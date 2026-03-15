@@ -1,0 +1,17 @@
+{
+    "private": true,
+    "name": "fitos-monorepo",
+    "packageManager": "npm@11.8.0",
+    "workspaces": [
+        "apps/*",
+        "packages/*",
+        "services/*"
+    ],
+    "devDependencies": {
+        "turbo": "latest"
+    },
+    "scripts": {
+        "dev": "turbo run dev",
+        "build": "turbo run build"
+    }
+}

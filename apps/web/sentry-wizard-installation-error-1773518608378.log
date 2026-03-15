@@ -1,0 +1,35 @@
+npm error code ERESOLVE
+npm error ERESOLVE could not resolve
+npm error
+npm error While resolving: react-beautiful-dnd@13.1.1
+npm error Found: react@19.2.3
+npm error node_modules/react
+npm error   peer react@"^17 || ^18 || ^19" from @base-ui/react@1.3.0
+npm error   node_modules/@base-ui/react
+npm error     @base-ui/react@"^1.3.0" from the root project
+npm error   peer react@"^17 || ^18 || ^19" from @base-ui/utils@0.2.6
+npm error   node_modules/@base-ui/utils
+npm error     @base-ui/utils@"0.2.6" from @base-ui/react@1.3.0
+npm error     node_modules/@base-ui/react
+npm error       @base-ui/react@"^1.3.0" from the root project
+npm error   44 more (@floating-ui/react-dom, ...)
+npm error
+npm error Could not resolve dependency:
+npm error peer react@"^16.8.5 || ^17.0.0 || ^18.0.0" from react-beautiful-dnd@13.1.1
+npm error node_modules/react-beautiful-dnd
+npm error   react-beautiful-dnd@"^13.1.1" from the root project
+npm error
+npm error Conflicting peer dependency: react@18.3.1
+npm error node_modules/react
+npm error   peer react@"^16.8.5 || ^17.0.0 || ^18.0.0" from react-beautiful-dnd@13.1.1
+npm error   node_modules/react-beautiful-dnd
+npm error     react-beautiful-dnd@"^13.1.1" from the root project
+npm error
+npm error Fix the upstream dependency conflict, or retry
+npm error this command with --force or --legacy-peer-deps
+npm error to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error C:\Users\abel_\AppData\Local\npm-cache\_logs\2026-03-14T20_03_23_707Z-eresolve-report.txt
+npm error A complete log of this run can be found in: C:\Users\abel_\AppData\Local\npm-cache\_logs\2026-03-14T20_03_23_707Z-debug-0.log
