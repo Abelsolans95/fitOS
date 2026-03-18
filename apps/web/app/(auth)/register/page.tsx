@@ -169,26 +169,18 @@ export default function RegisterPage() {
         role,
       });
 
-      // 3. If client: create trainer_clients + increment promo current_uses
+      // 3. If client: create trainer_clients via API route (uses service_role to bypass RLS)
       if (role === "client" && promo.trainer_id && promo.promo_code_id) {
-        await supabase.from("trainer_clients").insert({
-          trainer_id: promo.trainer_id,
-          client_id: authData.user.id,
-          promo_code_id: promo.promo_code_id,
+        await fetch("/api/complete-registration", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            trainer_id: promo.trainer_id,
+            client_id: authData.user.id,
+            promo_code_id: promo.promo_code_id,
+            email,
+          }),
         });
-
-        // Increment current_uses on the promo code
-        const { data: currentCode } = await supabase
-          .from("trainer_promo_codes")
-          .select("current_uses")
-          .eq("id", promo.promo_code_id!)
-          .single();
-        if (currentCode) {
-          await supabase
-            .from("trainer_promo_codes")
-            .update({ current_uses: currentCode.current_uses + 1 })
-            .eq("id", promo.promo_code_id!);
-        }
       }
     }
 

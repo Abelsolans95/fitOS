@@ -34,19 +34,61 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const pathname = request.nextUrl.pathname;
+
   // Protect /app/* routes — redirect unauthenticated users to /login
-  if (!user && request.nextUrl.pathname.startsWith("/app")) {
+  if (!user && pathname.startsWith("/app")) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  // If authenticated user is on /login or /register, redirect to dashboard
-  if (user && (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/register")) {
+  // Protect /onboarding/* routes
+  if (!user && pathname.startsWith("/onboarding")) {
     const url = request.nextUrl.clone();
-    // We'll determine the correct dashboard path based on role later
-    url.pathname = "/app/trainer/dashboard";
+    url.pathname = "/login";
     return NextResponse.redirect(url);
+  }
+
+  // If authenticated user is on /login or /register, redirect to their dashboard or onboarding
+  if (user && (pathname === "/login" || pathname === "/register")) {
+    const url = request.nextUrl.clone();
+    const role = user.user_metadata?.role;
+    const onboardingCompleted = user.user_metadata?.onboarding_completed;
+    if (role === "client" && !onboardingCompleted) {
+      url.pathname = "/onboarding/client";
+    } else if (role === "trainer" && !onboardingCompleted) {
+      url.pathname = "/onboarding/trainer";
+    } else {
+      url.pathname = role === "client" ? "/app/client/dashboard" : "/app/trainer/dashboard";
+    }
+    return NextResponse.redirect(url);
+  }
+
+  // If authenticated client accesses /app/* without completing onboarding, redirect
+  if (user && pathname.startsWith("/app/")) {
+    const role = user.user_metadata?.role;
+    const onboardingCompleted = user.user_metadata?.onboarding_completed;
+    if (!onboardingCompleted) {
+      const url = request.nextUrl.clone();
+      url.pathname = role === "client" ? "/onboarding/client" : "/onboarding/trainer";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // Prevent trainers from accessing client routes and vice versa
+  if (user && pathname.startsWith("/app/")) {
+    const role = user.user_metadata?.role;
+    if (role === "trainer" && pathname.startsWith("/app/client/")) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/app/trainer/dashboard";
+      return NextResponse.redirect(url);
+    }
+    if (role === "client" && pathname.startsWith("/app/trainer/")) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/app/client/dashboard";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

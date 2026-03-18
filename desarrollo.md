@@ -1,7 +1,9 @@
 # FitOS — Estado del Desarrollo
 
-> Documento generado el 15/03/2026. Léelo de arriba abajo antes de tocar cualquier archivo.
+> Documento actualizado el 18/03/2026 (Fase 1 completada). Léelo de arriba abajo antes de tocar cualquier archivo.
 > Cualquier agente o desarrollador debe leer este archivo **primero** para entender el estado actual del proyecto.
+>
+> **IMPORTANTE:** Al terminar cualquier desarrollo, bugfix o cambio significativo, actualiza este archivo (`desarrollo.md`) **y** `CLAUDE.md` antes de cerrar la sesión. Refleja los archivos nuevos o modificados, añade notas para el siguiente agente/desarrollador y actualiza la sección de próximos pasos. El objetivo es que cualquier persona o agente pueda continuar el proyecto sin contexto previo.
 
 ---
 
@@ -23,171 +25,341 @@
 | Componentes UI | shadcn/ui + componentes propios estilo Aceternity |
 | Base de datos | Supabase (PostgreSQL) — proyecto `fitos-prod` |
 | Auth | Supabase Auth (email/password + OAuth preparado) |
-| Mobile | Expo (React Native + TypeScript) — en construcción |
+| Mobile | Expo 55 (React Native) + React Navigation + Supabase |
+| Edge Functions | Supabase Edge Functions (Deno) — 4 funciones IA |
 | Gestor de paquetes | **pnpm** (raíz) / **npm** dentro de `apps/web` |
 
 ---
 
-## 3. Estructura del Monorepo
+## 3. Fases Completadas
+
+### Fase 0 (Completada)
+- Estructura del monorepo
+- Supabase: 18 tablas con RLS
+- Auth: registro/login con roles (trainer/client)
+- Editor de formularios de onboarding
+- Tema visual FitOS (dark mode)
+
+### Fase 1 (Completada — 18/03/2026)
+- Onboarding wizard entrenador y cliente
+- Dashboard completo del entrenador (sidebar, KPIs, CRUD)
+- Dashboard completo del cliente (bottom nav, 6 módulos)
+- Biblioteca de ejercicios y alimentos
+- Constructor de rutinas y menús
+- Vision Calorie Tracker (cámara + IA)
+- Calendario master y página de progreso con gráficos
+- 4 Edge Functions de IA (analyze-food-image, generate-meal-plan, generate-gym-routine, analyze-onboarding-form)
+- Integración Google Calendar OAuth (preparada para credenciales)
+- App móvil con 5 pantallas del cliente
+- Middleware con routing por roles
+
+---
+
+## 4. Estructura del Monorepo
 
 ```
 fitOS/
 ├── apps/
-│   ├── web/          ← Next.js 15 (App principal — ACTIVA)
-│   ├── mobile/       ← Expo (esqueleto básico, sin desarrollar)
-│   ├── admin/        ← Placeholder vacío
-│   └── landing/      ← Placeholder vacío
+│   ├── web/                    ← Next.js 15 (App principal — ACTIVA)
+│   ├── mobile/                 ← Expo 55 (App cliente — 5 pantallas)
+│   ├── admin/                  ← Placeholder vacío
+│   └── landing/                ← Placeholder vacío
 ├── packages/
-│   ├── ui/           ← Placeholder (componentes compartidos futuros)
-│   ├── types/        ← Placeholder (tipos TypeScript compartidos)
-│   ├── validations/  ← Placeholder (esquemas zod compartidos)
-│   └── config/       ← Placeholder (configuración compartida)
+│   ├── ui/                     ← Placeholder (componentes compartidos futuros)
+│   ├── types/                  ← Placeholder (tipos TypeScript compartidos)
+│   ├── validations/            ← Placeholder (esquemas zod compartidos)
+│   └── config/                 ← Placeholder (configuración compartida)
 ├── services/
-│   ├── ai/           ← Placeholder (Edge Functions de IA)
-│   └── notifications/← Placeholder
+│   ├── ai/                     ← Placeholder
+│   └── notifications/          ← Placeholder
 ├── supabase/
-│   └── migrations/   ← Archivos SQL de migración (vacíos localmente, aplicados en Supabase)
-├── turbo.json        ← Configuración Turborepo (usa "tasks", NO "pipeline")
+│   ├── migrations/
+│   │   └── 018_create_food_log.sql   ← Tabla food_log (Vision Calorie Tracker)
+│   └── functions/
+│       ├── analyze-food-image/       ← Claude Vision: análisis foto → macros
+│       ├── generate-meal-plan/       ← Claude: generar plan nutricional
+│       ├── generate-gym-routine/     ← Claude: generar rutina de ejercicios
+│       └── analyze-onboarding-form/  ← Claude: analizar respuestas onboarding
+├── turbo.json
 ├── pnpm-workspace.yaml
-├── package.json      ← Scripts raíz: dev, build
-├── especificaciones.md ← PRD Maestro completo
-└── desarrollo.md     ← Este archivo
+├── package.json
+├── especificaciones.md
+└── desarrollo.md               ← Este archivo
 ```
 
 ---
 
-## 4. Supabase — Base de Datos
+## 5. Supabase — Base de Datos
 
 **Proyecto:** `fitos-prod`
 **Project ID:** `rgrtxlciqmexdkxagomo`
 **URL:** `https://rgrtxlciqmexdkxagomo.supabase.co`
 **Región:** `eu-west-1`
 
-### Tablas existentes (18 tablas, todas con RLS activado)
+### Tablas existentes (19 tablas, todas con RLS activado)
 
 | Tabla | Descripción |
 |---|---|
 | `user_roles` | Rol del usuario: `trainer` o `client` |
 | `trainer_promo_codes` | Códigos de invitación generados por entrenadores |
 | `trainer_clients` | Relación entrenador ↔ cliente |
-| `profiles` | Perfil extendido de cada usuario |
+| `profiles` | Perfil extendido de cada usuario (incluye `google_calendar_tokens`) |
 | `onboarding_forms` | Formularios personalizados de onboarding del entrenador |
-| `onboarding_responses` | Respuestas de los clientes a los formularios |
+| `onboarding_responses` | Respuestas de los clientes (incluye `ai_analysis`, `analyzed_at`) |
 | `trainer_food_library` | Biblioteca de alimentos del entrenador |
 | `meal_plans` | Planes de comida asignados a clientes |
-| `trainer_exercise_library` | Biblioteca de ejercicios del entrenador |
+| `exercises` | Biblioteca de ejercicios (globales + propios del entrenador) |
 | `user_routines` | Rutinas asignadas a clientes |
+| `food_log` | **NUEVA** — Registro de comidas (manual + AI Vision) |
+| `workout_logs` | Registro de entrenamientos completados |
 | `weight_log` | Registro de pesos levantados por ejercicio |
 | `body_metrics` | Medidas corporales (peso, % grasa, perímetros...) |
-| `user_calendar` | Calendario de actividades (entreno, comida, descanso) |
+| `user_calendar` | Calendario de actividades |
 | `rpe_history` | RPE por sesión de entrenamiento |
-| `biometric_data` | Datos de wearables (HRV, sueño, pasos...) |
-| `leagues` | Ligas de gamificación creadas por entrenadores |
-| `league_members` | Miembros de cada liga con puntuación y ranking |
-| `trainer_subscriptions` | Suscripciones de pago de entrenadores (Stripe) |
+| `biometric_data` | Datos de wearables |
+| `leagues` | Ligas de gamificación |
+| `league_members` | Miembros de cada liga |
+| `trainer_subscriptions` | Suscripciones de pago (Stripe) |
 
 ### Funciones de base de datos
+- **`handle_new_user()`** — Trigger en `auth.users` → crea `profiles`
+- **`generate_promo_code(trainer_name TEXT)`** — Genera códigos tipo `CARLOS-X7K2`
 
-- **`handle_new_user()`** — Trigger que se dispara en `auth.users` AFTER INSERT. Crea automáticamente una fila en `profiles` con `role` y `full_name` tomados de `raw_user_meta_data`.
-- **`generate_promo_code(trainer_name TEXT)`** — Genera códigos únicos del tipo `CARLOS-X7K2`.
-
-### Cómo ejecutar migraciones
-
-Las migraciones ya están aplicadas en Supabase. Si necesitas aplicar nuevas:
+### Tabla `food_log` (migración 018)
+```sql
+-- Campos: id, client_id, logged_at, meal_type, foods (JSONB), totales de macros, photo_url, source, ai_raw, notes
+-- Índices: por client_id+fecha
+-- RLS: cliente gestiona su propio log, entrenador lee logs de sus clientes
 ```
-supabase db push
-```
-O bien usa el MCP de Supabase con `apply_migration`.
 
 ---
 
-## 5. Web App — `apps/web`
+## 6. Web App — `apps/web`
 
 ### Comandos
 ```bash
 cd apps/web
 npm run dev    # Desarrollo en localhost:3000
-npm run build  # Build de producción (debe pasar sin errores)
+npm run build  # Build de producción
 ```
 
 ### Variables de entorno — `apps/web/.env.local`
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://rgrtxlciqmexdkxagomo.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
-> ⚠️ Este archivo existe localmente. Para producción (Vercel), configura las mismas variables en el dashboard de Vercel.
 
-### Estructura de `apps/web`
+# Google Calendar (añadir cuando se configure)
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+NEXT_PUBLIC_GOOGLE_REDIRECT_URI=https://tu-dominio.com/api/auth/google/callback
+```
+
+### Estructura de rutas completa
 
 ```
-apps/web/
-├── app/
-│   ├── layout.tsx              ← Layout raíz: Inter font, class="dark", metadata FitOS
-│   ├── globals.css             ← Tema FitOS: #0A0A0F fondo, #00E5FF cyan, #7C3AED violet
-│   ├── page.tsx                ← Redirige a /login
-│   ├── (auth)/                 ← Grupo de rutas públicas (sin dashboard shell)
-│   │   ├── layout.tsx          ← Centra contenido en pantalla negra
-│   │   ├── login/
-│   │   │   └── page.tsx        ← Login con Spotlight + OAuth buttons
-│   │   └── register/
-│   │       └── page.tsx        ← Registro con selector rol + código promo
-│   └── (dashboard)/            ← Grupo de rutas protegidas (con navbar)
-│       ├── layout.tsx          ← Navbar con logo FitOS + backdrop blur
-│       └── app/
-│           └── trainer/
-│               └── forms/
-│                   └── page.tsx ← Editor de formulario de onboarding
-├── components/
-│   ├── ui/
-│   │   ├── spotlight.tsx       ← Efecto Spotlight (Aceternity UI style)
-│   │   ├── input.tsx           ← shadcn
-│   │   ├── label.tsx           ← shadcn
-│   │   ├── card.tsx            ← shadcn
-│   │   ├── select.tsx          ← shadcn
-│   │   ├── switch.tsx          ← shadcn
-│   │   ├── badge.tsx           ← shadcn
-│   │   ├── separator.tsx       ← shadcn
-│   │   ├── tabs.tsx            ← shadcn
-│   │   └── sonner.tsx          ← shadcn (toasts)
+apps/web/app/
+├── layout.tsx                          ← Layout raíz: Inter font, class="dark"
+├── globals.css                         ← Tema FitOS completo
+├── page.tsx                            ← Redirige a /login
+│
+├── (auth)/                             ← Rutas públicas
+│   ├── layout.tsx                      ← Centra contenido
+│   ├── login/page.tsx                  ← Login + OAuth
+│   ├── register/page.tsx               ← Registro con rol + código promo
+│   ├── forgot-password/page.tsx        ← Recuperación de contraseña
+│   ├── reset-password/page.tsx         ← Resetear contraseña
 │   └── onboarding/
-│       ├── FormFieldEditor.tsx  ← Editor de campos con drag & drop (8 tipos)
-│       └── FormPreview.tsx      ← Vista previa del formulario
+│       ├── trainer/page.tsx            ← ✅ Wizard 3 pasos: negocio, formulario, código promo
+│       └── client/page.tsx             ← ✅ Wizard 2 pasos: formulario entrenador, datos biométricos
+│
+├── (dashboard)/                        ← Rutas protegidas
+│   ├── layout.tsx                      ← Layout genérico
+│   └── app/
+│       ├── trainer/
+│       │   ├── layout.tsx              ← ✅ TrainerSidebar (240px, colapsable a 72px)
+│       │   ├── dashboard/page.tsx      ← ✅ KPIs + actividad reciente + acciones rápidas
+│       │   ├── clients/page.tsx        ← ✅ Lista clientes con búsqueda + tabla
+│       │   ├── clients/[id]/page.tsx   ← ✅ Detalle cliente con 5 tabs (Perfil, Progreso, Rutina, Menú, Formulario)
+│       │   ├── exercises/page.tsx      ← ✅ Biblioteca de ejercicios (globales + propios, filtros, CRUD)
+│       │   ├── routines/page.tsx       ← ✅ Constructor de rutinas (días de semana, ejercicios, sets/reps/RIR)
+│       │   ├── nutrition/page.tsx      ← ✅ Menú creator + Biblioteca de alimentos (2 tabs)
+│       │   ├── forms/page.tsx          ← Editor de formulario onboarding (drag & drop, 8 tipos)
+│       │   └── settings/page.tsx       ← ✅ Código promo + perfil editable
+│       │
+│       └── client/
+│           ├── layout.tsx              ← ✅ ClientBottomNav (5 tabs)
+│           ├── dashboard/page.tsx      ← ✅ Resumen diario + stats + acciones rápidas
+│           ├── calories/page.tsx       ← ✅ Vision Calorie Tracker (foto → IA → macros)
+│           ├── routine/page.tsx        ← ✅ Rutina actual con tracker de sets
+│           ├── meals/page.tsx          ← ✅ Plan de comidas asignado (por día)
+│           ├── calendar/page.tsx       ← ✅ Calendario master (entrenos, comidas, métricas)
+│           └── progress/page.tsx       ← ✅ Mediciones corporales + gráfico SVG + historial
+│
+├── api/
+│   └── auth/google/
+│       ├── route.ts                    ← ✅ Inicia OAuth de Google Calendar
+│       └── callback/route.ts           ← ✅ Callback OAuth → guarda tokens en profiles
+│
+├── components/
+│   ├── layout/
+│   │   ├── TrainerSidebar.tsx          ← ✅ Sidebar colapsable con 7 nav items + logout
+│   │   └── ClientBottomNav.tsx         ← ✅ Bottom nav con 5 tabs + indicador activo
+│   ├── onboarding/
+│   │   ├── FormFieldEditor.tsx         ← Editor de campos con drag & drop
+│   │   └── FormPreview.tsx             ← Vista previa del formulario
+│   └── ui/                             ← shadcn/ui components
+│
 ├── lib/
-│   ├── supabase.ts             ← createClient() para componentes cliente
-│   └── supabase-server.ts      ← createClient() para Server Components
-├── middleware.ts                ← Protege /app/* → redirige a /login si no autenticado
-└── .env.local                   ← Variables de entorno (no subir a Git)
+│   ├── supabase.ts                     ← createClient() browser
+│   ├── supabase-server.ts              ← createClient() server
+│   └── google-calendar.ts             ← ✅ OAuth helpers + CRUD eventos + sync helpers
+│
+└── middleware.ts                        ← ✅ Protección por rol (trainer/client separation)
+```
+
+### Middleware — Routing por roles
+El middleware protege rutas y separa los accesos:
+- `/app/*` sin sesión → redirige a `/login`
+- `/onboarding/*` sin sesión → redirige a `/login`
+- `/login` o `/register` con sesión + onboarding completado → redirige al dashboard según rol
+- `/login` o `/register` con sesión + onboarding NO completado → redirige a `/onboarding/[rol]`
+- `/app/*` con sesión pero onboarding NO completado → redirige a `/onboarding/[rol]`
+- `/app/client/*` para trainers → redirige a `/app/trainer/dashboard`
+- `/app/trainer/*` para clients → redirige a `/app/client/dashboard`
+- El flag `onboarding_completed` se lee de `user.user_metadata` (sin query a DB)
+
+---
+
+## 7. Edge Functions — `supabase/functions/`
+
+4 funciones Deno que usan Claude API (Anthropic). Todas requieren `ANTHROPIC_API_KEY` en los secrets de Supabase. Sin la key, devuelven respuesta mock o error informativo.
+
+| Función | Endpoint | Descripción |
+|---|---|---|
+| `analyze-food-image` | POST | Recibe `image_base64` → Claude Vision → devuelve alimentos estimados con macros |
+| `generate-meal-plan` | POST | Recibe datos del cliente → Claude genera plan semanal completo en JSON |
+| `generate-gym-routine` | POST | Recibe objetivo/nivel/días → Claude genera rutina con ejercicios y progresión |
+| `analyze-onboarding-form` | POST | Recibe `response_id` → Claude analiza respuestas → devuelve informe + recomendaciones |
+
+### Configurar Edge Functions
+```bash
+# Configurar API key de Anthropic
+supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
+
+# Desplegar todas las funciones
+supabase functions deploy analyze-food-image
+supabase functions deploy generate-meal-plan
+supabase functions deploy generate-gym-routine
+supabase functions deploy analyze-onboarding-form
 ```
 
 ---
 
-## 6. Sistema de Autenticación
+## 8. Google Calendar Integration
+
+### Flujo OAuth
+1. Cliente hace click en "Conectar Google Calendar" → `GET /api/auth/google`
+2. Redirige a Google OAuth consent screen
+3. Google callback → `GET /api/auth/google/callback`
+4. Se intercambian tokens y se guardan en `profiles.google_calendar_tokens`
+5. El helper `google-calendar.ts` provee funciones para crear/listar/eliminar eventos
+
+### Variables de entorno necesarias
+```env
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-xxx
+NEXT_PUBLIC_GOOGLE_REDIRECT_URI=https://tu-dominio.com/api/auth/google/callback
+```
+
+### Helpers disponibles (`lib/google-calendar.ts`)
+- `getGoogleAuthUrl(state?)` — URL de autorización
+- `exchangeCodeForTokens(code)` — Intercambio code → tokens
+- `refreshAccessToken(refreshToken)` — Renovar token
+- `createCalendarEvent(token, event)` — Crear evento
+- `listCalendarEvents(token, timeMin, timeMax)` — Listar eventos
+- `deleteCalendarEvent(token, eventId)` — Eliminar evento
+- `syncWorkoutToCalendar(token, workout)` — Crear evento de entreno
+- `syncMealToCalendar(token, meal)` — Crear evento de comida
+
+---
+
+## 9. Mobile App — `apps/mobile`
+
+### Tecnología
+- Expo SDK 55, React Native 0.83.2, React 19
+- React Navigation (Bottom Tabs)
+- Supabase client con AsyncStorage
+- Sentry para monitoreo
+
+### Comandos
+```bash
+cd apps/mobile
+npm install    # Instalar dependencias (ejecutar tras cambios en package.json)
+npm run dev    # Expo start
+npm run ios    # iOS simulator
+npm run android # Android emulator
+```
+
+### Variables de entorno — `apps/mobile/.env`
+```env
+EXPO_PUBLIC_SUPABASE_URL=https://rgrtxlciqmexdkxagomo.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+### Estructura
+```
+apps/mobile/
+├── App.tsx                             ← ✅ Entry: AuthProvider + NavigationContainer + Bottom Tabs
+├── src/
+│   ├── theme.ts                        ← Colores FitOS para mobile
+│   ├── lib/supabase.ts                 ← Cliente Supabase con AsyncStorage
+│   ├── contexts/AuthContext.tsx         ← Auth state + listener de sesión
+│   └── screens/
+│       ├── LoginScreen.tsx             ← ✅ Login con email/password
+│       ├── OnboardingScreen.tsx        ← ✅ Wizard 2 pasos: formulario entrenador + datos biométricos
+│       ├── DashboardScreen.tsx         ← ✅ Resumen diario (kcal ring, stats, quick actions)
+│       ├── CaloriesScreen.tsx          ← ✅ Vision Calorie Tracker (cámara/galería → IA)
+│       ├── RoutineScreen.tsx           ← ✅ Rutina del día con set tracker interactivo
+│       ├── MealsScreen.tsx             ← ✅ Plan de comidas por día con macros
+│       └── ProgressScreen.tsx          ← ✅ Mediciones + historial + tendencias
+├── app.json                            ← Config Expo + Sentry
+└── package.json                        ← Dependencias actualizadas
+```
+
+### Dependencias a instalar (si no están)
+```bash
+cd apps/mobile
+npx expo install @react-navigation/native @react-navigation/bottom-tabs react-native-safe-area-context react-native-screens @react-native-async-storage/async-storage @supabase/supabase-js expo-image-picker
+```
+
+---
+
+## 10. Sistema de Autenticación
 
 ### Flujo de registro (Entrenador)
-1. Usuario va a `/register`
-2. Selecciona "Soy Entrenador"
-3. Rellena nombre, email, contraseña
-4. `supabase.auth.signUp()` → `raw_user_meta_data: { role: "trainer", full_name: "..." }`
-5. Trigger `handle_new_user()` crea fila en `profiles`
-6. Se inserta fila en `user_roles`
-7. Redirige a `/onboarding/trainer` ← **Esta ruta aún no existe (TODO)**
+1. `/register` → selecciona "Soy Entrenador"
+2. Rellena nombre, email, contraseña
+3. `supabase.auth.signUp()` → trigger crea `profiles`
+4. Se inserta `user_roles`
+5. Redirige a `/onboarding/trainer` → Wizard 3 pasos:
+   - Paso 1: nombre negocio, especialidad, bio → guarda en `profiles`
+   - Paso 2: crear formulario onboarding (reutiliza FormFieldEditor)
+   - Paso 3: generar código promo → `trainer_promo_codes`
 
 ### Flujo de registro (Cliente)
-1. Usuario va a `/register`
-2. Selecciona "Soy Cliente" → aparece campo "Código de tu entrenador"
-3. El código se valida en tiempo real contra `trainer_promo_codes` (debounce 500ms)
-4. Si válido, muestra el nombre del entrenador en verde
-5. Al registrarse: Supabase Auth → `profiles` (trigger) → `user_roles` → `trainer_clients`
-6. Redirige a `/onboarding/client` ← **Esta ruta aún no existe (TODO)**
+1. `/register` → selecciona "Soy Cliente"
+2. Introduce código del entrenador (validación real-time)
+3. Registro → `profiles` + `user_roles` + `trainer_clients`
+4. Redirige a `/onboarding/client` → Wizard 2 pasos:
+   - Paso 1: rellenar formulario del entrenador
+   - Paso 2: datos biométricos (peso, altura, objetivo)
 
 ### Middleware de protección
-`middleware.ts` intercepta todas las rutas:
-- Si ruta empieza por `/app` y no hay sesión → redirige a `/login`
-- Si hay sesión y está en `/login` o `/register` → redirige a `/app/trainer/dashboard` (aún no existe)
+Protege rutas por autenticación Y por rol. Trainers no acceden a rutas de client y viceversa.
 
 ---
 
-## 7. Tema Visual
+## 11. Tema Visual
 
 ### Colores (CSS custom properties en `globals.css`)
 
@@ -197,135 +369,296 @@ apps/web/
 | `--card` | `#12121A` | Superficies de tarjetas |
 | `--primary` | `#00E5FF` | Acento principal (cyan neón) |
 | `--secondary` | `#7C3AED` | Acento secundario (violeta eléctrico) |
-| `--muted` | `#1A1A2E` | Fondo de hover y elementos secundarios |
-| `--muted-foreground` | `#8B8BA3` | Texto secundario / placeholders |
+| `--muted` | `#1A1A2E` | Fondo hover |
+| `--muted-foreground` | `#8B8BA3` | Texto secundario |
 | `--border` | `rgba(255,255,255,0.08)` | Bordes sutiles |
-| `--destructive` | `#FF1744` | Errores y alertas |
-| `--ring` | `#00E5FF` | Outline de focus |
+| `--destructive` | `#FF1744` | Errores |
 
-### Clases de utilidad
-- `.glow-cyan` — Sombra difusa cyan
-- `.glow-cyan-hover:hover` — Glow al hacer hover
-- `.glow-violet` — Sombra difusa violeta
-
-### Tipografía
-- **Inter** — Única fuente (400, 500, 600, 700)
-- Cargada con `next/font/google`, variable CSS `--font-sans`
+### Patrones de diseño
+- **Cards:** `rounded-2xl border border-white/[0.06] bg-[#12121A]`
+- **Botón primario:** `bg-[#00E5FF] text-[#0A0A0F] rounded-xl`
+- **Loading spinner:** `h-8 w-8 animate-spin rounded-full border-2 border-[#00E5FF] border-t-transparent`
+- **Glow effects:** `.glow-cyan`, `.glow-cyan-hover`, `.glow-violet`
+- **Tipografía:** Inter (400, 500, 600, 700)
 
 ---
 
-## 8. Editor de Formularios de Onboarding
+## 12. Próximos Pasos Recomendados (Fase 2)
 
-**Ruta:** `/app/trainer/forms`
-
-El editor permite al entrenador crear el formulario que rellenarán sus nuevos clientes al registrarse. Los formularios se guardan en la tabla `onboarding_forms` como JSONB.
-
-### 8 tipos de campo disponibles
-
-| Tipo | Descripción | Color |
+| Tarea | Prioridad | Descripción |
 |---|---|---|
-| `text` | Texto libre corto | Cyan |
-| `textarea` | Texto largo, varias líneas | Cyan |
-| `number` | Valor numérico | Violeta |
-| `select` | Selección única con opciones | Violeta |
-| `multiselect` | Selección múltiple con opciones | Naranja |
-| `boolean` | Toggle Sí / No | Verde |
-| `scale` | Escala del 1 al 10 | Naranja |
-| `date` | Selector de fecha | Rojo |
-
-### Estructura JSONB de un campo
-
-```json
-{
-  "id": "abc123",
-  "type": "select",
-  "label": "¿Cuál es tu objetivo principal?",
-  "placeholder": "",
-  "required": true,
-  "options": ["Perder peso", "Ganar músculo", "Mejorar resistencia"]
-}
-```
+| Configurar Vercel | 🔴 Alta | Conectar repo GitHub, env vars, dominio |
+| Aplicar migración food_log | 🔴 Alta | `supabase db push` o aplicar `018_create_food_log.sql` |
+| Configurar ANTHROPIC_API_KEY | 🔴 Alta | `supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx` |
+| Insertar datos seed | 🟡 Media | Ejercicios y alimentos globales en las tablas correspondientes |
+| Configurar Google Calendar | 🟡 Media | Crear proyecto en Google Cloud Console, obtener OAuth credentials |
+| Instalar deps mobile | 🟡 Media | `cd apps/mobile && npx expo install ...` (ver sección 9) |
+| Stripe / suscripciones | 🟡 Media | Integrar pagos para entrenadores |
+| Gamificación / Ligas | 🟢 Baja | Implementar el sistema de ligas (tablas ya existen) |
+| Notificaciones push | 🟢 Baja | Expo Notifications para mobile |
+| Wearables / biometric_data | 🟢 Baja | Integraciones con Apple Health, Google Fit, Garmin |
 
 ---
 
-## 9. Rutas Pendientes de Implementar (TODO)
-
-Estas rutas están referenciadas en el código pero **aún no existen**:
-
-| Ruta | Descripción | Prioridad |
-|---|---|---|
-| `/onboarding/trainer` | Wizard de onboarding del entrenador: nombre empresa, especialidad, generar código promo | 🔴 Alta |
-| `/onboarding/client` | Wizard de onboarding del cliente: rellenar formulario del entrenador, datos biométricos | 🔴 Alta |
-| `/app/trainer/dashboard` | Panel principal del entrenador: lista de clientes, métricas | 🔴 Alta |
-| `/app/client/dashboard` | Panel principal del cliente: rutina hoy, comidas, progreso | 🔴 Alta |
-| `/app/trainer/clients` | Lista detallada de clientes del entrenador | 🟡 Media |
-| `/app/trainer/clients/[id]` | Perfil individual de cliente | 🟡 Media |
-| `/app/trainer/routines` | Creación y asignación de rutinas | 🟡 Media |
-| `/app/trainer/nutrition` | Creación y asignación de planes de comida | 🟡 Media |
-| `/forgot-password` | Recuperación de contraseña | 🟡 Media |
-
----
-
-## 10. Próximos Pasos Recomendados (Fase 1)
-
-### Paso 1: Onboarding del Entrenador (`/onboarding/trainer`)
-Wizard de 3 pasos:
-1. **Paso 1** — Nombre de negocio, especialidad, bio (guarda en `profiles`)
-2. **Paso 2** — Crear formulario de onboarding (reusar `FormFieldEditor`)
-3. **Paso 3** — Generar código promo (llama a `generate_promo_code()` o crea uno personalizado en `trainer_promo_codes`)
-
-### Paso 2: Dashboard del Entrenador (`/app/trainer/dashboard`)
-- Sidebar de navegación
-- Cards de estadísticas: clientes activos, formularios pendientes
-- Lista de clientes recientes
-
-### Paso 3: Onboarding del Cliente (`/onboarding/client`)
-Wizard de 2 pasos:
-1. **Paso 1** — Rellenar formulario del entrenador (datos dinámicos de `onboarding_forms`)
-2. **Paso 2** — Datos biométricos básicos (peso, altura, objetivo → `profiles` + `body_metrics`)
-
-### Paso 4: Configurar Vercel
-- Conectar repositorio GitHub
-- Añadir variables de entorno de producción
-- Configurar dominio
-
----
-
-## 11. Comandos Útiles
+## 13. Comandos Útiles
 
 ```bash
-# Arrancar la web en desarrollo
+# Web — desarrollo
 cd apps/web && npm run dev
 
-# Arrancar todo el monorepo (desde la raíz)
-npm run dev    # Turborepo ejecuta dev en todos los workspaces
-
-# Build de producción de la web
+# Web — build producción
 cd apps/web && npm run build
+
+# Mobile — desarrollo
+cd apps/mobile && npm run dev
+
+# Monorepo completo
+npm run dev
 
 # Añadir componente shadcn
 cd apps/web && npx shadcn@latest add [componente]
 
-# Instalar dependencias en apps/web con legacy-peer-deps (necesario por conflictos)
+# Instalar en web (siempre con --legacy-peer-deps)
 cd apps/web && npm install [paquete] --legacy-peer-deps
+
+# Supabase — aplicar migraciones
+supabase db push
+
+# Supabase — desplegar Edge Functions
+supabase functions deploy [nombre]
 ```
 
 ---
 
-## 12. Notas Importantes para el Siguiente Agente/Desarrollador
+## 14. Notas Importantes para el Siguiente Agente/Desarrollador
 
-1. **pnpm vs npm**: La raíz del monorepo usa `pnpm`. PERO dentro de `apps/web` se usa `npm` directamente (porque shadcn CLI lo requiere). No mezclar.
+### Convenciones del proyecto
 
-2. **legacy-peer-deps**: Al instalar paquetes en `apps/web`, usar siempre `--legacy-peer-deps` porque hay conflictos de versión entre paquetes. Esto ya está configurado como default (`npm config set legacy-peer-deps true`).
+1. **pnpm vs npm**: Raíz usa `pnpm`. Dentro de `apps/web` se usa `npm` (shadcn CLI lo requiere). No mezclar.
 
-3. **Turbo 2.x**: El campo en `turbo.json` es `"tasks"` (no `"pipeline"`). Cambios anteriores a v2 usan `"pipeline"` y darán error.
+2. **legacy-peer-deps**: Al instalar en `apps/web`, siempre usar `--legacy-peer-deps`.
 
-4. **Dark mode permanente**: El modo oscuro está siempre activo. NO hay toggle de light/dark. La clase `dark` está hardcodeada en `<html>`.
+3. **Turbo 2.x**: El campo en `turbo.json` es `"tasks"` (no `"pipeline"`).
 
-5. **Variables de entorno**: El `.env.local` de `apps/web` contiene la anon key de Supabase. Esta key es pública (anon key), no es secreta. La `service_role` key **nunca** debe ir en el frontend.
+4. **Dark mode permanente**: Clase `dark` hardcodeada en `<html>`. No hay toggle light/dark.
 
-6. **Supabase RLS**: Todas las tablas tienen RLS activado. Las queries desde el frontend solo devuelven lo que las políticas permiten. Si algo no devuelve datos, revisa las políticas.
+5. **Variables de entorno**: El `.env.local` contiene la anon key (pública). La `service_role` key **nunca** va en frontend.
 
-7. **`shadcn/ui` config**: El `components.json` está en `apps/web/` (no en la raíz). El style es `nova` con base en `neutral`.
+6. **Supabase RLS**: Todas las tablas tienen RLS activado. Si una query no devuelve datos, revisar las políticas antes de tocar el código.
 
-8. **React Beautiful DnD**: Instalado en `apps/web` para el drag & drop del editor de formularios. Es una librería legacy (no mantenida activamente), pero funciona bien con React 18/19 en modo `StrictMode` desactivado. Si da problemas de renderizado, considera migrar a `@dnd-kit/core`.
+7. **shadcn/ui**: `components.json` está en `apps/web/`. Estilo `nova`, base `neutral`.
+
+8. **food_log.client_id**: La tabla `food_log` usa `client_id` como FK (no `user_id`). Diferente al resto de tablas que usan `user_id`.
+
+9. **Edge Functions**: Requieren `ANTHROPIC_API_KEY` en Supabase secrets. Sin ella, devuelven respuestas mock/error informativo.
+
+10. **Google Calendar**: Los tokens se guardan en `profiles.google_calendar_tokens` (JSONB). Si la columna no existe: `ALTER TABLE profiles ADD COLUMN google_calendar_tokens JSONB DEFAULT NULL`.
+
+11. **Mobile**: La app necesita `npm install` después de cambios en `package.json`. Las dependencias de React Navigation se instalan con `npx expo install`.
+
+12. **Sonner (toast)**: Nutrición y rutinas usan `import { toast } from "sonner"`. El `<Toaster />` debe estar en el layout raíz o dashboard.
+
+---
+
+### Errores conocidos y cómo evitarlos
+
+> Esta sección documenta errores que ya ocurrieron. Leerla antes de tocar las áreas afectadas evita repetirlos.
+
+---
+
+**ERROR #1 — FK join inexistente entre `trainer_clients` y `profiles`**
+- **Fecha:** 18/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/trainer/clients/page.tsx`
+- **Qué pasó:** Se intentó hacer un join directo `profiles!trainer_clients_client_id_fkey(...)` en la query de Supabase. Crasheaba porque no existe FK entre `trainer_clients` y `profiles` — ambas tablas referencian `auth.users` de forma independiente (`trainer_clients.client_id → auth.users.id` y `profiles.user_id → auth.users.id`).
+- **Solución aplicada:** Dos queries separadas: primero `trainer_clients`, luego `profiles` filtrando por los IDs obtenidos, y merge manual por `client_id === user_id`.
+- **Regla:** Nunca asumir que existe una FK entre tablas sin verificarlo en el schema. En esta base de datos, `profiles` y `trainer_clients` NO están directamente relacionadas entre sí.
+
+---
+
+**ERROR #2 — Query a tabla inexistente `trainer_profiles`**
+- **Fecha:** 18/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/trainer/settings/page.tsx`
+- **Qué pasó:** La página consultaba `trainer_profiles` que no existe. Los datos de perfil del entrenador están en `profiles` (columnas `business_name`, `specialty`, `bio`) y el código promocional está en `trainer_promo_codes`.
+- **Solución aplicada:** Reescritura completa de la página para usar las tablas correctas.
+- **Regla:** Antes de escribir cualquier query, verificar que la tabla existe consultando la sección "Supabase — Base de Datos" de este documento o el schema real. Las 19 tablas están listadas en la sección 5.
+
+---
+
+**ERROR #3 — `react-beautiful-dnd` incompatible con React 19**
+- **Fecha:** 18/03/2026
+- **Archivo afectado:** `apps/web/components/onboarding/FormFieldEditor.tsx`
+- **Qué pasó:** `react-beautiful-dnd` usa APIs internas de React que fueron eliminadas en React 19. Crasheaba en runtime al renderizar el editor de formularios (call stack de 58 frames en `Droppable`).
+- **Solución aplicada:** Eliminada la dependencia por completo. Reordenado de campos implementado con botones ▲▼ nativos. No requiere ninguna librería externa.
+- **Regla:** No instalar `react-beautiful-dnd` en este proyecto. Si se necesita DnD en el futuro, usar `@dnd-kit/core` que sí es compatible con React 19.
+
+---
+
+**ERROR #4 — Arrays de la DB llegan como `null` aunque el tipo TypeScript diga `string[]`**
+- **Fecha:** 18/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/trainer/exercises/page.tsx`
+- **Qué pasó:** Los campos `primary_muscles`, `secondary_muscles` y `equipment` del tipo `Exercise` están declarados como `string[]`, pero PostgreSQL puede devolver `null` si la columna no tiene valor. Crasheaba en `.length` y `.map()`.
+- **Solución aplicada:** Usar siempre null-coalescing: `(exercise.primary_muscles ?? []).map(...)` y `(exercise.primary_muscles?.length ?? 0) > 0`.
+- **Regla:** En este proyecto, los campos array de Supabase pueden ser `null` en runtime aunque el tipo TypeScript diga `string[]`. Usar siempre `?? []` al iterar y `?.length ?? 0` al comprobar longitud. Aplicar esta misma precaución en cualquier campo array de cualquier tabla.
+
+---
+
+**ERROR #5 — Columnas incorrectas en `body_metrics`**
+- **Fecha:** 18/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/client/progress/page.tsx`
+- **Qué pasó:** El código usaba nombres de columna inventados (`weight_kg`, `hip_cm`, `arm_cm`, `thigh_cm`, `user_id`) que no existen en la tabla real. Supabase devolvía `Could not find the 'arm_cm' column of 'body_metrics' in the schema cache`.
+- **Solución aplicada:** Corregidos todos los nombres al schema real y la FK correcta.
+- **Mapeo correcto:**
+  - `weight_kg` → `body_weight_kg`
+  - `hip_cm` → `hips_cm`
+  - `arm_cm` → `right_arm_cm`
+  - `thigh_cm` → `right_thigh_cm`
+  - `user_id` → `client_id` (esta tabla usa `client_id`, no `user_id`)
+- **Regla:** Antes de escribir queries a `body_metrics`, verificar el schema en `especificaciones.md` sección 4.12. La tabla usa `client_id` (no `user_id`) y los nombres de columna son más específicos de lo esperado.
+
+---
+
+**ERROR #6 — `trainer_clients.created_at` no existe**
+- **Fecha:** 18/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/trainer/clients/page.tsx`
+- **Qué pasó:** La query ordenaba por `created_at`, pero la columna en `trainer_clients` se llama `joined_at`.
+- **Solución aplicada:** Cambiado `created_at` → `joined_at` en el `.order()`.
+- **Regla:** En `trainer_clients`, la columna de fecha es `joined_at`, no `created_at`.
+
+---
+
+**ERROR #7 — `profiles` no tiene columnas `height_cm`/`weight_kg`**
+- **Fecha:** 18/03/2026
+- **Archivos afectados:** `apps/web/app/(auth)/onboarding/client/page.tsx`, `apps/mobile/src/screens/OnboardingScreen.tsx`
+- **Qué pasó:** El onboarding intentaba guardar `height_cm` y `weight_kg` en `profiles`, pero las columnas reales son `height` y `weight`.
+- **Solución aplicada:** Corregidos a `height` y `weight` en web y mobile.
+- **Regla:** `profiles` usa `height` y `weight` (sin sufijo `_cm`/`_kg`).
+
+---
+
+**ERROR #8 — `profiles.role` es NOT NULL — upsert fallaba**
+- **Fecha:** 18/03/2026
+- **Archivo afectado:** `apps/web/app/(auth)/onboarding/trainer/page.tsx`
+- **Qué pasó:** El upsert del onboarding del entrenador no incluía el campo `role`, y como la columna es NOT NULL, Supabase devolvía `null value in column "role" of relation "profiles"`.
+- **Solución aplicada:** Añadido `role: "trainer"` en el objeto del upsert.
+- **Regla:** Cualquier upsert a `profiles` debe incluir `role` (valor: `"trainer"` o `"client"`).
+
+---
+
+**ERROR #9 — `onboarding_responses` viola unique constraint en reintento**
+- **Fecha:** 18/03/2026
+- **Archivos afectados:** `apps/web/app/(auth)/onboarding/client/page.tsx`, `apps/mobile/src/screens/OnboardingScreen.tsx`
+- **Qué pasó:** El onboarding del cliente usaba `insert` al guardar respuestas. Si el usuario recargaba o reintentaba, fallaba con `duplicate key value violates unique constraint "onboarding_responses_form_id_client_id_key"`.
+- **Solución aplicada:** Cambiado a `upsert` con `onConflict: "form_id,client_id"` en web y mobile.
+- **Regla:** Siempre usar `upsert` (no `insert`) para `onboarding_responses`. La tabla tiene un unique constraint en `(form_id, client_id)`.
+
+---
+
+**ERROR #10 — `meal_plans` usa columna `days`, no `content`**
+- **Fecha:** 18/03/2026
+- **Archivos afectados:** `apps/mobile/src/screens/MealsScreen.tsx`
+- **Qué pasó:** La pantalla móvil seleccionaba la columna `content` de `meal_plans`, que no existe. Los datos del plan semanal están en la columna `days` (JSONB).
+- **Solución aplicada:** Cambiado `content` → `days` en el select y en la interfaz TypeScript.
+- **Regla:** `meal_plans` almacena el array de días en la columna `days`. No existe columna `content`.
+
+---
+
+**ERROR #11 — JSONB (`food_preferences`) renderizado directamente como hijo React**
+- **Fecha:** 18/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/trainer/clients/[id]/page.tsx`
+- **Qué pasó:** El detalle de cliente renderizaba `profile.food_preferences` directamente en JSX. Al ser un objeto JSONB, React lanzaba "Objects are not valid as a React child".
+- **Solución aplicada:** Usar `JSON.stringify()` o renderizar campos específicos del objeto con optional chaining.
+- **Regla:** Nunca renderizar campos JSONB directamente como texto en React. Convertir con `JSON.stringify()` o acceder a propiedades específicas.
+
+---
+
+**ERROR #12 — `meal_plans` insert usaba `user_id` y columna `name` inexistentes**
+- **Fecha:** 18/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/trainer/nutrition/page.tsx`
+- **Qué pasó:** El creator de menús insertaba con `user_id` (no existe, es `client_id`) y `name` (no existe, es `title`). También `target_kcal` puede ser NOT NULL.
+- **Solución aplicada:** Corregido a `client_id`, `title`, y añadido fallback `|| 2000` para `target_kcal`.
+- **Regla:** En `meal_plans`: FK es `client_id`, nombre del plan es `title`, `target_kcal` es NOT NULL (usar fallback `|| 2000`).
+
+---
+
+**ERROR #13 — `trainer_clients` no se creaba en el registro por falta de `service_role` key**
+- **Fecha:** 18/03/2026
+- **Archivo afectado:** `apps/web/app/api/complete-registration/route.ts`
+- **Qué pasó:** La API route de registro intentaba insertar en `trainer_clients` usando el cliente anon, pero RLS bloqueaba la inserción al no haber sesión activa en ese momento.
+- **Solución aplicada:** Usar `createClient(url, SERVICE_ROLE_KEY)` en la API route. Añadir `SUPABASE_SERVICE_ROLE_KEY` a `.env.local`.
+- **Regla:** Las API routes que necesitan bypasear RLS deben usar la `service_role` key. Nunca en frontend.
+
+---
+
+**ERROR #19 — Múltiples columnas incorrectas en detalle de cliente `[id]/page.tsx`**
+- **Fecha:** 18/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/trainer/clients/[id]/page.tsx`
+- **Qué pasó:** El componente tenía varios errores de nombres de columna acumulados:
+  - `profiles`: `height_cm`/`weight_kg` (no existen) → columnas reales son `height`/`weight`
+  - `body_metrics`: `user_id` → `client_id`, `weight_kg` → `body_weight_kg`, `measured_at` → `recorded_at`
+  - `meal_plans`: `user_id` → `client_id`, `name` → `title`
+  - `user_routines`: `user_id` → `client_id`, `name` → `title`
+  - `onboarding_responses`: `user_id` → `client_id`, `answers` → `responses`
+  - `food_preferences` se renderizaba como JSON crudo con `JSON.stringify()`
+  - El tab Formulario mostraba IDs de campo como labels en vez de los labels reales
+- **Solución aplicada:** Reescritura completa del archivo con todos los nombres de columna correctos. Se añadió `FoodPreferencesDisplay` que muestra restricciones como pills, alergias y alimentos no deseados como texto. El tab Formulario carga `fields` del form para mostrar labels legibles. Se añadió `GOAL_LABELS` para traducir los valores internos de goal a texto legible.
+- **Regla:** Verificar siempre en especificaciones.md el nombre exacto de cada columna antes de escribir queries. Los nombres en la DB son específicos y no siempre coinciden con lo que parece intuitivo.
+
+---
+
+**ERROR #18 — Editor de formulario duplicado en Formularios y Ajustes (desincronizado)**
+- **Fecha:** 18/03/2026
+- **Archivos afectados:** `apps/web/app/(dashboard)/app/trainer/settings/page.tsx`
+- **Qué pasó:** El editor de formulario de onboarding existía tanto en `/trainer/forms` como en `/trainer/settings`. La query en settings no filtraba por `is_active: true` ni ordenaba por fecha, por lo que podía cargar un form diferente al de la página de Formularios. Cambios en uno no se veían en el otro.
+- **Solución aplicada:** Eliminado el editor duplicado de Ajustes. Settings ahora muestra solo el contador de campos y un botón "Editar formulario" que lleva a `/trainer/forms`, donde está el editor real.
+- **Regla:** El formulario de onboarding se edita únicamente en `/app/trainer/forms`. Ajustes es de solo lectura para el formulario (muestra resumen + enlace).
+
+---
+
+**ERROR #17 — `body_metrics` insert falla por `recorded_at` NOT NULL faltante**
+- **Fecha:** 18/03/2026
+- **Archivos afectados:** `apps/web/app/(auth)/onboarding/client/page.tsx`, `apps/mobile/src/screens/OnboardingScreen.tsx`
+- **Qué pasó:** El insert a `body_metrics` en el onboarding no incluía `recorded_at`, que es `TIMESTAMPTZ NOT NULL`. Supabase devolvía `{}` (objeto de error sin serializar) en consola. El onboarding completaba igual (error non-blocking) pero el peso inicial del cliente no se registraba.
+- **Solución aplicada:** Añadido `recorded_at: new Date().toISOString()` al insert en web y mobile.
+- **Regla:** `body_metrics` requiere siempre `client_id`, `recorded_at` (NOT NULL) y al menos un campo de medida. Ver schema completo en especificaciones.md sección 4.12.
+
+---
+
+**ERROR #16 — Check constraint `profiles_goal_check` viola por valores incorrectos**
+- **Fecha:** 18/03/2026
+- **Archivos afectados:** `apps/web/app/(auth)/onboarding/client/page.tsx`, `apps/mobile/src/screens/OnboardingScreen.tsx`
+- **Qué pasó:** Los GOAL_OPTIONS usaban labels en español con mayúsculas y espacios ("Hipertrofia", "Perdida de peso") pero la columna `profiles.goal` tiene un check constraint que solo acepta valores en minúsculas con guion bajo: `('hipertrofia','fuerza','perdida_peso','mantenimiento')`.
+- **Solución aplicada:** GOAL_OPTIONS cambiados a objetos `{ label, value }`. El label se muestra en UI, el value (en minúsculas con guion bajo) se guarda en DB. Aplicado en web y mobile.
+- **Valores correctos:** `'hipertrofia'`, `'fuerza'`, `'perdida_peso'`, `'mantenimiento'`
+- **Regla:** Siempre verificar check constraints en especificaciones.md antes de enviar texto a columnas con CHECK en DB. Los enums de `profiles.goal` están definidos en la sección 4.x de especificaciones.md.
+
+---
+
+**ERROR #15 — `profiles.update()` falla en onboarding cliente (message genérico)**
+- **Fecha:** 18/03/2026
+- **Archivo afectado:** `apps/web/app/(auth)/onboarding/client/page.tsx`
+- **Qué pasó:** El paso 2 del onboarding mostraba "Error al guardar tu perfil. Intenta nuevamente." sin más detalle. Dos causas: (1) el error genérico ocultaba el mensaje real de Supabase, (2) se usaba `.update()` que falla si el trigger no creó la fila del profile, y (3) `body_metrics` se insertaba con `user_id` en vez de `client_id`.
+- **Solución aplicada:** Cambiado `.update()` → `.upsert()` con `onConflict: "user_id"` e incluyendo `role` (NOT NULL). El mensaje de error ahora muestra `profileErr.message`. El `body_metrics` insert corregido a `client_id`.
+- **Regla:** En onboarding de cliente, usar siempre `upsert` (no `update`) en profiles e incluir `role`. El error de Supabase debe mostrarse siempre con `.message`, nunca un texto genérico que oculte el problema real.
+
+---
+
+**ERROR #14 — Onboarding no se disparaba tras login de cliente**
+- **Fecha:** 18/03/2026
+- **Archivos afectados:** `apps/web/middleware.ts`, `apps/web/app/(auth)/onboarding/client/page.tsx`, `apps/web/app/(auth)/onboarding/trainer/page.tsx`, `apps/mobile/App.tsx`
+- **Qué pasó:** Tras confirmar el email y hacer login, el usuario iba al dashboard sin pasar por el onboarding. El middleware no controlaba si el onboarding estaba completado.
+- **Solución aplicada:** Usar `user_metadata.onboarding_completed` (flag en auth.users) para gate el acceso. Middleware redirige a `/onboarding/client` o `/onboarding/trainer` si el flag es false. Al completar el onboarding se llama `supabase.auth.updateUser({ data: { onboarding_completed: true } })`.
+- **Regla:** El onboarding_completed se guarda en `user_metadata` (no en DB). Verificar este flag en middleware y en `App.tsx` mobile antes de mostrar dashboard.
+
+---
+
+### Regla de mantenimiento
+
+**Al terminar cualquier desarrollo, bugfix o cambio significativo:**
+
+1. Actualizar la estructura de rutas de la sección 6 si se añadieron o modificaron archivos.
+2. Actualizar la sección "Próximos Pasos" (sección 12) para reflejar el estado real.
+3. Si ocurrió algún error durante el desarrollo, documentarlo en la sección "Errores conocidos" siguiendo el formato existente (archivo, qué pasó, solución, regla).
+4. Actualizar también `CLAUDE.md` si la regla es lo suficientemente crítica para estar visible desde el primer momento.
+5. **Verificar paridad web ↔ mobile**: cualquier cambio en web debe reflejarse en mobile y viceversa. No dar una tarea por terminada si solo está implementada en una plataforma.
+
+El objetivo es que cualquier persona o agente que llegue al proyecto pueda continuar sin contexto previo y sin repetir los mismos errores.
