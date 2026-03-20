@@ -173,7 +173,7 @@ export default function ClientDashboardPage() {
     <div className="space-y-8">
 
       {/* ── Header row ── */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#5A5A72]">
             {formattedDate}
@@ -242,10 +242,10 @@ export default function ClientDashboardPage() {
       </div>
 
       {/* ── Main grid ── */}
-      <div className="grid grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
 
         {/* Today's workout — 2 cols */}
-        <div className="col-span-2 relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[#12121A] p-6">
+        <div className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[#12121A] p-6 md:col-span-2">
           <div className="absolute -right-20 -top-20 h-48 w-48 rounded-full bg-[#7C3AED]/[0.06] blur-3xl pointer-events-none" />
 
           <div className="mb-5 flex items-center justify-between">
@@ -350,7 +350,7 @@ export default function ClientDashboardPage() {
         <p className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-[#5A5A72]">
           Acciones rápidas
         </p>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Link
             href="/app/client/calories"
             className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-[#12121A] px-5 py-4 transition-all hover:border-[#00E5FF]/20 hover:bg-[#00E5FF]/[0.03]"

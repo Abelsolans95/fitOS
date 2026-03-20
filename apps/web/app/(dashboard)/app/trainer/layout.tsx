@@ -8,8 +8,8 @@ export default function TrainerLayout({
   return (
     <div className="min-h-screen bg-[#0A0A0F]">
       <TrainerSidebar />
-      <main className="pl-[220px] transition-all duration-300">
-        <div className="mx-auto max-w-6xl px-6 py-8">{children}</div>
+      <main className="pt-14 transition-all duration-300 lg:pt-0 lg:pl-[220px]">
+        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">{children}</div>
       </main>
     </div>
   );

@@ -1,11 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase";
+import { AppSidebar, SidebarNavItem } from "./AppSidebar";
 
-const NAV_ITEMS = [
+const NAV_ITEMS: SidebarNavItem[] = [
   {
     label: "Dashboard",
     href: "/app/trainer/dashboard",
@@ -38,7 +35,7 @@ const NAV_ITEMS = [
     href: "/app/trainer/nutrition",
     icon: (
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.25v-1.5m0 1.5c-1.355 0-2.697.056-4.024.166C6.845 8.51 6 9.473 6 10.608v2.513m6-4.871c1.355 0 2.697.056 4.024.166C17.155 8.51 18 9.473 18 10.608v2.513M15 8.25v-1.5m-6 1.5v-1.5m12 9.75-1.5.75a3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0L3 16.5m15-3.379a48.474 48.474 0 0 0-6-.371c-2.032 0-4.034.126-6 .371m12 0c.39.049.777.102 1.163.16 1.07.16 1.837 1.094 1.837 2.175v5.169c0 .621-.504 1.125-1.125 1.125H4.125A1.125 1.125 0 0 1 3 20.625v-5.17c0-1.08.768-2.014 1.837-2.174A47.78 47.78 0 0 1 6 13.12" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.25v-1.5m0 1.5c-1.355 0-2.697.056-4.024.166C6.845 8.51 6 9.473 6 10.608v2.513m6-4.871c1.355 0 2.697.056 4.024.166C17.155 8.51 18 9.473 18 10.608v2.513M15 8.25v-1.5m-6 1.5v-1.5m12 9.75-1.5.75a3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0L3 16.5" />
       </svg>
     ),
   },
@@ -73,84 +70,5 @@ const NAV_ITEMS = [
 ];
 
 export function TrainerSidebar() {
-  const pathname = usePathname();
-  const router = useRouter();
-  const [collapsed, setCollapsed] = useState(false);
-
-  const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-  };
-
-  return (
-    <aside
-      className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-white/[0.06] bg-[#0A0A0F] transition-all duration-300 ${
-        collapsed ? "w-[60px]" : "w-[220px]"
-      }`}
-    >
-      {/* Logo */}
-      <div className={`flex h-14 items-center border-b border-white/[0.06] ${collapsed ? "justify-center px-0" : "justify-between px-5"}`}>
-        {!collapsed && (
-          <Link href="/app/trainer/dashboard" className="text-base font-bold tracking-tight text-white">
-            Fit<span className="text-[#00E5FF]">OS</span>
-          </Link>
-        )}
-        <button
-          type="button"
-          onClick={() => setCollapsed(!collapsed)}
-          className="text-[#5A5A72] transition-colors hover:text-white"
-        >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            {collapsed ? (
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M12 17.25h8.25" />
-            )}
-          </svg>
-        </button>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4">
-        {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              title={collapsed ? item.label : undefined}
-              className={`relative flex items-center gap-3 px-5 py-2.5 text-[13px] font-medium transition-colors duration-150 ${
-                isActive
-                  ? "text-white"
-                  : "text-[#5A5A72] hover:text-[#8B8BA3]"
-              } ${collapsed ? "justify-center px-0" : ""}`}
-            >
-              {isActive && (
-                <span className="absolute left-0 top-1/2 h-5 w-[2px] -translate-y-1/2 bg-[#00E5FF]" />
-              )}
-              <span className={isActive ? "text-[#00E5FF]" : ""}>{item.icon}</span>
-              {!collapsed && <span>{item.label}</span>}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Logout */}
-      <div className="border-t border-white/[0.06] py-3">
-        <button
-          type="button"
-          onClick={handleLogout}
-          className={`flex w-full items-center gap-3 px-5 py-2.5 text-[13px] font-medium text-[#5A5A72] transition-colors hover:text-[#FF1744] ${
-            collapsed ? "justify-center px-0" : ""
-          }`}
-        >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
-          </svg>
-          {!collapsed && <span>Cerrar sesión</span>}
-        </button>
-      </div>
-    </aside>
-  );
+  return <AppSidebar items={NAV_ITEMS} defaultHref="/app/trainer/dashboard" />;
 }
