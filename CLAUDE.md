@@ -10,6 +10,7 @@
 
 - **Fase 0:** Completada — estructura base, auth, 19 tablas, tema visual
 - **Fase 1:** Completada — dashboards completos (web + mobile), IA, Google Calendar
+- **Rediseño UI:** Completado — "brutalismo elegante" en web y mobile, landing page premium
 
 ---
 
@@ -20,7 +21,7 @@
 | Web | Next.js 15 App Router, React 19, TypeScript |
 | Estilos | Tailwind CSS 4, shadcn/ui (`nova` style, `neutral` base) |
 | DB | Supabase PostgreSQL — proyecto `fitos-prod` |
-| Mobile | Expo SDK 55 + React Navigation (Bottom Tabs) |
+| Mobile | Expo SDK 55 + React Navigation (Bottom Tabs) + expo-linear-gradient + react-native-svg |
 | Edge Functions | Supabase Deno — 4 funciones IA (Claude API) |
 | Monorepo | Turborepo 2.x + pnpm (raíz) / npm (apps/web) |
 
@@ -44,6 +45,10 @@
 14. **`meal_plans` usa columna `days`** — no `content`. El JSONB con los días del plan se llama `days`.
 15. **`onboarding_responses` tiene unique constraint** — `(form_id, client_id)`. Usar siempre `upsert` con `onConflict: "form_id,client_id"`, nunca `insert`.
 16. **`SUPABASE_SERVICE_ROLE_KEY` en API routes** — necesaria en `apps/web/.env.local` para operaciones que bypaseen RLS (e.g. `/api/complete-registration`). Nunca exponer en frontend.
+17. **Landing page en `page.tsx` raíz** — `apps/web/app/page.tsx` es ahora la landing page pública (hero, features, pricing). Ya no redirige a `/login`. Los links de CTA llevan a `/login` y `/register`.
+18. **Theme mobile extendido** — `apps/mobile/src/theme.ts` exporta `colors`, `spacing`, `radius` y `shadows`. Usar estos tokens en vez de valores hardcoded. `shadows.glow(color)` genera un glow effect.
+19. **SVG icons en mobile** — Usar `react-native-svg` (Svg, Path, Circle) para iconos. No usar emojis ni Text como iconos en la app mobile.
+20. **expo-linear-gradient para gradientes** — En mobile usar `LinearGradient` de `expo-linear-gradient` para botones y fondos con gradiente. Ya está instalado.
 
 ---
 
@@ -59,6 +64,20 @@ Error:     #FF1744
 Success:   #00C853
 ```
 
+Orange:    #FF9100   (acento terciario)
+Dimmed:    #5A5A72   (texto muy secundario)
+```
+
+### Estilo "Brutalismo elegante"
+- **Bento grids** para layouts asimétricos (flex ratios en mobile, CSS grid en web)
+- **Uppercase tracking labels** (`text-xs font-bold uppercase tracking-[0.2em]`) para jerarquía
+- **Font weight 900** en números/headings con negative letter-spacing
+- **Glow effects** via box-shadow y gradient overlays (opacity 0.06)
+- **Gradient accents** con `expo-linear-gradient` (mobile) y CSS gradients (web)
+- **SVG icons** nativos (react-native-svg en mobile, inline SVG en web)
+
+### Patrones de card
+```
 Patrón de card: `rounded-2xl border border-white/[0.06] bg-[#12121A]`
 Botón primario: `bg-[#00E5FF] text-[#0A0A0F] rounded-xl font-semibold`
 

@@ -1,6 +1,6 @@
 # FitOS — Estado del Desarrollo
 
-> Documento actualizado el 18/03/2026 (Fase 1 completada). Léelo de arriba abajo antes de tocar cualquier archivo.
+> Documento actualizado el 19/03/2026 (Rediseño UI completado). Léelo de arriba abajo antes de tocar cualquier archivo.
 > Cualquier agente o desarrollador debe leer este archivo **primero** para entender el estado actual del proyecto.
 >
 > **IMPORTANTE:** Al terminar cualquier desarrollo, bugfix o cambio significativo, actualiza este archivo (`desarrollo.md`) **y** `CLAUDE.md` antes de cerrar la sesión. Refleja los archivos nuevos o modificados, añade notas para el siguiente agente/desarrollador y actualiza la sección de próximos pasos. El objetivo es que cualquier persona o agente pueda continuar el proyecto sin contexto previo.
@@ -52,6 +52,15 @@
 - Integración Google Calendar OAuth (preparada para credenciales)
 - App móvil con 5 pantallas del cliente
 - Middleware con routing por roles
+
+### Rediseño UI — "Brutalismo Elegante" (Completado — 19/03/2026)
+- Rediseño integral de 7 pantallas mobile y 3 páginas web
+- Nuevo design system en `theme.ts` con tokens extendidos (colors, spacing, radius, shadows)
+- Landing page premium en `apps/web/app/page.tsx` (hero animado, bento features, pricing)
+- Dependencias añadidas: `expo-linear-gradient ~55.0.9`, `react-native-svg 15.15.3`
+- SVG icons nativos reemplazando emojis en mobile
+- Bento grids, gradient accents, uppercase tracking labels, glow effects
+- Paridad visual web ↔ mobile mantenida
 
 ---
 
@@ -160,7 +169,7 @@ NEXT_PUBLIC_GOOGLE_REDIRECT_URI=https://tu-dominio.com/api/auth/google/callback
 apps/web/app/
 ├── layout.tsx                          ← Layout raíz: Inter font, class="dark"
 ├── globals.css                         ← Tema FitOS completo
-├── page.tsx                            ← Redirige a /login
+├── page.tsx                            ← ✅ Landing page pública (hero, features, pricing)
 │
 ├── (auth)/                             ← Rutas públicas
 │   ├── layout.tsx                      ← Centra contenido
@@ -289,6 +298,8 @@ NEXT_PUBLIC_GOOGLE_REDIRECT_URI=https://tu-dominio.com/api/auth/google/callback
 - Expo SDK 55, React Native 0.83.2, React 19
 - React Navigation (Bottom Tabs)
 - Supabase client con AsyncStorage
+- expo-linear-gradient ~55.0.9 (gradientes en botones/fondos)
+- react-native-svg 15.15.3 (iconos SVG nativos)
 - Sentry para monitoreo
 
 ### Comandos
@@ -311,7 +322,7 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 apps/mobile/
 ├── App.tsx                             ← ✅ Entry: AuthProvider + NavigationContainer + Bottom Tabs
 ├── src/
-│   ├── theme.ts                        ← Colores FitOS para mobile
+│   ├── theme.ts                        ← ✅ Design system completo (colors, spacing, radius, shadows)
 │   ├── lib/supabase.ts                 ← Cliente Supabase con AsyncStorage
 │   ├── contexts/AuthContext.tsx         ← Auth state + listener de sesión
 │   └── screens/
@@ -374,12 +385,22 @@ Protege rutas por autenticación Y por rol. Trainers no acceden a rutas de clien
 | `--border` | `rgba(255,255,255,0.08)` | Bordes sutiles |
 | `--destructive` | `#FF1744` | Errores |
 
-### Patrones de diseño
+### Patrones de diseño — "Brutalismo Elegante"
 - **Cards:** `rounded-2xl border border-white/[0.06] bg-[#12121A]`
 - **Botón primario:** `bg-[#00E5FF] text-[#0A0A0F] rounded-xl`
 - **Loading spinner:** `h-8 w-8 animate-spin rounded-full border-2 border-[#00E5FF] border-t-transparent`
-- **Glow effects:** `.glow-cyan`, `.glow-cyan-hover`, `.glow-violet`
-- **Tipografía:** Inter (400, 500, 600, 700)
+- **Glow effects:** `shadow-[0_0_20px_rgba(0,229,255,0.15)]` y gradient overlays con opacity 0.06
+- **Section labels:** `text-xs font-bold uppercase tracking-[0.2em] text-[#5A5A72]`
+- **Headings:** `text-3xl font-black tracking-tight` (font-weight: 900)
+- **Bento grids:** CSS Grid en web (`grid-cols-2 lg:grid-cols-4`), flex ratios en mobile
+- **Gradient accents:** Blobs difusos con blur-2xl en cards, LinearGradient en botones mobile
+- **Tipografía:** Inter (400, 500, 600, 700, 800, 900)
+
+### Mobile theme tokens (`apps/mobile/src/theme.ts`)
+- `colors`: 20+ tokens incluyendo `dimmed`, `cyanDim`, `cyanGlow`, `violetDim`, `orangeDim`, `greenDim`, `borderSubtle`, `borderActive`, `surfaceHover`
+- `spacing`: `{ xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28 }`
+- `radius`: `{ sm: 8, md: 12, lg: 16, xl: 20, pill: 100 }`
+- `shadows`: `card`, `subtle`, `glow(color)` — usar `shadows.glow(colors.cyan)` para glow effects
 
 ---
 
@@ -648,6 +669,15 @@ supabase functions deploy [nombre]
 - **Qué pasó:** Tras confirmar el email y hacer login, el usuario iba al dashboard sin pasar por el onboarding. El middleware no controlaba si el onboarding estaba completado.
 - **Solución aplicada:** Usar `user_metadata.onboarding_completed` (flag en auth.users) para gate el acceso. Middleware redirige a `/onboarding/client` o `/onboarding/trainer` si el flag es false. Al completar el onboarding se llama `supabase.auth.updateUser({ data: { onboarding_completed: true } })`.
 - **Regla:** El onboarding_completed se guarda en `user_metadata` (no en DB). Verificar este flag en middleware y en `App.tsx` mobile antes de mostrar dashboard.
+
+---
+
+**ERROR #20 — expo install muestra error de config plugins pero los paquetes se instalan correctamente**
+- **Fecha:** 19/03/2026
+- **Archivo afectado:** `apps/mobile/package.json`
+- **Qué pasó:** Al ejecutar `npx expo install expo-linear-gradient react-native-svg`, el post-install mostraba "Cannot find module './utils/autoAddConfigPlugins.js'" pero los paquetes se añadieron correctamente a `package.json` y funcionan en runtime.
+- **Solución aplicada:** Ignorar el error de config plugins. Verificar en `package.json` que los paquetes están listados.
+- **Regla:** `expo install` puede fallar en el paso de auto-add config plugins sin que eso afecte la instalación real. Si aparece este error, verificar `package.json` antes de reintentar.
 
 ---
 

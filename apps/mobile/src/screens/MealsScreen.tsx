@@ -7,9 +7,11 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import Svg, { Path } from "react-native-svg";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
-import { colors } from "../theme";
+import { colors, spacing, radius, shadows } from "../theme";
 
 interface MealFood {
   name: string;
@@ -39,8 +41,8 @@ interface MealPlan {
 }
 
 const DAY_SHORT: Record<string, string> = {
-  lunes: "Lun", martes: "Mar", miércoles: "Mié", jueves: "Jue",
-  viernes: "Vie", sábado: "Sáb", domingo: "Dom",
+  lunes: "L", martes: "M", miércoles: "X", jueves: "J",
+  viernes: "V", sábado: "S", domingo: "D",
 };
 
 export default function MealsScreen() {
@@ -56,7 +58,6 @@ export default function MealsScreen() {
   useEffect(() => {
     const load = async () => {
       if (!user) return;
-
       const { data } = await supabase
         .from("meal_plans")
         .select("id, title, target_kcal, period, days")
@@ -65,7 +66,6 @@ export default function MealsScreen() {
         .order("created_at", { ascending: false })
         .limit(1)
         .single();
-
       if (data) setPlan(data as MealPlan);
       setLoading(false);
     };
@@ -85,9 +85,23 @@ export default function MealsScreen() {
     return days.map((d) => d.day);
   })();
 
+  // Day totals
+  const dayTotals = dayPlan?.meals.reduce(
+    (acc, meal) => {
+      meal.foods.forEach((f) => {
+        acc.kcal += f.kcal || 0;
+        acc.protein += f.protein || 0;
+        acc.carbs += f.carbs || 0;
+        acc.fat += f.fat || 0;
+      });
+      return acc;
+    },
+    { kcal: 0, protein: 0, carbs: 0, fat: 0 }
+  ) || { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={styles.center}>
         <ActivityIndicator size="large" color={colors.cyan} />
       </View>
     );
@@ -95,8 +109,17 @@ export default function MealsScreen() {
 
   if (!plan) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyIcon}>🍽️</Text>
+      <View style={styles.center}>
+        <View style={styles.emptyIconBox}>
+          <Svg width={32} height={32} viewBox="0 0 24 24" fill="none">
+            <Path
+              d="M12 8.25v-1.5m0 1.5c-1.355 0-2.697.056-4.024.166C6.845 8.51 6 9.473 6 10.608v2.513m6-4.871c1.355 0 2.697.056 4.024.166C17.155 8.51 18 9.473 18 10.608v2.513"
+              stroke={colors.dimmed}
+              strokeWidth={1.5}
+              strokeLinecap="round"
+            />
+          </Svg>
+        </View>
         <Text style={styles.emptyTitle}>Sin menú asignado</Text>
         <Text style={styles.emptySubtitle}>Tu entrenador aún no te ha asignado un plan nutricional</Text>
       </View>
@@ -105,19 +128,49 @@ export default function MealsScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header */}
-      <Text style={styles.title}>{plan.title}</Text>
+      {/* Plan header */}
+      <Text style={styles.planTitle}>{plan.title}</Text>
       <View style={styles.metaRow}>
         <View style={styles.metaBadge}>
           <Text style={styles.metaText}>{plan.target_kcal} kcal/día</Text>
         </View>
-        <View style={[styles.metaBadge, { backgroundColor: colors.violet + "15", borderColor: colors.violet + "30" }]}>
+        <View style={[styles.metaBadge, { backgroundColor: colors.violetDim, borderColor: colors.violetGlow }]}>
           <Text style={[styles.metaText, { color: colors.violet }]}>{plan.period}</Text>
         </View>
       </View>
 
+      {/* Day totals bento */}
+      {dayPlan && (
+        <View style={styles.totalsBento}>
+          <LinearGradient
+            colors={["rgba(0, 229, 255, 0.06)", "transparent"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={styles.totalMain}>
+            <Text style={styles.totalKcal}>{Math.round(dayTotals.kcal)}</Text>
+            <Text style={styles.totalKcalUnit}>kcal totales</Text>
+          </View>
+          <View style={styles.totalMacros}>
+            <View style={styles.totalMacroItem}>
+              <Text style={[styles.totalMacroValue, { color: colors.cyan }]}>{Math.round(dayTotals.protein)}g</Text>
+              <Text style={styles.totalMacroLabel}>P</Text>
+            </View>
+            <View style={styles.totalMacroItem}>
+              <Text style={[styles.totalMacroValue, { color: colors.orange }]}>{Math.round(dayTotals.carbs)}g</Text>
+              <Text style={styles.totalMacroLabel}>C</Text>
+            </View>
+            <View style={styles.totalMacroItem}>
+              <Text style={[styles.totalMacroValue, { color: colors.violet }]}>{Math.round(dayTotals.fat)}g</Text>
+              <Text style={styles.totalMacroLabel}>G</Text>
+            </View>
+          </View>
+        </View>
+      )}
+
       {/* Day selector */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dayScroll}>
+      <View style={styles.dayRow}>
         {availableDays.map((day) => {
           const isActive = selectedDay === day;
           return (
@@ -128,12 +181,12 @@ export default function MealsScreen() {
               activeOpacity={0.7}
             >
               <Text style={[styles.dayPillText, isActive && styles.dayPillTextActive]}>
-                {DAY_SHORT[day] || day}
+                {DAY_SHORT[day] || day.substring(0, 1).toUpperCase()}
               </Text>
             </TouchableOpacity>
           );
         })}
-      </ScrollView>
+      </View>
 
       {/* Meals */}
       {!dayPlan ? (
@@ -146,11 +199,14 @@ export default function MealsScreen() {
           return (
             <View key={i} style={styles.mealCard}>
               <View style={styles.mealHeader}>
-                <Text style={styles.mealLabel}>{meal.label}</Text>
+                <View style={styles.mealLabelRow}>
+                  <View style={styles.mealDot} />
+                  <Text style={styles.mealLabel}>{meal.label}</Text>
+                </View>
                 <Text style={styles.mealKcal}>{Math.round(mealKcal)} kcal</Text>
               </View>
               {meal.foods.map((food, j) => (
-                <View key={j} style={styles.foodRow}>
+                <View key={j} style={[styles.foodRow, j < meal.foods.length - 1 && styles.foodRowBorder]}>
                   <View style={styles.foodInfo}>
                     <Text style={styles.foodName}>{food.name}</Text>
                     <Text style={styles.foodPortion}>{food.portion_g}g</Text>
@@ -172,68 +228,78 @@ export default function MealsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: 20, paddingBottom: 100 },
-  loadingContainer: { flex: 1, backgroundColor: colors.bg, justifyContent: "center", alignItems: "center" },
-  emptyContainer: { flex: 1, backgroundColor: colors.bg, justifyContent: "center", alignItems: "center", padding: 40 },
-  emptyIcon: { fontSize: 48, marginBottom: 16 },
-  emptyTitle: { fontSize: 20, fontWeight: "700", color: colors.white, marginBottom: 8 },
+  content: { padding: spacing.xl, paddingBottom: 100 },
+  center: { flex: 1, backgroundColor: colors.bg, justifyContent: "center", alignItems: "center", padding: 40 },
+
+  emptyIconBox: {
+    width: 64, height: 64, borderRadius: 20,
+    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
+    alignItems: "center", justifyContent: "center", marginBottom: spacing.lg,
+  },
+  emptyTitle: { fontSize: 20, fontWeight: "800", color: colors.white, marginBottom: 6 },
   emptySubtitle: { fontSize: 14, color: colors.muted, textAlign: "center" },
-  title: { fontSize: 24, fontWeight: "800", color: colors.white },
-  metaRow: { flexDirection: "row", gap: 8, marginTop: 8, marginBottom: 20 },
+
+  // Header
+  planTitle: { fontSize: 26, fontWeight: "900", color: colors.white, letterSpacing: -0.5 },
+  metaRow: { flexDirection: "row", gap: 8, marginTop: 8, marginBottom: spacing.xl },
   metaBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: colors.orange + "15",
-    borderWidth: 1,
-    borderColor: colors.orange + "30",
+    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6,
+    backgroundColor: colors.orangeDim, borderWidth: 1, borderColor: "rgba(255, 145, 0, 0.15)",
   },
-  metaText: { fontSize: 12, fontWeight: "600", color: colors.orange },
-  dayScroll: { marginBottom: 20 },
+  metaText: { fontSize: 11, fontWeight: "700", color: colors.orange, letterSpacing: 0.3 },
+
+  // Totals bento
+  totalsBento: {
+    backgroundColor: colors.surface, borderRadius: radius.xl,
+    borderWidth: 1, borderColor: colors.borderActive,
+    padding: spacing.xl, marginBottom: spacing.xl,
+    flexDirection: "row", alignItems: "center",
+    overflow: "hidden", ...shadows.subtle,
+  },
+  totalMain: { flex: 1 },
+  totalKcal: { fontSize: 32, fontWeight: "900", color: colors.white, letterSpacing: -1 },
+  totalKcalUnit: { fontSize: 11, color: colors.dimmed, letterSpacing: 1, marginTop: 2 },
+  totalMacros: { flexDirection: "row", gap: spacing.lg },
+  totalMacroItem: { alignItems: "center" },
+  totalMacroValue: { fontSize: 16, fontWeight: "800" },
+  totalMacroLabel: { fontSize: 9, fontWeight: "700", color: colors.dimmed, letterSpacing: 1, marginTop: 2 },
+
+  // Day pills
+  dayRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: spacing.xxl },
   dayPill: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginRight: 8,
+    width: 40, height: 40, borderRadius: radius.md,
+    borderWidth: 1, borderColor: colors.border,
+    alignItems: "center", justifyContent: "center",
   },
-  dayPillActive: {
-    backgroundColor: colors.orange + "15",
-    borderColor: colors.orange + "40",
-  },
-  dayPillText: { fontSize: 14, fontWeight: "600", color: colors.muted },
+  dayPillActive: { backgroundColor: colors.orangeDim, borderColor: "rgba(255, 145, 0, 0.2)" },
+  dayPillText: { fontSize: 13, fontWeight: "700", color: colors.muted },
   dayPillTextActive: { color: colors.orange },
   noDay: { alignItems: "center", paddingVertical: 40 },
   noDayText: { color: colors.muted, fontSize: 14 },
+
+  // Meal cards
   mealCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: colors.surface, borderRadius: radius.lg,
+    borderWidth: 1, borderColor: colors.border,
+    padding: spacing.lg, marginBottom: spacing.md,
+    ...shadows.subtle,
   },
   mealHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    marginBottom: spacing.md, paddingBottom: spacing.md,
+    borderBottomWidth: 1, borderBottomColor: colors.border,
   },
+  mealLabelRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  mealDot: { width: 4, height: 12, borderRadius: 2, backgroundColor: colors.orange },
   mealLabel: { fontSize: 15, fontWeight: "700", color: colors.white },
-  mealKcal: { fontSize: 14, fontWeight: "600", color: colors.orange },
-  foodRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 8,
-  },
+  mealKcal: { fontSize: 14, fontWeight: "700", color: colors.orange },
+
+  // Food rows
+  foodRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10 },
+  foodRowBorder: { borderBottomWidth: 1, borderBottomColor: colors.borderSubtle },
   foodInfo: { flex: 1 },
-  foodName: { fontSize: 14, color: colors.white },
-  foodPortion: { fontSize: 12, color: colors.muted, marginTop: 2 },
-  foodMacros: { flexDirection: "row", gap: 8 },
-  foodMacro: { fontSize: 11, fontWeight: "600" },
+  foodName: { fontSize: 14, color: colors.white, fontWeight: "500" },
+  foodPortion: { fontSize: 11, color: colors.dimmed, marginTop: 2 },
+  foodMacros: { flexDirection: "row", gap: 10 },
+  foodMacro: { fontSize: 11, fontWeight: "700" },
 });

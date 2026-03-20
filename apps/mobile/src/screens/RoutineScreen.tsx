@@ -7,9 +7,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
+import Svg, { Path, Circle as SvgCircle } from "react-native-svg";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
-import { colors } from "../theme";
+import { colors, spacing, radius, shadows } from "../theme";
 
 interface RoutineExercise {
   exercise_id: string;
@@ -36,13 +37,8 @@ interface Routine {
 
 const DAY_LABELS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
 const DAY_SHORT: Record<string, string> = {
-  lunes: "Lun",
-  martes: "Mar",
-  miércoles: "Mié",
-  jueves: "Jue",
-  viernes: "Vie",
-  sábado: "Sáb",
-  domingo: "Dom",
+  lunes: "L", martes: "M", miércoles: "X", jueves: "J",
+  viernes: "V", sábado: "S", domingo: "D",
 };
 
 export default function RoutineScreen() {
@@ -51,14 +47,13 @@ export default function RoutineScreen() {
   const [loading, setLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState(() => {
     const d = new Date().getDay();
-    return DAY_LABELS[d === 0 ? 6 : d - 1]; // JS Sunday=0
+    return DAY_LABELS[d === 0 ? 6 : d - 1];
   });
   const [completedSets, setCompletedSets] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const load = async () => {
       if (!user) return;
-
       const { data } = await supabase
         .from("user_routines")
         .select("id, title, goal, days")
@@ -67,7 +62,6 @@ export default function RoutineScreen() {
         .order("created_at", { ascending: false })
         .limit(1)
         .single();
-
       if (data) setRoutine(data as Routine);
       setLoading(false);
     };
@@ -76,12 +70,10 @@ export default function RoutineScreen() {
 
   const getDayExercises = (): RoutineExercise[] => {
     if (!routine?.days) return [];
-
     if (Array.isArray(routine.days)) {
       const found = routine.days.find((d) => d.day === selectedDay);
       return found?.exercises || [];
     }
-
     const dayData = (routine.days as Record<string, { exercises?: RoutineExercise[] }>)[selectedDay];
     return dayData?.exercises || [];
   };
@@ -95,9 +87,14 @@ export default function RoutineScreen() {
     }));
   };
 
+  // Count total completed
+  const totalSets = exercises.reduce((sum, e) => sum + e.sets, 0);
+  const doneSets = exercises.reduce((sum, e) => sum + Math.min(completedSets[e.exercise_id] || 0, e.sets), 0);
+  const progress = totalSets > 0 ? Math.round((doneSets / totalSets) * 100) : 0;
+
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={styles.center}>
         <ActivityIndicator size="large" color={colors.cyan} />
       </View>
     );
@@ -105,8 +102,18 @@ export default function RoutineScreen() {
 
   if (!routine) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyIcon}>💪</Text>
+      <View style={styles.center}>
+        <View style={styles.emptyIconBox}>
+          <Svg width={32} height={32} viewBox="0 0 24 24" fill="none">
+            <Path
+              d="M3.75 13.5L14.25 2.25 12 10.5h8.25L9.75 21.75 12 13.5H3.75z"
+              stroke={colors.dimmed}
+              strokeWidth={1.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </Svg>
+        </View>
         <Text style={styles.emptyTitle}>Sin rutina asignada</Text>
         <Text style={styles.emptySubtitle}>Tu entrenador aún no te ha asignado una rutina</Text>
       </View>
@@ -115,14 +122,25 @@ export default function RoutineScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Routine header */}
-      <Text style={styles.title}>{routine.title}</Text>
-      <View style={styles.goalBadge}>
-        <Text style={styles.goalText}>{routine.goal}</Text>
+      {/* Header */}
+      <View style={styles.headerRow}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.title}>{routine.title}</Text>
+          <View style={styles.goalBadge}>
+            <Text style={styles.goalText}>{routine.goal}</Text>
+          </View>
+        </View>
+        {/* Progress indicator */}
+        {exercises.length > 0 && (
+          <View style={styles.progressBox}>
+            <Text style={styles.progressValue}>{progress}%</Text>
+            <Text style={styles.progressLabel}>completado</Text>
+          </View>
+        )}
       </View>
 
-      {/* Day selector */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dayScroll}>
+      {/* Day selector - compact pills */}
+      <View style={styles.dayRow}>
         {DAY_LABELS.map((day) => {
           const isActive = selectedDay === day;
           const dayExercises = (() => {
@@ -147,24 +165,22 @@ export default function RoutineScreen() {
                 style={[
                   styles.dayPillText,
                   isActive && styles.dayPillTextActive,
-                  !hasExercises && styles.dayPillTextEmpty,
+                  !hasExercises && { color: colors.dimmed },
                 ]}
               >
-                {DAY_SHORT[day] || day}
+                {DAY_SHORT[day]}
               </Text>
-              {hasExercises && (
-                <View style={[styles.dayDot, isActive && styles.dayDotActive]} />
-              )}
+              {hasExercises && <View style={[styles.dayDot, isActive && styles.dayDotActive]} />}
             </TouchableOpacity>
           );
         })}
-      </ScrollView>
+      </View>
 
       {/* Exercises */}
       {exercises.length === 0 ? (
-        <View style={styles.restDay}>
-          <Text style={styles.restIcon}>🧘</Text>
-          <Text style={styles.restText}>Día de descanso</Text>
+        <View style={styles.restDayCard}>
+          <Text style={styles.restTitle}>Día de descanso</Text>
+          <Text style={styles.restSubtitle}>Recupera y vuelve más fuerte</Text>
         </View>
       ) : (
         exercises.map((exercise, index) => {
@@ -176,22 +192,47 @@ export default function RoutineScreen() {
               key={exercise.exercise_id + index}
               style={[styles.exerciseCard, isComplete && styles.exerciseCardDone]}
             >
-              <View style={styles.exerciseHeader}>
-                <Text style={styles.exerciseIndex}>{index + 1}</Text>
+              {/* Exercise number + info */}
+              <View style={styles.exerciseTop}>
+                <View style={[styles.exerciseIndex, isComplete && styles.exerciseIndexDone]}>
+                  {isComplete ? (
+                    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+                      <Path d="M4.5 12.75l6 6 9-13.5" stroke={colors.green} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                    </Svg>
+                  ) : (
+                    <Text style={styles.exerciseIndexText}>{index + 1}</Text>
+                  )}
+                </View>
                 <View style={styles.exerciseInfo}>
                   <Text style={styles.exerciseName}>{exercise.name}</Text>
-                  <Text style={styles.exerciseDetails}>
-                    {exercise.sets}×{exercise.reps_min}
-                    {exercise.reps_max !== exercise.reps_min ? `-${exercise.reps_max}` : ""} reps
-                    {exercise.weight_kg ? ` · ${exercise.weight_kg}kg` : ""}
-                    {exercise.rir > 0 ? ` · RIR ${exercise.rir}` : ""}
-                  </Text>
+                  <View style={styles.exerciseMetaRow}>
+                    <View style={styles.exerciseMetaChip}>
+                      <Text style={styles.exerciseMetaText}>
+                        {exercise.sets}×{exercise.reps_min}
+                        {exercise.reps_max !== exercise.reps_min ? `-${exercise.reps_max}` : ""}
+                      </Text>
+                    </View>
+                    {exercise.weight_kg && (
+                      <View style={styles.exerciseMetaChip}>
+                        <Text style={styles.exerciseMetaText}>{exercise.weight_kg}kg</Text>
+                      </View>
+                    )}
+                    {exercise.rir > 0 && (
+                      <View style={styles.exerciseMetaChip}>
+                        <Text style={styles.exerciseMetaText}>RIR {exercise.rir}</Text>
+                      </View>
+                    )}
+                    <View style={[styles.exerciseMetaChip, { borderColor: colors.orangeDim }]}>
+                      <Text style={[styles.exerciseMetaText, { color: colors.orange }]}>
+                        {exercise.rest_s}s
+                      </Text>
+                    </View>
+                  </View>
                 </View>
-                <Text style={styles.exerciseRest}>{exercise.rest_s}s</Text>
               </View>
 
               {/* Set tracker */}
-              <View style={styles.setsRow}>
+              <View style={styles.setsContainer}>
                 {Array.from({ length: exercise.sets }).map((_, i) => (
                   <TouchableOpacity
                     key={i}
@@ -209,9 +250,10 @@ export default function RoutineScreen() {
                       style={[
                         styles.setCircleText,
                         i < completed && styles.setCircleTextDone,
+                        i === completed && styles.setCircleTextCurrent,
                       ]}
                     >
-                      {i < completed ? "✓" : i + 1}
+                      {i < completed ? "✓" : `S${i + 1}`}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -226,101 +268,144 @@ export default function RoutineScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: 20, paddingBottom: 100 },
-  loadingContainer: { flex: 1, backgroundColor: colors.bg, justifyContent: "center", alignItems: "center" },
-  emptyContainer: { flex: 1, backgroundColor: colors.bg, justifyContent: "center", alignItems: "center", padding: 40 },
-  emptyIcon: { fontSize: 48, marginBottom: 16 },
-  emptyTitle: { fontSize: 20, fontWeight: "700", color: colors.white, marginBottom: 8 },
+  content: { padding: spacing.xl, paddingBottom: 100 },
+  center: { flex: 1, backgroundColor: colors.bg, justifyContent: "center", alignItems: "center", padding: 40 },
+
+  // Empty state
+  emptyIconBox: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.lg,
+  },
+  emptyTitle: { fontSize: 20, fontWeight: "800", color: colors.white, marginBottom: 6 },
   emptySubtitle: { fontSize: 14, color: colors.muted, textAlign: "center" },
-  title: { fontSize: 24, fontWeight: "800", color: colors.white },
+
+  // Header
+  headerRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: spacing.xxl },
+  title: { fontSize: 26, fontWeight: "900", color: colors.white, letterSpacing: -0.5 },
   goalBadge: {
     alignSelf: "flex-start",
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: colors.cyan + "15",
+    borderRadius: 6,
+    backgroundColor: colors.cyanDim,
     borderWidth: 1,
-    borderColor: colors.cyan + "30",
+    borderColor: colors.cyanGlow,
     marginTop: 8,
-    marginBottom: 20,
   },
-  goalText: { fontSize: 12, fontWeight: "600", color: colors.cyan },
-  dayScroll: { marginBottom: 20 },
-  dayPill: {
-    paddingHorizontal: 18,
+  goalText: { fontSize: 11, fontWeight: "700", color: colors.cyan, letterSpacing: 0.5 },
+  progressBox: {
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 14,
+  },
+  progressValue: { fontSize: 22, fontWeight: "900", color: colors.cyan },
+  progressLabel: { fontSize: 9, color: colors.dimmed, letterSpacing: 1 },
+
+  // Day selector
+  dayRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: spacing.xxl },
+  dayPill: {
+    width: 40,
+    height: 48,
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.border,
-    marginRight: 8,
-    alignItems: "center",
-  },
-  dayPillActive: {
-    backgroundColor: colors.cyan + "15",
-    borderColor: colors.cyan + "40",
-  },
-  dayPillEmpty: { opacity: 0.5 },
-  dayPillText: { fontSize: 14, fontWeight: "600", color: colors.muted },
-  dayPillTextActive: { color: colors.cyan },
-  dayPillTextEmpty: { color: colors.muted + "60" },
-  dayDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.muted, marginTop: 4 },
-  dayDotActive: { backgroundColor: colors.cyan },
-  restDay: {
-    alignItems: "center",
-    paddingVertical: 60,
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  restIcon: { fontSize: 40, marginBottom: 12 },
-  restText: { fontSize: 16, color: colors.muted },
-  exerciseCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 16,
-    marginBottom: 10,
-  },
-  exerciseCardDone: {
-    borderColor: colors.green + "40",
-    backgroundColor: colors.green + "08",
-  },
-  exerciseHeader: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
-  exerciseIndex: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: colors.cyan + "15",
-    color: colors.cyan,
-    fontSize: 13,
-    fontWeight: "700",
-    textAlign: "center",
-    lineHeight: 28,
-    overflow: "hidden",
-  },
-  exerciseInfo: { flex: 1 },
-  exerciseName: { fontSize: 15, fontWeight: "700", color: colors.white },
-  exerciseDetails: { fontSize: 12, color: colors.muted, marginTop: 2 },
-  exerciseRest: { fontSize: 12, color: colors.muted },
-  setsRow: { flexDirection: "row", gap: 8 },
-  setCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 2,
     borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
+  dayPillActive: {
+    backgroundColor: colors.cyanDim,
+    borderColor: colors.cyanGlow,
+  },
+  dayPillEmpty: { opacity: 0.4 },
+  dayPillText: { fontSize: 13, fontWeight: "700", color: colors.muted },
+  dayPillTextActive: { color: colors.cyan },
+  dayDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: colors.dimmed, marginTop: 4 },
+  dayDotActive: { backgroundColor: colors.cyan },
+
+  // Rest day
+  restDayCard: {
+    alignItems: "center",
+    paddingVertical: 60,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  restTitle: { fontSize: 18, fontWeight: "700", color: colors.muted },
+  restSubtitle: { fontSize: 13, color: colors.dimmed, marginTop: 6 },
+
+  // Exercise cards
+  exerciseCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    ...shadows.subtle,
+  },
+  exerciseCardDone: {
+    borderColor: "rgba(0, 200, 83, 0.2)",
+    backgroundColor: "rgba(0, 200, 83, 0.04)",
+  },
+  exerciseTop: { flexDirection: "row", gap: spacing.md, marginBottom: spacing.md },
+  exerciseIndex: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: colors.cyanDim,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  exerciseIndexDone: {
+    backgroundColor: colors.greenDim,
+  },
+  exerciseIndexText: { fontSize: 13, fontWeight: "800", color: colors.cyan },
+  exerciseInfo: { flex: 1 },
+  exerciseName: { fontSize: 15, fontWeight: "700", color: colors.white, marginBottom: 6 },
+  exerciseMetaRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  exerciseMetaChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceHover,
+  },
+  exerciseMetaText: { fontSize: 11, fontWeight: "600", color: colors.muted },
+
+  // Sets
+  setsContainer: { flexDirection: "row", gap: 8, paddingTop: 4 },
+  setCircle: {
+    width: 40,
+    height: 36,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surfaceHover,
+  },
   setCircleDone: {
-    borderColor: colors.green,
-    backgroundColor: colors.green + "20",
+    borderColor: "rgba(0, 200, 83, 0.3)",
+    backgroundColor: colors.greenDim,
   },
   setCircleCurrent: {
     borderColor: colors.cyan,
+    backgroundColor: colors.cyanDim,
   },
-  setCircleText: { fontSize: 13, fontWeight: "600", color: colors.muted },
+  setCircleText: { fontSize: 11, fontWeight: "700", color: colors.dimmed },
   setCircleTextDone: { color: colors.green },
+  setCircleTextCurrent: { color: colors.cyan },
 });

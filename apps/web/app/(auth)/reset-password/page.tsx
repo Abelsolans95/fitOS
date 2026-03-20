@@ -17,25 +17,25 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [sessionReady, setSessionReady] = useState(false);
 
-  // Supabase adds the recovery token as a hash fragment.
-  // The @supabase/ssr package processes it automatically on load —
-  // we just need to wait for the session to be available.
   useEffect(() => {
     const supabase = createClient();
 
-    // Listen for the PASSWORD_RECOVERY event which Supabase fires
-    // when the user arrives via a recovery link.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event) => {
-        if (event === "PASSWORD_RECOVERY") {
-          setSessionReady(true);
-        }
-      }
-    );
+    // Check for error flag from /auth/callback (link expired)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("error") === "link_expired") {
+      setSessionReady(false);
+      return;
+    }
 
-    // Also check if there's already a session (e.g. page refresh)
+    // The /auth/callback route already exchanged the code server-side.
+    // Just check if there's an active session.
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setSessionReady(true);
+      setSessionReady(!!session);
+    });
+
+    // Also listen for PASSWORD_RECOVERY in case of implicit flow fallback
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") setSessionReady(true);
     });
 
     return () => subscription.unsubscribe();
@@ -55,7 +55,7 @@ export default function ResetPasswordPage() {
     /[0-9]/.test(password) &&
     password === confirmPassword;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!isValid) return;
 

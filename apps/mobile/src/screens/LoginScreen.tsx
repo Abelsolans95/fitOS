@@ -9,8 +9,9 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "../lib/supabase";
-import { colors } from "../theme";
+import { colors, spacing, radius, shadows } from "../theme";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -43,43 +44,61 @@ export default function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <View style={styles.inner}>
-        {/* Logo */}
-        <Text style={styles.logo}>
-          Fit<Text style={styles.logoAccent}>OS</Text>
-        </Text>
-        <Text style={styles.subtitle}>Inicia sesión</Text>
+      {/* Background gradient accent */}
+      <LinearGradient
+        colors={["rgba(0, 229, 255, 0.06)", "transparent", "rgba(124, 58, 237, 0.04)"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
 
-        {/* Form */}
-        <View style={styles.form}>
+      <View style={styles.inner}>
+        {/* Brand mark */}
+        <View style={styles.brandContainer}>
+          <Text style={styles.logo}>
+            Fit<Text style={styles.logoAccent}>OS</Text>
+          </Text>
+          <View style={styles.brandLine} />
+          <Text style={styles.tagline}>ENTRENAMIENTO INTELIGENTE</Text>
+        </View>
+
+        {/* Form card */}
+        <View style={styles.formCard}>
+          <Text style={styles.formTitle}>Inicia sesión</Text>
+
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="tu@email.com"
-              placeholderTextColor={colors.muted + "80"}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
+            <Text style={styles.label}>EMAIL</Text>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.input}
+                placeholder="tu@email.com"
+                placeholderTextColor={colors.dimmed}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Contraseña</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="••••••••"
-              placeholderTextColor={colors.muted + "80"}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
+            <Text style={styles.label}>CONTRASEÑA</Text>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.input}
+                placeholder="••••••••"
+                placeholderTextColor={colors.dimmed}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
+            </View>
           </View>
 
           {error && (
             <View style={styles.errorBox}>
+              <View style={styles.errorIndicator} />
               <Text style={styles.errorText}>{error}</Text>
             </View>
           )}
@@ -88,15 +107,25 @@ export default function LoginScreen() {
             style={[styles.button, loading && styles.buttonDisabled]}
             onPress={handleLogin}
             disabled={loading}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
           >
-            {loading ? (
-              <ActivityIndicator color={colors.bg} />
-            ) : (
-              <Text style={styles.buttonText}>Iniciar sesión</Text>
-            )}
+            <LinearGradient
+              colors={["#00E5FF", "#00B8D4"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.buttonGradient}
+            >
+              {loading ? (
+                <ActivityIndicator color={colors.bg} />
+              ) : (
+                <Text style={styles.buttonText}>Acceder</Text>
+              )}
+            </LinearGradient>
           </TouchableOpacity>
         </View>
+
+        {/* Footer */}
+        <Text style={styles.version}>v1.0 — FitOS</Text>
       </View>
     </KeyboardAvoidingView>
   );
@@ -110,68 +139,118 @@ const styles = StyleSheet.create({
   inner: {
     flex: 1,
     justifyContent: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.xxxl,
+  },
+  brandContainer: {
+    alignItems: "center",
+    marginBottom: 48,
   },
   logo: {
-    fontSize: 40,
-    fontWeight: "800",
+    fontSize: 56,
+    fontWeight: "900",
     color: colors.white,
-    textAlign: "center",
+    letterSpacing: -3,
   },
   logoAccent: {
     color: colors.cyan,
   },
-  subtitle: {
-    fontSize: 14,
-    color: colors.muted,
-    textAlign: "center",
-    marginTop: 8,
-    marginBottom: 32,
+  brandLine: {
+    width: 40,
+    height: 2,
+    backgroundColor: colors.cyan,
+    marginTop: 12,
+    marginBottom: 12,
+    borderRadius: 1,
   },
-  form: {
-    gap: 16,
+  tagline: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.dimmed,
+    letterSpacing: 4,
   },
-  inputGroup: {
-    gap: 6,
-  },
-  label: {
-    fontSize: 13,
-    color: colors.muted,
-  },
-  input: {
-    backgroundColor: colors.bg,
+  formCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    padding: spacing.xxl,
+    gap: spacing.lg,
+    ...shadows.card,
+  },
+  formTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.white,
+    marginBottom: spacing.xs,
+  },
+  inputGroup: {
+    gap: spacing.sm,
+  },
+  label: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.dimmed,
+    letterSpacing: 2,
+  },
+  inputWrapper: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.bg,
+    overflow: "hidden",
+  },
+  input: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 15,
     fontSize: 15,
     color: colors.white,
   },
   errorBox: {
-    backgroundColor: colors.red + "15",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    backgroundColor: colors.redDim,
     borderWidth: 1,
-    borderColor: colors.red + "30",
-    borderRadius: 12,
-    padding: 12,
+    borderColor: "rgba(255, 23, 68, 0.2)",
+    borderRadius: radius.md,
+    padding: spacing.md,
+  },
+  errorIndicator: {
+    width: 3,
+    height: 20,
+    borderRadius: 2,
+    backgroundColor: colors.red,
   },
   errorText: {
+    flex: 1,
     fontSize: 13,
     color: colors.red,
+    lineHeight: 18,
   },
   button: {
-    backgroundColor: colors.cyan,
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginTop: 8,
+    borderRadius: radius.md,
+    overflow: "hidden",
+    marginTop: spacing.sm,
+    ...shadows.glow(colors.cyan),
   },
   buttonDisabled: {
     opacity: 0.5,
   },
+  buttonGradient: {
+    paddingVertical: 16,
+    alignItems: "center",
+  },
   buttonText: {
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "800",
     color: colors.bg,
+    letterSpacing: 0.5,
+  },
+  version: {
+    textAlign: "center",
+    fontSize: 11,
+    color: colors.dimmed,
+    marginTop: 32,
+    letterSpacing: 1,
   },
 });

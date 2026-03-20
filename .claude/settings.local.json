@@ -1,22 +1,17 @@
 {
   "permissions": {
     "allow": [
-      "Bash(ls \"c:/Users/abel_/OneDrive/Documentos/Antigravity/fitOS/apps/web/app/\\(auth\\)/onboarding\")",
-      "Bash(ls \"c:/Users/abel_/OneDrive/Documentos/Antigravity/fitOS/apps/web/app/\\(auth\\)/onboarding/\")",
-      "Bash(ls \"apps/web/app/\\(dashboard\\)/app/trainer/\")",
-      "Bash(ls \"c:/Users/abel_/OneDrive/Documentos/Antigravity/fitOS/apps/web/app/\\(auth\\)/onboarding/trainer/\")",
-      "Bash(ls -la \"c:/Users/abel_/OneDrive/Documentos/Antigravity/fitOS/apps/web/app/\\(auth\\)/onboarding/\")",
-      "Bash(ls \"apps/web/app/\\(dashboard\\)/\")",
-      "Bash(wc -l \"c:/Users/abel_/OneDrive/Documentos/Antigravity/fitOS/apps/web/app/\\(auth\\)/onboarding/trainer/page.tsx\")",
-      "Bash(find \"apps/web/app/\\(dashboard\\)/app/trainer\" -name \"*.tsx\")",
-      "Bash(npx tsc:*)",
-      "Bash(ls \"c:/Users/abel_/OneDrive/Documentos/Antigravity/fitOS/apps/web/app/\\(dashboard\\)/app/trainer/exercises/\")",
-      "Bash(ls \"c:/Users/abel_/OneDrive/Documentos/Antigravity/fitOS/apps/web/app/\\(dashboard\\)/app/trainer/\")",
-      "Bash(wc -l \"c:/Users/abel_/OneDrive/Documentos/Antigravity/fitOS/apps/web/app/\\(dashboard\\)/app/trainer/exercises/page.tsx\")",
-      "Bash(find c:/Users/abel_/OneDrive/Documentos/Antigravity/fitOS/apps/mobile -type f -not -path */node_modules/*)"
-    ],
-    "additionalDirectories": [
-      "c:\\Users\\abel_\\OneDrive\\Documentos\\Antigravity\\fitOS\\apps\\web\\app\\(dashboard)\\app\\trainer\\clients"
+      "Bash(*)",
+      "Read",
+      "Edit",
+      "Write",
+      "Glob",
+      "Grep",
+      "Agent",
+      "WebFetch",
+      "WebSearch",
+      "TodoWrite",
+      "NotebookEdit"
     ]
   }
 }
