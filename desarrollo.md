@@ -40,18 +40,20 @@
 - Editor de formularios de onboarding
 - Tema visual FitOS (dark mode)
 
-### Fase 1 (Completada — 18/03/2026)
-- Onboarding wizard entrenador y cliente
-- Dashboard completo del entrenador (sidebar, KPIs, CRUD)
-- Dashboard completo del cliente (bottom nav, 6 módulos)
-- Biblioteca de ejercicios y alimentos
-- Constructor de rutinas y menús
-- Vision Calorie Tracker (cámara + IA)
-- Calendario master y página de progreso con gráficos
-- 4 Edge Functions de IA (analyze-food-image, generate-meal-plan, generate-gym-routine, analyze-onboarding-form)
-- Integración Google Calendar OAuth (preparada para credenciales)
-- App móvil con 5 pantallas del cliente
-- Middleware con routing por roles
+### Fase 1 (MVP Core — En proceso de finalización)
+- [x] Onboarding wizard entrenador y cliente
+- [x] Dashboard completo del entrenador (sidebar, KPIs, CRUD)
+- [x] Dashboard completo del cliente (bottom nav, 6 módulos)
+- [x] Biblioteca de ejercicios y alimentos
+- [x] Constructor de rutinas y menús
+- [x] Vision Calorie Tracker (cámara + IA - requiere API Key)
+- [x] Calendario master y página de progreso con gráficos
+- [x] 4 Edge Functions de IA (Mencionado en PENDIENTE_FASE_1.md)
+- [x] Integración Google Calendar OAuth (Configuración pendiente)
+- [x] App móvil con 5 pantallas del cliente
+- [x] Middleware con routing por roles
+> [!NOTE]
+> Ver `PENDIENTE_FASE_1.md` en la raíz para las tareas de configuración y seeds faltantes para cerrar esta fase.
 
 ### Rediseño UI — "Brutalismo Elegante" (Completado — 19/03/2026)
 - Rediseño integral de 7 pantallas mobile y 3 páginas web

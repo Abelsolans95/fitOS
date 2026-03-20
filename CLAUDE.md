@@ -9,7 +9,7 @@
 **FitOS** es una plataforma SaaS para entrenadores personales. Dos roles: `trainer` y `client`. Monorepo con Next.js 15 (web) + Expo 55 (mobile) + Supabase (DB + Edge Functions).
 
 - **Fase 0:** Completada — estructura base, auth, 19 tablas, tema visual
-- **Fase 1:** Completada — dashboards completos (web + mobile), IA, Google Calendar
+- **Fase 1:** En proceso de finalización (Ver `PENDIENTE_FASE_1.md`) — dashboards, IA base, Google Calendar (config. pendiente)
 - **Rediseño UI:** Completado — "brutalismo elegante" en web y mobile, landing page premium
 
 ---
