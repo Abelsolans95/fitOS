@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase";
 type TabKey = "perfil" | "progreso" | "rutina" | "menu" | "formulario";
 
 interface ClientProfile {
-  id: string;
+  user_id: string;
   full_name: string | null;
   email: string | null;
   goal: string | null;
