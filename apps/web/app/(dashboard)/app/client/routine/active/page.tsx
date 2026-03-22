@@ -1,7 +1,6 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
+import { Suspense } from "react";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase";
@@ -117,7 +116,7 @@ function calculateProgress(
    Component
    ──────────────────────────────────────────── */
 
-export default function ActiveTrainingPage() {
+function ActiveTrainingPage() {
   const searchParams = useSearchParams();
   const routineId = searchParams.get("routine_id");
   const day = searchParams.get("day") || "lunes";
@@ -1378,5 +1377,13 @@ export default function ActiveTrainingPage() {
         </a>
       )}
     </div>
+  );
+}
+
+export default function ActiveRoutinePage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-[80vh] items-center justify-center"><div className="h-10 w-10 animate-spin rounded-full border-2 border-[#00E5FF] border-t-transparent" /></div>}>
+      <ActiveTrainingPage />
+    </Suspense>
   );
 }
