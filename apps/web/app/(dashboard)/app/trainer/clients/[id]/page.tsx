@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 
@@ -49,6 +49,43 @@ interface MealPlan {
   title: string;
   is_active: boolean;
   created_at: string;
+}
+
+interface WorkoutSession {
+  id: string;
+  routine_id: string;
+  mode: string;
+  status: string;
+  duration_seconds: number | null;
+  total_volume_kg: number | null;
+  total_sets: number | null;
+  total_exercises: number | null;
+  rpe_session: number | null;
+  completed_at: string | null;
+  created_at: string;
+}
+
+interface WeightLogEntry {
+  id: string;
+  exercise_name: string;
+  sets_data: { set_number: number; weight_kg: number; reps_done: number; type: string }[];
+  total_volume_kg: number | null;
+  client_notes: string | null;
+  session_id: string;
+}
+
+interface FoodLogEntry {
+  id: string;
+  meal_type: string;
+  foods: { name: string; portion_g?: number; kcal?: number; protein?: number; carbs?: number; fat?: number }[];
+  total_kcal: number;
+  total_protein: number;
+  total_carbs: number;
+  total_fat: number;
+  photo_url: string | null;
+  source: string;
+  notes: string | null;
+  logged_at: string;
 }
 
 interface FormField {
@@ -220,7 +257,49 @@ function ProgressTab({ metrics }: { metrics: BodyMetric[] }) {
   );
 }
 
-function RoutineTab({ routine }: { routine: UserRoutine | null }) {
+function RoutineTab({ routine, clientId }: { routine: UserRoutine | null; clientId: string }) {
+  const [sessions, setSessions] = useState<WorkoutSession[]>([]);
+  const [weightLogs, setWeightLogs] = useState<WeightLogEntry[]>([]);
+  const [expandedSession, setExpandedSession] = useState<string | null>(null);
+  const [loadingSessions, setLoadingSessions] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      const supabase = createClient();
+      const [sessRes, logsRes] = await Promise.all([
+        supabase
+          .from("workout_sessions")
+          .select("*")
+          .eq("client_id", clientId)
+          .eq("status", "completed")
+          .order("completed_at", { ascending: false })
+          .limit(20),
+        supabase
+          .from("weight_log")
+          .select("id, exercise_name, sets_data, total_volume_kg, client_notes, session_id")
+          .eq("client_id", clientId)
+          .order("session_date", { ascending: false })
+          .limit(200),
+      ]);
+      setSessions((sessRes.data ?? []) as WorkoutSession[]);
+      setWeightLogs((logsRes.data ?? []) as WeightLogEntry[]);
+      setLoadingSessions(false);
+    };
+    load();
+  }, [clientId]);
+
+  const getLogsForSession = useCallback(
+    (sessionId: string) => weightLogs.filter((l) => l.session_id === sessionId),
+    [weightLogs]
+  );
+
+  function formatDuration(seconds: number | null): string {
+    if (!seconds) return "—";
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${String(s).padStart(2, "0")}`;
+  }
+
   if (!routine) {
     return (
       <EmptyState
@@ -232,17 +311,184 @@ function RoutineTab({ routine }: { routine: UserRoutine | null }) {
   }
 
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-5">
-      <div className="flex items-start justify-between">
-        <h4 className="text-sm font-semibold text-white">{routine.title}</h4>
-        <span className="inline-flex items-center rounded-full bg-[#7C3AED]/10 px-2.5 py-0.5 text-xs font-medium text-[#7C3AED]">Activa</span>
+    <div className="space-y-4">
+      {/* Active routine info */}
+      <div className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-5">
+        <div className="flex items-start justify-between">
+          <h4 className="text-sm font-semibold text-white">{routine.title}</h4>
+          <span className="inline-flex items-center rounded-full bg-[#7C3AED]/10 px-2.5 py-0.5 text-xs font-medium text-[#7C3AED]">Activa</span>
+        </div>
+        <p className="mt-3 text-xs text-[#8B8BA3]">Creada el {formatDate(routine.created_at)}</p>
       </div>
-      <p className="mt-3 text-xs text-[#8B8BA3]">Creada el {formatDate(routine.created_at)}</p>
+
+      {/* Session history */}
+      <div>
+        <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#8B8BA3]">
+          Historial de sesiones
+        </h3>
+
+        {loadingSessions ? (
+          <div className="flex justify-center py-8">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#00E5FF] border-t-transparent" />
+          </div>
+        ) : sessions.length === 0 ? (
+          <p className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-5 text-center text-sm text-[#5A5A72]">
+            Aún no ha completado ninguna sesión
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {sessions.map((session) => {
+              const isExpanded = expandedSession === session.id;
+              const logs = isExpanded ? getLogsForSession(session.id) : [];
+
+              return (
+                <div key={session.id} className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedSession(isExpanded ? null : session.id)}
+                    className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-white/[0.02]"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="text-center">
+                        <p className="text-lg font-black text-white">{formatDuration(session.duration_seconds)}</p>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#5A5A72]">Duración</p>
+                      </div>
+                      <div className="h-8 w-px bg-white/[0.06]" />
+                      <div className="text-center">
+                        <p className="text-lg font-black text-[#7C3AED]">{Math.round(session.total_volume_kg ?? 0)}</p>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#5A5A72]">Vol (kg)</p>
+                      </div>
+                      <div className="h-8 w-px bg-white/[0.06]" />
+                      <div className="text-center">
+                        <p className="text-lg font-black text-[#00E5FF]">{session.total_sets ?? 0}</p>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#5A5A72]">Series</p>
+                      </div>
+                      {session.rpe_session && (
+                        <>
+                          <div className="h-8 w-px bg-white/[0.06]" />
+                          <div className="text-center">
+                            <p className="text-lg font-black text-[#FF9100]">{session.rpe_session}</p>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#5A5A72]">RPE</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-[#5A5A72]">
+                        {session.completed_at ? formatDate(session.completed_at) : formatDate(session.created_at)}
+                      </span>
+                      <svg
+                        className={`h-4 w-4 text-[#5A5A72] transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                      </svg>
+                    </div>
+                  </button>
+
+                  {/* Expanded: exercise details */}
+                  {isExpanded && (
+                    <div className="border-t border-white/[0.04] px-4 pb-4 pt-3 space-y-3">
+                      {logs.length === 0 ? (
+                        <p className="text-xs text-[#5A5A72]">Sin datos de ejercicios</p>
+                      ) : (
+                        logs.map((log) => (
+                          <div key={log.id} className="rounded-lg border border-white/[0.04] bg-[#12121A] p-3">
+                            <p className="text-sm font-semibold text-white">{log.exercise_name}</p>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {(log.sets_data ?? []).map((set, i) => (
+                                <span
+                                  key={i}
+                                  className="rounded-md bg-white/[0.04] px-2 py-1 text-xs text-[#8B8BA3]"
+                                >
+                                  <span className="font-semibold text-white">{set.weight_kg}</span>kg × <span className="font-semibold text-white">{set.reps_done}</span>
+                                  {set.type === "rest_pause" && <span className="ml-1 text-[#FF9100]">RP</span>}
+                                </span>
+                              ))}
+                            </div>
+                            {log.client_notes && (
+                              <p className="mt-2 rounded-md bg-[#7C3AED]/5 px-3 py-2 text-xs text-[#7C3AED]">
+                                💬 {log.client_notes}
+                              </p>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-function MealPlanTab({ mealPlan }: { mealPlan: MealPlan | null }) {
+const MEAL_LABELS: Record<string, string> = {
+  desayuno: "Desayuno",
+  almuerzo: "Almuerzo",
+  comida: "Comida",
+  merienda: "Merienda",
+  cena: "Cena",
+  snack: "Snack",
+};
+
+const MEAL_ORDER = ["desayuno", "almuerzo", "comida", "merienda", "cena", "snack"];
+
+function MealPlanTab({ mealPlan, clientId }: { mealPlan: MealPlan | null; clientId: string }) {
+  const [foodLogs, setFoodLogs] = useState<FoodLogEntry[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    const today = new Date();
+    return today.toISOString().split("T")[0];
+  });
+
+  useEffect(() => {
+    const load = async () => {
+      setLoadingLogs(true);
+      const supabase = createClient();
+      const startOfDay = `${selectedDate}T00:00:00`;
+      const endOfDay = `${selectedDate}T23:59:59`;
+      const { data } = await supabase
+        .from("food_log")
+        .select("id, meal_type, foods, total_kcal, total_protein, total_carbs, total_fat, photo_url, source, notes, logged_at")
+        .eq("client_id", clientId)
+        .gte("logged_at", startOfDay)
+        .lte("logged_at", endOfDay)
+        .order("logged_at", { ascending: true });
+      setFoodLogs((data ?? []) as FoodLogEntry[]);
+      setLoadingLogs(false);
+    };
+    load();
+  }, [clientId, selectedDate]);
+
+  const dailyTotals = foodLogs.reduce(
+    (acc, log) => ({
+      kcal: acc.kcal + (log.total_kcal || 0),
+      protein: acc.protein + (log.total_protein || 0),
+      carbs: acc.carbs + (log.total_carbs || 0),
+      fat: acc.fat + (log.total_fat || 0),
+    }),
+    { kcal: 0, protein: 0, carbs: 0, fat: 0 }
+  );
+
+  const logsByMeal = MEAL_ORDER.reduce<Record<string, FoodLogEntry[]>>((acc, meal) => {
+    const entries = foodLogs.filter((l) => l.meal_type === meal);
+    if (entries.length > 0) acc[meal] = entries;
+    return acc;
+  }, {});
+
+  const changeDate = (delta: number) => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + delta);
+    setSelectedDate(d.toISOString().split("T")[0]);
+  };
+
   if (!mealPlan) {
     return (
       <EmptyState
@@ -254,12 +500,98 @@ function MealPlanTab({ mealPlan }: { mealPlan: MealPlan | null }) {
   }
 
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-5">
-      <div className="flex items-start justify-between">
-        <h4 className="text-sm font-semibold text-white">{mealPlan.title}</h4>
-        <span className="inline-flex items-center rounded-full bg-[#00C853]/10 px-2.5 py-0.5 text-xs font-medium text-[#00C853]">Activo</span>
+    <div className="space-y-4">
+      {/* Plan info */}
+      <div className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-5">
+        <div className="flex items-start justify-between">
+          <h4 className="text-sm font-semibold text-white">{mealPlan.title}</h4>
+          <span className="inline-flex items-center rounded-full bg-[#00C853]/10 px-2.5 py-0.5 text-xs font-medium text-[#00C853]">Activo</span>
+        </div>
+        <p className="mt-3 text-xs text-[#8B8BA3]">Creado el {formatDate(mealPlan.created_at)}</p>
       </div>
-      <p className="mt-3 text-xs text-[#8B8BA3]">Creado el {formatDate(mealPlan.created_at)}</p>
+
+      {/* Date selector */}
+      <div className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-4 py-3">
+        <button type="button" onClick={() => changeDate(-1)} className="rounded-lg p-1.5 text-[#8B8BA3] transition-colors hover:bg-white/[0.04] hover:text-white">
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
+        </button>
+        <span className="text-sm font-semibold text-white">{formatDate(selectedDate)}</span>
+        <button type="button" onClick={() => changeDate(1)} className="rounded-lg p-1.5 text-[#8B8BA3] transition-colors hover:bg-white/[0.04] hover:text-white">
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+        </button>
+      </div>
+
+      {/* Daily totals */}
+      <div className="grid grid-cols-4 gap-2">
+        {[
+          { label: "Kcal", value: Math.round(dailyTotals.kcal), color: "#00E5FF" },
+          { label: "Proteína", value: `${Math.round(dailyTotals.protein)}g`, color: "#FF9100" },
+          { label: "Carbos", value: `${Math.round(dailyTotals.carbs)}g`, color: "#7C3AED" },
+          { label: "Grasa", value: `${Math.round(dailyTotals.fat)}g`, color: "#00C853" },
+        ].map((macro) => (
+          <div key={macro.label} className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-3 text-center">
+            <p className="text-lg font-black" style={{ color: macro.color }}>{macro.value}</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#5A5A72]">{macro.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Meals */}
+      <div>
+        <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#8B8BA3]">
+          Registro del día
+        </h3>
+
+        {loadingLogs ? (
+          <div className="flex justify-center py-8">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#00E5FF] border-t-transparent" />
+          </div>
+        ) : foodLogs.length === 0 ? (
+          <p className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-5 text-center text-sm text-[#5A5A72]">
+            Sin registros este día
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {Object.entries(logsByMeal).map(([meal, entries]) => (
+              <div key={meal} className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-4">
+                <h4 className="mb-3 text-xs font-bold uppercase tracking-[0.15em] text-[#00E5FF]">
+                  {MEAL_LABELS[meal] ?? meal}
+                </h4>
+                <div className="space-y-2">
+                  {entries.map((entry) => (
+                    <div key={entry.id} className="rounded-lg border border-white/[0.04] bg-[#12121A] p-3">
+                      {/* Food items */}
+                      <div className="space-y-1">
+                        {(entry.foods ?? []).map((food, i) => (
+                          <div key={i} className="flex items-center justify-between text-xs">
+                            <span className="text-[#E8E8ED]">{food.name}</span>
+                            <span className="text-[#5A5A72]">{food.portion_g ? `${food.portion_g}g` : ""} {food.kcal ? `· ${Math.round(food.kcal)} kcal` : ""}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {/* Totals */}
+                      <div className="mt-2 flex items-center gap-3 border-t border-white/[0.04] pt-2 text-[10px] text-[#8B8BA3]">
+                        <span><span className="font-semibold text-white">{Math.round(entry.total_kcal)}</span> kcal</span>
+                        <span><span className="font-semibold text-[#FF9100]">{Math.round(entry.total_protein)}</span>g P</span>
+                        <span><span className="font-semibold text-[#7C3AED]">{Math.round(entry.total_carbs)}</span>g C</span>
+                        <span><span className="font-semibold text-[#00C853]">{Math.round(entry.total_fat)}</span>g G</span>
+                        {entry.source === "ai_vision" && (
+                          <span className="ml-auto rounded-full bg-[#00E5FF]/10 px-2 py-0.5 text-[10px] font-medium text-[#00E5FF]">IA</span>
+                        )}
+                      </div>
+                      {entry.notes && (
+                        <p className="mt-2 rounded-md bg-[#7C3AED]/5 px-3 py-2 text-xs text-[#7C3AED]">
+                          {entry.notes}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -558,8 +890,8 @@ export default function ClientDetailPage() {
       <div>
         {activeTab === "perfil" && <ProfileTab profile={profile} />}
         {activeTab === "progreso" && <ProgressTab metrics={metrics} />}
-        {activeTab === "rutina" && <RoutineTab routine={routine} />}
-        {activeTab === "menu" && <MealPlanTab mealPlan={mealPlan} />}
+        {activeTab === "rutina" && <RoutineTab routine={routine} clientId={clientId} />}
+        {activeTab === "menu" && <MealPlanTab mealPlan={mealPlan} clientId={clientId} />}
         {activeTab === "formulario" && <FormTab responses={formResponses} />}
       </div>
     </div>

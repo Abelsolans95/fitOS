@@ -198,6 +198,9 @@ export default function ClientRoutinePage() {
   const [clientNotes, setClientNotes] = useState<Record<string, string>>({});
   const [rpeGlobal, setRpeGlobal] = useState(7);
   const [saving, setSaving] = useState(false);
+  const [inProgressSession, setInProgressSession] = useState<{ id: string; routine_id: string; day_label: string; week_number: number } | null>(null);
+  // Set of "day_label::week_number" keys for completed sessions in this routine
+  const [completedSessions, setCompletedSessions] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const load = async () => {
@@ -212,6 +215,21 @@ export default function ClientRoutinePage() {
         }
 
         setUserId(user.id);
+
+        // Check for in_progress session
+        const { data: pendingSession } = await supabase
+          .from("workout_sessions")
+          .select("id, routine_id, day_label, week_number")
+          .eq("client_id", user.id)
+          .eq("status", "in_progress")
+          .eq("mode", "active")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (pendingSession) {
+          setInProgressSession(pendingSession as { id: string; routine_id: string; day_label: string; week_number: number });
+        }
 
         // Load active routine (try client_id first, then user_id for compat)
         let routineData = null;
@@ -240,6 +258,19 @@ export default function ClientRoutinePage() {
 
         if (routineData) {
           setRoutine(routineData as RoutineRaw);
+
+          // Load completed sessions for this routine (to block re-doing same day+week)
+          const { data: doneSessions } = await supabase
+            .from("workout_sessions")
+            .select("day_label, week_number")
+            .eq("client_id", user.id)
+            .eq("routine_id", routineData.id)
+            .eq("status", "completed");
+
+          if (doneSessions) {
+            const keys = new Set(doneSessions.map((s: any) => `${s.day_label}::${s.week_number}`));
+            setCompletedSessions(keys);
+          }
 
           // Load previous weight logs for comparison
           const { data: logs } = await supabase
@@ -314,6 +345,12 @@ export default function ClientRoutinePage() {
     const ex = parsedExercises.find((e) => e.day_of_week === activeDay);
     return ex?.day_label || DAY_LABELS[activeDay] || activeDay;
   }, [parsedExercises, activeDay]);
+
+  // Check if this specific day+week session is already completed
+  const isSessionCompleted = useMemo(() => {
+    if (!dayLabel || !activeWeek) return false;
+    return completedSessions.has(`${dayLabel}::${activeWeek}`);
+  }, [completedSessions, dayLabel, activeWeek]);
 
   // Get previous log for an exercise
   const getPreviousLog = (exerciseName: string): PreviousSet[] => {
@@ -400,6 +437,25 @@ export default function ClientRoutinePage() {
       const supabase = createClient();
       const today = new Date().toISOString().split("T")[0];
 
+      // Create workout_session first
+      const { data: session, error: sessionError } = await supabase
+        .from("workout_sessions")
+        .insert({
+          client_id: userId,
+          routine_id: routine?.id,
+          trainer_id: routine ? (routine as any).trainer_id : null,
+          session_date: today,
+          day_label: dayLabel,
+          week_number: activeWeek,
+          mode: "registration",
+          status: "completed",
+          completed_at: new Date().toISOString(),
+        })
+        .select("id")
+        .single();
+
+      const currentSessionId = session?.id || null;
+
       const weightLogInserts = dayExercises.map((ex) => {
         const sets = sessionInputs[ex.name] || [];
         const setsData = sets.map((s, i) => ({
@@ -419,6 +475,7 @@ export default function ClientRoutinePage() {
           exercise_id: ex.exercise_id,
           exercise_name: ex.name,
           session_date: today,
+          session_id: currentSessionId,
           sets_data: setsData,
           total_volume_kg: totalVolume,
         };
@@ -432,6 +489,18 @@ export default function ClientRoutinePage() {
         toast.error("Error al guardar la sesión");
         setSaving(false);
         return;
+      }
+
+      // Update session aggregates
+      if (currentSessionId) {
+        const totalVol = weightLogInserts.reduce((s, w) => s + w.total_volume_kg, 0);
+        const totalSets = weightLogInserts.reduce((s, w) => s + (w.sets_data?.length || 0), 0);
+        await supabase.from("workout_sessions").update({
+          total_volume_kg: totalVol,
+          total_sets: totalSets,
+          total_exercises: dayExercises.length,
+          rpe_session: rpeGlobal,
+        }).eq("id", currentSessionId);
       }
 
       // Calendar entry
@@ -875,7 +944,7 @@ export default function ClientRoutinePage() {
         </div>
       ) : (
         <>
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {dayExercises.map((ex, idx) => {
               const scheme =
                 ex.scheme || `${ex.sets}x${ex.reps_min}-${ex.reps_max}`;
@@ -887,46 +956,46 @@ export default function ClientRoutinePage() {
               return (
                 <div
                   key={`${ex.exercise_id}-${idx}`}
-                  className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-4"
+                  className="rounded-xl border border-white/[0.06] bg-[#12121A] px-3 py-2.5"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[#00E5FF]/10 text-[10px] font-bold text-[#00E5FF]">
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-[#00E5FF]/10 text-[9px] font-bold text-[#00E5FF]">
                         {idx + 1}
                       </span>
-                      <p className="text-sm font-semibold text-white">
+                      <p className="truncate text-xs font-semibold text-white">
                         {ex.name}
                       </p>
                     </div>
-                    <span className="rounded-md bg-white/[0.06] px-2 py-0.5 text-[10px] font-bold text-[#8B8BA3]">
+                    <span className="shrink-0 rounded bg-white/[0.06] px-1.5 py-0.5 text-[9px] font-bold text-[#8B8BA3]">
                       {scheme}
                     </span>
                   </div>
 
                   {/* Meta */}
-                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#5A5A72]">
+                  <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-[#5A5A72]">
                     <span>RIR {ex.rir}</span>
                     {(ex.target_weight || ex.weight_kg) ? (
-                      <span>{ex.target_weight || ex.weight_kg} kg</span>
+                      <span>{ex.target_weight || ex.weight_kg}kg</span>
                     ) : null}
-                    <span>{ex.rest_s}s desc.</span>
+                    <span>{ex.rest_s}s</span>
                     {prevStr && (
                       <span className="text-[#8B8BA3]">
-                        Anterior: {prevStr}
+                        Ant: {prevStr}
                       </span>
                     )}
                   </div>
 
                   {/* Notes */}
                   {(notes || progressionRule) && (
-                    <div className="mt-2 space-y-1">
+                    <div className="mt-1 space-y-0.5">
                       {progressionRule && (
-                        <p className="text-[10px] text-[#FF9100]">
+                        <p className="truncate text-[9px] text-[#FF9100]">
                           {progressionRule}
                         </p>
                       )}
                       {notes && (
-                        <p className="text-[10px] text-[#7C3AED]">
+                        <p className="truncate text-[9px] text-[#7C3AED]">
                           {notes}
                         </p>
                       )}
@@ -938,12 +1007,12 @@ export default function ClientRoutinePage() {
                       href={ex.video_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-2 inline-flex items-center gap-1 text-[10px] font-medium text-[#00E5FF] transition-colors hover:text-[#00E5FF]/80"
+                      className="mt-1 inline-flex items-center gap-1 text-[9px] font-medium text-[#00E5FF] transition-colors hover:text-[#00E5FF]/80"
                     >
-                      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+                      <svg className="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M8 5v14l11-7z" />
                       </svg>
-                      Ver vídeo
+                      Vídeo
                     </a>
                   )}
                 </div>
@@ -951,27 +1020,60 @@ export default function ClientRoutinePage() {
             })}
           </div>
 
-          {/* Start tracking button */}
-          <button
-            type="button"
-            onClick={startTracking}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#00E5FF] py-3.5 text-sm font-semibold text-[#0A0A0F] transition-all hover:bg-[#00E5FF]/90 hover:shadow-[0_0_20px_rgba(0,229,255,0.3)]"
-          >
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
+          {/* Resume in-progress session */}
+          {inProgressSession && (
+            <a
+              href={`/app/client/routine/active?routine_id=${inProgressSession.routine_id}&day=${inProgressSession.day_label}&week=${inProgressSession.week_number}&session_id=${inProgressSession.id}`}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-[#FF9100] bg-[#FF9100]/10 py-3.5 text-sm font-bold text-[#FF9100] transition-all hover:bg-[#FF9100]/20"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 4.5v15m7.5-7.5h-15"
-              />
-            </svg>
-            Registrar sesión
-          </button>
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+              </svg>
+              Completar rutina en curso
+            </a>
+          )}
+
+          {/* Training mode buttons */}
+          {isSessionCompleted ? (
+            <div className="flex items-center justify-center gap-2 rounded-2xl border border-[#00C853]/20 bg-[#00C853]/10 py-3.5 text-sm font-semibold text-[#00C853]">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+              Sesión completada hoy
+            </div>
+          ) : (
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={startTracking}
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/[0.06] bg-[#12121A] py-3.5 text-sm font-semibold text-white transition-all hover:bg-white/[0.04]"
+              >
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 4.5v15m7.5-7.5h-15"
+                  />
+                </svg>
+                Registrar sesión
+              </button>
+              <a
+                href={`/app/client/routine/active?routine_id=${routine.id}&day=${activeDay}&week=${activeWeek}`}
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#00E5FF] py-3.5 text-sm font-semibold text-[#0A0A0F] transition-all hover:shadow-[0_0_20px_rgba(0,229,255,0.3)]"
+              >
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+                Entrenar en activo
+              </a>
+            </div>
+          )}
         </>
       )}
     </div>

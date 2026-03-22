@@ -2,25 +2,23 @@ import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 
-interface Exercise {
-  nombre: string;
-  series: number;
-  repeticiones: string;
-  peso?: string;
-  rir?: number;
-  descanso?: string;
-  notas?: string;
-}
-
-interface DayRoutine {
-  dia: string;
-  ejercicios: Exercise[];
+interface RoutineExercise {
+  exercise_id: string;
+  name: string;
+  day_of_week: string;
+  sets: number;
+  reps_min: number;
+  reps_max: number;
+  rir: number;
+  weight_kg: number | null;
+  rest_s: number;
 }
 
 interface UserRoutine {
   id: string;
-  name: string;
-  days: DayRoutine[];
+  title: string;
+  goal: string;
+  exercises: RoutineExercise[];
   is_active: boolean;
 }
 
@@ -46,8 +44,8 @@ export function useRoutineData(user: User | null): RoutineState {
 
     supabase
       .from("user_routines")
-      .select("id, name, days, is_active")
-      .eq("user_id", user.id)
+      .select("id, title, goal, exercises, is_active")
+      .eq("client_id", user.id)
       .eq("is_active", true)
       .maybeSingle()
       .then(({ data, error: err }) => {

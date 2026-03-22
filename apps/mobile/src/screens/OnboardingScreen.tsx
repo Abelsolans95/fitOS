@@ -265,6 +265,7 @@ export default function OnboardingScreen() {
         .select("id, title, fields")
         .eq("trainer_id", tc.trainer_id)
         .eq("is_active", true)
+        .order("created_at", { ascending: false })
         .limit(1);
 
       if (forms && forms.length > 0) {

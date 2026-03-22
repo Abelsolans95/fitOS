@@ -9,6 +9,7 @@ export interface SidebarNavItem {
   label: string;
   href: string;
   icon: React.ReactNode;
+  children?: { label: string; href: string }[];
 }
 
 interface AppSidebarProps {
@@ -103,6 +104,53 @@ export function AppSidebar({ items, defaultHref }: AppSidebarProps) {
           {items.map((item) => {
             const isActive =
               pathname === item.href || pathname.startsWith(item.href + "/");
+            const hasChildren = item.children && item.children.length > 0;
+            const isChildActive = hasChildren && item.children!.some(
+              (child) => pathname === child.href || pathname.startsWith(child.href + "/")
+            );
+            const isParentActive = isActive || isChildActive;
+
+            if (hasChildren) {
+              return (
+                <div key={item.href}>
+                  <Link
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    title={collapsed ? item.label : undefined}
+                    className={`relative flex items-center gap-3 py-2.5 text-[13px] font-medium transition-colors duration-150 ${
+                      isParentActive ? "text-white" : "text-[#5A5A72] hover:text-[#8B8BA3]"
+                    } ${collapsed ? "lg:justify-center lg:px-0 px-5" : "px-5"}`}
+                  >
+                    {isParentActive && (
+                      <span className="absolute left-0 top-1/2 h-5 w-[2px] -translate-y-1/2 rounded-r bg-[#00E5FF]" />
+                    )}
+                    <span className={isParentActive ? "text-[#00E5FF]" : ""}>{item.icon}</span>
+                    <span className={collapsed ? "lg:hidden" : ""}>{item.label}</span>
+                  </Link>
+                  {!collapsed && (
+                    <div className="ml-[2.15rem] border-l border-white/[0.06] pl-3">
+                      {item.children!.map((child) => {
+                        const childActive =
+                          pathname === child.href || pathname.startsWith(child.href + "/");
+                        return (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            onClick={() => setMobileOpen(false)}
+                            className={`block py-1.5 text-[12px] font-medium transition-colors duration-150 ${
+                              childActive ? "text-[#00E5FF]" : "text-[#5A5A72] hover:text-[#8B8BA3]"
+                            }`}
+                          >
+                            {child.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
             return (
               <Link
                 key={item.href}

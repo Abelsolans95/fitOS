@@ -1,0 +1,769 @@
+meta:
+  theme: fitos
+  layout: vertical
+  canvas: 2400x2000
+  routing: orthogonal
+  title: "FitOS — System Architecture & Functionality Map"
+  description: "Complete overview of the FitOS SaaS platform for personal trainers"
+
+modules:
+  # Top-level: User Roles
+  - id: roles
+    label: "USER ROLES"
+    style:
+      fillColor: "#0A0A0F"
+      strokeColor: "#2A2A3E"
+
+  # Platforms
+  - id: platforms
+    label: "PLATFORMS"
+    style:
+      fillColor: "#0E0E16"
+      strokeColor: "#2A2A3E"
+
+  # Trainer Features
+  - id: trainer_web
+    label: "WEB — TRAINER DASHBOARD"
+    style:
+      fillColor: "#0E0E16"
+      strokeColor: "#7C3AED"
+      strokeWidth: 2
+
+  # Client Web Features
+  - id: client_web
+    label: "WEB — CLIENT DASHBOARD"
+    style:
+      fillColor: "#0E0E16"
+      strokeColor: "#00E5FF"
+      strokeWidth: 2
+
+  # Mobile Features
+  - id: mobile
+    label: "MOBILE APP — CLIENT (Expo 55)"
+    style:
+      fillColor: "#0E0E16"
+      strokeColor: "#00E5FF"
+      strokeWidth: 2
+
+  # Auth Flow
+  - id: auth
+    label: "AUTH & ONBOARDING"
+    style:
+      fillColor: "#0E0E16"
+      strokeColor: "#FF9100"
+      strokeWidth: 2
+
+  # Backend
+  - id: backend_db
+    label: "SUPABASE POSTGRESQL — 22+ TABLES (RLS)"
+    style:
+      fillColor: "#0E0E16"
+      strokeColor: "#7C3AED"
+      strokeWidth: 2
+
+  # AI
+  - id: ai_functions
+    label: "AI EDGE FUNCTIONS (Claude API)"
+    style:
+      fillColor: "#0E0E16"
+      strokeColor: "#00C853"
+      strokeWidth: 2
+
+  # Integrations
+  - id: integrations
+    label: "INTEGRATIONS"
+    style:
+      fillColor: "#0E0E16"
+      strokeColor: "#FF9100"
+      strokeWidth: 2
+
+  # Tech Stack
+  - id: techstack
+    label: "TECH STACK"
+    style:
+      fillColor: "#0E0E16"
+      strokeColor: "#5A5A72"
+
+nodes:
+  # ===== USER ROLES =====
+  - id: trainer_role
+    label: "TRAINER"
+    type: user
+    module: roles
+    size: large
+    style:
+      fillColor: "#1A1030"
+      strokeColor: "#7C3AED"
+      strokeWidth: 2
+      fontColor: "#F1F5F9"
+      fontSize: 16
+
+  - id: client_role
+    label: "CLIENT"
+    type: user
+    module: roles
+    size: large
+    style:
+      fillColor: "#0A2A33"
+      strokeColor: "#00E5FF"
+      strokeWidth: 2
+      fontColor: "#F1F5F9"
+      fontSize: 16
+
+  # ===== PLATFORMS =====
+  - id: web_app
+    label: "Web App\nNext.js 15 + React 19"
+    type: service
+    module: platforms
+    size: large
+    style:
+      fillColor: "#12121A"
+      strokeColor: "#00E5FF"
+      fontColor: "#F1F5F9"
+
+  - id: mobile_app
+    label: "Mobile App\nExpo 55 + React Native"
+    type: service
+    module: platforms
+    size: large
+    style:
+      fillColor: "#12121A"
+      strokeColor: "#00E5FF"
+      fontColor: "#F1F5F9"
+
+  - id: landing_page
+    label: "Landing Page\nHero + Features + Pricing"
+    type: document
+    module: platforms
+    size: large
+    style:
+      fillColor: "#12121A"
+      strokeColor: "#FF9100"
+      fontColor: "#F1F5F9"
+
+  # ===== TRAINER WEB FEATURES =====
+  - id: t_dashboard
+    label: "Dashboard\nKPIs + Activity + Quick Actions"
+    type: service
+    module: trainer_web
+    style:
+      fillColor: "#1A1030"
+      strokeColor: "#7C3AED"
+      fontColor: "#F1F5F9"
+
+  - id: t_clients
+    label: "Client Management\nList + Search + Detail (5 tabs)"
+    type: service
+    module: trainer_web
+    size: large
+    style:
+      fillColor: "#1A1030"
+      strokeColor: "#7C3AED"
+      fontColor: "#F1F5F9"
+
+  - id: t_exercises
+    label: "Exercise Library\nGlobal + Private + Overrides\n3-Layer Resolution"
+    type: service
+    module: trainer_web
+    size: large
+    style:
+      fillColor: "#1A1030"
+      strokeColor: "#7C3AED"
+      fontColor: "#F1F5F9"
+
+  - id: t_routines
+    label: "Routine Builder\nDays + Sets/Reps/RIR\nWeekly Blocks (Mesocycles)"
+    type: service
+    module: trainer_web
+    size: large
+    style:
+      fillColor: "#1A1030"
+      strokeColor: "#7C3AED"
+      fontColor: "#F1F5F9"
+
+  - id: t_nutrition
+    label: "Nutrition\nMenu Creator + Food Library"
+    type: service
+    module: trainer_web
+    style:
+      fillColor: "#1A1030"
+      strokeColor: "#7C3AED"
+      fontColor: "#F1F5F9"
+
+  - id: t_forms
+    label: "Onboarding Form Editor\nDrag & Drop + 8 Field Types"
+    type: service
+    module: trainer_web
+    style:
+      fillColor: "#1A1030"
+      strokeColor: "#7C3AED"
+      fontColor: "#F1F5F9"
+
+  - id: t_import
+    label: "Excel Import\n4 Steps: Upload > Map >\nReconcile (pg_trgm) > Review"
+    type: service
+    module: trainer_web
+    size: large
+    style:
+      fillColor: "#1A1030"
+      strokeColor: "#7C3AED"
+      fontColor: "#F1F5F9"
+
+  - id: t_settings
+    label: "Settings\nPromo Code + Profile"
+    type: service
+    module: trainer_web
+    style:
+      fillColor: "#1A1030"
+      strokeColor: "#7C3AED"
+      fontColor: "#F1F5F9"
+
+  # ===== CLIENT WEB FEATURES =====
+  - id: c_dashboard
+    label: "Dashboard\nDaily Summary + Stats"
+    type: service
+    module: client_web
+    style:
+      fillColor: "#0A2A33"
+      strokeColor: "#00E5FF"
+      fontColor: "#F1F5F9"
+
+  - id: c_routine
+    label: "Routine\n2 Modes: Register Session\n+ Active Training (Rest Timer)\nANTERIOR Values"
+    type: service
+    module: client_web
+    size: xl
+    style:
+      fillColor: "#0A2A33"
+      strokeColor: "#00E5FF"
+      fontColor: "#F1F5F9"
+
+  - id: c_calories
+    label: "Vision Calorie Tracker\nCamera > AI > Macros"
+    type: service
+    module: client_web
+    style:
+      fillColor: "#0A2A33"
+      strokeColor: "#00E5FF"
+      fontColor: "#F1F5F9"
+
+  - id: c_meals
+    label: "Meal Plan\nAssigned Plan by Day"
+    type: service
+    module: client_web
+    style:
+      fillColor: "#0A2A33"
+      strokeColor: "#00E5FF"
+      fontColor: "#F1F5F9"
+
+  - id: c_calendar
+    label: "Calendar\nWorkouts + Meals + Metrics"
+    type: service
+    module: client_web
+    style:
+      fillColor: "#0A2A33"
+      strokeColor: "#00E5FF"
+      fontColor: "#F1F5F9"
+
+  - id: c_progress
+    label: "Progress\nBody Measurements\nSVG Chart + History"
+    type: service
+    module: client_web
+    style:
+      fillColor: "#0A2A33"
+      strokeColor: "#00E5FF"
+      fontColor: "#F1F5F9"
+
+  # ===== MOBILE FEATURES =====
+  - id: m_dashboard
+    label: "DashboardScreen\nKcal Ring + Stats"
+    type: service
+    module: mobile
+    style:
+      fillColor: "#0A2A33"
+      strokeColor: "#00E5FF"
+      fontColor: "#F1F5F9"
+
+  - id: m_routine
+    label: "RoutineScreen\n3 Modes: Overview +\nRegister + Active\nANTERIOR + Rest Timer"
+    type: service
+    module: mobile
+    size: xl
+    style:
+      fillColor: "#0A2A33"
+      strokeColor: "#00E5FF"
+      fontColor: "#F1F5F9"
+
+  - id: m_calories
+    label: "CaloriesScreen\nCamera/Gallery > AI"
+    type: service
+    module: mobile
+    style:
+      fillColor: "#0A2A33"
+      strokeColor: "#00E5FF"
+      fontColor: "#F1F5F9"
+
+  - id: m_meals
+    label: "MealsScreen\nPlan by Day + Macros"
+    type: service
+    module: mobile
+    style:
+      fillColor: "#0A2A33"
+      strokeColor: "#00E5FF"
+      fontColor: "#F1F5F9"
+
+  - id: m_progress
+    label: "ProgressScreen\nMeasurements + Trends"
+    type: service
+    module: mobile
+    style:
+      fillColor: "#0A2A33"
+      strokeColor: "#00E5FF"
+      fontColor: "#F1F5F9"
+
+  # ===== AUTH FLOW =====
+  - id: auth_register
+    label: "Register\nEmail + Password + Role"
+    type: terminal
+    module: auth
+    style:
+      fillColor: "#2A1A00"
+      strokeColor: "#FF9100"
+      fontColor: "#F1F5F9"
+
+  - id: auth_login
+    label: "Login\nEmail/Password"
+    type: terminal
+    module: auth
+    style:
+      fillColor: "#2A1A00"
+      strokeColor: "#FF9100"
+      fontColor: "#F1F5F9"
+
+  - id: auth_onb_trainer
+    label: "Trainer Onboarding\n3 Steps: Business >\nForm > Promo Code"
+    type: service
+    module: auth
+    style:
+      fillColor: "#1A1030"
+      strokeColor: "#7C3AED"
+      fontColor: "#F1F5F9"
+
+  - id: auth_onb_client
+    label: "Client Onboarding\n2 Steps: Trainer Form >\nBiometrics"
+    type: service
+    module: auth
+    style:
+      fillColor: "#0A2A33"
+      strokeColor: "#00E5FF"
+      fontColor: "#F1F5F9"
+
+  - id: auth_middleware
+    label: "Middleware\nRole-based Routing\nSession Protection"
+    type: decision
+    module: auth
+    style:
+      fillColor: "#2A1A00"
+      strokeColor: "#FF9100"
+      fontColor: "#F1F5F9"
+
+  # ===== DATABASE TABLES =====
+  - id: db_auth
+    label: "AUTH TABLES\nuser_roles | profiles\ntrainer_promo_codes\ntrainer_clients"
+    type: database
+    module: backend_db
+    size: large
+    style:
+      fillColor: "#1A1030"
+      strokeColor: "#7C3AED"
+      fontColor: "#F1F5F9"
+
+  - id: db_training
+    label: "TRAINING TABLES\nexercises | user_routines\nworkout_sessions | weight_log\nworkout_logs | rpe_history"
+    type: database
+    module: backend_db
+    size: large
+    style:
+      fillColor: "#0A2A33"
+      strokeColor: "#00E5FF"
+      fontColor: "#F1F5F9"
+
+  - id: db_nutrition
+    label: "NUTRITION TABLES\ntrainer_food_library\nmeal_plans | food_log"
+    type: database
+    module: backend_db
+    size: large
+    style:
+      fillColor: "#0A2A15"
+      strokeColor: "#00C853"
+      fontColor: "#F1F5F9"
+
+  - id: db_data
+    label: "DATA TABLES\nbody_metrics\nuser_calendar\nbiometric_data"
+    type: database
+    module: backend_db
+    style:
+      fillColor: "#12121A"
+      strokeColor: "#8B8BA3"
+      fontColor: "#F1F5F9"
+
+  - id: db_gamification
+    label: "GAMIFICATION\nleagues\nleague_members"
+    type: database
+    module: backend_db
+    style:
+      fillColor: "#2A1A00"
+      strokeColor: "#FF9100"
+      fontColor: "#F1F5F9"
+
+  - id: db_overrides
+    label: "OVERRIDES (Layer C)\ntrainer_exercise_overrides\ntrainer_food_overrides"
+    type: database
+    module: backend_db
+    style:
+      fillColor: "#1A1030"
+      strokeColor: "#7C3AED"
+      fontColor: "#F1F5F9"
+
+  - id: db_import
+    label: "IMPORT\nexcel_imports"
+    type: database
+    module: backend_db
+    style:
+      fillColor: "#12121A"
+      strokeColor: "#8B8BA3"
+      fontColor: "#F1F5F9"
+
+  - id: db_billing
+    label: "BILLING\ntrainer_subscriptions"
+    type: database
+    module: backend_db
+    style:
+      fillColor: "#12121A"
+      strokeColor: "#8B8BA3"
+      fontColor: "#F1F5F9"
+
+  # ===== AI EDGE FUNCTIONS =====
+  - id: ai_food_image
+    label: "analyze-food-image\nClaude Vision"
+    type: process
+    module: ai_functions
+    style:
+      fillColor: "#0A2A15"
+      strokeColor: "#00C853"
+      fontColor: "#F1F5F9"
+
+  - id: ai_meal_plan
+    label: "generate-meal-plan\nClaude"
+    type: process
+    module: ai_functions
+    style:
+      fillColor: "#0A2A15"
+      strokeColor: "#00C853"
+      fontColor: "#F1F5F9"
+
+  - id: ai_gym_routine
+    label: "generate-gym-routine\nClaude"
+    type: process
+    module: ai_functions
+    style:
+      fillColor: "#0A2A15"
+      strokeColor: "#00C853"
+      fontColor: "#F1F5F9"
+
+  - id: ai_onboarding
+    label: "analyze-onboarding-form\nClaude"
+    type: process
+    module: ai_functions
+    style:
+      fillColor: "#0A2A15"
+      strokeColor: "#00C853"
+      fontColor: "#F1F5F9"
+
+  # ===== INTEGRATIONS =====
+  - id: google_calendar
+    label: "Google Calendar\nOAuth + Sync"
+    type: cloud
+    module: integrations
+    style:
+      fillColor: "#2A1A00"
+      strokeColor: "#FF9100"
+      fontColor: "#F1F5F9"
+
+  - id: pg_trgm
+    label: "pg_trgm\nSimilarity Search\nExercises & Foods"
+    type: service
+    module: integrations
+    style:
+      fillColor: "#1A1030"
+      strokeColor: "#7C3AED"
+      fontColor: "#F1F5F9"
+
+  - id: rls_badge
+    label: "Row Level Security\nAll 22+ Tables"
+    type: service
+    module: integrations
+    style:
+      fillColor: "#2A0A10"
+      strokeColor: "#FF1744"
+      fontColor: "#F1F5F9"
+
+  # ===== TECH STACK =====
+  - id: ts_turborepo
+    label: "Turborepo 2.x\nMonorepo"
+    type: service
+    module: techstack
+    size: small
+    style:
+      fillColor: "#12121A"
+      strokeColor: "#5A5A72"
+      fontColor: "#8B8BA3"
+
+  - id: ts_tailwind
+    label: "Tailwind CSS 4\nshadcn/ui"
+    type: service
+    module: techstack
+    size: small
+    style:
+      fillColor: "#12121A"
+      strokeColor: "#5A5A72"
+      fontColor: "#8B8BA3"
+
+  - id: ts_pnpm
+    label: "pnpm (root)\nnpm (apps/web)"
+    type: service
+    module: techstack
+    size: small
+    style:
+      fillColor: "#12121A"
+      strokeColor: "#5A5A72"
+      fontColor: "#8B8BA3"
+
+  - id: ts_brutalismo
+    label: "Brutalismo Elegante\nDesign System"
+    type: service
+    module: techstack
+    size: small
+    style:
+      fillColor: "#12121A"
+      strokeColor: "#5A5A72"
+      fontColor: "#8B8BA3"
+
+edges:
+  # Roles -> Platforms
+  - from: trainer_role
+    to: web_app
+    type: primary
+    label: "Full Dashboard"
+  - from: client_role
+    to: web_app
+    type: primary
+    label: "Client Dashboard"
+  - from: client_role
+    to: mobile_app
+    type: primary
+    label: "5 Screens"
+
+  # Platforms -> Feature modules
+  - from: web_app
+    to: t_dashboard
+    type: primary
+  - from: web_app
+    to: c_dashboard
+    type: primary
+  - from: mobile_app
+    to: m_dashboard
+    type: primary
+
+  # Trainer features internal
+  - from: t_dashboard
+    to: t_clients
+    type: primary
+  - from: t_dashboard
+    to: t_exercises
+    type: primary
+  - from: t_dashboard
+    to: t_routines
+    type: primary
+  - from: t_dashboard
+    to: t_nutrition
+    type: primary
+  - from: t_dashboard
+    to: t_forms
+    type: primary
+  - from: t_dashboard
+    to: t_import
+    type: primary
+  - from: t_dashboard
+    to: t_settings
+    type: optional
+
+  # Client web internal
+  - from: c_dashboard
+    to: c_routine
+    type: primary
+  - from: c_dashboard
+    to: c_calories
+    type: primary
+  - from: c_dashboard
+    to: c_meals
+    type: primary
+  - from: c_dashboard
+    to: c_calendar
+    type: primary
+  - from: c_dashboard
+    to: c_progress
+    type: primary
+
+  # Mobile internal
+  - from: m_dashboard
+    to: m_routine
+    type: primary
+  - from: m_dashboard
+    to: m_calories
+    type: primary
+  - from: m_dashboard
+    to: m_meals
+    type: primary
+  - from: m_dashboard
+    to: m_progress
+    type: primary
+
+  # Auth flow
+  - from: auth_register
+    to: auth_middleware
+    type: primary
+  - from: auth_login
+    to: auth_middleware
+    type: primary
+  - from: auth_middleware
+    to: auth_onb_trainer
+    type: primary
+    label: "trainer role"
+  - from: auth_middleware
+    to: auth_onb_client
+    type: primary
+    label: "client role"
+  - from: auth_onb_trainer
+    to: t_dashboard
+    type: data
+    label: "redirect"
+  - from: auth_onb_client
+    to: c_dashboard
+    type: data
+    label: "redirect"
+
+  # Features -> Database
+  - from: t_clients
+    to: db_auth
+    type: data
+  - from: t_exercises
+    to: db_training
+    type: data
+  - from: t_exercises
+    to: db_overrides
+    type: data
+    label: "Layer C"
+  - from: t_routines
+    to: db_training
+    type: data
+  - from: t_nutrition
+    to: db_nutrition
+    type: data
+  - from: t_forms
+    to: db_auth
+    type: data
+    label: "onboarding_forms"
+  - from: t_import
+    to: db_import
+    type: data
+  - from: t_import
+    to: pg_trgm
+    type: data
+    label: "reconciliation"
+
+  - from: c_routine
+    to: db_training
+    type: data
+    label: "workout_sessions\nweight_log"
+  - from: c_calories
+    to: db_nutrition
+    type: data
+    label: "food_log"
+  - from: c_meals
+    to: db_nutrition
+    type: data
+    label: "meal_plans"
+  - from: c_progress
+    to: db_data
+    type: data
+    label: "body_metrics"
+  - from: c_calendar
+    to: db_data
+    type: data
+    label: "user_calendar"
+
+  # Mobile -> Database
+  - from: m_routine
+    to: db_training
+    type: data
+  - from: m_calories
+    to: db_nutrition
+    type: data
+  - from: m_meals
+    to: db_nutrition
+    type: data
+  - from: m_progress
+    to: db_data
+    type: data
+
+  # AI connections
+  - from: c_calories
+    to: ai_food_image
+    type: data
+    label: "photo"
+  - from: m_calories
+    to: ai_food_image
+    type: data
+    label: "photo"
+  - from: t_nutrition
+    to: ai_meal_plan
+    type: data
+    label: "generate"
+  - from: t_routines
+    to: ai_gym_routine
+    type: data
+    label: "generate"
+  - from: t_forms
+    to: ai_onboarding
+    type: data
+    label: "analyze"
+
+  # Google Calendar
+  - from: c_calendar
+    to: google_calendar
+    type: data
+    label: "OAuth sync"
+
+  # RLS
+  - from: rls_badge
+    to: db_auth
+    type: optional
+  - from: rls_badge
+    to: db_training
+    type: optional
+  - from: rls_badge
+    to: db_nutrition
+    type: optional
+
+  # Billing
+  - from: t_settings
+    to: db_billing
+    type: data
+    label: "Stripe"
+
+  # Gamification
+  - from: t_dashboard
+    to: db_gamification
+    type: optional
+    label: "leagues"

@@ -73,6 +73,13 @@ export default function TrainerFormsPage() {
         .update({ ...formData, updated_at: new Date().toISOString() })
         .eq("id", formId);
     } else {
+      // Deactivate any previous active forms first
+      await supabase
+        .from("onboarding_forms")
+        .update({ is_active: false })
+        .eq("trainer_id", user.id)
+        .eq("is_active", true);
+
       const { data } = await supabase
         .from("onboarding_forms")
         .insert(formData)

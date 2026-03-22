@@ -111,7 +111,7 @@ export default function RegisterPage() {
     if (authData.user) {
       await supabase.from("user_roles").insert({ user_id: authData.user.id, role });
       if (role === "client" && promo.trainer_id && promo.promo_code_id) {
-        await fetch("/api/complete-registration", {
+        const res = await fetch("/api/complete-registration", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -121,6 +121,12 @@ export default function RegisterPage() {
             email,
           }),
         });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          setError(body.error || "Error al vincular con tu entrenador. Intenta de nuevo.");
+          setLoading(false);
+          return;
+        }
       }
     }
 

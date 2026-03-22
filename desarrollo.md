@@ -1,6 +1,6 @@
 # FitOS — Estado del Desarrollo
 
-> Documento actualizado el 19/03/2026 (Rediseño UI completado). Léelo de arriba abajo antes de tocar cualquier archivo.
+> Documento actualizado el 22/03/2026 (Entrenamiento activo resumible, vista trainer de datos cliente, Excel import con Haiku, clone-on-edit ejercicios). Léelo de arriba abajo antes de tocar cualquier archivo.
 > Cualquier agente o desarrollador debe leer este archivo **primero** para entender el estado actual del proyecto.
 >
 > **IMPORTANTE:** Al terminar cualquier desarrollo, bugfix o cambio significativo, actualiza este archivo (`desarrollo.md`) **y** `CLAUDE.md` antes de cerrar la sesión. Refleja los archivos nuevos o modificados, añade notas para el siguiente agente/desarrollador y actualiza la sección de próximos pasos. El objetivo es que cualquier persona o agente pueda continuar el proyecto sin contexto previo.
@@ -85,7 +85,17 @@ fitOS/
 │   └── notifications/          ← Placeholder
 ├── supabase/
 │   ├── migrations/
-│   │   └── 018_create_food_log.sql   ← Tabla food_log (Vision Calorie Tracker)
+│   │   ├── 018_create_food_log.sql   ← Tabla food_log (Vision Calorie Tracker)
+│   │   ├── 019_add_pending_status_trainer_clients.sql ← Status 'pending' en trainer_clients
+│   │   ├── 020_trainer_clients_rls_client_select.sql  ← RLS select para clientes
+│   │   ├── 021_trainer_exercise_overrides.sql ← Layer C: overrides de ejercicios + set_updated_at()
+│   │   ├── 022_trainer_food_overrides.sql     ← Layer C: overrides de alimentos
+│   │   ├── 023_excel_imports.sql              ← Tracking importaciones Excel
+│   │   ├── 024_workout_sessions.sql           ← Sesiones de entrenamiento + weight_log.session_id
+│   │   ├── 025_alter_user_routines_weeks.sql  ← Bloques semanales + aliases en exercises
+│   │   ├── 026_enable_pg_trgm.sql             ← Extensión trigram + funciones de similitud
+│   │   ├── 027_exercise_override_hidden.sql   ← hidden BOOLEAN en trainer_exercise_overrides
+│   │   └── 028_weight_log_client_notes.sql    ← client_notes TEXT en weight_log
 │   └── functions/
 │       ├── analyze-food-image/       ← Claude Vision: análisis foto → macros
 │       ├── generate-meal-plan/       ← Claude: generar plan nutricional
@@ -131,10 +141,17 @@ fitOS/
 | `leagues` | Ligas de gamificación |
 | `league_members` | Miembros de cada liga |
 | `trainer_subscriptions` | Suscripciones de pago (Stripe) |
+| `trainer_exercise_overrides` | **NUEVA** — Layer C: personalizaciones + `hidden` BOOLEAN para ocultar globals por trainer |
+| `trainer_food_overrides` | **NUEVA** — Layer C: personalizaciones de alimentos globales por trainer |
+| `excel_imports` | **NUEVA** — Tracking de importaciones Excel (columnas detectadas, datos raw, decisiones) |
+| `workout_sessions` | **NUEVA** — Agrupa weight_log por sesión (modo registration/active) |
 
 ### Funciones de base de datos
 - **`handle_new_user()`** — Trigger en `auth.users` → crea `profiles`
 - **`generate_promo_code(trainer_name TEXT)`** — Genera códigos tipo `CARLOS-X7K2`
+- **`set_updated_at()`** — Trigger genérico para actualizar `updated_at` en cualquier tabla
+- **`search_similar_exercises(search_term, p_trainer_id, threshold, max)`** — Búsqueda por similitud trigram
+- **`search_similar_foods(search_term, p_trainer_id, threshold, max)`** — Búsqueda por similitud trigram
 
 ### Tabla `food_log` (migración 018)
 ```sql
@@ -190,10 +207,15 @@ apps/web/app/
 │       │   ├── layout.tsx              ← ✅ TrainerSidebar (240px, colapsable a 72px)
 │       │   ├── dashboard/page.tsx      ← ✅ KPIs + actividad reciente + acciones rápidas
 │       │   ├── clients/page.tsx        ← ✅ Lista clientes con búsqueda + tabla
-│       │   ├── clients/[id]/page.tsx   ← ✅ Detalle cliente con 5 tabs (Perfil, Progreso, Rutina, Menú, Formulario)
-│       │   ├── exercises/page.tsx      ← ✅ Biblioteca de ejercicios (globales + propios, filtros, CRUD)
+│       │   ├── clients/[id]/page.tsx   ← ✅ Detalle cliente con 5 tabs (Perfil, Progreso, Rutina+sesiones, Menú+food_log, Formulario)
+│       │   ├── exercises/page.tsx      ← ✅ Biblioteca de ejercicios (3 capas, clone-on-edit global, overrides hidden)
 │       │   ├── routines/page.tsx       ← ✅ Constructor de rutinas (días de semana, ejercicios, sets/reps/RIR)
 │       │   ├── nutrition/page.tsx      ← ✅ Menú creator + Biblioteca de alimentos (2 tabs)
+│       │   ├── import/page.tsx          ← ✅ Importar Excel (4 pasos: upload, mapeo, reconciliación, review; Haiku detecta estructura, linked array para reconciliación, clone-on-edit global)
+│       │
+│       │   # Client routes:
+│       │   # routine/page.tsx          ← ✅ Rutina con semanas, ANTERIOR, dos modos (registro + activo)
+│       │   # routine/active/page.tsx   ← ✅ Entrenamiento activo (nav libre, resume, notas, finalizar rutina)
 │       │   ├── forms/page.tsx          ← Editor de formulario onboarding (drag & drop, 8 tipos)
 │       │   └── settings/page.tsx       ← ✅ Código promo + perfil editable
 │       │
@@ -207,9 +229,15 @@ apps/web/app/
 │           └── progress/page.tsx       ← ✅ Mediciones corporales + gráfico SVG + historial
 │
 ├── api/
-│   └── auth/google/
-│       ├── route.ts                    ← ✅ Inicia OAuth de Google Calendar
-│       └── callback/route.ts           ← ✅ Callback OAuth → guarda tokens en profiles
+│   ├── auth/google/
+│   │   ├── route.ts                    ← ✅ Inicia OAuth de Google Calendar
+│   │   └── callback/route.ts           ← ✅ Callback OAuth → guarda tokens en profiles
+│   ├── import/
+│   │   ├── excel/route.ts              ← ✅ Upload Excel → Claude Haiku analysis + save
+│   │   ├── create-exercises/route.ts   ← ✅ Server-side exercise creation (service_role, bypasses RLS)
+│   │   └── reconcile/route.ts          ← ✅ Entity reconciliation via pg_trgm similarity
+│   ├── client-trainer/route.ts         ← ✅ API para relación cliente-trainer
+│   └── fix-client-link/route.ts        ← ✅ Fix client link
 │
 ├── components/
 │   ├── layout/
@@ -223,7 +251,10 @@ apps/web/app/
 ├── lib/
 │   ├── supabase.ts                     ← createClient() browser
 │   ├── supabase-server.ts              ← createClient() server
-│   └── google-calendar.ts             ← ✅ OAuth helpers + CRUD eventos + sync helpers
+│   ├── google-calendar.ts             ← ✅ OAuth helpers + CRUD eventos + sync helpers
+│   ├── exercise-resolver.ts           ← ✅ Three-layer exercise resolver (A/B/C)
+│   ├── food-resolver.ts              ← ✅ Three-layer food resolver (A/B/C)
+│   └── excel-parser.ts               ← ✅ Column type definitions + header keywords (Haiku does inference)
 │
 └── middleware.ts                        ← ✅ Protección por rol (trainer/client separation)
 ```
@@ -332,7 +363,7 @@ apps/mobile/
 │       ├── OnboardingScreen.tsx        ← ✅ Wizard 2 pasos: formulario entrenador + datos biométricos
 │       ├── DashboardScreen.tsx         ← ✅ Resumen diario (kcal ring, stats, quick actions)
 │       ├── CaloriesScreen.tsx          ← ✅ Vision Calorie Tracker (cámara/galería → IA)
-│       ├── RoutineScreen.tsx           ← ✅ Rutina del día con set tracker interactivo
+│       ├── RoutineScreen.tsx           ← ✅ Rutina: 3 modos (overview + registro + activo) con ANTERIOR, semanas, rest timer
 │       ├── MealsScreen.tsx             ← ✅ Plan de comidas por día con macros
 │       └── ProgressScreen.tsx          ← ✅ Mediciones + historial + tendencias
 ├── app.json                            ← Config Expo + Sentry
@@ -407,6 +438,19 @@ Protege rutas por autenticación Y por rol. Trainers no acceden a rutas de clien
 ---
 
 ## 12. Próximos Pasos Recomendados (Fase 2)
+
+### Paridad mobile pendiente (Fase 1)
+
+| Tarea | Estado | Descripción |
+|---|---|---|
+| Notas del cliente en entrenamiento activo | ✅ Hecho | `exerciseNotes` en rest timer, se guarda en `weight_log.client_notes` |
+| Sesión resumible ("Completar rutina en curso") | ✅ Hecho | Botón naranja en overview, carga `weight_log` de sesión `in_progress`, restaura sets/notas |
+| Navegación libre entre ejercicios | ✅ Hecho | Botones Anterior/Siguiente siempre visibles, "Finalizar rutina" en último ejercicio |
+| Resumen de rutina finalizada (summary) | ✅ Hecho | Ya existía — muestra duración, volumen, series y progreso por ejercicio |
+| Trainer ve datos del cliente (Rutina + Menú tabs) | ❌ Solo web | Mobile no tiene vista de detalle de cliente aún |
+| Import Excel | ❌ Solo web | No aplica a mobile (funcionalidad exclusiva de trainer en web) |
+
+### Tareas Fase 2
 
 | Tarea | Prioridad | Descripción |
 |---|---|---|
@@ -680,6 +724,128 @@ supabase functions deploy [nombre]
 - **Qué pasó:** Al ejecutar `npx expo install expo-linear-gradient react-native-svg`, el post-install mostraba "Cannot find module './utils/autoAddConfigPlugins.js'" pero los paquetes se añadieron correctamente a `package.json` y funcionan en runtime.
 - **Solución aplicada:** Ignorar el error de config plugins. Verificar en `package.json` que los paquetes están listados.
 - **Regla:** `expo install` puede fallar en el paso de auto-add config plugins sin que eso afecte la instalación real. Si aparece este error, verificar `package.json` antes de reintentar.
+
+---
+
+**ERROR #22 — Registration view no creaba `workout_sessions`**
+- **Fecha:** 21/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/client/routine/page.tsx`
+- **Qué pasó:** `handleSaveSession` insertaba directamente en `weight_log` sin crear un registro en `workout_sessions` primero. Los weight_log quedaban sin `session_id`, rompiendo la agrupación por sesión.
+- **Solución aplicada:** Añadido `INSERT INTO workout_sessions` antes de los weight_log inserts. El `session_id` se pasa a cada weight_log. Se actualizan los aggregates (volume, sets, exercises) al final.
+- **Regla:** Toda sesión de entrenamiento (registration o active) DEBE crear un `workout_sessions` primero y pasar el `session_id` a cada `weight_log`.
+
+---
+
+**ERROR #23 — Rest timer creaba múltiples intervals por dependencia incorrecta**
+- **Fecha:** 21/03/2026
+- **Archivos afectados:** `apps/web/.../active/page.tsx`, `apps/mobile/.../RoutineScreen.tsx`
+- **Qué pasó:** El useEffect del rest timer tenía `restTime > 0 ? "ticking" : "stopped"` como dependencia, creando un string nuevo en cada render y potencialmente disparando múltiples intervals.
+- **Solución aplicada:** Cambiado a depender solo de `phase`/`mode`. El interval se crea una vez cuando phase="rest" y se limpia en el cleanup.
+- **Regla:** Nunca usar expresiones ternarias que generen strings como dependencias de useEffect. Usar valores estables (estado, refs).
+
+---
+
+**ERROR #24 — Elapsed timer mobile no limpiaba al desmontar**
+- **Fecha:** 21/03/2026
+- **Archivo afectado:** `apps/mobile/src/screens/RoutineScreen.tsx`
+- **Qué pasó:** El cleanup del useEffect del elapsed timer era `return () => {}` (vacío). Si el usuario salía de la pantalla durante un entrenamiento activo, el interval seguía corriendo en background.
+- **Solución aplicada:** Añadido clearInterval en la función de cleanup.
+- **Regla:** Todo useEffect que cree un setInterval DEBE limpiarlo en su return cleanup.
+
+---
+
+**ERROR #21 — `moddatetime` no disponible en Supabase**
+- **Fecha:** 20/03/2026
+- **Archivos afectados:** Migraciones 021-024
+- **Qué pasó:** Los triggers `updated_at` usaban `EXECUTE FUNCTION moddatetime(updated_at)` que requiere la extensión `moddatetime`, no habilitada en Supabase por defecto.
+- **Solución aplicada:** Crear función custom `set_updated_at()` en migración 021 (`CREATE OR REPLACE FUNCTION set_updated_at() RETURNS TRIGGER...`) y usarla en todos los triggers.
+- **Regla:** No usar `moddatetime()` en Supabase. Usar siempre `set_updated_at()` para triggers de `updated_at`.
+
+---
+
+**ERROR #25 — `column user_routines.days does not exist` en entrenamiento activo**
+- **Fecha:** 22/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/client/routine/active/page.tsx`
+- **Qué pasó:** La query selectaba `days` de `user_routines`, pero esa columna no existe. Los ejercicios están en la columna `exercises` (JSONB array).
+- **Solución aplicada:** Eliminado `days` del select. Parsear ejercicios solo desde `routine.exercises`.
+- **Regla:** `user_routines` NO tiene columna `days`. Los ejercicios están en `exercises` (JSONB). El campo `day_of_week` de cada ejercicio dentro del array determina a qué día pertenece.
+
+---
+
+**ERROR #26 — Excel import "Solo entrenadores" por query a tabla incorrecta**
+- **Fecha:** 22/03/2026
+- **Archivo afectado:** `apps/web/app/api/import/excel/route.ts`
+- **Qué pasó:** La verificación de rol consultaba `user_roles` que no contiene el campo `role` correctamente. La tabla correcta es `profiles`.
+- **Solución aplicada:** Cambiado a `profiles` con `.select("role").eq("user_id", user.id)`.
+- **Regla:** El rol del usuario se obtiene de `profiles.role`, no de `user_roles`.
+
+---
+
+**ERROR #27 — Ejercicios insertados pero no aparecen en biblioteca (RLS silencioso)**
+- **Fecha:** 22/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/trainer/import/page.tsx`
+- **Qué pasó:** Los ejercicios se insertaban desde el frontend con el client Supabase (anon key). RLS bloqueaba silenciosamente el insert — no daba error pero los datos no se guardaban.
+- **Solución aplicada:** Creada API route `/api/import/create-exercises` que usa `SUPABASE_SERVICE_ROLE_KEY` para bypassear RLS.
+- **Regla:** Cualquier insert a `trainer_exercise_library` desde import debe ir via server-side API route con `service_role`. RLS puede bloquear silenciosamente desde el frontend.
+
+---
+
+**ERROR #28 — `category CHECK constraint violation` en trainer_exercise_library**
+- **Fecha:** 22/03/2026
+- **Archivo afectado:** `apps/web/app/api/import/create-exercises/route.ts`
+- **Qué pasó:** La tabla tenía un CHECK constraint limitando `category` a valores específicos. Los ejercicios de Excel tenían categorías libres que no coincidían.
+- **Solución aplicada:** Ejecutar `ALTER TABLE trainer_exercise_library DROP CONSTRAINT ...` para permitir texto libre. Category es ahora nullable sin restricción.
+- **Regla:** `trainer_exercise_library.category` es TEXT libre (sin CHECK). No hay columna `difficulty` ni `equipment`.
+
+---
+
+**ERROR #29 — primary_muscles/secondary_muscles no se guardan al editar ejercicio global**
+- **Fecha:** 22/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/trainer/exercises/page.tsx`
+- **Qué pasó:** Al editar un ejercicio global, se hacía update directo. Pero el entrenador no tiene permiso de escritura en ejercicios globales. Los cambios parecían guardarse (no error) pero los datos no persistían.
+- **Solución aplicada:** Implementado patrón clone-on-edit: al guardar cambios en un ejercicio global, se clona como privado (`is_global: false`) y se oculta el original via `trainer_exercise_overrides.hidden = true`.
+- **Regla:** Nunca hacer update directo a ejercicios globales. Siempre clonar como privado + ocultar original. Usar tres capas (Layer A/B/C) para resolución.
+
+---
+
+**ERROR #30 — Sets completados no se persisten en DB hasta navegar al siguiente ejercicio**
+- **Fecha:** 22/03/2026
+- **Archivos afectados:** `apps/web/app/(dashboard)/app/client/routine/active/page.tsx`, `apps/mobile/src/screens/RoutineScreen.tsx`
+- **Qué pasó:** Al marcar una serie como completada (check), solo se actualizaba el estado local. Si el cliente salía de la pantalla (o cerraba la app) a mitad de ejercicio, al volver con "Completar rutina en curso" todos los datos se perdían porque `weight_log` solo se escribía al navegar al siguiente ejercicio.
+- **Solución aplicada:** Nueva función `savePartialProgress()` que hace upsert a `weight_log` inmediatamente en cada check de serie. El campo `sets_data` ahora incluye `completed: boolean` por set. La lógica de resume restaura sets parcialmente completados.
+- **Regla:** Cada interacción del usuario que genera datos debe persistirse inmediatamente en DB, no solo en estado local. Usar upsert (check existencia + update/insert) para evitar duplicados.
+
+---
+
+**ERROR #31 — Botones de entrenamiento visibles después de completar la sesión del día**
+- **Fecha:** 22/03/2026
+- **Archivos afectados:** `apps/web/app/(dashboard)/app/client/routine/page.tsx`, `apps/mobile/src/screens/RoutineScreen.tsx`
+- **Qué pasó:** Después de finalizar una sesión de entrenamiento, el cliente podía volver a la página de rutina y ver los botones "Registrar" / "Entrenar en activo", pudiendo iniciar una segunda sesión duplicada para el mismo día.
+- **Solución aplicada:** Se cargan todas las `workout_sessions` completadas para la rutina y se compara por `day_label::week_number`. Si la combinación ya existe, se muestra badge "Sesión completada" en lugar de los botones. Permite múltiples sesiones distintas en el mismo día.
+- **Regla:** Bloquear por identidad de sesión (rutina + día + semana), no por fecha. Consultar siempre el estado actual en DB, no asumir desde el frontend.
+
+---
+
+**ERROR #32 — Import Excel "link" oculta ejercicios globales en vez de mantenerlos visibles**
+- **Fecha:** 22/03/2026
+- **Archivo afectado:** `apps/web/app/api/import/create-exercises/route.ts`
+- **Qué pasó:** Cuando un ejercicio del Excel se enlazaba (link) a un ejercicio global existente durante la reconciliación, el route creaba un `trainer_exercise_overrides` con `hidden: true`. Esto ocultaba el ejercicio global de la biblioteca del trainer. Al re-importar el mismo Excel, los ejercicios aparecían como "Match 100%" pero no se veían en la biblioteca porque estaban ocultos.
+- **Solución aplicada:** "Link" en import ahora crea un ejercicio privado con el nombre del trainer si el nombre difiere del global. Si el nombre es idéntico (match 100%), el global ya es visible y no se clona. Nunca se ocultan globales desde import. El `hidden: true` solo se usa en clone-on-edit desde la página de ejercicios.
+- **Regla:** Import "link" con nombre diferente = crear privado con nombre del Excel. Import "link" con nombre igual = no hacer nada, el global es visible. Nunca ocultar globales desde import.
+
+---
+
+**SQL de limpieza — Restaurar ejercicios ocultos por bug de import (ERROR #32)**
+
+Ejecutar en Supabase SQL Editor para restaurar los ejercicios globales que fueron ocultados por imports anteriores:
+
+```sql
+-- Ver cuántos overrides hidden hay
+SELECT * FROM trainer_exercise_overrides WHERE hidden = true;
+
+-- Eliminarlos (restaura la visibilidad de los ejercicios globales)
+DELETE FROM trainer_exercise_overrides WHERE hidden = true;
+```
 
 ---
 

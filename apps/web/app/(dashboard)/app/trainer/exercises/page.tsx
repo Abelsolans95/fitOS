@@ -7,9 +7,6 @@ import { createClient } from "@/lib/supabase";
 // Types
 // ---------------------------------------------------------------------------
 
-type Category = "fuerza" | "hipertrofia" | "cardio" | "movilidad" | "core";
-type Difficulty = "principiante" | "intermedio" | "avanzado";
-
 interface Exercise {
   id: string;
   trainer_id: string | null;
@@ -17,12 +14,25 @@ interface Exercise {
   description: string | null;
   primary_muscles: string[];
   secondary_muscles: string[];
-  equipment: string[];
-  category: Category;
-  difficulty: Difficulty;
+  category: string | null;
   video_url: string | null;
   is_global: boolean;
   created_at: string;
+  // Override data (applied on top of globals for this trainer)
+  _override_id?: string;
+  _is_overridden?: boolean;
+  _is_hidden?: boolean;
+}
+
+interface ExerciseOverride {
+  id: string;
+  trainer_id: string;
+  exercise_id: string;
+  custom_name: string | null;
+  custom_description: string | null;
+  custom_notes: string | null;
+  custom_video_url: string | null;
+  hidden: boolean;
 }
 
 interface ExerciseFormData {
@@ -31,8 +41,7 @@ interface ExerciseFormData {
   primary_muscles: string;
   secondary_muscles: string;
   equipment: string;
-  category: Category;
-  difficulty: Difficulty;
+  category: string;
   video_url: string;
 }
 
@@ -40,35 +49,11 @@ interface ExerciseFormData {
 // Constants
 // ---------------------------------------------------------------------------
 
-const CATEGORIES: { value: Category | "todos"; label: string }[] = [
+const OWNERSHIP_FILTERS: { value: "todos" | "global" | "propio"; label: string }[] = [
   { value: "todos", label: "Todos" },
-  { value: "fuerza", label: "Fuerza" },
-  { value: "hipertrofia", label: "Hipertrofia" },
-  { value: "cardio", label: "Cardio" },
-  { value: "movilidad", label: "Movilidad" },
-  { value: "core", label: "Core" },
+  { value: "global", label: "Global" },
+  { value: "propio", label: "Propio" },
 ];
-
-const DIFFICULTIES: { value: Difficulty | "todos"; label: string }[] = [
-  { value: "todos", label: "Todos" },
-  { value: "principiante", label: "Principiante" },
-  { value: "intermedio", label: "Intermedio" },
-  { value: "avanzado", label: "Avanzado" },
-];
-
-const CATEGORY_COLORS: Record<Category, { bg: string; text: string }> = {
-  fuerza: { bg: "bg-[#00E5FF]/10", text: "text-[#00E5FF]" },
-  hipertrofia: { bg: "bg-[#7C3AED]/10", text: "text-[#7C3AED]" },
-  cardio: { bg: "bg-[#FF1744]/10", text: "text-[#FF1744]" },
-  movilidad: { bg: "bg-[#00C853]/10", text: "text-[#00C853]" },
-  core: { bg: "bg-[#FF9100]/10", text: "text-[#FF9100]" },
-};
-
-const DIFFICULTY_COLORS: Record<Difficulty, { bg: string; text: string }> = {
-  principiante: { bg: "bg-[#00C853]/10", text: "text-[#00C853]" },
-  intermedio: { bg: "bg-[#FF9100]/10", text: "text-[#FF9100]" },
-  avanzado: { bg: "bg-[#FF1744]/10", text: "text-[#FF1744]" },
-};
 
 const EMPTY_FORM: ExerciseFormData = {
   name: "",
@@ -76,8 +61,7 @@ const EMPTY_FORM: ExerciseFormData = {
   primary_muscles: "",
   secondary_muscles: "",
   equipment: "",
-  category: "fuerza",
-  difficulty: "principiante",
+  category: "",
   video_url: "",
 };
 
@@ -216,25 +200,11 @@ function DumbbellIcon({ className }: { className?: string }) {
   );
 }
 
-function CategoryBadge({ category }: { category: Category }) {
-  const color = CATEGORY_COLORS[category];
+function CategoryBadge({ category }: { category: string | null }) {
+  if (!category) return null;
   const label = category.charAt(0).toUpperCase() + category.slice(1);
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${color.bg} ${color.text}`}
-    >
-      {label}
-    </span>
-  );
-}
-
-function DifficultyBadge({ difficulty }: { difficulty: Difficulty }) {
-  const color = DIFFICULTY_COLORS[difficulty];
-  const label = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${color.bg} ${color.text}`}
-    >
+    <span className="inline-flex items-center rounded-full bg-[#00E5FF]/10 px-2.5 py-0.5 text-xs font-medium text-[#00E5FF]">
       {label}
     </span>
   );
@@ -290,12 +260,10 @@ function PillFilter<T extends string>({
 
 function ExerciseCard({
   exercise,
-  isOwn,
   onEdit,
   onDelete,
 }: {
   exercise: Exercise;
-  isOwn: boolean;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -315,32 +283,30 @@ function ExerciseCard({
         <h3 className="text-sm font-semibold text-white leading-snug line-clamp-2">
           {exercise.name}
         </h3>
-        {isOwn && (
-          <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit();
-              }}
-              className="rounded-lg p-1.5 text-[#8B8BA3] transition-colors hover:bg-white/[0.06] hover:text-white"
-              title="Editar ejercicio"
-            >
-              <PencilIcon className="h-3.5 w-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              className="rounded-lg p-1.5 text-[#8B8BA3] transition-colors hover:bg-[#FF1744]/10 hover:text-[#FF1744]"
-              title="Eliminar ejercicio"
-            >
-              <TrashIcon className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        )}
+        <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
+            className="rounded-lg p-1.5 text-[#8B8BA3] transition-colors hover:bg-white/[0.06] hover:text-white"
+            title={exercise.is_global ? "Personalizar ejercicio" : "Editar ejercicio"}
+          >
+            <PencilIcon className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="rounded-lg p-1.5 text-[#8B8BA3] transition-colors hover:bg-[#FF1744]/10 hover:text-[#FF1744]"
+            title={exercise.is_global ? "Ocultar ejercicio" : "Eliminar ejercicio"}
+          >
+            <TrashIcon className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* Description */}
@@ -353,7 +319,6 @@ function ExerciseCard({
       {/* Badges */}
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
         <CategoryBadge category={exercise.category} />
-        <DifficultyBadge difficulty={exercise.difficulty} />
         <OwnershipBadge isGlobal={exercise.is_global} />
       </div>
 
@@ -379,19 +344,6 @@ function ExerciseCard({
         </div>
       )}
 
-      {/* Equipment */}
-      {exercise.equipment?.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1">
-          {exercise.equipment.map((e) => (
-            <span
-              key={e}
-              className="rounded-md border border-white/[0.06] px-2 py-0.5 text-[10px] text-[#8B8BA3]"
-            >
-              {e}
-            </span>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -471,42 +423,21 @@ function ExerciseModal({
             />
           </div>
 
-          {/* Category + Difficulty row */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-[#E8E8ED]">
-                Categoria
-              </label>
-              <select
-                value={form.category}
-                onChange={(e) =>
-                  onChange({ category: e.target.value as Category })
-                }
-                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-3 text-sm text-white outline-none transition-colors focus:border-[#00E5FF]/50 appearance-none cursor-pointer"
-              >
-                <option value="fuerza">Fuerza</option>
-                <option value="hipertrofia">Hipertrofia</option>
-                <option value="cardio">Cardio</option>
-                <option value="movilidad">Movilidad</option>
-                <option value="core">Core</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-[#E8E8ED]">
-                Dificultad
-              </label>
-              <select
-                value={form.difficulty}
-                onChange={(e) =>
-                  onChange({ difficulty: e.target.value as Difficulty })
-                }
-                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-3 text-sm text-white outline-none transition-colors focus:border-[#00E5FF]/50 appearance-none cursor-pointer"
-              >
-                <option value="principiante">Principiante</option>
-                <option value="intermedio">Intermedio</option>
-                <option value="avanzado">Avanzado</option>
-              </select>
-            </div>
+          {/* Category */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-[#E8E8ED]">
+              Categoría
+            </label>
+            <input
+              type="text"
+              value={form.category}
+              onChange={(e) => onChange({ category: e.target.value })}
+              placeholder="Ej: Pecho, Espalda, Pierna, Bíceps..."
+              className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-sm text-white placeholder:text-[#8B8BA3] outline-none transition-colors focus:border-[#00E5FF]/50"
+            />
+            <p className="mt-1 text-[11px] text-[#8B8BA3]">
+              Texto libre — usa lo que tenga sentido para ti
+            </p>
           </div>
 
           {/* Primary muscles */}
@@ -548,23 +479,6 @@ function ExerciseModal({
               value={form.secondary_muscles}
               onChange={(e) => onChange({ secondary_muscles: e.target.value })}
               placeholder="Ej: Triceps, Serrato anterior"
-              className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-sm text-white placeholder:text-[#8B8BA3] outline-none transition-colors focus:border-[#00E5FF]/50"
-            />
-            <p className="mt-1 text-[11px] text-[#8B8BA3]">
-              Separados por comas
-            </p>
-          </div>
-
-          {/* Equipment */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-[#E8E8ED]">
-              Equipamiento
-            </label>
-            <input
-              type="text"
-              value={form.equipment}
-              onChange={(e) => onChange({ equipment: e.target.value })}
-              placeholder="Ej: Barra, Banco plano, Discos"
               className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-sm text-white placeholder:text-[#8B8BA3] outline-none transition-colors focus:border-[#00E5FF]/50"
             />
             <p className="mt-1 text-[11px] text-[#8B8BA3]">
@@ -628,12 +542,14 @@ function ExerciseModal({
 function DeleteConfirmModal({
   isOpen,
   exerciseName,
+  isGlobal,
   deleting,
   onConfirm,
   onCancel,
 }: {
   isOpen: boolean;
   exerciseName: string;
+  isGlobal: boolean;
   deleting: boolean;
   onConfirm: () => void;
   onCancel: () => void;
@@ -653,12 +569,22 @@ function DeleteConfirmModal({
           </div>
           <div>
             <h3 className="text-base font-semibold text-white">
-              Eliminar ejercicio
+              {isGlobal ? "Ocultar ejercicio" : "Eliminar ejercicio"}
             </h3>
             <p className="mt-1.5 text-sm text-[#8B8BA3]">
-              Estas seguro de eliminar{" "}
-              <span className="font-medium text-white">{exerciseName}</span>?
-              Esta accion no se puede deshacer.
+              {isGlobal ? (
+                <>
+                  ¿Ocultar{" "}
+                  <span className="font-medium text-white">{exerciseName}</span>?
+                  Solo desaparecerá de tu vista.
+                </>
+              ) : (
+                <>
+                  ¿Eliminar{" "}
+                  <span className="font-medium text-white">{exerciseName}</span>?
+                  Esta acción no se puede deshacer.
+                </>
+              )}
             </p>
           </div>
           <div className="flex w-full gap-3">
@@ -707,12 +633,7 @@ export default function TrainerExercisesPage() {
 
   // Filters
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<Category | "todos">(
-    "todos"
-  );
-  const [difficultyFilter, setDifficultyFilter] = useState<
-    Difficulty | "todos"
-  >("todos");
+  const [ownershipFilter, setOwnershipFilter] = useState<"todos" | "global" | "propio">("todos");
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -744,19 +665,38 @@ export default function TrainerExercisesPage() {
 
       setUserId(user.id);
 
-      const { data, error: queryError } = await supabase
-        .from("trainer_exercise_library")
-        .select("*")
-        .or(`is_global.eq.true,trainer_id.eq.${user.id}`)
-        .order("name", { ascending: true });
+      // Load exercises + overrides in parallel
+      const [exResult, ovResult] = await Promise.all([
+        supabase
+          .from("trainer_exercise_library")
+          .select("*")
+          .or(`is_global.eq.true,trainer_id.eq.${user.id}`)
+          .order("name", { ascending: true }),
+        supabase
+          .from("trainer_exercise_overrides")
+          .select("exercise_id, hidden")
+          .eq("trainer_id", user.id)
+          .eq("hidden", true),
+      ]);
 
-      if (queryError) {
+      if (exResult.error) {
         setError("Error al cargar los ejercicios.");
         setLoading(false);
         return;
       }
 
-      setExercises((data ?? []) as Exercise[]);
+      // Build set of hidden global exercise IDs
+      const hiddenIds = new Set(
+        (ovResult.data ?? []).map((ov: { exercise_id: string }) => ov.exercise_id)
+      );
+
+      // Mark hidden exercises
+      const merged = (exResult.data ?? []).map((ex: Exercise) => ({
+        ...ex,
+        _is_hidden: hiddenIds.has(ex.id),
+      }));
+
+      setExercises(merged as Exercise[]);
     } catch {
       setError("Error inesperado al cargar los ejercicios.");
     } finally {
@@ -773,7 +713,8 @@ export default function TrainerExercisesPage() {
   // ---------------------------------------------------------------------------
 
   const filteredExercises = useMemo(() => {
-    let result = exercises;
+    // Filter out hidden exercises (globals that this trainer has "deleted")
+    let result = exercises.filter((ex) => !ex._is_hidden);
 
     // Text search
     if (search.trim()) {
@@ -781,18 +722,15 @@ export default function TrainerExercisesPage() {
       result = result.filter((ex) => ex.name.toLowerCase().includes(q));
     }
 
-    // Category filter
-    if (categoryFilter !== "todos") {
-      result = result.filter((ex) => ex.category === categoryFilter);
-    }
-
-    // Difficulty filter
-    if (difficultyFilter !== "todos") {
-      result = result.filter((ex) => ex.difficulty === difficultyFilter);
+    // Ownership filter
+    if (ownershipFilter === "global") {
+      result = result.filter((ex) => ex.is_global);
+    } else if (ownershipFilter === "propio") {
+      result = result.filter((ex) => !ex.is_global);
     }
 
     return result;
-  }, [exercises, search, categoryFilter, difficultyFilter]);
+  }, [exercises, search, ownershipFilter]);
 
   // ---------------------------------------------------------------------------
   // Form handlers
@@ -809,11 +747,10 @@ export default function TrainerExercisesPage() {
     setForm({
       name: exercise.name,
       description: exercise.description ?? "",
-      primary_muscles: exercise.primary_muscles.join(", "),
-      secondary_muscles: exercise.secondary_muscles.join(", "),
-      equipment: exercise.equipment.join(", "),
-      category: exercise.category,
-      difficulty: exercise.difficulty,
+      primary_muscles: (exercise.primary_muscles ?? []).join(", "),
+      secondary_muscles: (exercise.secondary_muscles ?? []).join(", "),
+      equipment: "",
+      category: exercise.category ?? "",
       video_url: exercise.video_url ?? "",
     });
     setModalOpen(true);
@@ -836,40 +773,76 @@ export default function TrainerExercisesPage() {
     try {
       const supabase = createClient();
 
-      const payload = {
+      const exercisePayload = {
         name: form.name.trim(),
         description: form.description.trim() || null,
         primary_muscles: csvToArray(form.primary_muscles),
         secondary_muscles: csvToArray(form.secondary_muscles),
-        equipment: csvToArray(form.equipment),
-        category: form.category,
-        difficulty: form.difficulty,
+        category: form.category.trim() || null,
         video_url: form.video_url.trim() || null,
-        trainer_id: userId,
-        is_global: false,
       };
 
       if (editingExercise) {
-        // Update
-        const { error: updateError } = await supabase
-          .from("trainer_exercise_library")
-          .update(payload)
-          .eq("id", editingExercise.id)
-          .eq("trainer_id", userId);
+        if (editingExercise.is_global) {
+          // Editing a GLOBAL → clone as private + hide original
+          // 1. Create private copy with trainer's changes
+          const { error: cloneError } = await supabase
+            .from("trainer_exercise_library")
+            .insert({
+              ...exercisePayload,
+              trainer_id: userId,
+              is_global: false,
+            });
 
-        if (updateError) {
-          setError("Error al actualizar el ejercicio.");
-          setSaving(false);
-          return;
+          if (cloneError) {
+            setError("Error al crear tu versión: " + cloneError.message);
+            setSaving(false);
+            return;
+          }
+
+          // 2. Hide the original global for this trainer
+          const { error: ovError } = await supabase
+            .from("trainer_exercise_overrides")
+            .upsert(
+              {
+                trainer_id: userId,
+                exercise_id: editingExercise.id,
+                hidden: true,
+              },
+              { onConflict: "trainer_id,exercise_id" }
+            );
+
+          if (ovError) {
+            setError("Error al ocultar el global: " + ovError.message);
+            setSaving(false);
+            return;
+          }
+        } else {
+          // Editing an OWN exercise → direct update
+          const { error: updateError } = await supabase
+            .from("trainer_exercise_library")
+            .update(exercisePayload)
+            .eq("id", editingExercise.id)
+            .eq("trainer_id", userId);
+
+          if (updateError) {
+            setError("Error al actualizar el ejercicio: " + updateError.message);
+            setSaving(false);
+            return;
+          }
         }
       } else {
-        // Insert
+        // Creating a NEW own exercise
         const { error: insertError } = await supabase
           .from("trainer_exercise_library")
-          .insert(payload);
+          .insert({
+            ...exercisePayload,
+            trainer_id: userId,
+            is_global: false,
+          });
 
         if (insertError) {
-          setError("Error al crear el ejercicio.");
+          setError("Error al crear el ejercicio: " + insertError.message);
           setSaving(false);
           return;
         }
@@ -897,16 +870,37 @@ export default function TrainerExercisesPage() {
     try {
       const supabase = createClient();
 
-      const { error: deleteError } = await supabase
-        .from("trainer_exercise_library")
-        .delete()
-        .eq("id", deleteTarget.id)
-        .eq("trainer_id", userId);
+      if (deleteTarget.is_global) {
+        // "Delete" a GLOBAL exercise → hide it via override (only for this trainer)
+        const { error: ovError } = await supabase
+          .from("trainer_exercise_overrides")
+          .upsert(
+            {
+              trainer_id: userId,
+              exercise_id: deleteTarget.id,
+              hidden: true,
+            },
+            { onConflict: "trainer_id,exercise_id" }
+          );
 
-      if (deleteError) {
-        setError("Error al eliminar el ejercicio.");
-        setDeleting(false);
-        return;
+        if (ovError) {
+          setError("Error al ocultar el ejercicio: " + ovError.message);
+          setDeleting(false);
+          return;
+        }
+      } else {
+        // Delete an OWN exercise → real delete
+        const { error: deleteError } = await supabase
+          .from("trainer_exercise_library")
+          .delete()
+          .eq("id", deleteTarget.id)
+          .eq("trainer_id", userId);
+
+        if (deleteError) {
+          setError("Error al eliminar el ejercicio.");
+          setDeleting(false);
+          return;
+        }
       }
 
       setDeleteTarget(null);
@@ -1010,28 +1004,11 @@ export default function TrainerExercisesPage() {
       </div>
 
       {/* Filters */}
-      <div className="space-y-3">
-        <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">
-            Categoria
-          </p>
-          <PillFilter
-            options={CATEGORIES}
-            value={categoryFilter}
-            onChange={setCategoryFilter}
-          />
-        </div>
-        <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">
-            Dificultad
-          </p>
-          <PillFilter
-            options={DIFFICULTIES}
-            value={difficultyFilter}
-            onChange={setDifficultyFilter}
-          />
-        </div>
-      </div>
+      <PillFilter
+        options={OWNERSHIP_FILTERS}
+        value={ownershipFilter}
+        onChange={setOwnershipFilter}
+      />
 
       {/* Exercise Grid */}
       {filteredExercises.length === 0 ? (
@@ -1041,22 +1018,16 @@ export default function TrainerExercisesPage() {
               <DumbbellIcon className="h-7 w-7 text-[#8B8BA3]" />
             </div>
             <p className="text-sm font-medium text-white">
-              {search.trim() ||
-              categoryFilter !== "todos" ||
-              difficultyFilter !== "todos"
+              {search.trim() || ownershipFilter !== "todos"
                 ? "No se encontraron ejercicios"
                 : "Aun no hay ejercicios"}
             </p>
             <p className="text-xs text-[#8B8BA3]">
-              {search.trim() ||
-              categoryFilter !== "todos" ||
-              difficultyFilter !== "todos"
+              {search.trim() || ownershipFilter !== "todos"
                 ? "Prueba ajustar los filtros de busqueda"
                 : "Crea tu primer ejercicio para empezar a construir tu biblioteca"}
             </p>
-            {!search.trim() &&
-              categoryFilter === "todos" &&
-              difficultyFilter === "todos" && (
+            {!search.trim() && ownershipFilter === "todos" && (
                 <button
                   type="button"
                   onClick={openCreateModal}
@@ -1074,7 +1045,6 @@ export default function TrainerExercisesPage() {
             <ExerciseCard
               key={exercise.id}
               exercise={exercise}
-              isOwn={exercise.trainer_id === userId}
               onEdit={() => openEditModal(exercise)}
               onDelete={() => setDeleteTarget(exercise)}
             />
@@ -1097,6 +1067,7 @@ export default function TrainerExercisesPage() {
       <DeleteConfirmModal
         isOpen={!!deleteTarget}
         exerciseName={deleteTarget?.name ?? ""}
+        isGlobal={deleteTarget?.is_global ?? false}
         deleting={deleting}
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}

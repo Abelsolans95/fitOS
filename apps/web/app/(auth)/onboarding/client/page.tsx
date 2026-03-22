@@ -366,42 +366,27 @@ export default function ClientOnboardingPage() {
         return;
       }
 
-      // 2. Get trainer_clients row
-      const { data: tc, error: tcErr } = await supabase
-        .from("trainer_clients")
-        .select("trainer_id")
-        .eq("client_id", user.id)
-        .limit(1)
-        .single();
-
-      if (tcErr || !tc) {
+      // 2. Get trainer via API (bypasses RLS)
+      const trainerRes = await fetch("/api/client-trainer");
+      if (!trainerRes.ok) {
+        const body = await trainerRes.json().catch(() => ({}));
         setPageError(
-          "No se encontro un entrenador vinculado a tu cuenta. Contacta con tu entrenador."
+          body.error || "No se encontro un entrenador vinculado a tu cuenta. Contacta con tu entrenador."
         );
         setPageLoading(false);
         return;
       }
+      const tc: { trainer_id: string; full_name: string } = await trainerRes.json();
 
-      // 3. Get trainer profile
-      const { data: trainerProfile } = await supabase
-        .from("profiles")
-        .select("full_name, business_name")
-        .eq("user_id", tc.trainer_id)
-        .single();
+      setTrainer({ trainer_id: tc.trainer_id, full_name: tc.full_name });
 
-      const trainerName =
-        trainerProfile?.business_name ||
-        trainerProfile?.full_name ||
-        "Tu entrenador";
-
-      setTrainer({ trainer_id: tc.trainer_id, full_name: trainerName });
-
-      // 4. Get active onboarding form
+      // 4. Get active onboarding form (most recent)
       const { data: forms, error: formErr } = await supabase
         .from("onboarding_forms")
         .select("id, title, fields")
         .eq("trainer_id", tc.trainer_id)
         .eq("is_active", true)
+        .order("created_at", { ascending: false })
         .limit(1);
 
       if (formErr) {

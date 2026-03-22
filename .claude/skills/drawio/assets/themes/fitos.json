@@ -1,0 +1,170 @@
+{
+  "$schema": "./theme.schema.json",
+  "name": "fitos",
+  "displayName": "FitOS Dark",
+  "description": "FitOS brand theme - brutalismo elegante with cyan/violet accents on dark background",
+  "colors": {
+    "primary": "#00E5FF",
+    "primaryLight": "#0A2A33",
+    "secondary": "#7C3AED",
+    "secondaryLight": "#1A1030",
+    "accent": "#FF9100",
+    "accentLight": "#2A1A00",
+    "background": "#0A0A0F",
+    "surface": "#12121A",
+    "surfaceAlt": "#1A1A2E",
+    "text": "#F1F5F9",
+    "textMuted": "#8B8BA3",
+    "textInverse": "#0A0A0F",
+    "border": "#2A2A3E",
+    "borderStrong": "#3A3A52",
+    "success": "#00C853",
+    "successLight": "#0A2A15",
+    "warning": "#FF9100",
+    "warningLight": "#2A1A00",
+    "error": "#FF1744",
+    "errorLight": "#2A0A10",
+    "info": "#00E5FF",
+    "infoLight": "#0A2A33"
+  },
+  "spacing": {
+    "unit": 8,
+    "scale": {
+      "xs": 4, "sm": 8, "md": 16, "lg": 24, "xl": 32,
+      "2xl": 40, "3xl": 48, "4xl": 64, "5xl": 80
+    }
+  },
+  "typography": {
+    "fontFamily": {
+      "primary": "Inter, Roboto, system-ui, sans-serif",
+      "monospace": "JetBrains Mono, Fira Code, Consolas, monospace",
+      "formula": "Latin Modern, STIX Two Math, Times New Roman, serif"
+    },
+    "fontSize": {
+      "xs": 10, "sm": 11, "md": 13, "lg": 14, "xl": 16, "2xl": 20
+    },
+    "fontWeight": {
+      "normal": 400, "medium": 500, "semibold": 600, "bold": 700
+    }
+  },
+  "borderRadius": {
+    "none": 0, "sm": 4, "md": 8, "lg": 12, "full": 9999
+  },
+  "shadows": {
+    "none": "none",
+    "sm": "0 1px 2px rgba(0,0,0,0.3)",
+    "md": "0 4px 6px rgba(0,229,255,0.1)",
+    "lg": "0 10px 15px rgba(0,229,255,0.15)"
+  },
+  "node": {
+    "default": {
+      "fillColor": "#12121A",
+      "strokeColor": "#00E5FF",
+      "strokeWidth": 1.5,
+      "fontColor": "#F1F5F9",
+      "fontSize": 12,
+      "fontFamily": "Inter, Roboto, system-ui, sans-serif",
+      "rounded": 12
+    },
+    "service": {
+      "fillColor": "#0A2A33",
+      "strokeColor": "#00E5FF",
+      "rounded": 12
+    },
+    "database": {
+      "fillColor": "#1A1030",
+      "strokeColor": "#7C3AED"
+    },
+    "decision": {
+      "fillColor": "#2A1A00",
+      "strokeColor": "#FF9100"
+    },
+    "terminal": {
+      "fillColor": "#1A1A2E",
+      "strokeColor": "#8B8BA3"
+    },
+    "queue": {
+      "fillColor": "#1A1030",
+      "strokeColor": "#7C3AED"
+    },
+    "user": {
+      "fillColor": "#0A2A33",
+      "strokeColor": "#00E5FF"
+    },
+    "document": {
+      "fillColor": "#12121A",
+      "strokeColor": "#3A3A52"
+    },
+    "formula": {
+      "fillColor": "#12121A",
+      "strokeColor": "#00E5FF",
+      "strokeWidth": 1
+    },
+    "process": {
+      "fillColor": "#0A2A15",
+      "strokeColor": "#00C853",
+      "rounded": 12
+    },
+    "cloud": {
+      "fillColor": "#2A1A00",
+      "strokeColor": "#FF9100"
+    }
+  },
+  "connector": {
+    "primary": {
+      "strokeColor": "#00E5FF",
+      "strokeWidth": 2,
+      "dashed": false,
+      "dashPattern": null,
+      "endArrow": "block",
+      "endFill": true
+    },
+    "data": {
+      "strokeColor": "#7C3AED",
+      "strokeWidth": 2,
+      "dashed": true,
+      "dashPattern": "6 4",
+      "endArrow": "block",
+      "endFill": true
+    },
+    "optional": {
+      "strokeColor": "#5A5A72",
+      "strokeWidth": 1,
+      "dashed": true,
+      "dashPattern": "2 2",
+      "endArrow": "open",
+      "endFill": false
+    },
+    "dependency": {
+      "strokeColor": "#8B8BA3",
+      "strokeWidth": 1,
+      "dashed": false,
+      "dashPattern": null,
+      "endArrow": "diamond",
+      "endFill": true
+    },
+    "bidirectional": {
+      "strokeColor": "#5A5A72",
+      "strokeWidth": 1.5,
+      "dashed": false,
+      "dashPattern": null,
+      "endArrow": "none",
+      "endFill": false
+    }
+  },
+  "module": {
+    "fillColor": "#12121A",
+    "strokeColor": "#2A2A3E",
+    "strokeWidth": 1.5,
+    "rounded": 16,
+    "padding": 24,
+    "labelFontSize": 14,
+    "labelFontWeight": 700,
+    "labelFontColor": "#F1F5F9"
+  },
+  "canvas": {
+    "background": "#0A0A0F",
+    "gridSize": 8,
+    "gridColor": "#12121A"
+  }
+}
