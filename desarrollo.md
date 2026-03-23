@@ -849,6 +849,24 @@ DELETE FROM trainer_exercise_overrides WHERE hidden = true;
 
 ---
 
+**ERROR #33 — `supabaseKey is required` en build de Vercel (cliente Supabase a nivel de módulo)**
+- **Fecha:** 22/03/2026
+- **Archivo afectado:** `apps/web/app/api/import/create-exercises/route.ts`
+- **Qué pasó:** El cliente `supabaseAdmin` se inicializaba a nivel de módulo (fuera de cualquier función). Durante el build de Vercel, Next.js evalúa todos los módulos para recoger page data, y en ese momento las variables de entorno (`SUPABASE_SERVICE_ROLE_KEY`) no están disponibles → crash con `supabaseKey is required`.
+- **Solución aplicada:** Mover la inicialización del cliente dentro de la función handler (`POST`), no a nivel de módulo.
+- **Regla:** Nunca crear clientes Supabase (ni ningún cliente que dependa de env vars) a nivel de módulo en API routes. Siempre inicializarlos dentro de la función handler.
+
+---
+
+**ERROR #34 — `Error occurred prerendering page "/app/client/routine/active"` en build de Vercel**
+- **Fecha:** 22/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/client/routine/active/page.tsx`
+- **Qué pasó:** Next.js 15 intenta hacer prerender estático de todas las páginas durante el build. La página usaba `useSearchParams()` directamente en el componente exportado como `default`. Esto causa crash en build porque `useSearchParams` requiere contexto de request. `export const dynamic = "force-dynamic"` NO funciona en `"use client"` components para resolver este problema.
+- **Solución aplicada:** Renombrar el componente principal a `ActiveTrainingPage` (sin export default), y crear un nuevo `export default function ActiveRoutinePage()` que envuelve el primero en `<Suspense fallback={...}>`.
+- **Regla:** En Next.js 15, cualquier `"use client"` component que use `useSearchParams()` debe estar envuelto en `<Suspense>` en el `export default`. El patrón correcto es: función interna con la lógica + export default wrapper con Suspense. `export const dynamic = "force-dynamic"` solo funciona en server components.
+
+---
+
 ### Regla de mantenimiento
 
 **Al terminar cualquier desarrollo, bugfix o cambio significativo:**

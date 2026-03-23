@@ -12,8 +12,8 @@ interface Exercise {
   trainer_id: string | null;
   name: string;
   description: string | null;
-  primary_muscles: string[];
-  secondary_muscles: string[];
+  primary_muscles: string[] | null;
+  secondary_muscles: string[] | null;
   category: string | null;
   video_url: string | null;
   is_global: boolean;
@@ -40,7 +40,6 @@ interface ExerciseFormData {
   description: string;
   primary_muscles: string;
   secondary_muscles: string;
-  equipment: string;
   category: string;
   video_url: string;
 }
@@ -60,21 +59,9 @@ const EMPTY_FORM: ExerciseFormData = {
   description: "",
   primary_muscles: "",
   secondary_muscles: "",
-  equipment: "",
   category: "",
   video_url: "",
 };
-
-// ---------------------------------------------------------------------------
-// Helper: parse comma-separated string to trimmed array
-// ---------------------------------------------------------------------------
-
-function csvToArray(csv: string): string[] {
-  return csv
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -204,7 +191,7 @@ function CategoryBadge({ category }: { category: string | null }) {
   if (!category) return null;
   const label = category.charAt(0).toUpperCase() + category.slice(1);
   return (
-    <span className="inline-flex items-center rounded-full bg-[#00E5FF]/10 px-2.5 py-0.5 text-xs font-medium text-[#00E5FF]">
+    <span className="inline-flex items-center rounded-full bg-[#00E5FF]/10 border border-[#00E5FF]/20 px-2.5 py-0.5 text-[10px] font-bold text-[#00E5FF] uppercase tracking-[0.15em]">
       {label}
     </span>
   );
@@ -212,11 +199,11 @@ function CategoryBadge({ category }: { category: string | null }) {
 
 function OwnershipBadge({ isGlobal }: { isGlobal: boolean }) {
   return isGlobal ? (
-    <span className="inline-flex items-center rounded-full bg-[#8B8BA3]/10 px-2.5 py-0.5 text-xs font-medium text-[#8B8BA3]">
+    <span className="inline-flex items-center rounded-full bg-[#00E5FF]/10 border border-[#00E5FF]/25 px-2.5 py-0.5 text-[10px] font-bold text-[#00E5FF] uppercase tracking-[0.15em]">
       Global
     </span>
   ) : (
-    <span className="inline-flex items-center rounded-full bg-[#7C3AED]/10 px-2.5 py-0.5 text-xs font-medium text-[#7C3AED]">
+    <span className="inline-flex items-center rounded-full bg-[#7C3AED]/10 border border-[#7C3AED]/25 px-2.5 py-0.5 text-[10px] font-bold text-[#7C3AED] uppercase tracking-[0.15em]">
       Propio
     </span>
   );
@@ -240,11 +227,11 @@ function PillFilter<T extends string>({
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-all duration-150 ${
+            className={
               active
-                ? "bg-[#00E5FF]/15 text-[#00E5FF] ring-1 ring-[#00E5FF]/30"
-                : "bg-white/[0.04] text-[#8B8BA3] hover:bg-white/[0.08] hover:text-[#E8E8ED]"
-            }`}
+                ? "rounded-full bg-[#00E5FF]/10 border border-[#00E5FF]/25 text-[#00E5FF] text-[11px] font-bold px-3 py-1 transition-all"
+                : "rounded-full border border-white/[0.08] text-[#8B8BA3] text-[11px] px-3 py-1 hover:border-white/[0.16] hover:text-white transition-all"
+            }
           >
             {opt.label}
           </button>
@@ -268,7 +255,7 @@ function ExerciseCard({
   onDelete: () => void;
 }) {
   return (
-    <div className="group relative flex flex-col rounded-2xl border border-white/[0.06] bg-[#12121A] p-4 transition-all duration-200 hover:border-white/[0.1]">
+    <div className="group relative flex flex-col rounded-[18px] border border-white/[0.06] bg-[#12121A] p-4 transition-all duration-200 hover:border-white/[0.1]">
       {/* Video thumbnail placeholder */}
       {exercise.video_url ? (
         <div className="mb-3 flex h-36 items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.04]">
@@ -280,7 +267,7 @@ function ExerciseCard({
 
       {/* Header: name + actions */}
       <div className="flex items-start justify-between gap-2">
-        <h3 className="text-sm font-semibold text-white leading-snug line-clamp-2">
+        <h3 className="text-[14px] font-bold text-white leading-snug line-clamp-2 tracking-[-0.01em]">
           {exercise.name}
         </h3>
         <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
@@ -311,7 +298,7 @@ function ExerciseCard({
 
       {/* Description */}
       {exercise.description && (
-        <p className="mt-1.5 text-xs text-[#8B8BA3] line-clamp-2 leading-relaxed">
+        <p className="mt-1.5 text-[12px] text-[#8B8BA3] line-clamp-2 leading-relaxed">
           {exercise.description}
         </p>
       )}
@@ -323,27 +310,20 @@ function ExerciseCard({
       </div>
 
       {/* Muscle groups */}
-      {(exercise.primary_muscles?.length ?? 0) > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1">
+      {((exercise.primary_muscles?.length ?? 0) > 0 || (exercise.secondary_muscles?.length ?? 0) > 0) && (
+        <div className="mt-2 flex flex-wrap gap-1">
           {(exercise.primary_muscles ?? []).map((m) => (
-            <span
-              key={m}
-              className="rounded-md bg-white/[0.04] px-2 py-0.5 text-[10px] font-medium text-[#E8E8ED]"
-            >
+            <span key={m} className="rounded-md bg-white/[0.04] px-2 py-0.5 text-[10px] font-medium text-[#E8E8ED]">
               {m}
             </span>
           ))}
           {(exercise.secondary_muscles ?? []).map((m) => (
-            <span
-              key={m}
-              className="rounded-md bg-white/[0.04] px-2 py-0.5 text-[10px] text-[#8B8BA3]"
-            >
+            <span key={m} className="rounded-md bg-white/[0.04] px-2 py-0.5 text-[10px] text-[#8B8BA3]">
               {m}
             </span>
           ))}
         </div>
       )}
-
     </div>
   );
 }
@@ -375,21 +355,26 @@ function ExerciseModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         onClick={onClose}
       />
 
       {/* Panel */}
-      <div className="relative z-10 mx-4 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-white/[0.08] bg-[#12121A] p-6 shadow-2xl">
+      <div className="relative z-10 mx-4 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[18px] border border-white/[0.08] bg-[#12121A] p-6 shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-white">{title}</h2>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72] mb-1">
+              Ejercicio
+            </p>
+            <h2 className="text-[18px] font-extrabold tracking-[-0.02em] text-white">{title}</h2>
+          </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-[#8B8BA3] transition-colors hover:bg-white/[0.06] hover:text-white"
+            className="rounded-xl p-2 text-[#8B8BA3] transition-colors hover:bg-white/[0.06] hover:text-white border border-white/[0.08]"
           >
-            <XIcon className="h-5 w-5" />
+            <XIcon className="h-4 w-4" />
           </button>
         </div>
 
@@ -397,7 +382,7 @@ function ExerciseModal({
         <div className="space-y-4">
           {/* Name */}
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-[#E8E8ED]">
+            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.2em] text-[#5A5A72]">
               Nombre <span className="text-[#FF1744]">*</span>
             </label>
             <input
@@ -405,13 +390,13 @@ function ExerciseModal({
               value={form.name}
               onChange={(e) => onChange({ name: e.target.value })}
               placeholder="Ej: Press de banca"
-              className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-sm text-white placeholder:text-[#8B8BA3] outline-none transition-colors focus:border-[#00E5FF]/50"
+              className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-[#E8E8ED]">
+            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.2em] text-[#5A5A72]">
               Descripcion
             </label>
             <textarea
@@ -419,13 +404,13 @@ function ExerciseModal({
               onChange={(e) => onChange({ description: e.target.value })}
               placeholder="Describe el ejercicio, tecnica, consejos..."
               rows={3}
-              className="w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 py-3 text-sm text-white placeholder:text-[#8B8BA3] outline-none transition-colors focus:border-[#00E5FF]/50 resize-none"
+              className="w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 py-3 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors resize-none"
             />
           </div>
 
           {/* Category */}
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-[#E8E8ED]">
+            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.2em] text-[#5A5A72]">
               Categoría
             </label>
             <input
@@ -433,62 +418,46 @@ function ExerciseModal({
               value={form.category}
               onChange={(e) => onChange({ category: e.target.value })}
               placeholder="Ej: Pecho, Espalda, Pierna, Bíceps..."
-              className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-sm text-white placeholder:text-[#8B8BA3] outline-none transition-colors focus:border-[#00E5FF]/50"
+              className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors"
             />
-            <p className="mt-1 text-[11px] text-[#8B8BA3]">
+            <p className="mt-1 text-[11px] text-[#5A5A72]">
               Texto libre — usa lo que tenga sentido para ti
             </p>
           </div>
 
           {/* Primary muscles */}
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-[#E8E8ED]">
-              Musculos principales
+            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.2em] text-[#5A5A72]">
+              Músculos principales
             </label>
             <input
               type="text"
               value={form.primary_muscles}
               onChange={(e) => onChange({ primary_muscles: e.target.value })}
               placeholder="Ej: Pectoral mayor, Deltoides anterior"
-              className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-sm text-white placeholder:text-[#8B8BA3] outline-none transition-colors focus:border-[#00E5FF]/50"
+              className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors"
             />
-            <p className="mt-1 text-[11px] text-[#8B8BA3]">
-              Separados por comas
-            </p>
-            {csvToArray(form.primary_muscles).length > 0 && (
-              <div className="mt-1.5 flex flex-wrap gap-1">
-                {csvToArray(form.primary_muscles).map((m) => (
-                  <span
-                    key={m}
-                    className="rounded-md bg-white/[0.04] px-2 py-0.5 text-[10px] font-medium text-[#E8E8ED]"
-                  >
-                    {m}
-                  </span>
-                ))}
-              </div>
-            )}
+            <p className="mt-1 text-[11px] text-[#5A5A72]">Separados por comas (opcional)</p>
           </div>
 
           {/* Secondary muscles */}
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-[#E8E8ED]">
-              Musculos secundarios
+            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.2em] text-[#5A5A72]">
+              Músculos secundarios
             </label>
             <input
               type="text"
               value={form.secondary_muscles}
               onChange={(e) => onChange({ secondary_muscles: e.target.value })}
-              placeholder="Ej: Triceps, Serrato anterior"
-              className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-sm text-white placeholder:text-[#8B8BA3] outline-none transition-colors focus:border-[#00E5FF]/50"
+              placeholder="Ej: Tríceps, Serrato anterior"
+              className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors"
             />
-            <p className="mt-1 text-[11px] text-[#8B8BA3]">
-              Separados por comas
-            </p>
+            <p className="mt-1 text-[11px] text-[#5A5A72]">Separados por comas (opcional)</p>
           </div>
 
           {/* Video URL */}
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-[#E8E8ED]">
+            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.2em] text-[#5A5A72]">
               URL de video
             </label>
             <input
@@ -496,9 +465,9 @@ function ExerciseModal({
               value={form.video_url}
               onChange={(e) => onChange({ video_url: e.target.value })}
               placeholder="https://youtube.com/watch?v=..."
-              className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-sm text-white placeholder:text-[#8B8BA3] outline-none transition-colors focus:border-[#00E5FF]/50"
+              className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors"
             />
-            <p className="mt-1 text-[11px] text-[#8B8BA3]">
+            <p className="mt-1 text-[11px] text-[#5A5A72]">
               YouTube o Vimeo (opcional)
             </p>
           </div>
@@ -510,7 +479,7 @@ function ExerciseModal({
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="rounded-xl px-4 py-2.5 text-sm font-medium text-[#8B8BA3] transition-colors hover:text-white disabled:opacity-50"
+            className="border border-white/[0.1] text-[#8B8BA3] rounded-xl px-4 py-2 text-[13px] hover:border-white/[0.18] hover:text-white transition-all disabled:opacity-50"
           >
             Cancelar
           </button>
@@ -518,7 +487,7 @@ function ExerciseModal({
             type="button"
             onClick={onSave}
             disabled={saving || !form.name.trim()}
-            className="rounded-xl bg-[#00E5FF] px-5 py-2.5 text-sm font-semibold text-[#0A0A0F] transition-all hover:bg-[#00E5FF]/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-[#00E5FF] text-[#0A0A0F] font-bold rounded-xl px-5 py-2.5 text-[13px] hover:bg-[#2BEEFF] hover:shadow-[0_0_24px_rgba(0,229,255,0.35)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? (
               <span className="flex items-center gap-2">
@@ -559,29 +528,29 @@ function DeleteConfirmModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         onClick={onCancel}
       />
-      <div className="relative z-10 mx-4 w-full max-w-sm rounded-2xl border border-white/[0.08] bg-[#12121A] p-6 shadow-2xl">
+      <div className="relative z-10 mx-4 w-full max-w-sm rounded-[18px] border border-white/[0.08] bg-[#12121A] p-6 shadow-2xl">
         <div className="flex flex-col items-center gap-4 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#FF1744]/10">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FF1744]/10 ring-1 ring-[#FF1744]/20">
             <TrashIcon className="h-6 w-6 text-[#FF1744]" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-white">
+            <h3 className="text-[15px] font-extrabold tracking-[-0.02em] text-white">
               {isGlobal ? "Ocultar ejercicio" : "Eliminar ejercicio"}
             </h3>
-            <p className="mt-1.5 text-sm text-[#8B8BA3]">
+            <p className="mt-1.5 text-[13px] text-[#8B8BA3]">
               {isGlobal ? (
                 <>
                   ¿Ocultar{" "}
-                  <span className="font-medium text-white">{exerciseName}</span>?
+                  <span className="font-semibold text-white">{exerciseName}</span>?
                   Solo desaparecerá de tu vista.
                 </>
               ) : (
                 <>
                   ¿Eliminar{" "}
-                  <span className="font-medium text-white">{exerciseName}</span>?
+                  <span className="font-semibold text-white">{exerciseName}</span>?
                   Esta acción no se puede deshacer.
                 </>
               )}
@@ -592,7 +561,7 @@ function DeleteConfirmModal({
               type="button"
               onClick={onCancel}
               disabled={deleting}
-              className="flex-1 rounded-xl border border-white/[0.08] px-4 py-2.5 text-sm font-medium text-[#E8E8ED] transition-colors hover:bg-white/[0.04] disabled:opacity-50"
+              className="flex-1 border border-white/[0.1] text-[#8B8BA3] rounded-xl px-4 py-2 text-[13px] hover:border-white/[0.18] hover:text-white transition-all disabled:opacity-50"
             >
               Cancelar
             </button>
@@ -600,7 +569,7 @@ function DeleteConfirmModal({
               type="button"
               onClick={onConfirm}
               disabled={deleting}
-              className="flex-1 rounded-xl bg-[#FF1744] px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#FF1744]/90 disabled:opacity-50"
+              className="flex-1 rounded-xl bg-[#FF1744] px-4 py-2.5 text-[13px] font-bold text-white transition-all hover:bg-[#FF1744]/90 hover:shadow-[0_0_20px_rgba(255,23,68,0.3)] disabled:opacity-50"
             >
               {deleting ? (
                 <span className="flex items-center justify-center gap-2">
@@ -749,7 +718,6 @@ export default function TrainerExercisesPage() {
       description: exercise.description ?? "",
       primary_muscles: (exercise.primary_muscles ?? []).join(", "),
       secondary_muscles: (exercise.secondary_muscles ?? []).join(", "),
-      equipment: "",
       category: exercise.category ?? "",
       video_url: exercise.video_url ?? "",
     });
@@ -776,8 +744,8 @@ export default function TrainerExercisesPage() {
       const exercisePayload = {
         name: form.name.trim(),
         description: form.description.trim() || null,
-        primary_muscles: csvToArray(form.primary_muscles),
-        secondary_muscles: csvToArray(form.secondary_muscles),
+        primary_muscles: form.primary_muscles.split(",").map((s) => s.trim()).filter(Boolean),
+        secondary_muscles: form.secondary_muscles.split(",").map((s) => s.trim()).filter(Boolean),
         category: form.category.trim() || null,
         video_url: form.video_url.trim() || null,
       };
@@ -933,8 +901,8 @@ export default function TrainerExercisesPage() {
   if (error && exercises.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-32">
-        <div className="rounded-2xl border border-[#FF1744]/20 bg-[#FF1744]/5 px-6 py-4">
-          <p className="text-sm text-[#FF1744]">{error}</p>
+        <div className="rounded-[18px] border border-[#FF1744]/20 bg-[#FF1744]/5 px-6 py-4">
+          <p className="text-[13px] text-[#FF1744]">{error}</p>
         </div>
         <button
           type="button"
@@ -943,7 +911,7 @@ export default function TrainerExercisesPage() {
             setLoading(true);
             loadExercises();
           }}
-          className="rounded-xl px-4 py-2 text-sm font-medium text-[#00E5FF] transition-colors hover:bg-[#00E5FF]/10"
+          className="rounded-xl px-4 py-2 text-[13px] font-medium text-[#00E5FF] transition-colors hover:bg-[#00E5FF]/10"
         >
           Reintentar
         </button>
@@ -956,122 +924,142 @@ export default function TrainerExercisesPage() {
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="space-y-6">
-      {/* Inline error toast */}
-      {error && exercises.length > 0 && (
-        <div className="flex items-center justify-between rounded-xl border border-[#FF1744]/20 bg-[#FF1744]/5 px-4 py-3">
-          <p className="text-sm text-[#FF1744]">{error}</p>
+    <>
+      <style>{`
+        @keyframes ex-in {
+          from { opacity: 0; transform: translateY(14px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .ex-in { animation: ex-in 0.55s cubic-bezier(0.16,1,0.3,1) both; }
+        .ex-1  { animation-delay: 0.04s; }
+        .ex-2  { animation-delay: 0.14s; }
+        .ex-3  { animation-delay: 0.24s; }
+      `}</style>
+
+      <div className="space-y-6">
+        {/* Inline error toast */}
+        {error && exercises.length > 0 && (
+          <div className="flex items-center justify-between rounded-xl border border-[#FF1744]/20 bg-[#FF1744]/5 px-4 py-3">
+            <p className="text-[13px] text-[#FF1744]">{error}</p>
+            <button
+              type="button"
+              onClick={() => setError(null)}
+              className="rounded-lg p-1 text-[#FF1744] transition-colors hover:bg-[#FF1744]/10"
+            >
+              <XIcon className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Header */}
+        <div className="ex-in ex-1 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72] mb-1">
+              Entrenamiento
+            </p>
+            <div className="flex items-center gap-3">
+              <h1 className="text-[26px] font-extrabold tracking-[-0.03em] text-white">
+                Biblioteca de Ejercicios
+              </h1>
+              <span className="flex h-6 min-w-[24px] items-center justify-center rounded-full bg-[#00E5FF]/10 border border-[#00E5FF]/20 px-2 text-[11px] font-bold text-[#00E5FF]">
+                {filteredExercises.length}
+              </span>
+            </div>
+          </div>
           <button
             type="button"
-            onClick={() => setError(null)}
-            className="rounded-lg p-1 text-[#FF1744] transition-colors hover:bg-[#FF1744]/10"
+            onClick={openCreateModal}
+            className="inline-flex items-center gap-2 bg-[#00E5FF] text-[#0A0A0F] font-bold rounded-xl px-5 py-2.5 text-[13px] hover:bg-[#2BEEFF] hover:shadow-[0_0_24px_rgba(0,229,255,0.35)] transition-all"
           >
-            <XIcon className="h-4 w-4" />
+            <PlusIcon className="h-4 w-4" />
+            Añadir ejercicio
           </button>
         </div>
-      )}
 
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-white">
-            Biblioteca de Ejercicios
-          </h1>
-          <span className="flex h-6 min-w-[24px] items-center justify-center rounded-full bg-[#00E5FF]/10 px-2 text-xs font-bold text-[#00E5FF]">
-            {filteredExercises.length}
-          </span>
+        {/* Search + Filters */}
+        <div className="ex-in ex-2 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative w-full max-w-md">
+            <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5A5A72]" />
+            <input
+              type="text"
+              placeholder="Buscar ejercicio por nombre..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#12121A] pl-10 pr-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors"
+            />
+          </div>
+          <PillFilter
+            options={OWNERSHIP_FILTERS}
+            value={ownershipFilter}
+            onChange={setOwnershipFilter}
+          />
         </div>
-        <button
-          type="button"
-          onClick={openCreateModal}
-          className="inline-flex items-center gap-2 rounded-xl bg-[#00E5FF] px-4 py-2.5 text-sm font-semibold text-[#0A0A0F] transition-all hover:bg-[#00E5FF]/90 hover:shadow-[0_0_20px_rgba(0,229,255,0.15)]"
-        >
-          <PlusIcon className="h-4 w-4" />
-          Anadir ejercicio
-        </button>
-      </div>
 
-      {/* Search */}
-      <div className="relative w-full max-w-md">
-        <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8B8BA3]" />
-        <input
-          type="text"
-          placeholder="Buscar ejercicio por nombre..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#12121A] pl-10 pr-4 text-sm text-white placeholder:text-[#8B8BA3] outline-none transition-colors focus:border-[#00E5FF]/50"
+        {/* Exercise Grid */}
+        <div className="ex-in ex-3">
+          {filteredExercises.length === 0 ? (
+            <div className="rounded-[18px] border border-white/[0.06] bg-[#12121A] p-12">
+              <div className="flex flex-col items-center gap-3 py-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.03] ring-1 ring-white/[0.06] text-[#3A3A52]">
+                  <DumbbellIcon className="h-6 w-6" />
+                </div>
+                <p className="text-[14px] font-semibold text-white">
+                  {search.trim() || ownershipFilter !== "todos"
+                    ? "No se encontraron ejercicios"
+                    : "Aun no hay ejercicios"}
+                </p>
+                <p className="text-[12px] text-[#5A5A72] text-center">
+                  {search.trim() || ownershipFilter !== "todos"
+                    ? "Prueba ajustar los filtros de busqueda"
+                    : "Crea tu primer ejercicio para empezar a construir tu biblioteca"}
+                </p>
+                {!search.trim() && ownershipFilter === "todos" && (
+                  <button
+                    type="button"
+                    onClick={openCreateModal}
+                    className="mt-2 inline-flex items-center gap-2 bg-[#00E5FF] text-[#0A0A0F] font-bold rounded-xl px-5 py-2.5 text-[13px] hover:bg-[#2BEEFF] hover:shadow-[0_0_24px_rgba(0,229,255,0.35)] transition-all"
+                  >
+                    <PlusIcon className="h-4 w-4" />
+                    Añadir ejercicio
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredExercises.map((exercise) => (
+                <ExerciseCard
+                  key={exercise.id}
+                  exercise={exercise}
+                  onEdit={() => openEditModal(exercise)}
+                  onDelete={() => setDeleteTarget(exercise)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Create / Edit Modal */}
+        <ExerciseModal
+          isOpen={modalOpen}
+          title={editingExercise ? "Editar ejercicio" : "Nuevo ejercicio"}
+          form={form}
+          saving={saving}
+          onChange={updateForm}
+          onSave={handleSave}
+          onClose={closeModal}
+        />
+
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmModal
+          isOpen={!!deleteTarget}
+          exerciseName={deleteTarget?.name ?? ""}
+          isGlobal={deleteTarget?.is_global ?? false}
+          deleting={deleting}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteTarget(null)}
         />
       </div>
-
-      {/* Filters */}
-      <PillFilter
-        options={OWNERSHIP_FILTERS}
-        value={ownershipFilter}
-        onChange={setOwnershipFilter}
-      />
-
-      {/* Exercise Grid */}
-      {filteredExercises.length === 0 ? (
-        <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-12">
-          <div className="flex flex-col items-center justify-center gap-3">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.04]">
-              <DumbbellIcon className="h-7 w-7 text-[#8B8BA3]" />
-            </div>
-            <p className="text-sm font-medium text-white">
-              {search.trim() || ownershipFilter !== "todos"
-                ? "No se encontraron ejercicios"
-                : "Aun no hay ejercicios"}
-            </p>
-            <p className="text-xs text-[#8B8BA3]">
-              {search.trim() || ownershipFilter !== "todos"
-                ? "Prueba ajustar los filtros de busqueda"
-                : "Crea tu primer ejercicio para empezar a construir tu biblioteca"}
-            </p>
-            {!search.trim() && ownershipFilter === "todos" && (
-                <button
-                  type="button"
-                  onClick={openCreateModal}
-                  className="mt-2 inline-flex items-center gap-2 rounded-xl bg-[#00E5FF] px-4 py-2.5 text-sm font-semibold text-[#0A0A0F] transition-all hover:bg-[#00E5FF]/90"
-                >
-                  <PlusIcon className="h-4 w-4" />
-                  Anadir ejercicio
-                </button>
-              )}
-          </div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredExercises.map((exercise) => (
-            <ExerciseCard
-              key={exercise.id}
-              exercise={exercise}
-              onEdit={() => openEditModal(exercise)}
-              onDelete={() => setDeleteTarget(exercise)}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Create / Edit Modal */}
-      <ExerciseModal
-        isOpen={modalOpen}
-        title={editingExercise ? "Editar ejercicio" : "Nuevo ejercicio"}
-        form={form}
-        saving={saving}
-        onChange={updateForm}
-        onSave={handleSave}
-        onClose={closeModal}
-      />
-
-      {/* Delete Confirmation Modal */}
-      <DeleteConfirmModal
-        isOpen={!!deleteTarget}
-        exerciseName={deleteTarget?.name ?? ""}
-        isGlobal={deleteTarget?.is_global ?? false}
-        deleting={deleting}
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteTarget(null)}
-      />
-    </div>
+    </>
   );
 }

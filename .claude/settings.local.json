@@ -11,7 +11,10 @@
       "WebFetch",
       "WebSearch",
       "TodoWrite",
-      "NotebookEdit"
+      "NotebookEdit",
+      "mcp__nanobanana__generate_image",
+      "mcp__StitchMCP__list_projects",
+      "mcp__magic__21st_magic_component_inspiration"
     ]
   }
 }

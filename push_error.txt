@@ -1,0 +1,168 @@
+﻿git : remote: error: 
+GH013: Repository rule 
+violations found for re
+fs/heads/updates-by-age
+nt-take-5.        
+En línea: 1 Carácter: 1
++ git push origin HEAD:
+updates-by-agent-take-5
+ *>&1 | Out-File 
+-FilePat ...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (remote: error   
+ : ...take-5.          
+  :String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+remote: 
+remote: - GITHUB PUSH 
+PROTECTION        
+remote:   ÔÇöÔÇöÔÇöÔÇöÔ
+ÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇö
+ÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇ
+öÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔ
+ÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇö
+ÔÇöÔÇöÔÇöÔÇöÔÇöÔÇö     
+   
+remote:     Resolve 
+the following 
+violations before 
+pushing again        
+remote: 
+remote:     - Push 
+cannot contain secrets 
+       
+remote: 
+remote:             
+remote:      (?) Learn 
+how to resolve a 
+blocked push        
+remote:      https://do
+cs.github.com/code-secu
+rity/secret-scanning/wo
+rking-with-secret-scann
+ing-and-push-protection
+/working-with-push-prot
+ection-from-the-command
+-line#resolving-a-block
+ed-push        
+remote:             
+remote:             
+remote:       ÔÇöÔÇö 
+Slack API Token ÔÇöÔÇöÔ
+ÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇö
+ÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇ
+öÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔ
+ÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇö
+ÔÇöÔÇö        
+remote:        
+locations:        
+remote:          - 
+commit: 5d85aff7540a8dd
+388a1d465dcf107108de8e9
+16        
+remote:            
+path: .mcp.json:7      
+  
+remote:          - 
+commit: 5d85aff7540a8dd
+388a1d465dcf107108de8e9
+16        
+remote:            
+path: .mcp.json:7      
+  
+remote:             
+remote:        (?) To 
+push, remove secret 
+from commit(s) or 
+follow this URL to 
+allow the secret.      
+  
+remote:        https://
+github.com/Abelsolans95
+/fitOS/security/secret-
+scanning/unblock-secret
+/3BKybkllEpe1avmlKfPg1T
+Oa2or        
+remote:             
+remote:             
+remote:       ÔÇöÔÇö 
+Vercel Personal Access 
+Token ÔÇöÔÇöÔÇöÔÇöÔÇöÔÇ
+öÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔ
+ÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇö
+ÔÇö        
+remote:        
+locations:        
+remote:          - 
+commit: 5d85aff7540a8dd
+388a1d465dcf107108de8e9
+16        
+remote:            
+path: .mcp.json:19     
+   
+remote:             
+remote:        (?) To 
+push, remove secret 
+from commit(s) or 
+follow this URL to 
+allow the secret.      
+  
+remote:        https://
+github.com/Abelsolans95
+/fitOS/security/secret-
+scanning/unblock-secret
+/3BKybmx9ZVRbThQv8NVzwR
+UC2J1        
+remote:             
+remote:             
+remote:       ÔÇöÔÇö 
+GitHub Personal Access 
+Token ÔÇöÔÇöÔÇöÔÇöÔÇöÔÇ
+öÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔ
+ÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇö
+ÔÇö        
+remote:        
+locations:        
+remote:          - 
+commit: 5d85aff7540a8dd
+388a1d465dcf107108de8e9
+16        
+remote:            
+path: .mcp.json:44     
+   
+remote:             
+remote:        (?) To 
+push, remove secret 
+from commit(s) or 
+follow this URL to 
+allow the secret.      
+  
+remote:        https://
+github.com/Abelsolans95
+/fitOS/security/secret-
+scanning/unblock-secret
+/3BKybiFF6AlAulyx9yF9dI
+dS7Uo        
+remote:             
+remote: 
+remote: 
+To https://github.com/A
+belsolans95/fitOS.git
+ ! [remote rejected] 
+HEAD -> updates-by-agen
+t-take-5 (push 
+declined due to 
+repository rule 
+violations)
+error: failed to push 
+some refs to 'https://g
+ithub.com/Abelsolans95/
+fitOS.git'

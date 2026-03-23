@@ -116,11 +116,11 @@ function buildEmptyDays(mealsPerDay: number, period: "weekly" | "monthly"): DayP
 
 function ActiveBadge({ active }: { active: boolean }) {
   return active ? (
-    <span className="inline-flex items-center rounded-full bg-[#00C853]/10 px-2.5 py-0.5 text-xs font-medium text-[#00C853]">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#00C853]/20 bg-[#00C853]/10 px-2.5 py-1 text-[10px] font-bold text-[#00C853]">
       Activo
     </span>
   ) : (
-    <span className="inline-flex items-center rounded-full bg-[#8B8BA3]/10 px-2.5 py-0.5 text-xs font-medium text-[#8B8BA3]">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.03] px-2.5 py-1 text-[10px] font-bold text-[#5A5A72]">
       Inactivo
     </span>
   );
@@ -128,12 +128,12 @@ function ActiveBadge({ active }: { active: boolean }) {
 
 function EmptyState({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/[0.06] bg-[#12121A] py-16">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.04] text-[#8B8BA3]">
+    <div className="flex flex-col items-center gap-3 py-16">
+      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.03] ring-1 ring-white/[0.06] text-[#3A3A52]">
         {icon}
       </div>
-      <p className="text-sm font-medium text-white">{title}</p>
-      <p className="text-xs text-[#8B8BA3]">{description}</p>
+      <p className="text-[14px] font-semibold text-white">{title}</p>
+      <p className="text-[12px] text-[#5A5A72] text-center max-w-[200px]">{description}</p>
     </div>
   );
 }
@@ -169,10 +169,10 @@ function FoodSearchCombobox({
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
-        className="h-9 w-full rounded-lg border border-white/[0.08] bg-[#0A0A0F] px-3 text-sm text-white placeholder:text-[#8B8BA3] outline-none transition-colors focus:border-[#00E5FF]/50"
+        className="h-9 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-3 text-[13px] text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/40"
       />
       {open && filtered.length > 0 && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-y-auto rounded-lg border border-white/[0.08] bg-[#12121A] shadow-lg">
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-y-auto rounded-xl border border-white/[0.08] bg-[#12121A] shadow-lg">
           {filtered.map((food) => (
             <button
               key={food.id}
@@ -182,10 +182,10 @@ function FoodSearchCombobox({
                 setQuery("");
                 setOpen(false);
               }}
-              className="flex w-full items-center justify-between px-3 py-2 text-left text-sm text-[#E8E8ED] transition-colors hover:bg-white/[0.04]"
+              className="flex w-full items-center justify-between px-3 py-2 text-left text-[13px] text-[#E8E8ED] transition-colors hover:bg-white/[0.04]"
             >
               <span className="truncate">{food.name}</span>
-              <span className="ml-2 shrink-0 text-xs text-[#8B8BA3]">
+              <span className="ml-2 shrink-0 text-[11px] text-[#8B8BA3]">
                 {food.kcal} kcal/100g
               </span>
             </button>
@@ -381,7 +381,7 @@ function MenuCreator({
       <button
         type="button"
         onClick={onCancel}
-        className="flex items-center gap-2 text-sm text-[#8B8BA3] transition-colors hover:text-white"
+        className="flex items-center gap-2 text-[13px] text-[#8B8BA3] transition-colors hover:text-white"
       >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
@@ -389,18 +389,18 @@ function MenuCreator({
         Volver a menus
       </button>
 
-      <h2 className="text-xl font-bold text-white">Nuevo Menu</h2>
+      <h2 className="text-[22px] font-extrabold tracking-[-0.03em] text-white">Nuevo Menu</h2>
 
       {/* Client selection */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6 space-y-4">
+      <div className="rounded-[18px] border border-white/[0.06] bg-[#12121A] p-6 space-y-4">
         <div className="space-y-1.5">
-          <label className="block text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">
+          <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">
             Cliente
           </label>
           <select
             value={selectedClientId}
             onChange={(e) => setSelectedClientId(e.target.value)}
-            className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-sm text-white outline-none transition-colors focus:border-[#00E5FF]/50"
+            className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white outline-none transition-colors focus:border-[#00E5FF]/40"
           >
             <option value="">Seleccionar cliente...</option>
             {clients.map((c) => (
@@ -418,9 +418,9 @@ function MenuCreator({
               <svg className="h-4 w-4 text-[#00E5FF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
               </svg>
-              <p className="text-xs font-semibold text-[#00E5FF]">Preferencias alimentarias</p>
+              <p className="text-[11px] font-bold text-[#00E5FF]">Preferencias alimentarias</p>
             </div>
-            <p className="text-sm text-[#E8E8ED]">
+            <p className="text-[13px] text-[#E8E8ED]">
               {typeof selectedClient.food_preferences === "string"
                 ? selectedClient.food_preferences
                 : JSON.stringify(selectedClient.food_preferences)}
@@ -430,7 +430,7 @@ function MenuCreator({
 
         {/* Title */}
         <div className="space-y-1.5">
-          <label className="block text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">
+          <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">
             Titulo del menu
           </label>
           <input
@@ -438,13 +438,13 @@ function MenuCreator({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Ej: Menu de definicion - Semana 1"
-            className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-sm text-white placeholder:text-[#8B8BA3] outline-none transition-colors focus:border-[#00E5FF]/50"
+            className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/40"
           />
         </div>
 
         {/* Period */}
         <div className="space-y-1.5">
-          <label className="block text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">
+          <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">
             Periodo
           </label>
           <div className="grid grid-cols-2 gap-3">
@@ -453,7 +453,7 @@ function MenuCreator({
                 key={p}
                 type="button"
                 onClick={() => setPeriod(p)}
-                className={`flex items-center justify-center rounded-xl border px-4 py-3 text-sm font-medium transition-all ${
+                className={`flex items-center justify-center rounded-xl border px-4 py-3 text-[13px] font-medium transition-all ${
                   period === p
                     ? "border-[#00E5FF]/50 bg-[#00E5FF]/10 text-[#00E5FF]"
                     : "border-white/[0.08] bg-[#0A0A0F] text-[#8B8BA3] hover:border-white/[0.15] hover:text-white"
@@ -467,7 +467,7 @@ function MenuCreator({
 
         {/* Meals per day */}
         <div className="space-y-1.5">
-          <label className="block text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">
+          <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">
             Comidas por dia
           </label>
           <div className="grid grid-cols-3 gap-3">
@@ -476,7 +476,7 @@ function MenuCreator({
                 key={n}
                 type="button"
                 onClick={() => setMealsPerDay(n)}
-                className={`flex items-center justify-center rounded-xl border px-4 py-3 text-sm font-medium transition-all ${
+                className={`flex items-center justify-center rounded-xl border px-4 py-3 text-[13px] font-medium transition-all ${
                   mealsPerDay === n
                     ? "border-[#00E5FF]/50 bg-[#00E5FF]/10 text-[#00E5FF]"
                     : "border-white/[0.08] bg-[#0A0A0F] text-[#8B8BA3] hover:border-white/[0.15] hover:text-white"
@@ -490,7 +490,7 @@ function MenuCreator({
 
         {/* Target kcal */}
         <div className="space-y-1.5">
-          <label className="block text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">
+          <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">
             Calorias objetivo (kcal/dia)
           </label>
           <input
@@ -498,19 +498,19 @@ function MenuCreator({
             value={targetKcal}
             onChange={(e) => setTargetKcal(e.target.value ? Number(e.target.value) : "")}
             placeholder="Auto-calcular segun perfil del cliente"
-            className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-sm text-white placeholder:text-[#8B8BA3] outline-none transition-colors focus:border-[#00E5FF]/50"
+            className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/40"
           />
         </div>
       </div>
 
       {/* Day planner */}
       <div className="space-y-3">
-        <h3 className="text-lg font-semibold text-white">Planificacion por dia</h3>
+        <h3 className="text-[16px] font-bold tracking-[-0.02em] text-white">Planificacion por dia</h3>
 
         {days.map((day, dayIndex) => (
           <div
             key={dayIndex}
-            className="rounded-2xl border border-white/[0.06] bg-[#12121A]"
+            className="rounded-[18px] border border-white/[0.06] bg-[#12121A]"
           >
             {/* Day header (accordion) */}
             <button
@@ -518,7 +518,7 @@ function MenuCreator({
               onClick={() => toggleDay(dayIndex)}
               className="flex w-full items-center justify-between px-6 py-4 text-left transition-colors hover:bg-white/[0.02]"
             >
-              <span className="text-sm font-semibold text-white">{day.day}</span>
+              <span className="text-[13px] font-semibold text-white">{day.day}</span>
               <svg
                 className={`h-4 w-4 text-[#8B8BA3] transition-transform ${day.expanded ? "rotate-180" : ""}`}
                 fill="none"
@@ -538,9 +538,9 @@ function MenuCreator({
                   return (
                     <div key={mealIndex} className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <h4 className="text-sm font-medium text-[#00E5FF]">{meal.label}</h4>
+                        <h4 className="text-[13px] font-semibold text-[#00E5FF]">{meal.label}</h4>
                         {meal.foods.length > 0 && (
-                          <div className="flex items-center gap-3 text-xs text-[#8B8BA3]">
+                          <div className="flex items-center gap-3 text-[11px] text-[#8B8BA3]">
                             <span>{totals.kcal} kcal</span>
                             <span>P: {totals.protein}g</span>
                             <span>C: {totals.carbs}g</span>
@@ -556,8 +556,8 @@ function MenuCreator({
                           className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-4 py-2.5"
                         >
                           <div className="flex-1 min-w-0">
-                            <p className="truncate text-sm text-[#E8E8ED]">{food.name}</p>
-                            <p className="text-xs text-[#8B8BA3]">
+                            <p className="truncate text-[13px] text-[#E8E8ED]">{food.name}</p>
+                            <p className="text-[11px] text-[#8B8BA3]">
                               {food.kcal} kcal | P: {food.protein}g | C: {food.carbs}g | G: {food.fat}g
                             </p>
                           </div>
@@ -568,9 +568,9 @@ function MenuCreator({
                               onChange={(e) =>
                                 updateFoodPortion(dayIndex, mealIndex, foodIndex, Number(e.target.value) || 0)
                               }
-                              className="h-8 w-20 rounded-lg border border-white/[0.08] bg-[#12121A] px-2 text-center text-xs text-white outline-none focus:border-[#00E5FF]/50"
+                              className="h-8 w-20 rounded-lg border border-white/[0.08] bg-[#12121A] px-2 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
                             />
-                            <span className="text-xs text-[#8B8BA3]">g</span>
+                            <span className="text-[11px] text-[#8B8BA3]">g</span>
                             <button
                               type="button"
                               onClick={() => removeFoodFromMeal(dayIndex, mealIndex, foodIndex)}
@@ -603,7 +603,7 @@ function MenuCreator({
         <button
           type="button"
           onClick={handleGenerateAI}
-          className="flex items-center justify-center gap-2 rounded-xl border border-[#7C3AED]/30 bg-[#7C3AED]/10 px-5 py-2.5 text-sm font-semibold text-[#7C3AED] transition-all hover:border-[#7C3AED]/50 hover:bg-[#7C3AED]/20"
+          className="flex items-center justify-center gap-2 rounded-xl border border-[#7C3AED]/30 bg-[#7C3AED]/10 px-5 py-2.5 text-[13px] font-semibold text-[#7C3AED] transition-all hover:border-[#7C3AED]/50 hover:bg-[#7C3AED]/20"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456Z" />
@@ -614,7 +614,7 @@ function MenuCreator({
           type="button"
           onClick={handleSend}
           disabled={saving}
-          className="flex items-center justify-center gap-2 rounded-xl bg-[#00C853] px-6 py-2.5 text-sm font-semibold text-[#0A0A0F] transition-all hover:bg-[#00C853]/90 hover:shadow-[0_0_20px_rgba(0,200,83,0.3)] disabled:opacity-50"
+          className="flex items-center justify-center gap-2 rounded-xl bg-[#00C853] px-6 py-2.5 text-[13px] font-bold text-[#0A0A0F] transition-all hover:bg-[#00C853]/90 hover:shadow-[0_0_20px_rgba(0,200,83,0.3)] disabled:opacity-50"
         >
           {saving ? (
             <>
@@ -795,7 +795,7 @@ function FoodLibraryTab({
             placeholder="Buscar alimento..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#12121A] pl-10 pr-4 text-sm text-white placeholder:text-[#8B8BA3] outline-none transition-colors focus:border-[#00E5FF]/50"
+            className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#12121A] pl-10 pr-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/40"
           />
         </div>
         <button
@@ -804,7 +804,7 @@ function FoodLibraryTab({
             resetForm();
             setShowAddForm(true);
           }}
-          className="flex items-center gap-2 rounded-xl bg-[#00C853] px-5 py-2.5 text-sm font-semibold text-[#0A0A0F] transition-all hover:bg-[#00C853]/90 hover:shadow-[0_0_20px_rgba(0,200,83,0.3)]"
+          className="flex items-center gap-2 bg-[#00C853] text-[#0A0A0F] font-bold rounded-xl px-5 py-2.5 text-[13px] hover:bg-[#00C853]/90 hover:shadow-[0_0_20px_rgba(0,200,83,0.3)] transition-all"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -820,7 +820,7 @@ function FoodLibraryTab({
             key={cat}
             type="button"
             onClick={() => setActiveCategory(cat)}
-            className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
+            className={`rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] transition-all ${
               activeCategory === cat
                 ? "bg-[#00E5FF]/10 text-[#00E5FF] border border-[#00E5FF]/30"
                 : "bg-white/[0.04] text-[#8B8BA3] border border-transparent hover:text-white"
@@ -833,9 +833,10 @@ function FoodLibraryTab({
 
       {/* Add/Edit form */}
       {showAddForm && (
-        <div className="rounded-2xl border border-[#00C853]/20 bg-[#00C853]/5 p-6 space-y-4">
+        <div className="relative overflow-hidden rounded-[18px] border border-[#00C853]/20 bg-[#00C853]/5 p-6 space-y-4">
+          <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(90deg, #00C853, transparent)" }} />
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-white">
+            <h3 className="text-[13px] font-semibold text-white">
               {editingFood ? "Editar alimento" : "Nuevo alimento"}
             </h3>
             <button
@@ -851,72 +852,72 @@ function FoodLibraryTab({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2 space-y-1.5">
-              <label className="block text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">Nombre</label>
+              <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">Nombre</label>
               <input
                 type="text"
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
                 placeholder="Ej: Pechuga de pollo a la plancha"
-                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-sm text-white placeholder:text-[#8B8BA3] outline-none focus:border-[#00E5FF]/50"
+                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">Kcal (por 100g)</label>
+              <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">Kcal (por 100g)</label>
               <input
                 type="number"
                 value={formKcal}
                 onChange={(e) => setFormKcal(e.target.value ? Number(e.target.value) : "")}
-                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-sm text-white outline-none focus:border-[#00E5FF]/50"
+                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">Proteina (g)</label>
+              <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">Proteina (g)</label>
               <input
                 type="number"
                 value={formProtein}
                 onChange={(e) => setFormProtein(e.target.value ? Number(e.target.value) : "")}
-                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-sm text-white outline-none focus:border-[#00E5FF]/50"
+                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">Carbohidratos (g)</label>
+              <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">Carbohidratos (g)</label>
               <input
                 type="number"
                 value={formCarbs}
                 onChange={(e) => setFormCarbs(e.target.value ? Number(e.target.value) : "")}
-                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-sm text-white outline-none focus:border-[#00E5FF]/50"
+                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">Grasa (g)</label>
+              <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">Grasa (g)</label>
               <input
                 type="number"
                 value={formFat}
                 onChange={(e) => setFormFat(e.target.value ? Number(e.target.value) : "")}
-                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-sm text-white outline-none focus:border-[#00E5FF]/50"
+                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">Fibra (g)</label>
+              <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">Fibra (g)</label>
               <input
                 type="number"
                 value={formFiber}
                 onChange={(e) => setFormFiber(e.target.value ? Number(e.target.value) : "")}
-                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-sm text-white outline-none focus:border-[#00E5FF]/50"
+                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">Categoria</label>
+              <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">Categoria</label>
               <select
                 value={formCategory}
                 onChange={(e) => setFormCategory(e.target.value)}
-                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-sm text-white outline-none focus:border-[#00E5FF]/50"
+                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
               >
                 {CATEGORIES.filter((c) => c !== "Todos").map((cat) => (
                   <option key={cat} value={cat}>{cat}</option>
@@ -929,7 +930,7 @@ function FoodLibraryTab({
             <button
               type="button"
               onClick={resetForm}
-              className="rounded-xl border border-white/[0.08] px-5 py-2.5 text-sm font-medium text-[#E8E8ED] transition-all hover:border-white/[0.15] hover:bg-white/[0.04]"
+              className="border border-white/[0.1] text-[#8B8BA3] rounded-xl px-5 py-2.5 text-[13px] font-medium hover:border-white/[0.18] hover:bg-white/[0.04] hover:text-white transition-all"
             >
               Cancelar
             </button>
@@ -937,7 +938,7 @@ function FoodLibraryTab({
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-2 rounded-xl bg-[#00C853] px-5 py-2.5 text-sm font-semibold text-[#0A0A0F] transition-all hover:bg-[#00C853]/90 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl bg-[#00C853] px-5 py-2.5 text-[13px] font-bold text-[#0A0A0F] transition-all hover:bg-[#00C853]/90 disabled:opacity-50"
             >
               {saving ? (
                 <>
@@ -958,7 +959,7 @@ function FoodLibraryTab({
       {filteredFoods.length === 0 ? (
         <EmptyState
           icon={
-            <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.25v-1.5m0 1.5c-1.355 0-2.697.056-4.024.166C6.845 8.51 6 9.473 6 10.608v2.513m6-4.871c1.355 0 2.697.056 4.024.166C17.155 8.51 18 9.473 18 10.608v2.513M15 8.25v-1.5m-6 1.5v-1.5m12 9.75-1.5.75a3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0L3 16.5m15-3.379a48.474 48.474 0 0 0-6-.371c-2.032 0-4.034.126-6 .371m12 0c.39.049.777.102 1.163.16 1.07.16 1.837 1.094 1.837 2.175v5.169c0 .621-.504 1.125-1.125 1.125H4.125A1.125 1.125 0 0 1 3 20.625v-5.17c0-1.08.768-2.014 1.837-2.174A47.78 47.78 0 0 1 6 13.12" />
             </svg>
           }
@@ -966,17 +967,17 @@ function FoodLibraryTab({
           description={search.trim() ? "No se encontraron alimentos con ese nombre" : "Anade alimentos a tu biblioteca para usarlos en los menus"}
         />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-[#12121A]">
+        <div className="overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#12121A]">
           {/* Table header */}
           <div className="hidden border-b border-white/[0.06] px-6 py-3 lg:grid lg:grid-cols-12 lg:gap-3">
-            <div className="col-span-3 text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">Nombre</div>
-            <div className="col-span-1 text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">Kcal</div>
-            <div className="col-span-1 text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">Prot.</div>
-            <div className="col-span-1 text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">Carbs</div>
-            <div className="col-span-1 text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">Grasa</div>
-            <div className="col-span-1 text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">Fibra</div>
-            <div className="col-span-1 text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">Cat.</div>
-            <div className="col-span-1 text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">Tipo</div>
+            <div className="col-span-3 text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]">Nombre</div>
+            <div className="col-span-1 text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]">Kcal</div>
+            <div className="col-span-1 text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]">Prot.</div>
+            <div className="col-span-1 text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]">Carbs</div>
+            <div className="col-span-1 text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]">Grasa</div>
+            <div className="col-span-1 text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]">Fibra</div>
+            <div className="col-span-1 text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]">Cat.</div>
+            <div className="col-span-1 text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]">Tipo</div>
             <div className="col-span-2" />
           </div>
 
@@ -986,36 +987,36 @@ function FoodLibraryTab({
             return (
               <div
                 key={food.id}
-                className="border-b border-white/[0.04] px-6 py-3.5 last:border-b-0 lg:grid lg:grid-cols-12 lg:items-center lg:gap-3"
+                className="border-b border-white/[0.04] px-6 py-3.5 last:border-b-0 hover:bg-white/[0.025] transition-colors lg:grid lg:grid-cols-12 lg:items-center lg:gap-3"
               >
                 <div className="col-span-3">
-                  <p className="text-sm font-medium text-white truncate">{food.name}</p>
+                  <p className="text-[13px] font-medium text-white truncate">{food.name}</p>
                 </div>
                 <div className="col-span-1">
-                  <p className="text-sm text-[#E8E8ED]">{food.kcal}</p>
+                  <p className="text-[13px] text-[#E8E8ED]">{food.kcal}</p>
                 </div>
                 <div className="col-span-1">
-                  <p className="text-sm text-[#E8E8ED]">{food.protein}g</p>
+                  <p className="text-[13px] text-[#E8E8ED]">{food.protein}g</p>
                 </div>
                 <div className="col-span-1">
-                  <p className="text-sm text-[#E8E8ED]">{food.carbs}g</p>
+                  <p className="text-[13px] text-[#E8E8ED]">{food.carbs}g</p>
                 </div>
                 <div className="col-span-1">
-                  <p className="text-sm text-[#E8E8ED]">{food.fat}g</p>
+                  <p className="text-[13px] text-[#E8E8ED]">{food.fat}g</p>
                 </div>
                 <div className="col-span-1">
-                  <p className="text-sm text-[#E8E8ED]">{food.fiber}g</p>
+                  <p className="text-[13px] text-[#E8E8ED]">{food.fiber}g</p>
                 </div>
                 <div className="col-span-1">
-                  <p className="text-xs text-[#8B8BA3]">{food.category}</p>
+                  <p className="text-[11px] text-[#8B8BA3]">{food.category}</p>
                 </div>
                 <div className="col-span-1">
                   {isOwn ? (
-                    <span className="inline-flex items-center rounded-full bg-[#7C3AED]/10 px-2 py-0.5 text-xs font-medium text-[#7C3AED]">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2.5 py-1 text-[10px] font-bold text-[#7C3AED]">
                       Propio
                     </span>
                   ) : (
-                    <span className="inline-flex items-center rounded-full bg-[#00E5FF]/10 px-2 py-0.5 text-xs font-medium text-[#00E5FF]">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#00E5FF]/20 bg-[#00E5FF]/10 px-2.5 py-1 text-[10px] font-bold text-[#00E5FF]">
                       Global
                     </span>
                   )}
@@ -1180,8 +1181,8 @@ export default function TrainerNutritionPage() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-32">
-        <div className="rounded-2xl border border-[#FF1744]/20 bg-[#FF1744]/5 px-6 py-4">
-          <p className="text-sm text-[#FF1744]">{error}</p>
+        <div className="rounded-xl border border-[#FF1744]/20 bg-[#FF1744]/05 px-4 py-3">
+          <p className="text-[13px] text-[#FF1744]">{error}</p>
         </div>
       </div>
     );
@@ -1200,131 +1201,148 @@ export default function TrainerNutritionPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-white">Nutricion</h1>
-      </div>
+    <>
+      <style>{`
+        @keyframes pg-in { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+        .pg-in { animation: pg-in 0.55s cubic-bezier(0.16,1,0.3,1) both; }
+        .pg-1 { animation-delay: 0.04s; }
+        .pg-2 { animation-delay: 0.14s; }
+        .pg-3 { animation-delay: 0.24s; }
+        .pg-4 { animation-delay: 0.34s; }
+      `}</style>
 
-      {/* Tabs */}
-      <div className="flex gap-1 rounded-xl border border-white/[0.06] bg-[#12121A] p-1">
-        <button
-          type="button"
-          onClick={() => setActiveTab("menus")}
-          className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
-            activeTab === "menus"
-              ? "bg-[#00C853]/10 text-[#00C853]"
-              : "text-[#8B8BA3] hover:text-white"
-          }`}
-        >
-          <span className="flex items-center justify-center gap-2">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="pg-in pg-1 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72] mb-1">
+              Salud & Alimentacion
+            </p>
+            <h1 className="text-[26px] font-extrabold tracking-[-0.03em] text-white">Nutricion</h1>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="pg-in pg-2 flex gap-1 rounded-[14px] border border-white/[0.06] bg-[#12121A] p-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab("menus")}
+            className={`flex-1 flex items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-[13px] font-semibold transition-all ${
+              activeTab === "menus"
+                ? "bg-[#00C853]/10 text-[#00C853]"
+                : "text-[#8B8BA3] hover:text-white"
+            }`}
+          >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.25v-1.5m0 1.5c-1.355 0-2.697.056-4.024.166C6.845 8.51 6 9.473 6 10.608v2.513m6-4.871c1.355 0 2.697.056 4.024.166C17.155 8.51 18 9.473 18 10.608v2.513M15 8.25v-1.5m-6 1.5v-1.5m12 9.75-1.5.75a3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0L3 16.5m15-3.379a48.474 48.474 0 0 0-6-.371c-2.032 0-4.034.126-6 .371m12 0c.39.049.777.102 1.163.16 1.07.16 1.837 1.094 1.837 2.175v5.169c0 .621-.504 1.125-1.125 1.125H4.125A1.125 1.125 0 0 1 3 20.625v-5.17c0-1.08.768-2.014 1.837-2.174A47.78 47.78 0 0 1 6 13.12" />
             </svg>
             Menus
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("biblioteca")}
-          className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
-            activeTab === "biblioteca"
-              ? "bg-[#7C3AED]/10 text-[#7C3AED]"
-              : "text-[#8B8BA3] hover:text-white"
-          }`}
-        >
-          <span className="flex items-center justify-center gap-2">
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("biblioteca")}
+            className={`flex-1 flex items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-[13px] font-semibold transition-all ${
+              activeTab === "biblioteca"
+                ? "bg-[#7C3AED]/10 text-[#7C3AED]"
+                : "text-[#8B8BA3] hover:text-white"
+            }`}
+          >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
             </svg>
             Mi Biblioteca de Alimentos
-          </span>
-        </button>
-      </div>
+          </button>
+        </div>
 
-      {/* Tab content */}
-      {activeTab === "menus" && (
-        <div className="space-y-5">
-          {/* New menu button */}
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={() => setShowCreator(true)}
-              className="flex items-center gap-2 rounded-xl bg-[#00C853] px-5 py-2.5 text-sm font-semibold text-[#0A0A0F] transition-all hover:bg-[#00C853]/90 hover:shadow-[0_0_20px_rgba(0,200,83,0.3)]"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-              Nuevo menu
-            </button>
-          </div>
-
-          {/* Meal plans list */}
-          {mealPlans.length === 0 ? (
-            <EmptyState
-              icon={
-                <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.25v-1.5m0 1.5c-1.355 0-2.697.056-4.024.166C6.845 8.51 6 9.473 6 10.608v2.513m6-4.871c1.355 0 2.697.056 4.024.166C17.155 8.51 18 9.473 18 10.608v2.513M15 8.25v-1.5m-6 1.5v-1.5m12 9.75-1.5.75a3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0L3 16.5m15-3.379a48.474 48.474 0 0 0-6-.371c-2.032 0-4.034.126-6 .371m12 0c.39.049.777.102 1.163.16 1.07.16 1.837 1.094 1.837 2.175v5.169c0 .621-.504 1.125-1.125 1.125H4.125A1.125 1.125 0 0 1 3 20.625v-5.17c0-1.08.768-2.014 1.837-2.174A47.78 47.78 0 0 1 6 13.12M12.265 3.11a.375.375 0 1 1-.53 0L12 2.845l.265.265Z" />
+        {/* Tab content */}
+        {activeTab === "menus" && (
+          <div className="pg-in pg-3 space-y-5">
+            {/* New menu button */}
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowCreator(true)}
+                className="flex items-center gap-2 bg-[#00C853] text-[#0A0A0F] font-bold rounded-xl px-5 py-2.5 text-[13px] hover:bg-[#00C853]/90 hover:shadow-[0_0_20px_rgba(0,200,83,0.3)] transition-all"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
-              }
-              title="Aun no tienes menus creados"
-              description="Crea tu primer menu nutricional para tus clientes"
-            />
-          ) : (
-            <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-[#12121A]">
-              {/* Table header */}
-              <div className="hidden border-b border-white/[0.06] px-6 py-3 sm:grid sm:grid-cols-12 sm:gap-4">
-                <div className="col-span-3 text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">Titulo</div>
-                <div className="col-span-2 text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">Cliente</div>
-                <div className="col-span-2 text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">Periodo</div>
-                <div className="col-span-1 text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">Kcal</div>
-                <div className="col-span-1 text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">Estado</div>
-                <div className="col-span-2 text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">Enviado</div>
-                <div className="col-span-1" />
-              </div>
+                Nuevo menu
+              </button>
+            </div>
 
-              {mealPlans.map((plan) => (
-                <div
-                  key={plan.id}
-                  className="border-b border-white/[0.04] px-6 py-4 last:border-b-0 sm:grid sm:grid-cols-12 sm:items-center sm:gap-4"
-                >
-                  <div className="col-span-3">
-                    <p className="text-sm font-medium text-white truncate">{plan.title}</p>
-                  </div>
-                  <div className="col-span-2 mt-1 sm:mt-0">
-                    <p className="text-sm text-[#E8E8ED] truncate">{plan.client_name ?? "Sin cliente"}</p>
-                  </div>
-                  <div className="col-span-2 mt-1 sm:mt-0">
-                    <p className="text-sm text-[#8B8BA3]">
-                      {plan.period === "weekly" ? "Semanal" : plan.period === "monthly" ? "Mensual" : plan.period}
-                    </p>
-                  </div>
-                  <div className="col-span-1 mt-1 sm:mt-0">
-                    <p className="text-sm text-[#E8E8ED]">{plan.target_kcal ?? "—"}</p>
-                  </div>
-                  <div className="col-span-1 mt-1 sm:mt-0">
-                    <ActiveBadge active={plan.is_active} />
-                  </div>
-                  <div className="col-span-2 mt-1 sm:mt-0">
-                    <p className="text-sm text-[#8B8BA3]">
-                      {plan.sent_at ? formatDate(plan.sent_at) : "No enviado"}
-                    </p>
-                  </div>
+            {/* Meal plans list */}
+            {mealPlans.length === 0 ? (
+              <EmptyState
+                icon={
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.25v-1.5m0 1.5c-1.355 0-2.697.056-4.024.166C6.845 8.51 6 9.473 6 10.608v2.513m6-4.871c1.355 0 2.697.056 4.024.166C17.155 8.51 18 9.473 18 10.608v2.513M15 8.25v-1.5m-6 1.5v-1.5m12 9.75-1.5.75a3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0L3 16.5m15-3.379a48.474 48.474 0 0 0-6-.371c-2.032 0-4.034.126-6 .371m12 0c.39.049.777.102 1.163.16 1.07.16 1.837 1.094 1.837 2.175v5.169c0 .621-.504 1.125-1.125 1.125H4.125A1.125 1.125 0 0 1 3 20.625v-5.17c0-1.08.768-2.014 1.837-2.174A47.78 47.78 0 0 1 6 13.12M12.265 3.11a.375.375 0 1 1-.53 0L12 2.845l.265.265Z" />
+                  </svg>
+                }
+                title="Aun no tienes menus creados"
+                description="Crea tu primer menu nutricional para tus clientes"
+              />
+            ) : (
+              <div className="relative overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#12121A]">
+                <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(90deg, #00C853, transparent)" }} />
+                <div className="pointer-events-none absolute -top-8 -right-8 h-32 w-32 rounded-full bg-[#00C853] opacity-[0.04] blur-[40px]" />
+
+                {/* Table header */}
+                <div className="hidden border-b border-white/[0.06] px-6 py-3 sm:grid sm:grid-cols-12 sm:gap-4">
+                  <div className="col-span-3 text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]">Titulo</div>
+                  <div className="col-span-2 text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]">Cliente</div>
+                  <div className="col-span-2 text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]">Periodo</div>
+                  <div className="col-span-1 text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]">Kcal</div>
+                  <div className="col-span-1 text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]">Estado</div>
+                  <div className="col-span-2 text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]">Enviado</div>
                   <div className="col-span-1" />
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
-      {activeTab === "biblioteca" && (
-        <FoodLibraryTab
-          foods={foods}
-          trainerId={trainerId}
-          onFoodsChanged={handleFoodsChanged}
-        />
-      )}
-    </div>
+                {mealPlans.map((plan) => (
+                  <div
+                    key={plan.id}
+                    className="border-b border-white/[0.04] px-6 py-4 last:border-b-0 hover:bg-white/[0.025] transition-colors sm:grid sm:grid-cols-12 sm:items-center sm:gap-4"
+                  >
+                    <div className="col-span-3">
+                      <p className="text-[13px] font-medium text-white truncate">{plan.title}</p>
+                    </div>
+                    <div className="col-span-2 mt-1 sm:mt-0">
+                      <p className="text-[13px] text-[#8B8BA3] truncate">{plan.client_name ?? "Sin cliente"}</p>
+                    </div>
+                    <div className="col-span-2 mt-1 sm:mt-0">
+                      <p className="text-[13px] text-[#8B8BA3]">
+                        {plan.period === "weekly" ? "Semanal" : plan.period === "monthly" ? "Mensual" : plan.period}
+                      </p>
+                    </div>
+                    <div className="col-span-1 mt-1 sm:mt-0">
+                      <p className="text-[13px] text-[#8B8BA3]">{plan.target_kcal ?? "—"}</p>
+                    </div>
+                    <div className="col-span-1 mt-1 sm:mt-0">
+                      <ActiveBadge active={plan.is_active} />
+                    </div>
+                    <div className="col-span-2 mt-1 sm:mt-0">
+                      <p className="text-[13px] text-[#5A5A72]">
+                        {plan.sent_at ? formatDate(plan.sent_at) : "No enviado"}
+                      </p>
+                    </div>
+                    <div className="col-span-1" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "biblioteca" && (
+          <div className="pg-in pg-3">
+            <FoodLibraryTab
+              foods={foods}
+              trainerId={trainerId}
+              onFoodsChanged={handleFoodsChanged}
+            />
+          </div>
+        )}
+      </div>
+    </>
   );
 }
