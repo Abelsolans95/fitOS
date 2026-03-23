@@ -229,8 +229,10 @@ export default function LandingPage() {
           animation: scan 6s linear infinite; pointer-events: none; z-index: 10;
         }
 
-        /* Prevent heading overflow on narrow screens */
-        h1, h2, h3 { overflow-wrap: break-word; word-break: break-word; }
+        /* Word breaking only on mobile — desktop allows natural overflow */
+        @media (max-width: 640px) {
+          h1, h2, h3 { word-break: break-word; }
+        }
 
         @media (prefers-reduced-motion: reduce) {
           .fu, .fi, .shimmer-cyan, .icon-float, .pulse-dot, .cursor,
