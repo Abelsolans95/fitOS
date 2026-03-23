@@ -189,7 +189,7 @@ export default function CalendarPage() {
       </div>
 
       {/* Month Navigation */}
-      <div className="flex items-center justify-between rounded-2xl border border-white/[0.06] bg-[#12121A] px-5 py-4">
+      <div className="flex items-center justify-between rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-5 py-4">
         <button type="button" onClick={prevMonth} className="rounded-lg p-2 text-[#8B8BA3] transition-colors hover:bg-white/[0.05] hover:text-white">
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
@@ -204,7 +204,7 @@ export default function CalendarPage() {
       </div>
 
       {/* Calendar Grid */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-4">
+      <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-4">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#00E5FF] border-t-transparent" />

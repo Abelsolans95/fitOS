@@ -57,7 +57,7 @@ export function ClientBottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.06] bg-[#0D0D14]/95 backdrop-blur-xl safe-area-bottom">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.04] bg-[#0A0A0F]/60 backdrop-blur-2xl safe-area-bottom">
       <div className="mx-auto flex max-w-lg items-center justify-around px-2 py-2">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");

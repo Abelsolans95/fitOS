@@ -255,7 +255,7 @@ function ExerciseCard({
   onDelete: () => void;
 }) {
   return (
-    <div className="group relative flex flex-col rounded-[18px] border border-white/[0.06] bg-[#12121A] p-4 transition-all duration-200 hover:border-white/[0.1]">
+    <div className="group relative flex flex-col rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-4 transition-all duration-200 hover:border-white/[0.1]">
       {/* Video thumbnail placeholder */}
       {exercise.video_url ? (
         <div className="mb-3 flex h-36 items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.04]">
@@ -360,7 +360,7 @@ function ExerciseModal({
       />
 
       {/* Panel */}
-      <div className="relative z-10 mx-4 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[18px] border border-white/[0.08] bg-[#12121A] p-6 shadow-2xl">
+      <div className="relative z-10 mx-4 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[18px] border border-white/[0.08] bg-[#0E0E18]/60 backdrop-blur-xl p-6 shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -390,7 +390,7 @@ function ExerciseModal({
               value={form.name}
               onChange={(e) => onChange({ name: e.target.value })}
               placeholder="Ej: Press de banca"
-              className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors"
+              className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors"
             />
           </div>
 
@@ -404,7 +404,7 @@ function ExerciseModal({
               onChange={(e) => onChange({ description: e.target.value })}
               placeholder="Describe el ejercicio, tecnica, consejos..."
               rows={3}
-              className="w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 py-3 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors resize-none"
+              className="w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-3 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors resize-none"
             />
           </div>
 
@@ -418,7 +418,7 @@ function ExerciseModal({
               value={form.category}
               onChange={(e) => onChange({ category: e.target.value })}
               placeholder="Ej: Pecho, Espalda, Pierna, Bíceps..."
-              className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors"
+              className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors"
             />
             <p className="mt-1 text-[11px] text-[#5A5A72]">
               Texto libre — usa lo que tenga sentido para ti
@@ -435,7 +435,7 @@ function ExerciseModal({
               value={form.primary_muscles}
               onChange={(e) => onChange({ primary_muscles: e.target.value })}
               placeholder="Ej: Pectoral mayor, Deltoides anterior"
-              className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors"
+              className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors"
             />
             <p className="mt-1 text-[11px] text-[#5A5A72]">Separados por comas (opcional)</p>
           </div>
@@ -450,7 +450,7 @@ function ExerciseModal({
               value={form.secondary_muscles}
               onChange={(e) => onChange({ secondary_muscles: e.target.value })}
               placeholder="Ej: Tríceps, Serrato anterior"
-              className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors"
+              className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors"
             />
             <p className="mt-1 text-[11px] text-[#5A5A72]">Separados por comas (opcional)</p>
           </div>
@@ -465,7 +465,7 @@ function ExerciseModal({
               value={form.video_url}
               onChange={(e) => onChange({ video_url: e.target.value })}
               placeholder="https://youtube.com/watch?v=..."
-              className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors"
+              className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors"
             />
             <p className="mt-1 text-[11px] text-[#5A5A72]">
               YouTube o Vimeo (opcional)
@@ -531,7 +531,7 @@ function DeleteConfirmModal({
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         onClick={onCancel}
       />
-      <div className="relative z-10 mx-4 w-full max-w-sm rounded-[18px] border border-white/[0.08] bg-[#12121A] p-6 shadow-2xl">
+      <div className="relative z-10 mx-4 w-full max-w-sm rounded-[18px] border border-white/[0.08] bg-[#0E0E18]/60 backdrop-blur-xl p-6 shadow-2xl">
         <div className="flex flex-col items-center gap-4 text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FF1744]/10 ring-1 ring-[#FF1744]/20">
             <TrashIcon className="h-6 w-6 text-[#FF1744]" />
@@ -985,7 +985,7 @@ export default function TrainerExercisesPage() {
               placeholder="Buscar ejercicio por nombre..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#12121A] pl-10 pr-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors"
+              className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0E0E18]/60 backdrop-blur-xl pl-10 pr-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors"
             />
           </div>
           <PillFilter
@@ -998,7 +998,7 @@ export default function TrainerExercisesPage() {
         {/* Exercise Grid */}
         <div className="ex-in ex-3">
           {filteredExercises.length === 0 ? (
-            <div className="rounded-[18px] border border-white/[0.06] bg-[#12121A] p-12">
+            <div className="rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-12">
               <div className="flex flex-col items-center gap-3 py-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.03] ring-1 ring-white/[0.06] text-[#3A3A52]">
                   <DumbbellIcon className="h-6 w-6" />

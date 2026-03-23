@@ -750,7 +750,7 @@ function ActiveTrainingPage() {
           {exercises.map((ex, i) => (
             <div
               key={i}
-              className="flex items-center gap-3 rounded-xl border border-white/[0.04] bg-[#12121A]/60 px-4 py-3"
+              className="flex items-center gap-3 rounded-xl border border-white/[0.04] bg-[#0E0E18]/60 backdrop-blur-xl/60 px-4 py-3"
             >
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#00E5FF]/10 text-xs font-bold text-[#00E5FF]">
                 {i + 1}
@@ -856,14 +856,14 @@ function ActiveTrainingPage() {
             }
             placeholder="Notas sobre este ejercicio... (opcional)"
             rows={2}
-            className="w-full rounded-xl border border-white/[0.06] bg-[#12121A] px-4 py-3 text-sm text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/30 resize-none"
+            className="w-full rounded-xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-4 py-3 text-sm text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/30 resize-none"
           />
         </div>
 
         {/* Skip */}
         <button
           onClick={skipRest}
-          className="rounded-xl border border-white/[0.06] bg-[#12121A] px-8 py-3 text-sm font-semibold text-[#8B8BA3] transition-colors hover:border-[#00E5FF]/20 hover:text-white"
+          className="rounded-xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-8 py-3 text-sm font-semibold text-[#8B8BA3] transition-colors hover:border-[#00E5FF]/20 hover:text-white"
         >
           Saltar descanso
         </button>
@@ -969,7 +969,7 @@ function ActiveTrainingPage() {
         </div>
 
         <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-4 text-center">
+          <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-4 text-center">
             <p className="text-3xl font-black tracking-tight text-[#00E5FF]">
               {formatTime(elapsed)}
             </p>
@@ -977,7 +977,7 @@ function ActiveTrainingPage() {
               Duración
             </p>
           </div>
-          <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-4 text-center">
+          <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-4 text-center">
             <p className="text-3xl font-black tracking-tight text-[#7C3AED]">
               {Math.round(summaryData.totalVolume).toLocaleString()}
             </p>
@@ -985,7 +985,7 @@ function ActiveTrainingPage() {
               Vol (kg)
             </p>
           </div>
-          <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-4 text-center">
+          <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-4 text-center">
             <p className="text-3xl font-black tracking-tight text-[#FF9100]">
               {summaryData.totalSetsCount}
             </p>
@@ -1003,7 +1003,7 @@ function ActiveTrainingPage() {
           {summaryData.exerciseResults.map((result, i) => (
             <div
               key={i}
-              className="rounded-xl border border-white/[0.04] bg-[#12121A] px-4 py-3"
+              className="rounded-xl border border-white/[0.04] bg-[#0E0E18]/60 backdrop-blur-xl px-4 py-3"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -1045,7 +1045,7 @@ function ActiveTrainingPage() {
         </div>
 
         {/* RPE */}
-        <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-4 text-center">
+        <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-4 text-center">
           <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#5A5A72]">
             RPE Global
           </p>
@@ -1134,7 +1134,7 @@ function ActiveTrainingPage() {
       </div>
 
       {/* Exercise header */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-5">
+      <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-5">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#5A5A72]">
@@ -1265,7 +1265,7 @@ function ActiveTrainingPage() {
                 }}
                 disabled={set.completed}
                 placeholder={prevSet ? String(prevSet.weight_kg) : "0"}
-                className="h-11 w-full rounded-lg border border-white/[0.08] bg-[#0A0A0F] px-3 text-center text-base font-semibold tabular-nums text-white placeholder:text-[#5A5A72]/40 outline-none transition-colors focus:border-[#00E5FF]/50 disabled:opacity-40"
+                className="h-11 w-full rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 text-center text-base font-semibold tabular-nums text-white placeholder:text-[#5A5A72]/40 outline-none transition-colors focus:border-[#00E5FF]/50 disabled:opacity-40"
               />
 
               {/* Reps */}
@@ -1289,7 +1289,7 @@ function ActiveTrainingPage() {
                     ? String(prevSet.reps_done)
                     : `${currentEx?.reps_min || 0}`
                 }
-                className="h-11 w-full rounded-lg border border-white/[0.08] bg-[#0A0A0F] px-3 text-center text-base font-semibold tabular-nums text-white placeholder:text-[#5A5A72]/40 outline-none transition-colors focus:border-[#00E5FF]/50 disabled:opacity-40"
+                className="h-11 w-full rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 text-center text-base font-semibold tabular-nums text-white placeholder:text-[#5A5A72]/40 outline-none transition-colors focus:border-[#00E5FF]/50 disabled:opacity-40"
               />
 
               {/* Complete set button */}
@@ -1329,7 +1329,7 @@ function ActiveTrainingPage() {
         <button
           onClick={goPrevExercise}
           disabled={currentExIdx === 0}
-          className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/[0.06] bg-[#12121A] py-3.5 text-sm font-semibold text-white transition-all hover:bg-white/[0.04] disabled:opacity-30 disabled:cursor-not-allowed"
+          className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl py-3.5 text-sm font-semibold text-white transition-all hover:bg-white/[0.04] disabled:opacity-30 disabled:cursor-not-allowed"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />

@@ -274,7 +274,7 @@ export default function ImportPage() {
                     ? "bg-[#00E5FF] text-[#0A0A0F]"
                     : (["upload", "mapping", "reconcile", "review"] as Step[]).indexOf(step) > i
                       ? "bg-[#00E5FF]/20 text-[#00E5FF]"
-                      : "bg-[#12121A] text-[#5A5A72] border border-white/[0.06]"
+                      : "bg-[#0E0E18]/60 backdrop-blur-xl text-[#5A5A72] border border-white/[0.06]"
                 }`}
               >
                 {i + 1}
@@ -302,7 +302,7 @@ export default function ImportPage() {
 
       {/* ── Step 1: Upload ── */}
       {step === "upload" && (
-        <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-8">
+        <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-8">
           <label className="flex cursor-pointer flex-col items-center gap-4 rounded-xl border-2 border-dashed border-white/[0.1] p-12 transition-colors hover:border-[#00E5FF]/30 hover:bg-[#00E5FF]/[0.02]">
             <svg
               className="h-12 w-12 text-[#5A5A72]"
@@ -339,7 +339,7 @@ export default function ImportPage() {
       {/* ── Step 2: Column Mapping ── */}
       {step === "mapping" && currentSheet && (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6">
+          <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6">
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold text-white">
@@ -351,7 +351,7 @@ export default function ImportPage() {
               </div>
               {sheets.length > 1 && (
                 <select
-                  className="rounded-lg border border-white/[0.06] bg-[#0A0A0F] px-3 py-2 text-sm text-white"
+                  className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-sm text-white"
                   value={activeSheet}
                   onChange={(e) => setActiveSheet(parseInt(e.target.value))}
                 >
@@ -393,7 +393,7 @@ export default function ImportPage() {
                       </td>
                       <td className="px-3 py-3">
                         <select
-                          className="rounded-lg border border-white/[0.06] bg-[#0A0A0F] px-3 py-1.5 text-sm text-white"
+                          className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-1.5 text-sm text-white"
                           value={columnMapping[col.index] || "unknown"}
                           onChange={(e) =>
                             setColumnMapping((prev) => ({
@@ -460,7 +460,7 @@ export default function ImportPage() {
               <div className="overflow-x-auto rounded-lg border border-white/[0.06]">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="bg-white/[0.02]">
+                    <tr className="bg-white/[0.04]">
                       {currentSheet.columns.map((col) => (
                         <th
                           key={col.index}
@@ -498,7 +498,7 @@ export default function ImportPage() {
           <div className="flex gap-3">
             <button
               onClick={() => setStep("upload")}
-              className="rounded-xl border border-white/[0.06] bg-[#12121A] px-6 py-3 font-semibold text-white transition-colors hover:bg-white/[0.04]"
+              className="rounded-xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-6 py-3 font-semibold text-white transition-colors hover:bg-white/[0.04]"
             >
               Volver
             </button>
@@ -516,7 +516,7 @@ export default function ImportPage() {
       {/* ── Step 3: Entity Reconciliation ── */}
       {step === "reconcile" && (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6">
+          <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6">
             <h2 className="mb-4 text-lg font-bold text-white">
               Reconciliación de ejercicios
             </h2>
@@ -653,7 +653,7 @@ export default function ImportPage() {
           <div className="flex gap-3">
             <button
               onClick={() => setStep("mapping")}
-              className="rounded-xl border border-white/[0.06] bg-[#12121A] px-6 py-3 font-semibold text-white transition-colors hover:bg-white/[0.04]"
+              className="rounded-xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-6 py-3 font-semibold text-white transition-colors hover:bg-white/[0.04]"
             >
               Volver
             </button>
@@ -670,13 +670,13 @@ export default function ImportPage() {
       {/* ── Step 4: Final Review ── */}
       {step === "review" && currentSheet && (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6">
+          <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6">
             <h2 className="mb-4 text-lg font-bold text-white">
               Resumen de importación
             </h2>
 
             <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="rounded-xl bg-white/[0.02] p-4 text-center">
+              <div className="rounded-xl bg-white/[0.04] p-4 text-center">
                 <p className="text-2xl font-black text-[#00E5FF]">
                   {currentSheet.row_count}
                 </p>
@@ -684,7 +684,7 @@ export default function ImportPage() {
                   Filas
                 </p>
               </div>
-              <div className="rounded-xl bg-white/[0.02] p-4 text-center">
+              <div className="rounded-xl bg-white/[0.04] p-4 text-center">
                 <p className="text-2xl font-black text-[#00C853]">
                   {
                     Object.values(decisions).filter(
@@ -696,7 +696,7 @@ export default function ImportPage() {
                   Enlazados
                 </p>
               </div>
-              <div className="rounded-xl bg-white/[0.02] p-4 text-center">
+              <div className="rounded-xl bg-white/[0.04] p-4 text-center">
                 <p className="text-2xl font-black text-[#7C3AED]">
                   {
                     Object.values(decisions).filter(
@@ -740,7 +740,7 @@ export default function ImportPage() {
           <div className="flex gap-3">
             <button
               onClick={() => setStep("reconcile")}
-              className="rounded-xl border border-white/[0.06] bg-[#12121A] px-6 py-3 font-semibold text-white transition-colors hover:bg-white/[0.04]"
+              className="rounded-xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-6 py-3 font-semibold text-white transition-colors hover:bg-white/[0.04]"
             >
               Volver
             </button>

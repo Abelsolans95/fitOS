@@ -597,7 +597,7 @@ export default function ClientRoutinePage() {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-white">Mi Rutina</h1>
-        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/[0.06] bg-[#12121A] py-16">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl py-16">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.04]">
             <svg className="h-7 w-7 text-[#8B8BA3]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
@@ -664,7 +664,7 @@ export default function ClientRoutinePage() {
           return (
             <div
               key={`${ex.exercise_id}-${exIdx}`}
-              className="rounded-2xl border border-white/[0.06] bg-[#12121A] overflow-hidden"
+              className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl overflow-hidden"
             >
               {/* Exercise header */}
               <div className="border-b border-white/[0.04] px-4 py-3">
@@ -766,7 +766,7 @@ export default function ClientRoutinePage() {
                           placeholder={
                             prevSet ? String(prevSet.weight_kg) : "0"
                           }
-                          className="h-9 w-full rounded-lg border border-white/[0.08] bg-[#0A0A0F] px-3 text-center text-sm text-white placeholder:text-[#5A5A72]/50 outline-none transition-colors focus:border-[#00E5FF]/50"
+                          className="h-9 w-full rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 text-center text-sm text-white placeholder:text-[#5A5A72]/50 outline-none transition-colors focus:border-[#00E5FF]/50"
                         />
                       </div>
 
@@ -784,7 +784,7 @@ export default function ClientRoutinePage() {
                               ? String(prevSet.reps_done)
                               : `${ex.reps_min}-${ex.reps_max}`
                           }
-                          className="h-9 w-full rounded-lg border border-white/[0.08] bg-[#0A0A0F] px-3 text-center text-sm text-white placeholder:text-[#5A5A72]/50 outline-none transition-colors focus:border-[#00E5FF]/50"
+                          className="h-9 w-full rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 text-center text-sm text-white placeholder:text-[#5A5A72]/50 outline-none transition-colors focus:border-[#00E5FF]/50"
                         />
                       </div>
                     </div>
@@ -812,7 +812,7 @@ export default function ClientRoutinePage() {
         })}
 
         {/* RPE */}
-        <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-4">
+        <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-4">
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-medium uppercase tracking-wider text-[#5A5A72]">
               RPE Global
@@ -939,7 +939,7 @@ export default function ClientRoutinePage() {
 
       {/* Exercise list */}
       {dayExercises.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-white/[0.06] bg-[#12121A] py-12">
+        <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl py-12">
           <p className="text-sm text-[#8B8BA3]">Día de descanso</p>
         </div>
       ) : (
@@ -956,7 +956,7 @@ export default function ClientRoutinePage() {
               return (
                 <div
                   key={`${ex.exercise_id}-${idx}`}
-                  className="rounded-xl border border-white/[0.06] bg-[#12121A] px-3 py-2.5"
+                  className="rounded-xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-3 py-2.5"
                 >
                   <div className="flex items-center justify-between gap-1">
                     <div className="flex items-center gap-1.5 min-w-0">
@@ -1046,7 +1046,7 @@ export default function ClientRoutinePage() {
               <button
                 type="button"
                 onClick={startTracking}
-                className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/[0.06] bg-[#12121A] py-3.5 text-sm font-semibold text-white transition-all hover:bg-white/[0.04]"
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl py-3.5 text-sm font-semibold text-white transition-all hover:bg-white/[0.04]"
               >
                 <svg
                   className="h-4 w-4"

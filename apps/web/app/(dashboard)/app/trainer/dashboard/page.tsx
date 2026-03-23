@@ -273,13 +273,16 @@ export default function TrainerDashboardPage() {
           position: relative;
           overflow: hidden;
           border-radius: 18px;
-          background: #12121A;
+          background: rgba(14, 14, 24, 0.6);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
           border: 1px solid rgba(255,255,255,0.06);
-          transition: border-color 0.35s ease, transform 0.3s ease, box-shadow 0.35s ease;
+          transition: border-color 0.35s ease, transform 0.3s ease, box-shadow 0.35s ease, background 0.3s ease;
           cursor: pointer;
         }
         .kpi-card:hover {
           transform: translateY(-2px);
+          background: rgba(20, 20, 34, 0.7);
         }
 
         .kpi-orb {
@@ -297,23 +300,25 @@ export default function TrainerDashboardPage() {
           gap: 12px;
           border-radius: 14px;
           border: 1px solid rgba(255,255,255,0.06);
-          background: #12121A;
+          background: rgba(14, 14, 24, 0.5);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
           padding: 14px 16px;
           transition: all 0.25s ease;
           text-decoration: none;
         }
         .action-card:hover {
-          background: #16162A;
+          background: rgba(255,255,255,0.03);
           border-color: rgba(255,255,255,0.12);
           transform: translateX(3px);
         }
         .action-card-primary {
           border-color: rgba(124,58,237,0.2);
-          background: rgba(124,58,237,0.06);
+          background: rgba(124,58,237,0.08);
         }
         .action-card-primary:hover {
           border-color: rgba(124,58,237,0.35);
-          background: rgba(124,58,237,0.1);
+          background: rgba(124,58,237,0.15);
           box-shadow: 0 0 30px -10px rgba(124,58,237,0.3);
         }
 
@@ -375,7 +380,7 @@ export default function TrainerDashboardPage() {
           </div>
 
           {/* Live indicator */}
-          <div className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-[#12121A] px-3.5 py-2">
+          <div className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] backdrop-blur-md px-3.5 py-2 shadow-[0_0_20px_rgba(0,200,83,0.1)]">
             <span className="live-dot h-2 w-2 rounded-full bg-[#00C853] flex-shrink-0" />
             <span className="text-[11px] font-semibold text-[#8B8BA3]">En vivo</span>
           </div>
@@ -424,7 +429,7 @@ export default function TrainerDashboardPage() {
           {/* Activity feed */}
           <div className="dash-in d3 lg:col-span-3">
             <p className="section-label">Actividad reciente</p>
-            <div className="rounded-[18px] border border-white/[0.06] bg-[#12121A] overflow-hidden">
+            <div className="rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl overflow-hidden">
               {/* Header bar */}
               <div className="flex items-center justify-between border-b border-white/[0.05] px-5 py-4">
                 <div className="flex items-center gap-2">
@@ -490,7 +495,7 @@ export default function TrainerDashboardPage() {
             {tips.map((tip, i) => (
               <div
                 key={i}
-                className="relative overflow-hidden rounded-[16px] border border-white/[0.06] bg-[#12121A] p-5"
+                className="relative overflow-hidden rounded-[16px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-5 transition-colors hover:bg-white/[0.04]"
               >
                 {/* Accent bar top */}
                 <div

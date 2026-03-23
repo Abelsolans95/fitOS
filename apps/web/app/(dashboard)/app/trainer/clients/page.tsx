@@ -132,7 +132,7 @@ export default function TrainerClientsPage() {
               placeholder="Buscar por nombre o email..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="search-input h-10 w-full rounded-xl border border-white/[0.08] bg-[#12121A] pl-10 pr-4 text-[13px] text-white"
+              className="search-input h-10 w-full rounded-xl border border-white/[0.08] bg-[#0E0E18]/60 backdrop-blur-xl pl-10 pr-4 text-[13px] text-white"
             />
           </div>
         </div>
@@ -140,7 +140,7 @@ export default function TrainerClientsPage() {
         {/* ── List ── */}
         <div className="cl-in cl-2">
           {filtered.length === 0 ? (
-            <div className="rounded-[18px] border border-white/[0.06] bg-[#12121A] p-16">
+            <div className="rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-16">
               <div className="flex flex-col items-center gap-3">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.03] ring-1 ring-white/[0.06] text-[#3A3A52]">
                   <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -156,7 +156,7 @@ export default function TrainerClientsPage() {
               </div>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#12121A]">
+            <div className="overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl">
               {/* Table header */}
               <div className="hidden border-b border-white/[0.05] px-6 py-3 sm:grid sm:grid-cols-12 sm:gap-4">
                 {["Cliente", "Objetivo", "Fecha", "Estado", ""].map((h, i) => (

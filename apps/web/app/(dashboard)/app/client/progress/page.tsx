@@ -188,7 +188,7 @@ export default function ProgressPage() {
 
       {/* New metric form */}
       {showForm && (
-        <div className="rounded-2xl border border-[#00E5FF]/20 bg-[#12121A] p-6">
+        <div className="rounded-2xl border border-[#00E5FF]/20 bg-[#0E0E18]/60 backdrop-blur-xl p-6">
           <h3 className="mb-4 text-sm font-medium text-white">Registrar medición</h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {METRIC_CONFIG.map((config) => (
@@ -202,7 +202,7 @@ export default function ProgressPage() {
                   placeholder="—"
                   value={newMetric[config.key]}
                   onChange={(e) => setNewMetric((prev) => ({ ...prev, [config.key]: e.target.value }))}
-                  className="w-full rounded-lg border border-white/[0.08] bg-[#0A0A0F] px-3 py-2 text-sm text-white placeholder:text-[#8B8BA3]/40 focus:border-[#00E5FF] focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/20"
+                  className="w-full rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 py-2 text-sm text-white placeholder:text-[#8B8BA3]/40 focus:border-[#00E5FF] focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/20"
                 />
               </div>
             ))}
@@ -214,7 +214,7 @@ export default function ProgressPage() {
               placeholder="Ej: después de vacaciones, inicio dieta..."
               value={newMetric.notes}
               onChange={(e) => setNewMetric((prev) => ({ ...prev, notes: e.target.value }))}
-              className="w-full rounded-lg border border-white/[0.08] bg-[#0A0A0F] px-3 py-2 text-sm text-white placeholder:text-[#8B8BA3]/40 focus:border-[#00E5FF] focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/20"
+              className="w-full rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 py-2 text-sm text-white placeholder:text-[#8B8BA3]/40 focus:border-[#00E5FF] focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/20"
             />
           </div>
           {saveError && (
@@ -266,7 +266,7 @@ export default function ProgressPage() {
       </div>
 
       {/* Chart */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6">
+      <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-sm font-medium text-white">
             {selectedConfig.label}
@@ -390,7 +390,7 @@ export default function ProgressPage() {
       </div>
 
       {/* Metrics history */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6">
+      <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6">
         <h3 className="mb-4 text-sm font-medium text-white">Historial de mediciones</h3>
 
         {metrics.length === 0 ? (
@@ -405,7 +405,7 @@ export default function ProgressPage() {
               .map((metric) => (
                 <div
                   key={metric.id}
-                  className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-4"
+                  className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4"
                 >
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-xs text-[#8B8BA3]">

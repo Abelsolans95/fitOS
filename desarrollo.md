@@ -1,6 +1,6 @@
 # FitOS — Estado del Desarrollo
 
-> Documento actualizado el 22/03/2026 (Entrenamiento activo resumible, vista trainer de datos cliente, Excel import con Haiku, clone-on-edit ejercicios). Léelo de arriba abajo antes de tocar cualquier archivo.
+> Documento actualizado el 23/03/2026 (Rediseño premium Dashboard Entrenador, glassmorphism, background glows, AppSidebar). Léelo de arriba abajo antes de tocar cualquier archivo.
 > Cualquier agente o desarrollador debe leer este archivo **primero** para entender el estado actual del proyecto.
 >
 > **IMPORTANTE:** Al terminar cualquier desarrollo, bugfix o cambio significativo, actualiza este archivo (`desarrollo.md`) **y** `CLAUDE.md` antes de cerrar la sesión. Refleja los archivos nuevos o modificados, añade notas para el siguiente agente/desarrollador y actualiza la sección de próximos pasos. El objetivo es que cualquier persona o agente pueda continuar el proyecto sin contexto previo.
@@ -55,8 +55,9 @@
 > [!NOTE]
 > Ver `PENDIENTE_FASE_1.md` en la raíz para las tareas de configuración y seeds faltantes para cerrar esta fase.
 
-### Rediseño UI — "Brutalismo Elegante" (Completado — 19/03/2026)
-- Rediseño integral de 7 pantallas mobile y 3 páginas web
+### Rediseño UI — "Brutalismo Elegante" y Dashboards Premium (Actualizado — 23/03/2026)
+- Rediseño integral de 7 pantallas mobile y páginas web públicas / auth (19/03/2026)
+- **Dashboards Premium (Entrenador y Cliente):** Implementación de *glassmorphism* intensivo, texturas `.dot-grid` globales, rediseño flotante en la `AppSidebar` y transparencias en tarjetas de contenido (`backdrop-blur-xl`). Se actualizaron masivamente todas las rutas internas y layouts base para unificar estética holográfica con la landing page (23/03/2026)
 - Nuevo design system en `theme.ts` con tokens extendidos (colors, spacing, radius, shadows)
 - Landing page premium en `apps/web/app/page.tsx` (hero animado, bento features, pricing)
 - Dependencias añadidas: `expo-linear-gradient ~55.0.9`, `react-native-svg 15.15.3`

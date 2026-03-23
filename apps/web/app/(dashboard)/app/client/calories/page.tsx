@@ -279,7 +279,7 @@ export default function CaloriesPage() {
         className={`relative overflow-hidden rounded-2xl border-2 border-dashed transition-all ${
           dragOver
             ? "border-[#00E5FF] bg-[#00E5FF]/5"
-            : "border-white/[0.08] bg-[#12121A]"
+            : "border-white/[0.08] bg-[#0E0E18]/60 backdrop-blur-xl"
         }`}
         onDragOver={(e) => {
           e.preventDefault();
@@ -411,7 +411,7 @@ export default function CaloriesPage() {
           {analyzedFoods.map((food, index) => (
             <div
               key={index}
-              className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-4"
+              className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-4"
             >
               <div className="flex items-start justify-between">
                 <div>
@@ -431,19 +431,19 @@ export default function CaloriesPage() {
 
               {/* Macros row */}
               <div className="mt-3 flex gap-4">
-                <div className="flex-1 rounded-lg bg-[#0A0A0F] px-3 py-2 text-center">
+                <div className="flex-1 rounded-lg bg-white/[0.02] px-3 py-2 text-center">
                   <p className="text-xs font-bold text-[#00E5FF]">
                     {food.protein}g
                   </p>
                   <p className="text-[10px] text-[#8B8BA3]">Proteina</p>
                 </div>
-                <div className="flex-1 rounded-lg bg-[#0A0A0F] px-3 py-2 text-center">
+                <div className="flex-1 rounded-lg bg-white/[0.02] px-3 py-2 text-center">
                   <p className="text-xs font-bold text-[#FF9100]">
                     {food.carbs}g
                   </p>
                   <p className="text-[10px] text-[#8B8BA3]">Carbos</p>
                 </div>
-                <div className="flex-1 rounded-lg bg-[#0A0A0F] px-3 py-2 text-center">
+                <div className="flex-1 rounded-lg bg-white/[0.02] px-3 py-2 text-center">
                   <p className="text-xs font-bold text-[#7C3AED]">
                     {food.fat}g
                   </p>
@@ -475,7 +475,7 @@ export default function CaloriesPage() {
           ))}
 
           {/* Meal type selector */}
-          <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-4">
+          <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-4">
             <p className="mb-3 text-sm font-medium text-white">
               Tipo de comida
             </p>
@@ -527,7 +527,7 @@ export default function CaloriesPage() {
 
       {/* Daily totals */}
       {todayLog.length > 0 && (
-        <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-5">
+        <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-5">
           <h2 className="mb-4 text-base font-semibold text-white">
             Totales del dia
           </h2>
@@ -573,7 +573,7 @@ export default function CaloriesPage() {
         <h2 className="text-base font-semibold text-white">Registro de hoy</h2>
 
         {todayLog.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/[0.06] bg-[#12121A] py-10">
+          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl py-10">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/[0.04]">
               <svg
                 className="h-6 w-6 text-[#8B8BA3]"
@@ -597,7 +597,7 @@ export default function CaloriesPage() {
           todayLog.map((entry) => (
             <div
               key={entry.id}
-              className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-4"
+              className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-4"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">

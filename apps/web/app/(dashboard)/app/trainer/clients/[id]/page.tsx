@@ -203,7 +203,7 @@ function ProfileTab({ profile }: { profile: ClientProfile }) {
           { label: "Objetivo", value: profile.goal ? GOAL_LABELS[profile.goal] ?? profile.goal : null },
           { label: "Bio", value: profile.bio },
         ].map((f) => (
-          <div key={f.label} className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-4">
+          <div key={f.label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
             <p className="text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">{f.label}</p>
             <p className="mt-1 text-sm text-[#E8E8ED]">{f.value ?? "No especificado"}</p>
           </div>
@@ -211,7 +211,7 @@ function ProfileTab({ profile }: { profile: ClientProfile }) {
       </div>
 
       {/* Food preferences — full width */}
-      <div className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-4">
+      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
         <p className="mb-3 text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">
           Preferencias alimentarias
         </p>
@@ -235,7 +235,7 @@ function ProgressTab({ metrics }: { metrics: BodyMetric[] }) {
   return (
     <div className="space-y-2">
       {metrics.map((m) => (
-        <div key={m.id} className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-4 py-3">
+        <div key={m.id} className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
           <div className="flex items-center gap-4">
             {m.body_weight_kg != null && (
               <div>
@@ -313,7 +313,7 @@ function RoutineTab({ routine, clientId }: { routine: UserRoutine | null; client
   return (
     <div className="space-y-4">
       {/* Active routine info */}
-      <div className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-5">
+      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
         <div className="flex items-start justify-between">
           <h4 className="text-sm font-semibold text-white">{routine.title}</h4>
           <span className="inline-flex items-center rounded-full bg-[#7C3AED]/10 px-2.5 py-0.5 text-xs font-medium text-[#7C3AED]">Activa</span>
@@ -332,7 +332,7 @@ function RoutineTab({ routine, clientId }: { routine: UserRoutine | null; client
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#00E5FF] border-t-transparent" />
           </div>
         ) : sessions.length === 0 ? (
-          <p className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-5 text-center text-sm text-[#5A5A72]">
+          <p className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 text-center text-sm text-[#5A5A72]">
             Aún no ha completado ninguna sesión
           </p>
         ) : (
@@ -342,11 +342,11 @@ function RoutineTab({ routine, clientId }: { routine: UserRoutine | null; client
               const logs = isExpanded ? getLogsForSession(session.id) : [];
 
               return (
-                <div key={session.id} className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] overflow-hidden">
+                <div key={session.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
                   <button
                     type="button"
                     onClick={() => setExpandedSession(isExpanded ? null : session.id)}
-                    className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-white/[0.02]"
+                    className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-white/[0.04]"
                   >
                     <div className="flex items-center gap-4">
                       <div className="text-center">
@@ -396,7 +396,7 @@ function RoutineTab({ routine, clientId }: { routine: UserRoutine | null; client
                         <p className="text-xs text-[#5A5A72]">Sin datos de ejercicios</p>
                       ) : (
                         logs.map((log) => (
-                          <div key={log.id} className="rounded-lg border border-white/[0.04] bg-[#12121A] p-3">
+                          <div key={log.id} className="rounded-lg border border-white/[0.04] bg-[#0E0E18]/60 backdrop-blur-xl p-3">
                             <p className="text-sm font-semibold text-white">{log.exercise_name}</p>
                             <div className="mt-2 flex flex-wrap gap-2">
                               {(log.sets_data ?? []).map((set, i) => (
@@ -502,7 +502,7 @@ function MealPlanTab({ mealPlan, clientId }: { mealPlan: MealPlan | null; client
   return (
     <div className="space-y-4">
       {/* Plan info */}
-      <div className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-5">
+      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
         <div className="flex items-start justify-between">
           <h4 className="text-sm font-semibold text-white">{mealPlan.title}</h4>
           <span className="inline-flex items-center rounded-full bg-[#00C853]/10 px-2.5 py-0.5 text-xs font-medium text-[#00C853]">Activo</span>
@@ -511,7 +511,7 @@ function MealPlanTab({ mealPlan, clientId }: { mealPlan: MealPlan | null; client
       </div>
 
       {/* Date selector */}
-      <div className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-4 py-3">
+      <div className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
         <button type="button" onClick={() => changeDate(-1)} className="rounded-lg p-1.5 text-[#8B8BA3] transition-colors hover:bg-white/[0.04] hover:text-white">
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
         </button>
@@ -529,7 +529,7 @@ function MealPlanTab({ mealPlan, clientId }: { mealPlan: MealPlan | null; client
           { label: "Carbos", value: `${Math.round(dailyTotals.carbs)}g`, color: "#7C3AED" },
           { label: "Grasa", value: `${Math.round(dailyTotals.fat)}g`, color: "#00C853" },
         ].map((macro) => (
-          <div key={macro.label} className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-3 text-center">
+          <div key={macro.label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-center">
             <p className="text-lg font-black" style={{ color: macro.color }}>{macro.value}</p>
             <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#5A5A72]">{macro.label}</p>
           </div>
@@ -547,19 +547,19 @@ function MealPlanTab({ mealPlan, clientId }: { mealPlan: MealPlan | null; client
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#00E5FF] border-t-transparent" />
           </div>
         ) : foodLogs.length === 0 ? (
-          <p className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-5 text-center text-sm text-[#5A5A72]">
+          <p className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 text-center text-sm text-[#5A5A72]">
             Sin registros este día
           </p>
         ) : (
           <div className="space-y-3">
             {Object.entries(logsByMeal).map(([meal, entries]) => (
-              <div key={meal} className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-4">
+              <div key={meal} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                 <h4 className="mb-3 text-xs font-bold uppercase tracking-[0.15em] text-[#00E5FF]">
                   {MEAL_LABELS[meal] ?? meal}
                 </h4>
                 <div className="space-y-2">
                   {entries.map((entry) => (
-                    <div key={entry.id} className="rounded-lg border border-white/[0.04] bg-[#12121A] p-3">
+                    <div key={entry.id} className="rounded-lg border border-white/[0.04] bg-[#0E0E18]/60 backdrop-blur-xl p-3">
                       {/* Food items */}
                       <div className="space-y-1">
                         {(entry.foods ?? []).map((food, i) => (
@@ -627,7 +627,7 @@ function FormTab({ responses }: { responses: OnboardingResponse[] }) {
         const entries = Object.entries(resp.responses ?? {});
 
         return (
-          <div key={resp.id} className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-5">
+          <div key={resp.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
             <div className="mb-4 flex items-center justify-between">
               <h4 className="text-sm font-semibold text-white">
                 {resp.form?.title ?? "Formulario de onboarding"}
@@ -672,7 +672,7 @@ function FormTab({ responses }: { responses: OnboardingResponse[] }) {
                 <p className="text-sm leading-relaxed text-[#E8E8ED]">{resp.ai_analysis}</p>
               </div>
             ) : (
-              <div className="mt-4 rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+              <div className="mt-4 rounded-lg border border-white/[0.06] bg-white/[0.04] px-4 py-3">
                 <p className="text-xs text-[#8B8BA3]">Análisis IA pendiente</p>
               </div>
             )}
@@ -685,7 +685,7 @@ function FormTab({ responses }: { responses: OnboardingResponse[] }) {
 
 function EmptyState({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-white/[0.06] bg-[#0A0A0F] py-12">
+    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] py-12">
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/[0.04] text-[#8B8BA3]">
         {icon}
       </div>
@@ -845,7 +845,7 @@ export default function ClientDetailPage() {
       </button>
 
       {/* Client header */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6">
+      <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-5">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#7C3AED]/10 text-lg font-bold text-[#7C3AED]">
             {getInitials(profile.full_name)}
@@ -871,7 +871,7 @@ export default function ClientDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 overflow-x-auto rounded-xl border border-white/[0.06] bg-[#12121A] p-1">
+      <div className="flex gap-1 overflow-x-auto rounded-xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-1">
         {TABS.map((tab) => (
           <button
             key={tab.key}

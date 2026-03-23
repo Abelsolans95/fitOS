@@ -145,6 +145,11 @@
                 0 0 60px rgba(124, 58, 237, 0.05);
   }
 
+  .dot-grid {
+    background-image: radial-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    background-size: 26px 26px;
+  }
+
   /* Custom scrollbar */
   ::-webkit-scrollbar {
     width: 6px;

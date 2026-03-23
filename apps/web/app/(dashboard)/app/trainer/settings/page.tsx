@@ -142,7 +142,7 @@ export default function TrainerSettingsPage() {
         )}
 
         {/* ── Promo Code ── */}
-        <div className="st-in st-2 relative overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#12121A] p-6">
+        <div className="st-in st-2 relative overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6">
           {/* Accent top bar */}
           <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(90deg, #00E5FF, transparent)" }} />
           {/* Glow */}
@@ -157,7 +157,7 @@ export default function TrainerSettingsPage() {
 
             <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
               {/* Code display */}
-              <div className="flex h-12 flex-1 items-center rounded-xl border border-[#00E5FF]/15 bg-[#0A0A0F] px-5">
+              <div className="flex h-12 flex-1 items-center rounded-xl border border-[#00E5FF]/15 bg-white/[0.02] px-5">
                 <span className="font-mono text-[18px] font-bold tracking-[0.15em] text-[#00E5FF]">
                   {promoCode || "Sin código"}
                 </span>
@@ -187,7 +187,7 @@ export default function TrainerSettingsPage() {
         </div>
 
         {/* ── Profile ── */}
-        <div className="st-in st-3 relative overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#12121A] p-6">
+        <div className="st-in st-3 relative overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6">
           <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(90deg, #7C3AED, transparent)" }} />
           <div className="pointer-events-none absolute -top-8 -right-8 h-32 w-32 rounded-full bg-[#7C3AED] opacity-[0.04] blur-[40px]" />
 
@@ -226,7 +226,7 @@ export default function TrainerSettingsPage() {
 
               {/* Form field count stat */}
               {formFieldCount > 0 && (
-                <div className="flex items-center gap-2 rounded-xl border border-white/[0.05] bg-white/[0.02] px-4 py-3">
+                <div className="flex items-center gap-2 rounded-xl border border-white/[0.05] bg-white/[0.04] px-4 py-3">
                   <span className="flex h-6 min-w-[28px] items-center justify-center rounded-md bg-[#00E5FF]/10 px-2 text-[11px] font-bold text-[#00E5FF]">
                     {formFieldCount}
                   </span>

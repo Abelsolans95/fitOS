@@ -169,10 +169,10 @@ function FoodSearchCombobox({
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
-        className="h-9 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-3 text-[13px] text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/40"
+        className="h-9 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-3 text-[13px] text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/40"
       />
       {open && filtered.length > 0 && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-y-auto rounded-xl border border-white/[0.08] bg-[#12121A] shadow-lg">
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-y-auto rounded-xl border border-white/[0.08] bg-[#0E0E18]/60 backdrop-blur-xl shadow-lg">
           {filtered.map((food) => (
             <button
               key={food.id}
@@ -392,7 +392,7 @@ function MenuCreator({
       <h2 className="text-[22px] font-extrabold tracking-[-0.03em] text-white">Nuevo Menu</h2>
 
       {/* Client selection */}
-      <div className="rounded-[18px] border border-white/[0.06] bg-[#12121A] p-6 space-y-4">
+      <div className="rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6 space-y-4">
         <div className="space-y-1.5">
           <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">
             Cliente
@@ -400,7 +400,7 @@ function MenuCreator({
           <select
             value={selectedClientId}
             onChange={(e) => setSelectedClientId(e.target.value)}
-            className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white outline-none transition-colors focus:border-[#00E5FF]/40"
+            className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white outline-none transition-colors focus:border-[#00E5FF]/40"
           >
             <option value="">Seleccionar cliente...</option>
             {clients.map((c) => (
@@ -438,7 +438,7 @@ function MenuCreator({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Ej: Menu de definicion - Semana 1"
-            className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/40"
+            className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/40"
           />
         </div>
 
@@ -456,7 +456,7 @@ function MenuCreator({
                 className={`flex items-center justify-center rounded-xl border px-4 py-3 text-[13px] font-medium transition-all ${
                   period === p
                     ? "border-[#00E5FF]/50 bg-[#00E5FF]/10 text-[#00E5FF]"
-                    : "border-white/[0.08] bg-[#0A0A0F] text-[#8B8BA3] hover:border-white/[0.15] hover:text-white"
+                    : "border-white/[0.08] bg-white/[0.02] text-[#8B8BA3] hover:border-white/[0.15] hover:text-white"
                 }`}
               >
                 {p === "weekly" ? "Semanal" : "Mensual"}
@@ -479,7 +479,7 @@ function MenuCreator({
                 className={`flex items-center justify-center rounded-xl border px-4 py-3 text-[13px] font-medium transition-all ${
                   mealsPerDay === n
                     ? "border-[#00E5FF]/50 bg-[#00E5FF]/10 text-[#00E5FF]"
-                    : "border-white/[0.08] bg-[#0A0A0F] text-[#8B8BA3] hover:border-white/[0.15] hover:text-white"
+                    : "border-white/[0.08] bg-white/[0.02] text-[#8B8BA3] hover:border-white/[0.15] hover:text-white"
                 }`}
               >
                 {n} comidas
@@ -498,7 +498,7 @@ function MenuCreator({
             value={targetKcal}
             onChange={(e) => setTargetKcal(e.target.value ? Number(e.target.value) : "")}
             placeholder="Auto-calcular segun perfil del cliente"
-            className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/40"
+            className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/40"
           />
         </div>
       </div>
@@ -510,13 +510,13 @@ function MenuCreator({
         {days.map((day, dayIndex) => (
           <div
             key={dayIndex}
-            className="rounded-[18px] border border-white/[0.06] bg-[#12121A]"
+            className="rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl"
           >
             {/* Day header (accordion) */}
             <button
               type="button"
               onClick={() => toggleDay(dayIndex)}
-              className="flex w-full items-center justify-between px-6 py-4 text-left transition-colors hover:bg-white/[0.02]"
+              className="flex w-full items-center justify-between px-6 py-4 text-left transition-colors hover:bg-white/[0.04]"
             >
               <span className="text-[13px] font-semibold text-white">{day.day}</span>
               <svg
@@ -553,7 +553,7 @@ function MenuCreator({
                       {meal.foods.map((food, foodIndex) => (
                         <div
                           key={foodIndex}
-                          className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-4 py-2.5"
+                          className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5"
                         >
                           <div className="flex-1 min-w-0">
                             <p className="truncate text-[13px] text-[#E8E8ED]">{food.name}</p>
@@ -568,7 +568,7 @@ function MenuCreator({
                               onChange={(e) =>
                                 updateFoodPortion(dayIndex, mealIndex, foodIndex, Number(e.target.value) || 0)
                               }
-                              className="h-8 w-20 rounded-lg border border-white/[0.08] bg-[#12121A] px-2 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
+                              className="h-8 w-20 rounded-lg border border-white/[0.08] bg-[#0E0E18]/60 backdrop-blur-xl px-2 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
                             />
                             <span className="text-[11px] text-[#8B8BA3]">g</span>
                             <button
@@ -795,7 +795,7 @@ function FoodLibraryTab({
             placeholder="Buscar alimento..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#12121A] pl-10 pr-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/40"
+            className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0E0E18]/60 backdrop-blur-xl pl-10 pr-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/40"
           />
         </div>
         <button
@@ -858,7 +858,7 @@ function FoodLibraryTab({
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
                 placeholder="Ej: Pechuga de pollo a la plancha"
-                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors"
+                className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors"
               />
             </div>
 
@@ -868,7 +868,7 @@ function FoodLibraryTab({
                 type="number"
                 value={formKcal}
                 onChange={(e) => setFormKcal(e.target.value ? Number(e.target.value) : "")}
-                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
+                className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
               />
             </div>
 
@@ -878,7 +878,7 @@ function FoodLibraryTab({
                 type="number"
                 value={formProtein}
                 onChange={(e) => setFormProtein(e.target.value ? Number(e.target.value) : "")}
-                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
+                className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
               />
             </div>
 
@@ -888,7 +888,7 @@ function FoodLibraryTab({
                 type="number"
                 value={formCarbs}
                 onChange={(e) => setFormCarbs(e.target.value ? Number(e.target.value) : "")}
-                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
+                className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
               />
             </div>
 
@@ -898,7 +898,7 @@ function FoodLibraryTab({
                 type="number"
                 value={formFat}
                 onChange={(e) => setFormFat(e.target.value ? Number(e.target.value) : "")}
-                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
+                className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
               />
             </div>
 
@@ -908,7 +908,7 @@ function FoodLibraryTab({
                 type="number"
                 value={formFiber}
                 onChange={(e) => setFormFiber(e.target.value ? Number(e.target.value) : "")}
-                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
+                className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
               />
             </div>
 
@@ -917,7 +917,7 @@ function FoodLibraryTab({
               <select
                 value={formCategory}
                 onChange={(e) => setFormCategory(e.target.value)}
-                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
+                className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
               >
                 {CATEGORIES.filter((c) => c !== "Todos").map((cat) => (
                   <option key={cat} value={cat}>{cat}</option>
@@ -967,7 +967,7 @@ function FoodLibraryTab({
           description={search.trim() ? "No se encontraron alimentos con ese nombre" : "Anade alimentos a tu biblioteca para usarlos en los menus"}
         />
       ) : (
-        <div className="overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#12121A]">
+        <div className="overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl">
           {/* Table header */}
           <div className="hidden border-b border-white/[0.06] px-6 py-3 lg:grid lg:grid-cols-12 lg:gap-3">
             <div className="col-span-3 text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]">Nombre</div>
@@ -1223,7 +1223,7 @@ export default function TrainerNutritionPage() {
         </div>
 
         {/* Tabs */}
-        <div className="pg-in pg-2 flex gap-1 rounded-[14px] border border-white/[0.06] bg-[#12121A] p-1">
+        <div className="pg-in pg-2 flex gap-1 rounded-[14px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-1">
           <button
             type="button"
             onClick={() => setActiveTab("menus")}
@@ -1283,7 +1283,7 @@ export default function TrainerNutritionPage() {
                 description="Crea tu primer menu nutricional para tus clientes"
               />
             ) : (
-              <div className="relative overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#12121A]">
+              <div className="relative overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl">
                 <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(90deg, #00C853, transparent)" }} />
                 <div className="pointer-events-none absolute -top-8 -right-8 h-32 w-32 rounded-full bg-[#00C853] opacity-[0.04] blur-[40px]" />
 

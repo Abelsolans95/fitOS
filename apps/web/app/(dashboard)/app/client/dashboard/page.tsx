@@ -245,7 +245,7 @@ export default function ClientDashboardPage() {
       <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
 
         {/* Today's workout — 2 cols */}
-        <div className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[#12121A] p-6 md:col-span-2">
+        <div className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6 md:col-span-2">
           <div className="absolute -right-20 -top-20 h-48 w-48 rounded-full bg-[#7C3AED]/[0.06] blur-3xl pointer-events-none" />
 
           <div className="mb-5 flex items-center justify-between">
@@ -267,7 +267,7 @@ export default function ClientDashboardPage() {
 
           <div className="space-y-3">
             {/* Workout */}
-            <div className="flex items-center gap-4 rounded-xl bg-[#0A0A0F]/60 p-4 ring-1 ring-white/[0.04]">
+            <div className="flex items-center gap-4 rounded-xl bg-white/[0.02]/60 p-4 ring-1 ring-white/[0.04]">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED]/10">
                 <svg className="h-5 w-5 text-[#7C3AED]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
@@ -287,7 +287,7 @@ export default function ClientDashboardPage() {
             </div>
 
             {/* Meals */}
-            <div className="flex items-center gap-4 rounded-xl bg-[#0A0A0F]/60 p-4 ring-1 ring-white/[0.04]">
+            <div className="flex items-center gap-4 rounded-xl bg-white/[0.02]/60 p-4 ring-1 ring-white/[0.04]">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#00C853]/10">
                 <svg className="h-5 w-5 text-[#00C853]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.25v-1.5m0 1.5c-1.355 0-2.697.056-4.024.166C6.845 8.51 6 9.473 6 10.608v2.513m6-4.871c1.355 0 2.697.056 4.024.166C17.155 8.51 18 9.473 18 10.608v2.513M15 8.25v-1.5m-6 1.5v-1.5m12 9.75-1.5.75a3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0L3 16.5" />
@@ -316,7 +316,7 @@ export default function ClientDashboardPage() {
         {/* Stats column — 1 col */}
         <div className="flex flex-col gap-4">
           {/* Adherence */}
-          <div className="flex-1 rounded-2xl border border-white/[0.06] bg-[#12121A] p-5">
+          <div className="flex-1 rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-5">
             <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#5A5A72]">
               Adherencia
             </p>
@@ -333,7 +333,7 @@ export default function ClientDashboardPage() {
           </div>
 
           {/* Next workout */}
-          <div className="flex-1 rounded-2xl border border-white/[0.06] bg-[#12121A] p-5">
+          <div className="flex-1 rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-5">
             <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#5A5A72]">
               Próximo
             </p>
@@ -353,7 +353,7 @@ export default function ClientDashboardPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Link
             href="/app/client/calories"
-            className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-[#12121A] px-5 py-4 transition-all hover:border-[#00E5FF]/20 hover:bg-[#00E5FF]/[0.03]"
+            className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-5 py-4 transition-all hover:border-[#00E5FF]/20 hover:bg-[#00E5FF]/[0.03]"
           >
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#00E5FF]/[0.08] transition-colors group-hover:bg-[#00E5FF]/[0.14]">
               <svg className="h-5 w-5 text-[#00E5FF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -369,7 +369,7 @@ export default function ClientDashboardPage() {
 
           <Link
             href="/app/client/routine"
-            className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-[#12121A] px-5 py-4 transition-all hover:border-[#7C3AED]/20 hover:bg-[#7C3AED]/[0.03]"
+            className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-5 py-4 transition-all hover:border-[#7C3AED]/20 hover:bg-[#7C3AED]/[0.03]"
           >
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED]/[0.08] transition-colors group-hover:bg-[#7C3AED]/[0.14]">
               <svg className="h-5 w-5 text-[#7C3AED]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -384,7 +384,7 @@ export default function ClientDashboardPage() {
 
           <Link
             href="/app/client/progress"
-            className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-[#12121A] px-5 py-4 transition-all hover:border-[#00C853]/20 hover:bg-[#00C853]/[0.03]"
+            className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-5 py-4 transition-all hover:border-[#00C853]/20 hover:bg-[#00C853]/[0.03]"
           >
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#00C853]/[0.08] transition-colors group-hover:bg-[#00C853]/[0.14]">
               <svg className="h-5 w-5 text-[#00C853]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

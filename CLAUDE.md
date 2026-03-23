@@ -10,7 +10,7 @@
 
 - **Fase 0:** Completada — estructura base, auth, 19 tablas, tema visual
 - **Fase 1:** En proceso de finalización (Ver `PENDIENTE_FASE_1.md`) — dashboards, IA base, Google Calendar (config. pendiente)
-- **Rediseño UI:** Completado — "brutalismo elegante" en web y mobile, landing page premium
+- **Rediseño UI:** Completado — estética premium en app completa (landing, paneles trainer/cliente con *glassmorphism*, app mobile brutalista)
 
 ---
 

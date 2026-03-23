@@ -254,7 +254,7 @@ export default function MealsPage() {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-white">Mi Menu</h1>
-        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/[0.06] bg-[#12121A] py-16">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl py-16">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.04]">
             <svg
               className="h-7 w-7 text-[#8B8BA3]"
@@ -326,7 +326,7 @@ export default function MealsPage() {
             return (
               <div
                 key={mealIdx}
-                className={`rounded-2xl border bg-[#12121A] p-4 transition-all ${
+                className={`rounded-2xl border bg-[#0E0E18]/60 backdrop-blur-xl p-4 transition-all ${
                   isCompleted
                     ? "border-[#00C853]/20"
                     : "border-white/[0.06]"
@@ -380,7 +380,7 @@ export default function MealsPage() {
                   {meal.foods.map((food, foodIdx) => (
                     <div
                       key={foodIdx}
-                      className="flex items-center justify-between rounded-lg bg-[#0A0A0F] px-3 py-2"
+                      className="flex items-center justify-between rounded-lg bg-white/[0.02] px-3 py-2"
                     >
                       <div>
                         <p className="text-xs font-medium text-white">
@@ -424,7 +424,7 @@ export default function MealsPage() {
           })}
 
           {/* Daily totals */}
-          <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-5">
+          <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-5">
             <h3 className="mb-3 text-sm font-semibold text-white">
               Totales del dia
             </h3>
@@ -464,7 +464,7 @@ export default function MealsPage() {
             </div>
 
             {/* Target comparison */}
-            <div className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-[#0A0A0F] px-3 py-2 text-xs">
+            <div className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-white/[0.02] px-3 py-2 text-xs">
               <span className="text-[#8B8BA3]">Objetivo:</span>
               <span className="font-medium text-[#00E5FF]">
                 {Math.round(mealPlan.target_kcal)} kcal
@@ -473,7 +473,7 @@ export default function MealsPage() {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-white/[0.06] bg-[#12121A] py-12">
+        <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl py-12">
           <p className="text-sm text-[#8B8BA3]">
             No hay datos para este dia
           </p>

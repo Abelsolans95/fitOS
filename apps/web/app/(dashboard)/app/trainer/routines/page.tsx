@@ -187,7 +187,7 @@ function ExerciseSearchModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="mx-4 w-full max-w-md rounded-[18px] border border-white/[0.06] bg-[#12121A] shadow-2xl">
+      <div className="mx-4 w-full max-w-md rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl shadow-2xl">
         <div className="flex items-center justify-between border-b border-white/[0.06] px-6 py-4">
           <h3 className="text-[13px] font-semibold text-white">Añadir ejercicio</h3>
           <button
@@ -218,7 +218,7 @@ function ExerciseSearchModal({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               autoFocus
-              className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] pl-10 pr-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/40"
+              className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] pl-10 pr-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/40"
             />
           </div>
         </div>
@@ -611,7 +611,7 @@ function RoutineCreator({
         <div className="space-y-6">
           <h2 className="text-[22px] font-extrabold tracking-[-0.03em] text-white">Configurar mesociclo</h2>
 
-          <div className="rounded-[18px] border border-white/[0.06] bg-[#12121A] p-6 space-y-5">
+          <div className="rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6 space-y-5">
             {/* Client */}
             <div className="space-y-1.5">
               <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">
@@ -620,7 +620,7 @@ function RoutineCreator({
               <select
                 value={selectedClientId}
                 onChange={(e) => setSelectedClientId(e.target.value)}
-                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white outline-none transition-colors focus:border-[#00E5FF]/40"
+                className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white outline-none transition-colors focus:border-[#00E5FF]/40"
               >
                 <option value="">Seleccionar cliente...</option>
                 {clients.map((c) => (
@@ -641,7 +641,7 @@ function RoutineCreator({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Ej: Mesociclo Hipertrofia — Pierna/Torso"
-                className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/40"
+                className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/40"
               />
             </div>
 
@@ -659,7 +659,7 @@ function RoutineCreator({
                     className={`rounded-xl border px-4 py-3 text-left transition-all ${
                       goal === g
                         ? "border-[#00E5FF]/40 bg-[#00E5FF]/5"
-                        : "border-white/[0.08] bg-[#0A0A0F] hover:border-white/[0.15]"
+                        : "border-white/[0.08] bg-white/[0.02] hover:border-white/[0.15]"
                     }`}
                   >
                     <span
@@ -686,7 +686,7 @@ function RoutineCreator({
                 <select
                   value={mesocycleWeeks}
                   onChange={(e) => setMesocycleWeeks(Number(e.target.value))}
-                  className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white outline-none transition-colors focus:border-[#00E5FF]/40"
+                  className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white outline-none transition-colors focus:border-[#00E5FF]/40"
                 >
                   {Array.from({ length: 12 }, (_, i) => i + 1).map((w) => (
                     <option key={w} value={w}>
@@ -703,7 +703,7 @@ function RoutineCreator({
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0A0A0F] px-4 text-[13px] text-white outline-none transition-colors focus:border-[#00E5FF]/40"
+                  className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white outline-none transition-colors focus:border-[#00E5FF]/40"
                 />
               </div>
             </div>
@@ -735,7 +735,7 @@ function RoutineCreator({
 
           {/* Week preview with dates */}
           {weekDates.length > 0 && (
-            <div className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-4">
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
               <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">
                 Semana 1 — Vista previa
               </p>
@@ -772,7 +772,7 @@ function RoutineCreator({
                   className={`rounded-[18px] border p-4 transition-all ${
                     isSelected
                       ? "border-[#00E5FF]/30 bg-[#00E5FF]/5"
-                      : "border-white/[0.06] bg-[#12121A]"
+                      : "border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl"
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -811,7 +811,7 @@ function RoutineCreator({
                           [day.key]: e.target.value.toUpperCase(),
                         }))
                       }
-                      className="mt-3 h-9 w-full rounded-lg border border-white/[0.08] bg-[#0A0A0F] px-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#00E5FF] placeholder:text-[#5A5A72] placeholder:normal-case placeholder:tracking-normal outline-none transition-colors focus:border-[#00E5FF]/40"
+                      className="mt-3 h-9 w-full rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#00E5FF] placeholder:text-[#5A5A72] placeholder:normal-case placeholder:tracking-normal outline-none transition-colors focus:border-[#00E5FF]/40"
                     />
                   )}
                 </div>
@@ -862,7 +862,7 @@ function RoutineCreator({
             return (
               <div
                 key={day.key}
-                className="rounded-[18px] border border-white/[0.06] bg-[#12121A] overflow-hidden"
+                className="rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl overflow-hidden"
               >
                 {/* Day header */}
                 <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3">
@@ -899,7 +899,7 @@ function RoutineCreator({
                   {day.exercises.map((exercise, exIndex) => (
                     <div
                       key={`${exercise.exercise_id}-${exIndex}`}
-                      className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-4 space-y-3"
+                      className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3"
                     >
                       {/* Header row */}
                       <div className="flex items-center justify-between gap-2">
@@ -986,7 +986,7 @@ function RoutineCreator({
                               type="number" min={1} max={20}
                               value={exercise.sets}
                               onChange={(e) => updateExercise(day.key, exIndex, { sets: Number(e.target.value) || 1 })}
-                              className="h-8 w-full rounded-lg border border-white/[0.08] bg-[#12121A] px-2 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
+                              className="h-8 w-full rounded-lg border border-white/[0.08] bg-[#0E0E18]/60 backdrop-blur-xl px-2 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
                             />
                           </div>
                           {/* Reps min */}
@@ -996,7 +996,7 @@ function RoutineCreator({
                               type="number" min={1}
                               value={exercise.reps_min}
                               onChange={(e) => updateExercise(day.key, exIndex, { reps_min: Number(e.target.value) || 1 })}
-                              className="h-8 w-full rounded-lg border border-white/[0.08] bg-[#12121A] px-2 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
+                              className="h-8 w-full rounded-lg border border-white/[0.08] bg-[#0E0E18]/60 backdrop-blur-xl px-2 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
                             />
                           </div>
                           {/* Reps max */}
@@ -1006,7 +1006,7 @@ function RoutineCreator({
                               type="number" min={1}
                               value={exercise.reps_max}
                               onChange={(e) => updateExercise(day.key, exIndex, { reps_max: Number(e.target.value) || 1 })}
-                              className="h-8 w-full rounded-lg border border-white/[0.08] bg-[#12121A] px-2 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
+                              className="h-8 w-full rounded-lg border border-white/[0.08] bg-[#0E0E18]/60 backdrop-blur-xl px-2 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
                             />
                           </div>
                           {/* RIR */}
@@ -1016,7 +1016,7 @@ function RoutineCreator({
                               type="number" min={0} max={5}
                               value={exercise.rir}
                               onChange={(e) => updateExercise(day.key, exIndex, { rir: Number(e.target.value) || 0 })}
-                              className="h-8 w-full rounded-lg border border-white/[0.08] bg-[#12121A] px-2 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
+                              className="h-8 w-full rounded-lg border border-white/[0.08] bg-[#0E0E18]/60 backdrop-blur-xl px-2 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
                             />
                           </div>
                           {/* Weight */}
@@ -1027,7 +1027,7 @@ function RoutineCreator({
                               value={exercise.target_weight ?? ""}
                               onChange={(e) => updateExercise(day.key, exIndex, { target_weight: e.target.value ? Number(e.target.value) : null })}
                               placeholder="—"
-                              className="h-8 w-full rounded-lg border border-white/[0.08] bg-[#12121A] px-2 text-center text-[11px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40"
+                              className="h-8 w-full rounded-lg border border-white/[0.08] bg-[#0E0E18]/60 backdrop-blur-xl px-2 text-center text-[11px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40"
                             />
                           </div>
                           {/* Rest */}
@@ -1037,7 +1037,7 @@ function RoutineCreator({
                               type="number" min={0} step={15}
                               value={exercise.rest_s}
                               onChange={(e) => updateExercise(day.key, exIndex, { rest_s: Number(e.target.value) || 0 })}
-                              className="h-8 w-full rounded-lg border border-white/[0.08] bg-[#12121A] px-2 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
+                              className="h-8 w-full rounded-lg border border-white/[0.08] bg-[#0E0E18]/60 backdrop-blur-xl px-2 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
                             />
                           </div>
                         </div>
@@ -1055,7 +1055,7 @@ function RoutineCreator({
                               type="number" min={1} max={20}
                               value={exercise.sets}
                               onChange={(e) => updateExercise(day.key, exIndex, { sets: Math.max(1, Number(e.target.value) || 1) })}
-                              className="h-7 w-16 rounded-lg border border-white/[0.08] bg-[#12121A] px-2 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
+                              className="h-7 w-16 rounded-lg border border-white/[0.08] bg-[#0E0E18]/60 backdrop-blur-xl px-2 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
                             />
                           </div>
 
@@ -1072,7 +1072,7 @@ function RoutineCreator({
                                 <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]">Desc. (s)</span>
                               </div>
                               {exercise.sets_config.map((sc, setIdx) => (
-                                <div key={setIdx} className="grid grid-cols-6 gap-1.5 rounded-lg bg-white/[0.02] px-1 py-1.5">
+                                <div key={setIdx} className="grid grid-cols-6 gap-1.5 rounded-lg bg-white/[0.04] px-1 py-1.5">
                                   <div className="flex items-center">
                                     <span className="flex h-5 w-5 items-center justify-center rounded bg-[#00E5FF]/10 text-[10px] font-bold text-[#00E5FF]">
                                       {setIdx + 1}
@@ -1082,32 +1082,32 @@ function RoutineCreator({
                                     type="number" min={1}
                                     value={sc.reps_min}
                                     onChange={(e) => updateSetConfig(day.key, exIndex, setIdx, { reps_min: Number(e.target.value) || 1 })}
-                                    className="h-7 w-full rounded border border-white/[0.06] bg-[#12121A] px-1 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
+                                    className="h-7 w-full rounded border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-1 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
                                   />
                                   <input
                                     type="number" min={1}
                                     value={sc.reps_max}
                                     onChange={(e) => updateSetConfig(day.key, exIndex, setIdx, { reps_max: Number(e.target.value) || 1 })}
-                                    className="h-7 w-full rounded border border-white/[0.06] bg-[#12121A] px-1 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
+                                    className="h-7 w-full rounded border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-1 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
                                   />
                                   <input
                                     type="number" min={0} max={5}
                                     value={sc.rir}
                                     onChange={(e) => updateSetConfig(day.key, exIndex, setIdx, { rir: Number(e.target.value) || 0 })}
-                                    className="h-7 w-full rounded border border-white/[0.06] bg-[#12121A] px-1 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
+                                    className="h-7 w-full rounded border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-1 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
                                   />
                                   <input
                                     type="number" min={0} step={0.5}
                                     value={sc.target_weight ?? ""}
                                     onChange={(e) => updateSetConfig(day.key, exIndex, setIdx, { target_weight: e.target.value ? Number(e.target.value) : null })}
                                     placeholder="—"
-                                    className="h-7 w-full rounded border border-white/[0.06] bg-[#12121A] px-1 text-center text-[11px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40"
+                                    className="h-7 w-full rounded border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-1 text-center text-[11px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40"
                                   />
                                   <input
                                     type="number" min={0} step={15}
                                     value={sc.rest_s}
                                     onChange={(e) => updateSetConfig(day.key, exIndex, setIdx, { rest_s: Number(e.target.value) || 0 })}
-                                    className="h-7 w-full rounded border border-white/[0.06] bg-[#12121A] px-1 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
+                                    className="h-7 w-full rounded border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-1 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
                                   />
                                 </div>
                               ))}
@@ -1130,7 +1130,7 @@ function RoutineCreator({
                             })
                           }
                           placeholder="Ej: Al llegar a 12 en la 1ª, añadir mínima carga posible"
-                          className="h-8 w-full rounded-lg border border-white/[0.08] bg-[#12121A] px-3 text-[11px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40"
+                          className="h-8 w-full rounded-lg border border-white/[0.08] bg-[#0E0E18]/60 backdrop-blur-xl px-3 text-[11px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40"
                         />
                       </div>
 
@@ -1148,7 +1148,7 @@ function RoutineCreator({
                             })
                           }
                           placeholder="Instrucciones técnicas para el cliente"
-                          className="h-8 w-full rounded-lg border border-white/[0.08] bg-[#12121A] px-3 text-[11px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40"
+                          className="h-8 w-full rounded-lg border border-white/[0.08] bg-[#0E0E18]/60 backdrop-blur-xl px-3 text-[11px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40"
                         />
                       </div>
                     </div>
@@ -1439,7 +1439,7 @@ export default function TrainerRoutinesPage() {
               </p>
             </div>
           ) : (
-            <div className="relative overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#12121A]">
+            <div className="relative overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl">
               <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(90deg, #00E5FF, transparent)" }} />
               <div className="pointer-events-none absolute -top-8 -right-8 h-32 w-32 rounded-full bg-[#00E5FF] opacity-[0.04] blur-[40px]" />
 
