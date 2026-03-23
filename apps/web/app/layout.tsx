@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Syne, Inter } from "next/font/google";
+import { Syne, Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -14,6 +14,13 @@ const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
+  display: "swap",
+});
+
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
 });
 
@@ -122,7 +129,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${syne.variable} ${inter.variable} font-[family-name:var(--font-syne)] antialiased overflow-x-hidden`}
+        className={`${syne.variable} ${inter.variable} ${jakarta.variable} font-[family-name:var(--font-syne)] antialiased overflow-x-hidden`}
       >
         {children}
         <Toaster theme="dark" position="bottom-right" richColors />

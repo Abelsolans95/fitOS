@@ -140,9 +140,19 @@ export default function LandingPage() {
           border-radius: 100px;
         }
 
+        /* Premium UI font — buttons, card titles, UI labels */
+        .font-jakarta { font-family: var(--font-jakarta), sans-serif; }
+        .feat-card h3,
+        .feat-card .card-num,
+        .how-card h3,
+        .pricing-title,
+        .nav-cta { font-family: var(--font-jakarta), sans-serif; }
+
         /* Buttons */
         .btn-primary {
           background: #00E5FF; color: #0A0A0F; font-weight: 800;
+          font-family: var(--font-jakarta), sans-serif;
+          letter-spacing: 0.01em;
           position: relative; overflow: hidden; transition: all 0.25s ease;
         }
         .btn-primary::before {
@@ -157,6 +167,7 @@ export default function LandingPage() {
         }
         .btn-ghost {
           border: 1px solid rgba(255,255,255,0.14); color: rgba(255,255,255,0.7);
+          font-family: var(--font-jakarta), sans-serif;
           transition: all 0.25s ease;
         }
         .btn-ghost:hover {
@@ -218,6 +229,9 @@ export default function LandingPage() {
           animation: scan 6s linear infinite; pointer-events: none; z-index: 10;
         }
 
+        /* Prevent heading overflow on narrow screens */
+        h1, h2, h3 { overflow-wrap: break-word; word-break: break-word; }
+
         @media (prefers-reduced-motion: reduce) {
           .fu, .fi, .shimmer-cyan, .icon-float, .pulse-dot, .cursor,
           .scan-line, .marquee-track, .ticker-track { animation: none !important; }
@@ -239,8 +253,8 @@ export default function LandingPage() {
               <a href="#pricing" className="hover:text-white transition-colors">Precio</a>
             </div>
             <div className="flex items-center gap-2">
-              <Link href="/login" className="btn-ghost rounded-full px-3 py-2 text-[12px] sm:px-4 sm:text-[13px]">Acceder</Link>
-              <Link href="/register" className="btn-primary rounded-full px-3 py-2 text-[12px] sm:px-4 sm:text-[13px] inline-flex items-center gap-1.5">
+              <Link href="/login" className="nav-cta btn-ghost rounded-full px-3 py-2 text-[12px] sm:px-4 sm:text-[13px]">Acceder</Link>
+              <Link href="/register" className="nav-cta btn-primary rounded-full px-3 py-2 text-[12px] sm:px-4 sm:text-[13px] inline-flex items-center gap-1.5">
                 <span className="hidden sm:inline">Empezar gratis</span>
                 <span className="sm:hidden">Empezar</span>
                 <IcArrow />
@@ -283,7 +297,7 @@ export default function LandingPage() {
               </div>
 
               {/* Headline */}
-              <h1 className="fu fu-2 text-[clamp(38px,7vw,92px)] font-extrabold leading-[0.95] tracking-[-0.04em] uppercase">
+              <h1 className="fu fu-2 text-[clamp(26px,7.5vw,92px)] font-extrabold leading-[0.95] tracking-[-0.04em] uppercase">
                 La plataforma
                 <br />
                 que escala
@@ -298,10 +312,10 @@ export default function LandingPage() {
 
               {/* CTAs */}
               <div className="fu fu-4 mt-8 flex flex-wrap items-center gap-3">
-                <Link href="/register" className="btn-primary inline-flex items-center gap-2 rounded-2xl px-6 py-3.5 sm:px-8 sm:py-4 text-[14px] sm:text-[15px]">
+                <Link href="/register" className="btn-primary inline-flex items-center gap-2 rounded-2xl px-6 py-3.5 sm:px-8 sm:py-4 text-[14px] sm:text-[15px] font-jakarta">
                   Prueba gratis — sin tarjeta
                 </Link>
-                <Link href="/login" className="btn-ghost inline-flex items-center gap-2 rounded-2xl px-6 py-3.5 sm:px-8 sm:py-4 text-[14px] sm:text-[15px]">
+                <Link href="/login" className="btn-ghost inline-flex items-center gap-2 rounded-2xl px-6 py-3.5 sm:px-8 sm:py-4 text-[14px] sm:text-[15px] font-jakarta">
                   Acceder <IcArrow />
                 </Link>
               </div>
@@ -405,10 +419,10 @@ export default function LandingPage() {
             <div className="mb-14 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.4em] text-[#5A5A72]">Módulos</p>
-                <h2 className="text-[clamp(30px,4.5vw,54px)] font-extrabold uppercase leading-[1.02] tracking-[-0.03em]">
+                <h2 className="text-[clamp(24px,4.5vw,54px)] font-extrabold uppercase leading-[1.02] tracking-[-0.03em]">
                   Todo lo que necesitas,
                   <br />
-                  <span className="text-[#00E5FF]">en un solo lugar.</span>
+                  <span className="shimmer-cyan">en un solo lugar.</span>
                 </h2>
               </div>
               <p className="max-w-xs text-[14px] leading-relaxed text-[#8B8BA3]">
@@ -500,7 +514,7 @@ export default function LandingPage() {
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center px-6">
               <p className="text-[11px] font-bold uppercase tracking-[0.5em] text-[#00E5FF]/70 mb-5">Tecnología al servicio del rendimiento</p>
-              <h2 className="text-[clamp(36px,6vw,80px)] font-extrabold uppercase leading-[0.95] tracking-[-0.04em]">
+              <h2 className="text-[clamp(26px,6vw,80px)] font-extrabold uppercase leading-[0.95] tracking-[-0.04em]">
                 Cada segundo que<br />
                 <span className="shimmer-cyan">ahorras, importa.</span>
               </h2>
@@ -526,7 +540,7 @@ export default function LandingPage() {
                 { n: "02", title: "La IA diseña el plan", desc: "Genera rutinas periodizadas y menús nutricionales personalizados con un solo prompt. Revisa, ajusta y asigna.", accent: "#7C3AED" },
                 { n: "03", title: "El cliente entrena", desc: "Tu cliente accede desde su app móvil, registra series y pesos, y tú ves el progreso en tiempo real.", accent: "#FF9100" },
               ].map(({ n, title, desc, accent }) => (
-                <div key={n} className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[#12121A] p-8">
+                <div key={n} className="how-card relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[#12121A] p-8">
                   <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${accent}, transparent)` }} />
                   <div className="pointer-events-none absolute right-0 top-0 h-40 w-40 rounded-full opacity-[0.05] blur-[50px]" style={{ background: accent }} />
                   <p className="text-[36px] font-extrabold leading-none mb-5" style={{ color: accent }}>{n}</p>
@@ -573,7 +587,7 @@ export default function LandingPage() {
               <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.4em] text-[#5A5A72]">Precio</p>
               <h2 className="text-[clamp(28px,4.5vw,52px)] font-extrabold uppercase tracking-[-0.03em] leading-tight">
                 Empieza gratis.
-                <br /><span className="text-[#00E5FF]">Escala cuando quieras.</span>
+                <br /><span className="shimmer-cyan">Escala cuando quieras.</span>
               </h2>
             </div>
 
@@ -605,7 +619,7 @@ export default function LandingPage() {
                 <div className="pricing-inner p-8 sm:p-10 h-full flex flex-col justify-between">
                   <div>
                     <div className="flex items-end gap-3 mb-2">
-                      <span className="text-[clamp(72px,10vw,100px)] font-extrabold leading-none" style={{ background: "linear-gradient(160deg,#fff 0%,rgba(255,255,255,0.55) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>14</span>
+                      <span className="pricing-title text-[clamp(72px,10vw,100px)] font-extrabold leading-none" style={{ background: "linear-gradient(160deg,#fff 0%,rgba(255,255,255,0.55) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>14</span>
                       <div className="mb-3">
                         <p className="text-[17px] font-light text-[#8B8BA3] leading-tight">días</p>
                         <p className="text-[17px] font-light text-[#8B8BA3] leading-tight">gratis</p>
@@ -626,7 +640,7 @@ export default function LandingPage() {
                     </ul>
                   </div>
 
-                  <Link href="/register" className="btn-primary inline-flex items-center justify-center gap-2 rounded-xl px-7 py-3.5 text-[14px] w-full">
+                  <Link href="/register" className="btn-primary font-jakarta inline-flex items-center justify-center gap-2 rounded-xl px-7 py-3.5 text-[14px] w-full">
                     Empezar ahora — es gratis <IcArrow />
                   </Link>
                 </div>
@@ -643,7 +657,7 @@ export default function LandingPage() {
           </div>
           <div className="relative z-10 mx-auto max-w-3xl text-center">
             <p className="mb-5 text-[10px] font-bold uppercase tracking-[0.4em] text-[#5A5A72]">Listo para empezar</p>
-            <h2 className="text-[clamp(36px,6vw,70px)] font-extrabold uppercase leading-[0.97] tracking-[-0.04em]">
+            <h2 className="text-[clamp(26px,6vw,70px)] font-extrabold uppercase leading-[0.97] tracking-[-0.04em]">
               Tu negocio merece
               <br />
               <span className="shimmer-cyan">mejores herramientas.</span>
@@ -652,7 +666,7 @@ export default function LandingPage() {
               Únete a los entrenadores que ya usan FitOS para gestionar sus clientes, ahorrar tiempo y escalar con IA.
             </p>
             <div className="mt-10">
-              <Link href="/register" className="btn-primary inline-flex items-center gap-3 rounded-2xl px-10 py-5 text-[15px] uppercase tracking-wide">
+              <Link href="/register" className="btn-primary font-jakarta inline-flex items-center gap-3 rounded-2xl px-10 py-5 text-[15px] uppercase tracking-wide">
                 Prueba FitOS gratis <IcArrow />
               </Link>
             </div>

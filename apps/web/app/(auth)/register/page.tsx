@@ -198,9 +198,9 @@ export default function RegisterPage() {
           background: #00E5FF;
           color: #0A0A0F;
           font-weight: 800;
-          font-size: 13px;
-          font-family: var(--font-syne);
-          letter-spacing: 0.05em;
+          font-size: 14px;
+          font-family: var(--font-jakarta), sans-serif;
+          letter-spacing: 0.04em;
           padding: 14px 24px;
           border-radius: 12px;
           border: none;
