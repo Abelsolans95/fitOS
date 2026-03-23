@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Syne, Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -16,6 +16,11 @@ const inter = Inter({
   weight: ["400", "500", "600"],
   display: "swap",
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
 
 const BASE_URL = "https://fit-os-web.vercel.app";
 
@@ -117,7 +122,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${syne.variable} ${inter.variable} font-[family-name:var(--font-syne)] antialiased`}
+        className={`${syne.variable} ${inter.variable} font-[family-name:var(--font-syne)] antialiased overflow-x-hidden`}
       >
         {children}
         <Toaster theme="dark" position="bottom-right" richColors />

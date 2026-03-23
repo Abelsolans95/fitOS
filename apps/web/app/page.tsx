@@ -189,7 +189,7 @@ export default function LandingPage() {
         .testi-card {
           background: rgba(18,18,26,0.85); backdrop-filter: blur(8px);
           border: 1px solid rgba(255,255,255,0.07);
-          border-radius: 18px; flex-shrink: 0; width: 320px;
+          border-radius: 18px; flex-shrink: 0; width: min(320px, 82vw);
         }
 
         /* Pricing wrap */
@@ -225,11 +225,11 @@ export default function LandingPage() {
         }
       `}</style>
 
-      <main className={`${syne.variable} bg-[#0A0A0F] font-[family-name:var(--font-syne)] text-white overflow-x-hidden`}>
+      <main className={`${syne.variable} bg-[#0A0A0F] font-[family-name:var(--font-syne)] text-white overflow-x-hidden w-full`}>
 
         {/* ══ NAV ══════════════════════════════════════════════ */}
-        <div className="fixed top-5 left-1/2 z-50 -translate-x-1/2 w-full max-w-5xl px-4">
-          <nav className="nav-pill flex items-center justify-between px-5 py-3">
+        <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 w-[calc(100%-24px)] sm:w-full sm:max-w-5xl px-0 sm:px-4">
+          <nav className="nav-pill flex items-center justify-between px-4 sm:px-5 py-2.5 sm:py-3">
             <span className="text-[15px] font-extrabold tracking-tight">
               Fit<span className="text-[#00E5FF]">OS</span>
             </span>
@@ -239,9 +239,11 @@ export default function LandingPage() {
               <a href="#pricing" className="hover:text-white transition-colors">Precio</a>
             </div>
             <div className="flex items-center gap-2">
-              <Link href="/login" className="btn-ghost rounded-full px-4 py-2 text-[13px]">Acceder</Link>
-              <Link href="/register" className="btn-primary rounded-full px-4 py-2 text-[13px] inline-flex items-center gap-1.5">
-                Empezar gratis <IcArrow />
+              <Link href="/login" className="btn-ghost rounded-full px-3 py-2 text-[12px] sm:px-4 sm:text-[13px]">Acceder</Link>
+              <Link href="/register" className="btn-primary rounded-full px-3 py-2 text-[12px] sm:px-4 sm:text-[13px] inline-flex items-center gap-1.5">
+                <span className="hidden sm:inline">Empezar gratis</span>
+                <span className="sm:hidden">Empezar</span>
+                <IcArrow />
               </Link>
             </div>
           </nav>
@@ -260,8 +262,8 @@ export default function LandingPage() {
               className="object-cover object-center"
               quality={90}
             />
-            {/* Left-to-right dark overlay for text readability */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#0A0A0F] via-[#0A0A0F]/85 to-[#0A0A0F]/25" />
+            {/* Left-to-right dark overlay — heavier on mobile for readability */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0A0A0F] via-[#0A0A0F]/90 to-[#0A0A0F]/70 sm:via-[#0A0A0F]/85 sm:to-[#0A0A0F]/25" />
             {/* Top fade */}
             <div className="absolute inset-0 bg-gradient-to-b from-[#0A0A0F]/60 via-transparent to-[#0A0A0F]" />
             {/* Cyan tint overlay to blend photo with brand */}
@@ -269,7 +271,7 @@ export default function LandingPage() {
           </div>
 
           {/* Content */}
-          <div className="relative z-10 mx-auto w-full max-w-6xl px-6 sm:px-10 pt-28 pb-24">
+          <div className="relative z-10 mx-auto w-full max-w-6xl px-5 sm:px-10 pt-24 sm:pt-28 pb-20 sm:pb-24">
             <div className="max-w-2xl">
 
               {/* Badge */}
@@ -281,7 +283,7 @@ export default function LandingPage() {
               </div>
 
               {/* Headline */}
-              <h1 className="fu fu-2 text-[clamp(48px,7vw,92px)] font-extrabold leading-[0.95] tracking-[-0.04em] uppercase">
+              <h1 className="fu fu-2 text-[clamp(38px,7vw,92px)] font-extrabold leading-[0.95] tracking-[-0.04em] uppercase">
                 La plataforma
                 <br />
                 que escala
@@ -295,19 +297,19 @@ export default function LandingPage() {
               </p>
 
               {/* CTAs */}
-              <div className="fu fu-4 mt-9 flex flex-wrap items-center gap-3">
-                <Link href="/register" className="btn-primary inline-flex items-center gap-2 rounded-2xl px-8 py-4 text-[15px]">
+              <div className="fu fu-4 mt-8 flex flex-wrap items-center gap-3">
+                <Link href="/register" className="btn-primary inline-flex items-center gap-2 rounded-2xl px-6 py-3.5 sm:px-8 sm:py-4 text-[14px] sm:text-[15px]">
                   Prueba gratis — sin tarjeta
                 </Link>
-                <Link href="/login" className="btn-ghost inline-flex items-center gap-2 rounded-2xl px-8 py-4 text-[15px]">
-                  Acceder a mi cuenta <IcArrow />
+                <Link href="/login" className="btn-ghost inline-flex items-center gap-2 rounded-2xl px-6 py-3.5 sm:px-8 sm:py-4 text-[14px] sm:text-[15px]">
+                  Acceder <IcArrow />
                 </Link>
               </div>
 
               <p className="fu fu-5 mt-5 text-[12px] text-white/30">14 días gratis · Sin tarjeta · Sin compromiso</p>
 
               {/* Stats row */}
-              <div className="fu fu-5 mt-12 flex items-center gap-8 border-t border-white/[0.08] pt-8">
+              <div className="fu fu-5 mt-10 flex items-center gap-5 sm:gap-8 border-t border-white/[0.08] pt-8">
                 {[
                   { val: "14", label: "días gratis" },
                   { val: "5", label: "clientes gratis" },
@@ -398,7 +400,7 @@ export default function LandingPage() {
         </div>
 
         {/* ══ FEATURES BENTO ══════════════════════════════════ */}
-        <section id="features" className="px-6 py-24 sm:px-10">
+        <section id="features" className="px-4 py-16 sm:px-10 sm:py-24">
           <div className="mx-auto w-full max-w-7xl">
             <div className="mb-14 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
@@ -481,7 +483,7 @@ export default function LandingPage() {
         </section>
 
         {/* ══ PHOTO BREAK — Athlete ════════════════════════════ */}
-        <section className="relative overflow-hidden" style={{ height: "70vh", minHeight: "480px" }}>
+        <section className="relative overflow-hidden" style={{ height: "60vh", minHeight: "360px" }}>
           <Image
             src="/hero-athlete.jpg"
             alt="Atleta entrenando en gimnasio de alto rendimiento"
@@ -510,7 +512,7 @@ export default function LandingPage() {
         </section>
 
         {/* ══ HOW IT WORKS ════════════════════════════════════ */}
-        <section id="how" className="px-6 py-24 sm:px-10">
+        <section id="how" className="px-4 py-16 sm:px-10 sm:py-24">
           <div className="mx-auto w-full max-w-7xl">
             <div className="mb-14 text-center">
               <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.4em] text-[#5A5A72]">Proceso</p>
@@ -564,7 +566,7 @@ export default function LandingPage() {
         </section>
 
         {/* ══ TRAINER DESK SPLIT + PRICING ════════════════════ */}
-        <section id="pricing" className="px-6 py-24 sm:px-10">
+        <section id="pricing" className="px-4 py-16 sm:px-10 sm:py-24">
           <div className="mx-auto w-full max-w-7xl">
 
             <div className="mb-14 text-center">
@@ -634,7 +636,7 @@ export default function LandingPage() {
         </section>
 
         {/* ══ CTA FINAL ════════════════════════════════════════ */}
-        <section className="relative overflow-hidden px-6 py-32 sm:px-10">
+        <section className="relative overflow-hidden px-4 py-20 sm:px-10 sm:py-32">
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute left-1/2 top-1/2 h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#7C3AED] opacity-[0.07] blur-[100px]" />
             <div className="absolute left-1/2 top-1/2 h-[300px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#00E5FF] opacity-[0.05] blur-[80px]" />
@@ -659,7 +661,7 @@ export default function LandingPage() {
         </section>
 
         {/* ══ FOOTER ════════════════════════════════════════════ */}
-        <footer className="px-6 py-10 sm:px-10">
+        <footer className="px-4 py-10 sm:px-10">
           <div className="mx-auto max-w-7xl">
             <div className="mb-8 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
             <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
