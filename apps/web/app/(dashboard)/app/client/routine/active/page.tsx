@@ -62,19 +62,31 @@ function ActiveTrainingPage() {
       if (dayEx.length === 0) { toast.error("No hay ejercicios para este día"); return; }
       setExercises(dayEx);
 
-      const { data: logs } = await supabase.from("weight_log")
+      const { data: logs, error: logsError } = await supabase.from("weight_log")
         .select("exercise_name, session_date, sets_data")
         .eq("client_id", user.id).order("session_date", { ascending: false }).limit(200);
+      if (logsError) {
+        console.error("[RoutineActive] Error cargando logs anteriores:", logsError);
+        // No bloqueante — continuamos sin datos anteriores
+      }
       const pl = (logs ?? []) as PreviousLog[];
       setPreviousLogs(pl);
 
       if (resumeSessionId) {
-        const { data: es } = await supabase.from("workout_sessions")
+        const { data: es, error: esError } = await supabase.from("workout_sessions")
           .select("id, created_at, status")
           .eq("id", resumeSessionId).eq("client_id", user.id).eq("status", "in_progress").maybeSingle();
+        if (esError) {
+          console.error("[RoutineActive] Error cargando sesión a resumir:", esError);
+          // Tratar como si no hubiera sesión a resumir
+        }
         if (es) {
-          const { data: sl } = await supabase.from("weight_log")
+          const { data: sl, error: slError } = await supabase.from("weight_log")
             .select("exercise_name, sets_data, client_notes").eq("session_id", es.id);
+          if (slError) {
+            console.error("[RoutineActive] Error cargando sets guardados:", slError);
+            // No bloqueante
+          }
           t.resumeFromSession({
             sessionId: es.id, sessionCreatedAt: es.created_at,
             sessionLogs: (sl ?? []) as SavedLogEntry[], exercises: dayEx, previousLogs: pl,
