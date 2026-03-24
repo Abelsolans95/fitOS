@@ -28,9 +28,21 @@ export interface ResolvedExercise {
   aliases: string[];
 }
 
+interface TrainerExerciseOverride {
+  id: string;
+  trainer_id: string;
+  exercise_id: string;
+  custom_name: string | null;
+  custom_description: string | null;
+  custom_notes: string | null;
+  custom_video_url: string | null;
+  hidden: boolean;
+}
+
 /**
  * Get all exercises visible to a trainer, with overrides applied.
  * Returns global exercises (with any overrides merged) + trainer's private exercises.
+ * Exercises with override.hidden = true are excluded from results.
  */
 export async function getResolvedExercises(
   supabase: SupabaseClient,
@@ -52,12 +64,17 @@ export async function getResolvedExercises(
   if (exercisesRes.error) throw exercisesRes.error;
   if (overridesRes.error) throw overridesRes.error;
 
-  const overrideMap = new Map<string, any>();
-  for (const ov of overridesRes.data || []) {
+  const overrideMap = new Map<string, TrainerExerciseOverride>();
+  for (const ov of (overridesRes.data || []) as TrainerExerciseOverride[]) {
     overrideMap.set(ov.exercise_id, ov);
   }
 
-  return (exercisesRes.data || []).map((ex) => {
+  return (exercisesRes.data || [])
+    .filter((ex) => {
+      const override = overrideMap.get(ex.id);
+      return !override?.hidden;
+    })
+    .map((ex) => {
     const override = overrideMap.get(ex.id);
     return {
       id: ex.id,
