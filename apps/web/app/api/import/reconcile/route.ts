@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 
+interface SimilarExerciseMatch {
+  id: string;
+  name: string;
+  is_global: boolean;
+  similarity: number;
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const {
@@ -9,6 +16,17 @@ export async function POST(request: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  }
+
+  // Verify trainer role
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("user_id", user.id)
+    .single();
+
+  if (profileError || profile?.role !== "trainer") {
+    return NextResponse.json({ error: "Solo entrenadores" }, { status: 403 });
   }
 
   const body = await request.json();
@@ -47,14 +65,14 @@ export async function POST(request: NextRequest) {
         };
       }
 
-      const sortedMatches = (matches || []).sort(
-        (a: any, b: any) => b.similarity - a.similarity
+      const sortedMatches = ((matches ?? []) as SimilarExerciseMatch[]).sort(
+        (a, b) => b.similarity - a.similarity
       );
       const best = sortedMatches[0] || null;
 
       return {
         original_name: name,
-        matches: sortedMatches.map((m: any) => ({
+        matches: sortedMatches.map((m) => ({
           id: m.id,
           name: m.name,
           is_global: m.is_global,
@@ -79,10 +97,15 @@ export async function POST(request: NextRequest) {
   );
 
   // Update import record status
-  await supabase
+  const { error: updateError } = await supabase
     .from("excel_imports")
     .update({ status: "mapped" })
     .eq("id", import_id);
+
+  if (updateError) {
+    console.error("[import/reconcile] Error updating excel_imports:", updateError);
+    // No bloqueante — la reconciliación ya se completó
+  }
 
   return NextResponse.json({
     import_id,
