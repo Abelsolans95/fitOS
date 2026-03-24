@@ -779,7 +779,7 @@ export default function TrainerAppointmentsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("calendar");
 
   const fetchAppointments = useCallback(async () => {
     const supabase = createClient();
