@@ -1,6 +1,6 @@
 # FitOS — Estado del Desarrollo
 
-> Documento actualizado el 23/03/2026 (Chat interno + Calendario de citas + Widget iOS/Android: ver entrenamiento del día sin abrir la app). Léelo de arriba abajo antes de tocar cualquier archivo.
+> Documento actualizado el 24/03/2026 (Chat interno + Calendario de citas + Widget iOS/Android + Refactorización entrenamiento activo: useReducer pattern). Léelo de arriba abajo antes de tocar cualquier archivo.
 > Cualquier agente o desarrollador debe leer este archivo **primero** para entender el estado actual del proyecto.
 >
 > **IMPORTANTE:** Al terminar cualquier desarrollo, bugfix o cambio significativo, actualiza este archivo (`desarrollo.md`) **y** `CLAUDE.md` antes de cerrar la sesión. Refleja los archivos nuevos o modificados, añade notas para el siguiente agente/desarrollador y actualiza la sección de próximos pasos. El objetivo es que cualquier persona o agente pueda continuar el proyecto sin contexto previo.
@@ -223,8 +223,10 @@ fitOS/
 ### Comandos
 ```bash
 cd apps/web
-npm run dev    # Desarrollo en localhost:3000
-npm run build  # Build de producción
+npm run dev          # Desarrollo en localhost:3000
+npm run build        # Build de producción
+npm test             # Ejecutar tests unitarios (una pasada)
+npm run test:watch   # Tests en modo watch
 ```
 
 ### Variables de entorno — `apps/web/.env.local`
@@ -267,7 +269,16 @@ apps/web/app/
 │       │   ├── layout.tsx              ← ✅ TrainerSidebar (240px, colapsable a 72px)
 │       │   ├── dashboard/page.tsx      ← ✅ KPIs + actividad reciente + acciones rápidas
 │       │   ├── clients/page.tsx        ← ✅ Lista clientes con búsqueda + tabla
-│       │   ├── clients/[id]/page.tsx   ← ✅ Detalle cliente con 6 tabs (Perfil, Progreso, Rutina+sesiones, Menú+food_log, Formulario, Chat)
+│       │   ├── clients/[id]/page.tsx   ← ✅ Detalle cliente — cabecera + tabs selector (<250 líneas)
+│       │   ├── clients/[id]/components/
+│       │   │   ├── types.ts            ← Interfaces compartidas por todos los tabs
+│       │   │   ├── shared.tsx          ← EmptyState, StatusBadge, getInitials, formatDate, TABS, GOAL_LABELS
+│       │   │   ├── TabPerfil.tsx       ← Datos del cliente + preferencias alimentarias
+│       │   │   ├── TabProgreso.tsx     ← Historial de métricas corporales
+│       │   │   ├── TabRutina.tsx       ← Rutina activa + historial workout_sessions + weight_log expandible
+│       │   │   ├── TabMenu.tsx         ← food_log por día con selector de fecha y macros
+│       │   │   ├── TabFormulario.tsx   ← Respuestas onboarding + análisis IA
+│       │   │   └── TabChat.tsx         ← Chat trainer↔cliente con Realtime y actualización optimista
 │       │   ├── exercises/page.tsx      ← ✅ Biblioteca de ejercicios (3 capas, clone-on-edit global, overrides hidden)
 │       │   ├── routines/page.tsx       ← ✅ Constructor de rutinas (días de semana, ejercicios, sets/reps/RIR)
 │       │   ├── nutrition/page.tsx      ← ✅ Menú creator + Biblioteca de alimentos (2 tabs)
@@ -275,7 +286,14 @@ apps/web/app/
 │       │
 │       │   # Client routes:
 │       │   # routine/page.tsx          ← ✅ Rutina con semanas, ANTERIOR, dos modos (registro + activo)
-│       │   # routine/active/page.tsx   ← ✅ Entrenamiento activo (nav libre, resume, notas, finalizar rutina)
+│       │   # routine/active/page.tsx       ← ✅ Entrenamiento activo — orquestador (196 líneas, useReducer pattern)
+│       │   # routine/active/types.ts       ← Interfaces compartidas + helpers (formatTime, calculateProgress)
+│       │   # routine/active/useActiveTraining.ts ← Custom hook: useReducer + timers + DB ops (savePartialProgress con retry, finalizeSession)
+│       │   # routine/active/components/
+│       │   #   ├── RestTimer.tsx            ← Countdown circular, notas del ejercicio, "Saltar descanso"
+│       │   #   ├── RPESelector.tsx          ← Selector 1-10 con descripción de cada valor
+│       │   #   ├── SummaryView.tsx          ← Resumen final: stats, progresión por ejercicio, RPE
+│       │   #   └── ExerciseCard.tsx         ← Ejercicio actual: sets, pesos, reps, ANTERIOR, navegación
 │       │   ├── forms/page.tsx          ← Editor de formulario onboarding (drag & drop, 8 tipos)
 │       │   ├── appointments/page.tsx   ← ✅ Calendario de citas: crear, confirmar, completar, cancelar
 │       │   └── settings/page.tsx       ← ✅ Código promo + perfil editable
@@ -316,10 +334,12 @@ apps/web/app/
 │   ├── supabase.ts                     ← createClient() browser
 │   ├── supabase-server.ts              ← createClient() server
 │   ├── google-calendar.ts             ← ✅ OAuth helpers + CRUD eventos + sync helpers
-│   ├── exercise-resolver.ts           ← ✅ Three-layer exercise resolver (A/B/C)
+│   ├── exercise-resolver.ts           ← ✅ Three-layer exercise resolver (A/B/C) — typed, hidden filter
+│   ├── exercise-resolver.test.ts      ← ✅ 9 tests unitarios (Vitest) — 6 casos Layer A/B/C + 2 smoke
 │   ├── food-resolver.ts              ← ✅ Three-layer food resolver (A/B/C)
 │   └── excel-parser.ts               ← ✅ Column type definitions + header keywords (Haiku does inference)
 │
+├── vitest.config.ts                    ← ✅ Config Vitest (happy-dom, alias @/*)
 └── middleware.ts                        ← ✅ Protección por rol (trainer/client separation)
 ```
 
@@ -1024,6 +1044,96 @@ DELETE FROM trainer_exercise_overrides WHERE hidden = true;
 - **Qué pasó:** Al añadir el tab "Chat" (6ª pestaña), la barra de tabs quedaba mal distribuida. Intentar cambiar de `flex-1` a `shrink-0` para las tabs rompió el espaciado uniforme.
 - **Solución aplicada:** Mantener `flex-1` en los tabs (para ocupar el espacio proporcionalmente) y reducir el padding horizontal de `px-4` a `px-2` para que quepan 6 tabs sin overflow.
 - **Regla:** Con 6+ tabs, usar `flex-1` + `px-2`. No usar `shrink-0` en tab bars — hace que los tabs no se distribuyan uniformemente.
+
+---
+
+**ERROR #39 — `exercise-resolver.ts` no filtraba ejercicios con `hidden=true`**
+- **Fecha:** 24/03/2026
+- **Archivo afectado:** `apps/web/lib/exercise-resolver.ts`
+- **Qué pasó:** `getResolvedExercises()` construía el `overrideMap` pero nunca comprobaba `override.hidden`. Ejercicios globales ocultos por un trainer (Layer C, `hidden=true`) seguían apareciendo en su biblioteca. El bug no tenía tests, por lo que pasó desapercibido.
+- **Solución aplicada:** Cambiado el `.map()` final a un bucle `for...of` con `if (override?.hidden) continue`. Los ejercicios con `hidden=true` en `trainer_exercise_overrides` ya no aparecen en los resultados.
+- **Regla:** En `getResolvedExercises`, comprobar siempre `override?.hidden` antes de incluir un ejercicio. Si `hidden=true`, excluirlo del resultado. Añadir test unitario para este caso al modificar el resolver.
+
+---
+
+**ERROR #40 — `Map<string, any>` en exercise-resolver.ts ocultaba el campo `hidden`**
+- **Fecha:** 24/03/2026
+- **Archivo afectado:** `apps/web/lib/exercise-resolver.ts`
+- **Qué pasó:** El override map estaba tipado como `Map<string, any>`. El tipo `any` hacía invisible el campo `hidden: boolean` para el compilador de TypeScript, por lo que no había alerta sobre el check faltante.
+- **Solución aplicada:** Añadido interface `TrainerExerciseOverride` con todos los campos de la tabla (incluyendo `hidden: boolean`). El map es ahora `Map<string, TrainerExerciseOverride>`.
+- **Regla:** Nunca usar `Map<string, any>` para datos de DB. Definir siempre un interface que refleje el schema real — TypeScript alertará si se intenta usar un campo que no existe, y no ocultará campos documentados como `hidden`.
+
+---
+
+### Arquitectura de componentes — Buenas prácticas (desde 24/03/2026)
+
+**Patrón obligatorio para páginas con múltiples secciones (tabs, paneles, vistas):**
+
+A partir del 24/03/2026 toda página web que supere ~300 líneas o contenga secciones independientes debe fragmentarse siguiendo este patrón. El primer ejemplo completo es `apps/web/app/(dashboard)/app/trainer/clients/[id]/`.
+
+**Estructura de carpeta:**
+```
+page.tsx                  ← Padre: datos mínimos de cabecera + selector de vista. Target orientativo ~250 líneas (guía, no límite).
+components/
+├── types.ts              ← Todas las interfaces TypeScript del módulo. Importar desde aquí.
+├── shared.tsx            ← Utilidades puras, constantes, UI compartida (EmptyState, badges, helpers).
+├── TabNombre1.tsx        ← Una sección = un archivo. Estado local propio. Sin duplicar queries del padre.
+├── TabNombre2.tsx
+└── ...
+```
+
+**Reglas del patrón:**
+1. **El padre carga solo lo mínimo** para renderizar la cabecera: nombre, avatar, estado del cliente. Los datos específicos de cada tab los carga el propio tab.
+2. **Cada tab tiene su propio estado local** (`useState`, `useEffect`, fetches). El padre le pasa solo IDs o datos ya cargados que necesite para hacer sus propios fetches.
+3. **No duplicar queries**: si el padre ya cargó `routine`, se la pasa al tab como prop. El tab no vuelve a fetchear `routine` — solo hace fetches adicionales propios (ej. `workout_sessions`).
+4. **`types.ts` centraliza interfaces** — nunca declarar interfaces en el componente hoja si son compartidas. Importar siempre desde `./types`.
+5. **`shared.tsx` centraliza UI reutilizable** — `EmptyState`, `StatusBadge`, `formatDate`, etc. No duplicar en cada tab.
+6. **Aplicar a cualquier página compleja** — no solo a detalles de cliente. Si una página tiene 2+ secciones independientes, fragmentarla.
+
+**Módulos ya fragmentados:**
+- `clients/[id]/` → 6 tabs en `components/` (referencia del patrón tabs)
+- `routine/active/` → `useActiveTraining.ts` + 4 subcomponentes (referencia del patrón useReducer + custom hook)
+
+#### Patrón useReducer para páginas con estado complejo (regla 51)
+
+Cuando una página tiene 8+ `useState` sueltos con estado interdependiente (ej: entrenamiento activo, wizards multi-paso):
+
+1. **`useXxx.ts`** junto al `page.tsx` con `useReducer` que centralice TODO el estado mutable.
+2. Acciones tipadas (`NEXT_STEP`, `COMPLETE_SET`, `TICK_TIMER`, etc.) — nada de `setSomething` suelto.
+3. Timers via `useRef` con cleanup en `useEffect` ligado a `state.phase`.
+4. DB ops como `useCallback` dentro del hook (despachan acciones + hacen fetch).
+5. `savePartialProgress()` con 1 reintento automático + `toast.error` si falla.
+6. `finalizeSession()` retorna `boolean` — page muestra "Reintentar" si falla.
+7. `page.tsx` orquestador: carga datos, hook, render por fase. Target orientativo ~200 líneas — lo que importa es responsabilidad única, no el conteo. Un page.tsx de 350 líneas bien estructurado (solo orquestación) es correcto.
+
+**Referencia:** `routine/active/useActiveTraining.ts` (1390 → 196 líneas en page.tsx)
+
+---
+
+### Tests unitarios — Vitest (desde 24/03/2026)
+
+**Framework:** Vitest 4.x + happy-dom. Instalado en `apps/web` como devDependency.
+
+```bash
+cd apps/web
+npm test             # Una pasada (CI)
+npm run test:watch   # Modo watch (desarrollo)
+```
+
+**Config:** `apps/web/vitest.config.ts` — environment `happy-dom`, alias `@/*` resuelto.
+
+**Convención de archivos:** `lib/foo.test.ts` junto a `lib/foo.ts`. No crear carpeta `__tests__` separada.
+
+**Patrón de mock para Supabase:**
+- Las funciones del resolver reciben `SupabaseClient` como parámetro → pasar objeto mock, no usar `vi.mock` del módulo.
+- Helper `createChain(result)` — cadena de métodos Supabase (`select/eq/or/order`) que todos devuelven `this`, más `single()` y `maybeSingle()` como Promises, más `then()` para que el chain sea awaitable directamente.
+- Helper `createMockSupabase(libraryResult, overridesResult)` — enruta `from(table)` al chain correcto según nombre de tabla.
+- **Referencia completa:** `apps/web/lib/exercise-resolver.test.ts`
+
+**Tests existentes:**
+| Archivo | Tests | Qué cubre |
+|---|---|---|
+| `lib/exercise-resolver.test.ts` | 9 | Layer A (globales), Layer B (privados trainer), Layer C (hidden + custom_name), combinación A+B+C, edge cases (sin privados, error DB) + smoke de `resolveExercise` |
 
 ---
 

@@ -80,6 +80,28 @@
 47. **Widget data sync** — `src/lib/widget-data.ts` consulta `user_routines` + `workout_sessions` y escribe JSON a AsyncStorage (`@fitos/widget-today-workout`). `src/lib/widget-sync.ts` expone `updateWidget(userId)` que sincroniza datos y llama a `requestWidgetUpdate()` en Android. Se invoca en `DashboardScreen` (al cargar) y `RoutineScreen` (al completar sesión en ambos modos).
 48. **Bundle identifiers configurados** — `app.json` tiene `ios.bundleIdentifier: "com.antigravity.fitos"` y `android.package: "com.antigravity.fitos"`. Necesarios para widgets y builds nativos.
 49. **Widget no usa hooks** — Los componentes de widget Android (`TodayWorkoutWidget.tsx`) reciben datos vía props, NO pueden usar `useState`, `useEffect` ni ningún hook de React. Son funciones puras que retornan primitivas de `react-native-android-widget`.
+50. **Fragmentar páginas complejas en componentes por responsabilidad** — Cualquier `page.tsx` que supere ~300 líneas o contenga múltiples secciones independientes (tabs, paneles, modales) debe fragmentarse. Patrón obligatorio:
+    - Crear carpeta `components/` junto al `page.tsx`
+    - `types.ts` — interfaces compartidas por todos los componentes del módulo
+    - `shared.tsx` — utilidades, constantes y UI compartida (EmptyState, badges, helpers)
+    - Un fichero por sección (`TabPerfil.tsx`, `TabChat.tsx`, etc.) con su propio estado local
+    - El `page.tsx` padre: solo datos mínimos de cabecera + selector de vista + render del componente activo. **Target orientativo ~250 líneas — el número es una guía, no una regla rígida.** Un `page.tsx` de 350 líneas bien estructurado (solo orquestación) es correcto. Uno de 150 líneas que mezcla lógica de negocio con UI no lo es. La pregunta clave: ¿puede un agente nuevo entender qué hace la página en 30 segundos?
+    - **Ejemplo de referencia:** `apps/web/app/(dashboard)/app/trainer/clients/[id]/` tiene 6 tabs extraídas a su carpeta `components/`.
+51. **Páginas con lógica stateful compleja deben usar `useReducer` + custom hook** — Cuando una página tiene 8+ `useState` sueltos con estado interdependiente (ej: entrenamiento activo, wizards multi-paso), obligatorio:
+    - Crear `useXxx.ts` junto al `page.tsx` con `useReducer` que centralice TODO el estado mutable.
+    - El reducer define acciones tipadas (`NEXT_STEP`, `COMPLETE_SET`, `TICK_TIMER`, etc.) — nada de `setSomething` suelto.
+    - Timers (`setInterval`/`setTimeout`) viven en el hook via `useRef` con cleanup en `useEffect` ligado a la fase/estado.
+    - Operaciones de DB (`savePartialProgress`, `finalizeSession`) viven en el hook como `useCallback` que despachan acciones + hacen fetch.
+    - `savePartialProgress()` siempre con 1 reintento automático + `toast.error` si falla ambas veces.
+    - `finalizeSession()` retorna `boolean` — si falla, NO redirigir; el page muestra botón "Reintentar".
+    - El `page.tsx` queda como orquestador: carga datos iniciales, llama al hook, renderiza subcomponente según fase. **Target orientativo ~200 líneas — mismo criterio que regla 50: lo que importa es responsabilidad única, no el conteo exacto.**
+    - **Ejemplo de referencia:** `apps/web/app/(dashboard)/app/client/routine/active/` — `useActiveTraining.ts` + 4 subcomponentes + `page.tsx` orquestador (196 líneas, antes 1390).
+
+52. **Tests unitarios con Vitest** — Framework de tests instalado en `apps/web` (vitest 4.x + happy-dom). Ejecutar con `npm test` (una pasada) o `npm run test:watch` (modo watch). Config en `apps/web/vitest.config.ts` con alias `@/*` resuelto. Convenciones:
+    - Archivos de test junto al archivo que testean: `lib/foo.test.ts` testea `lib/foo.ts`.
+    - Mocks de Supabase: pasar cliente mock como parámetro (no `vi.mock` del módulo). Usar `createChain(result)` + `createMockSupabase(table → result)` — ver `exercise-resolver.test.ts` como referencia.
+    - No instalar `@testing-library/react` para utils/libs puras — solo para componentes React si se necesita.
+    - **Ejemplo de referencia:** `apps/web/lib/exercise-resolver.test.ts` — 9 tests, 6 casos del resolver three-layer + 2 smoke tests de `resolveExercise`.
 
 ---
 

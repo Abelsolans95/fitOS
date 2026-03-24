@@ -7,9 +7,49 @@
  *
  * Resolution order: C (override) → B (private) → A (global)
  * If a trainer has an override for a global exercise, the override fields win.
+ * If hidden=true in Layer C, the exercise is excluded entirely.
  */
 
 import { SupabaseClient } from "@supabase/supabase-js";
+
+/** Row shape from trainer_exercise_library */
+interface TrainerExerciseLibraryRow {
+  id: string;
+  name: string;
+  description: string | null;
+  video_url: string | null;
+  video_thumbnail_url: string | null;
+  muscle_groups: string[] | null;
+  secondary_muscles: string[] | null;
+  equipment_needed: string[] | null;
+  category: string | null;
+  difficulty: string | null;
+  is_global: boolean;
+  trainer_id: string | null;
+  aliases: string[] | null;
+}
+
+/** Row shape from trainer_exercise_overrides (migración 021 + 027) */
+interface TrainerExerciseOverride {
+  id: string;
+  trainer_id: string;
+  exercise_id: string;
+  custom_name: string | null;
+  custom_description: string | null;
+  custom_notes: string | null;
+  custom_video_url: string | null;
+  /** hidden=true → exclude the global exercise from the trainer's library */
+  hidden: boolean;
+}
+
+/** Row returned by search_similar_exercises RPC */
+export interface SimilarExerciseResult {
+  id: string;
+  name: string;
+  similarity: number;
+  is_global: boolean;
+  trainer_id: string | null;
+}
 
 export interface ResolvedExercise {
   id: string;
@@ -52,30 +92,37 @@ export async function getResolvedExercises(
   if (exercisesRes.error) throw exercisesRes.error;
   if (overridesRes.error) throw overridesRes.error;
 
-  const overrideMap = new Map<string, any>();
-  for (const ov of overridesRes.data || []) {
+  const exercises = (exercisesRes.data ?? []) as TrainerExerciseLibraryRow[];
+  const overrides = (overridesRes.data ?? []) as TrainerExerciseOverride[];
+
+  const overrideMap = new Map<string, TrainerExerciseOverride>();
+  for (const ov of overrides) {
     overrideMap.set(ov.exercise_id, ov);
   }
 
-  return (exercisesRes.data || []).map((ex) => {
+  const result: ResolvedExercise[] = [];
+  for (const ex of exercises) {
     const override = overrideMap.get(ex.id);
-    return {
+    // Layer C: hidden=true means the trainer has explicitly hidden this global exercise
+    if (override?.hidden) continue;
+    result.push({
       id: ex.id,
       name: override?.custom_name || ex.name,
       description: override?.custom_description || ex.description,
       video_url: override?.custom_video_url || ex.video_url,
       video_thumbnail_url: ex.video_thumbnail_url,
-      muscle_groups: ex.muscle_groups || [],
-      secondary_muscles: ex.secondary_muscles || [],
-      equipment_needed: ex.equipment_needed || [],
+      muscle_groups: ex.muscle_groups ?? [],
+      secondary_muscles: ex.secondary_muscles ?? [],
+      equipment_needed: ex.equipment_needed ?? [],
       category: ex.category,
       difficulty: ex.difficulty,
       is_global: ex.is_global,
       is_overridden: !!override,
-      override_id: override?.id || null,
-      aliases: ex.aliases || [],
-    };
-  });
+      override_id: override?.id ?? null,
+      aliases: ex.aliases ?? [],
+    });
+  }
+  return result;
 }
 
 /**
@@ -102,8 +149,8 @@ export async function resolveExercise(
 
   if (exerciseRes.error || !exerciseRes.data) return null;
 
-  const ex = exerciseRes.data;
-  const override = overrideRes.data;
+  const ex = exerciseRes.data as TrainerExerciseLibraryRow;
+  const override = overrideRes.data as TrainerExerciseOverride | null;
 
   return {
     id: ex.id,
@@ -111,15 +158,15 @@ export async function resolveExercise(
     description: override?.custom_description || ex.description,
     video_url: override?.custom_video_url || ex.video_url,
     video_thumbnail_url: ex.video_thumbnail_url,
-    muscle_groups: ex.muscle_groups || [],
-    secondary_muscles: ex.secondary_muscles || [],
-    equipment_needed: ex.equipment_needed || [],
+    muscle_groups: ex.muscle_groups ?? [],
+    secondary_muscles: ex.secondary_muscles ?? [],
+    equipment_needed: ex.equipment_needed ?? [],
     category: ex.category,
     difficulty: ex.difficulty,
     is_global: ex.is_global,
     is_overridden: !!override,
-    override_id: override?.id || null,
-    aliases: ex.aliases || [],
+    override_id: override?.id ?? null,
+    aliases: ex.aliases ?? [],
   };
 }
 
@@ -133,7 +180,7 @@ export async function searchSimilarExercises(
   trainerId: string,
   threshold = 0.3,
   maxResults = 10
-) {
+): Promise<SimilarExerciseResult[]> {
   const { data, error } = await supabase.rpc("search_similar_exercises", {
     search_term: searchTerm,
     p_trainer_id: trainerId,
@@ -142,7 +189,7 @@ export async function searchSimilarExercises(
   });
 
   if (error) throw error;
-  return data || [];
+  return (data ?? []) as SimilarExerciseResult[];
 }
 
 /**
