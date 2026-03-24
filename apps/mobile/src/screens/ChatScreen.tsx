@@ -10,6 +10,7 @@ import {
   Platform,
   ActivityIndicator,
   SafeAreaView,
+  Alert,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { supabase } from "../lib/supabase";
@@ -83,21 +84,31 @@ export default function ChatScreen() {
       setTrainerId(tid);
 
       // Get trainer profile
-      const { data: tp } = await supabase
+      const { data: tp, error: tpError } = await supabase
         .from("profiles")
         .select("user_id, full_name")
         .eq("user_id", tid)
         .single();
+      if (tpError) {
+        console.error("[ChatScreen] Error cargando perfil trainer:", tpError);
+        Alert.alert("Error", "No se pudo cargar el perfil del entrenador");
+        setLoading(false);
+        return;
+      }
       setTrainer(tp as TrainerInfo | null);
 
       // Load messages
-      const { data: msgs } = await supabase
+      const { data: msgs, error: msgsError } = await supabase
         .from("messages")
         .select("*")
         .eq("trainer_id", tid)
         .eq("client_id", user.id)
         .order("created_at", { ascending: true })
         .limit(100);
+      if (msgsError) {
+        console.error("[ChatScreen] Error cargando mensajes:", msgsError);
+        Alert.alert("Error", "No se pudieron cargar los mensajes");
+      }
       setMessages((msgs as Message[]) ?? []);
       setLoading(false);
 
