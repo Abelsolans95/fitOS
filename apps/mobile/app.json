@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "FitOS",
+    "slug": "fitos",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -9,12 +9,14 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0A0A0F"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.antigravity.fitos"
     },
     "android": {
+      "package": "com.antigravity.fitos",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -34,7 +36,28 @@
           "project": "react-native",
           "organization": "fitos"
         }
-      ]
+      ],
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "TodayWorkout",
+              "label": "FitOS — Entrenamiento del día",
+              "minWidth": "250dp",
+              "minHeight": "180dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 3,
+              "maxResizeWidth": "530dp",
+              "maxResizeHeight": "450dp",
+              "description": "Ve tu entrenamiento de hoy sin abrir la app",
+              "updatePeriodMillis": 1800000,
+              "resizeMode": "horizontal|vertical"
+            }
+          ]
+        }
+      ],
+      "./plugins/withIOSWidget"
     ]
   }
 }

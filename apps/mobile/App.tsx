@@ -17,6 +17,8 @@ import CaloriesScreen from "./src/screens/CaloriesScreen";
 import RoutineScreen from "./src/screens/RoutineScreen";
 import MealsScreen from "./src/screens/MealsScreen";
 import ProgressScreen from "./src/screens/ProgressScreen";
+import ChatScreen from "./src/screens/ChatScreen";
+import AppointmentsScreen from "./src/screens/AppointmentsScreen";
 
 Sentry.init({
   dsn: "https://c8918d35c078388eb3680a7ac3fdbe2a@o4511044389240832.ingest.de.sentry.io/4511047824506960",
@@ -90,6 +92,28 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
       <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
         <Path
           d="M2.25 18L9 11.25l4.306 4.306a11.95 11.95 0 015.814-5.518l2.74-1.22m0 0l-5.94-2.281m5.94 2.28l-2.28 5.941"
+          stroke={color}
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </Svg>
+    ),
+    Chat: (
+      <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+        <Path
+          d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"
+          stroke={color}
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </Svg>
+    ),
+    Citas: (
+      <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+        <Path
+          d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
           stroke={color}
           strokeWidth={1.8}
           strokeLinecap="round"
@@ -175,6 +199,8 @@ function AppNavigator() {
       <Tab.Screen name="Rutina" component={RoutineScreen} />
       <Tab.Screen name="Comidas" component={MealsScreen} />
       <Tab.Screen name="Progreso" component={ProgressScreen} />
+      <Tab.Screen name="Chat" component={ChatScreen} />
+      <Tab.Screen name="Citas" component={AppointmentsScreen} />
     </Tab.Navigator>
   );
 }

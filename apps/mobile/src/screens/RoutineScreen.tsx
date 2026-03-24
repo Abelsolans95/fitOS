@@ -16,6 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
 import { colors, spacing, radius, shadows } from "../theme";
+import { updateWidget } from "../lib/widget-sync";
 
 /* ────────────────────────────────────────────
    Types
@@ -858,6 +859,9 @@ export default function RoutineScreen() {
       .order("session_date", { ascending: false })
       .limit(200);
     if (newLogs) setPreviousLogs(newLogs as PreviousLog[]);
+
+    // Update widget to reflect completed session
+    updateWidget(user.id).catch(() => {});
   }, [user, sessionId, dayExercises, allSets, sessionStart, rpeGlobal, routine, saveCalendarAndRpe]);
 
   // ── Finish active session ──
@@ -905,6 +909,9 @@ export default function RoutineScreen() {
       .order("session_date", { ascending: false })
       .limit(200);
     if (newLogs) setPreviousLogs(newLogs as PreviousLog[]);
+
+    // Update widget to reflect completed session
+    updateWidget(user.id).catch(() => {});
 
     setMode("summary");
   }, [sessionId, user, sessionStart, allSets, dayExercises, rpeGlobal, saveCalendarAndRpe]);

@@ -232,6 +232,62 @@ export async function syncWorkoutToCalendar(
 }
 
 /**
+ * Helper: Sincronizar una cita con Google Calendar
+ * PENDIENTE: Requiere OAuth 2.0 configurado (NEXT_PUBLIC_GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)
+ * y tokens almacenados en Supabase Vault por entrenador.
+ * Una vez configurado el OAuth, llamar con el accessToken del trainer desde una API Route.
+ */
+export async function syncAppointmentToCalendar(
+  accessToken: string,
+  appointment: {
+    title: string;
+    starts_at: string; // ISO string
+    ends_at: string;   // ISO string
+    session_type: string;
+    notes?: string;
+    location?: string;
+    meeting_url?: string;
+    client_name?: string;
+    timeZone?: string;
+  }
+) {
+  const tz = appointment.timeZone || "Europe/Madrid";
+
+  const typeLabels: Record<string, string> = {
+    presencial: "Sesión presencial",
+    online: "Sesión online",
+    telefonica: "Llamada telefónica",
+    evaluacion: "Evaluación inicial",
+    seguimiento: "Seguimiento",
+  };
+
+  const description = [
+    appointment.client_name ? `Cliente: ${appointment.client_name}` : null,
+    typeLabels[appointment.session_type] ?? appointment.session_type,
+    appointment.notes ? `Notas: ${appointment.notes}` : null,
+    appointment.meeting_url ? `Enlace: ${appointment.meeting_url}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return createCalendarEvent(accessToken, {
+    summary: `📅 ${appointment.title}`,
+    description,
+    start: { dateTime: appointment.starts_at, timeZone: tz },
+    end: { dateTime: appointment.ends_at, timeZone: tz },
+    colorId: "2", // Sage (green)
+    ...(appointment.location ? { location: appointment.location } : {}),
+    reminders: {
+      useDefault: false,
+      overrides: [
+        { method: "popup", minutes: 60 },
+        { method: "email", minutes: 1440 }, // 24h antes
+      ],
+    },
+  });
+}
+
+/**
  * Helper: Crear evento de comida en el calendario
  */
 export async function syncMealToCalendar(

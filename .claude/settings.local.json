@@ -14,7 +14,9 @@
       "NotebookEdit",
       "mcp__nanobanana__generate_image",
       "mcp__StitchMCP__list_projects",
-      "mcp__magic__21st_magic_component_inspiration"
+      "mcp__magic__21st_magic_component_inspiration",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs"
     ]
   }
 }

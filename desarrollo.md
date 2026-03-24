@@ -1,6 +1,6 @@
 # FitOS — Estado del Desarrollo
 
-> Documento actualizado el 23/03/2026 (Rediseño premium Dashboard Entrenador, glassmorphism, background glows, AppSidebar). Léelo de arriba abajo antes de tocar cualquier archivo.
+> Documento actualizado el 23/03/2026 (Chat interno + Calendario de citas + Widget iOS/Android: ver entrenamiento del día sin abrir la app). Léelo de arriba abajo antes de tocar cualquier archivo.
 > Cualquier agente o desarrollador debe leer este archivo **primero** para entender el estado actual del proyecto.
 >
 > **IMPORTANTE:** Al terminar cualquier desarrollo, bugfix o cambio significativo, actualiza este archivo (`desarrollo.md`) **y** `CLAUDE.md` antes de cerrar la sesión. Refleja los archivos nuevos o modificados, añade notas para el siguiente agente/desarrollador y actualiza la sección de próximos pasos. El objetivo es que cualquier persona o agente pueda continuar el proyecto sin contexto previo.
@@ -55,6 +55,57 @@
 > [!NOTE]
 > Ver `PENDIENTE_FASE_1.md` en la raíz para las tareas de configuración y seeds faltantes para cerrar esta fase.
 
+### Fase 2 — Chat interno (23/03/2026)
+- [x] Chat interno cifrado (RLS) entre entrenador y cliente — Migración 029
+- [x] Web trainer: tab "Chat" en detalle de cliente (`clients/[id]/page.tsx`) con 6 tabs (requiere scroll horizontal)
+- [x] Web cliente: nueva ruta `/app/client/chat/page.tsx` + badge de no leídos en `ClientSidebar`
+- [x] Mobile: `ChatScreen.tsx` nuevo + tab "Chat" en `App.tsx` (6 tabs en bottom nav)
+- [x] Actualización optimista de mensajes en ambos lados (aparecen al instante, no dependen de Realtime)
+- [x] Badge con conteo de mensajes no leídos en sidebar del cliente: píldora cyan con glow; en sidebar colapsada: punto glowing sobre el icono; se resetea al entrar en `/app/client/chat`
+- [x] `AppSidebar` soporta prop `badge?: number` en cualquier `SidebarNavItem`
+- [x] `ClientSidebar` convertida en componente inteligente (fetch unread + Realtime subscription)
+- Funcionalidades chat: Realtime para mensajes del otro usuario, agrupación por día, marcado de leído, scroll automático, tick de confirmación (gris=enviado, color=leído)
+
+### Fase 2 — Calendario de citas (23/03/2026) — **PENDIENTE DE DESARROLLO PARCIAL**
+- [x] Migración 030: tabla `appointments` con session_type, status, google_event_id, email_sent_at — **Aplicar en Supabase SQL Editor**
+- [x] RLS: trainer acceso total; cliente SELECT + INSERT (solo pending) + UPDATE (solo a cancelled)
+- [x] Realtime habilitado en tabla `appointments`
+- [x] Web trainer: `/app/trainer/appointments/page.tsx` — CRUD completo (crear, confirmar, completar, cancelar)
+- [x] Web cliente: `/app/client/appointments/page.tsx` — solicitar, ver y cancelar citas
+- [x] TrainerSidebar: item "Citas" añadido
+- [x] ClientSidebar: item "Citas" añadido (entre Progreso y Chat)
+- [x] Mobile: `AppointmentsScreen.tsx` — ver citas, solicitar con picker de día/hora, cancelar
+- [x] Mobile: tab "Citas" añadido en `App.tsx` (7 tabs en bottom nav)
+- [x] `lib/google-calendar.ts`: función `syncAppointmentToCalendar()` preparada — **PENDIENTE OAuth 2.0**
+- [x] `lib/email-notifications.ts`: `sendAppointmentEmail()` con template HTML preparada — **PENDIENTE Resend + dominio**
+
+**Pendiente de completar (requiere configuración externa):**
+- [ ] Sincronización Google Calendar: configurar OAuth 2.0 (NEXT_PUBLIC_GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, NEXT_PUBLIC_GOOGLE_REDIRECT_URI), guardar tokens en Supabase Vault, llamar `syncAppointmentToCalendar()` desde API route tras confirmar cita
+- [ ] Emails Resend: obtener dominio verificado, RESEND_API_KEY, instalar `resend` (`npm install resend --legacy-peer-deps`), descomentar bloque TODO en `sendAppointmentEmail()`, añadir RESEND_API_KEY y RESEND_FROM_EMAIL a .env.local y Vercel
+
+### Fase 3 — Widget iOS y Android (23/03/2026)
+- [x] `react-native-android-widget` instalado y configurado como plugin en `app.json`
+- [x] `src/widgets/TodayWorkoutWidget.tsx` — componente JSX del widget Android (FlexWidget, TextWidget, ListWidget)
+- [x] `src/widgets/widget-task-handler.tsx` — handler lifecycle (WIDGET_ADDED, UPDATE, RESIZED, CLICK, DELETED)
+- [x] `src/lib/widget-data.ts` — consulta `user_routines` + `workout_sessions`, escribe JSON a AsyncStorage
+- [x] `src/lib/widget-sync.ts` — `updateWidget(userId)` sincroniza datos y actualiza widget Android via `requestWidgetUpdate()`
+- [x] `index.ts` actualizado con `registerWidgetTaskHandler()`
+- [x] `app.json`: bundle IDs configurados (`com.antigravity.fitos`), splash bg actualizado, widget plugin Android
+- [x] iOS WidgetKit: `plugins/withIOSWidget.js` genera archivos Swift en `ios/TodayWorkoutWidget/` durante `expo prebuild`
+- [x] Integración en `DashboardScreen` (sync al montar) y `RoutineScreen` (sync al completar sesión en ambos modos)
+
+**Funcionalidad del widget:**
+- Muestra nombre del día, label del entrenamiento, lista de ejercicios con sets/reps
+- Indica si es día de descanso
+- Badge "COMPLETADO" si la sesión del día ya se hizo
+- Tap abre la app
+- Se refresca cada 30 min + al abrir la app + al completar sesión
+
+**Pendiente iOS (requiere build nativo):**
+- [ ] Ejecutar `expo prebuild` para generar proyecto nativo
+- [ ] En Xcode: añadir target Widget Extension, copiar Swift generado, configurar App Group
+- [ ] Implementar módulo nativo para escribir a App Group UserDefaults desde React Native
+
 ### Rediseño UI — "Brutalismo Elegante" y Dashboards Premium (Actualizado — 23/03/2026)
 - Rediseño integral de 7 pantallas mobile y páginas web públicas / auth (19/03/2026)
 - **Dashboards Premium (Entrenador y Cliente):** Implementación de *glassmorphism* intensivo, texturas `.dot-grid` globales, rediseño flotante en la `AppSidebar` y transparencias en tarjetas de contenido (`backdrop-blur-xl`). Se actualizaron masivamente todas las rutas internas y layouts base para unificar estética holográfica con la landing page (23/03/2026)
@@ -96,7 +147,9 @@ fitOS/
 │   │   ├── 025_alter_user_routines_weeks.sql  ← Bloques semanales + aliases en exercises
 │   │   ├── 026_enable_pg_trgm.sql             ← Extensión trigram + funciones de similitud
 │   │   ├── 027_exercise_override_hidden.sql   ← hidden BOOLEAN en trainer_exercise_overrides
-│   │   └── 028_weight_log_client_notes.sql    ← client_notes TEXT en weight_log
+│   │   ├── 028_weight_log_client_notes.sql    ← client_notes TEXT en weight_log
+│   │   ├── 029_chat_messages.sql              ← Tabla messages (chat trainer↔cliente) + RLS + Realtime
+│   │   └── 030_appointments.sql              ← Tabla appointments (citas) + RLS + Realtime
 │   └── functions/
 │       ├── analyze-food-image/       ← Claude Vision: análisis foto → macros
 │       ├── generate-meal-plan/       ← Claude: generar plan nutricional
@@ -146,6 +199,8 @@ fitOS/
 | `trainer_food_overrides` | **NUEVA** — Layer C: personalizaciones de alimentos globales por trainer |
 | `excel_imports` | **NUEVA** — Tracking de importaciones Excel (columnas detectadas, datos raw, decisiones) |
 | `workout_sessions` | **NUEVA** — Agrupa weight_log por sesión (modo registration/active) |
+| `messages` | **NUEVA** — Chat trainer↔cliente. Campos: `trainer_id`, `client_id`, `sender_id`, `content`, `read_at`. RLS doble. Realtime activo. |
+| `appointments` | **NUEVA** — Citas entre trainer y cliente. `session_type` (presencial/online/telefonica/evaluacion/seguimiento), `status` (pending/confirmed/cancelled/completed), `google_event_id` (NULL hasta OAuth), `email_sent_at` (NULL hasta Resend). RLS: trainer total, cliente SELECT+INSERT+UPDATE limitado. Realtime activo. |
 
 ### Funciones de base de datos
 - **`handle_new_user()`** — Trigger en `auth.users` → crea `profiles`
@@ -177,10 +232,14 @@ npm run build  # Build de producción
 NEXT_PUBLIC_SUPABASE_URL=https://rgrtxlciqmexdkxagomo.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
-# Google Calendar (añadir cuando se configure)
+# Google Calendar (añadir cuando se configure OAuth)
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 NEXT_PUBLIC_GOOGLE_REDIRECT_URI=https://tu-dominio.com/api/auth/google/callback
+
+# Resend (añadir cuando se tenga dominio verificado)
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=citas@tu-dominio.com
 ```
 
 ### Estructura de rutas completa
@@ -208,7 +267,7 @@ apps/web/app/
 │       │   ├── layout.tsx              ← ✅ TrainerSidebar (240px, colapsable a 72px)
 │       │   ├── dashboard/page.tsx      ← ✅ KPIs + actividad reciente + acciones rápidas
 │       │   ├── clients/page.tsx        ← ✅ Lista clientes con búsqueda + tabla
-│       │   ├── clients/[id]/page.tsx   ← ✅ Detalle cliente con 5 tabs (Perfil, Progreso, Rutina+sesiones, Menú+food_log, Formulario)
+│       │   ├── clients/[id]/page.tsx   ← ✅ Detalle cliente con 6 tabs (Perfil, Progreso, Rutina+sesiones, Menú+food_log, Formulario, Chat)
 │       │   ├── exercises/page.tsx      ← ✅ Biblioteca de ejercicios (3 capas, clone-on-edit global, overrides hidden)
 │       │   ├── routines/page.tsx       ← ✅ Constructor de rutinas (días de semana, ejercicios, sets/reps/RIR)
 │       │   ├── nutrition/page.tsx      ← ✅ Menú creator + Biblioteca de alimentos (2 tabs)
@@ -218,16 +277,19 @@ apps/web/app/
 │       │   # routine/page.tsx          ← ✅ Rutina con semanas, ANTERIOR, dos modos (registro + activo)
 │       │   # routine/active/page.tsx   ← ✅ Entrenamiento activo (nav libre, resume, notas, finalizar rutina)
 │       │   ├── forms/page.tsx          ← Editor de formulario onboarding (drag & drop, 8 tipos)
+│       │   ├── appointments/page.tsx   ← ✅ Calendario de citas: crear, confirmar, completar, cancelar
 │       │   └── settings/page.tsx       ← ✅ Código promo + perfil editable
 │       │
 │       └── client/
-│           ├── layout.tsx              ← ✅ ClientBottomNav (5 tabs)
+│           ├── layout.tsx              ← ✅ ClientSidebar (sidebar con badge de no leídos en Chat)
 │           ├── dashboard/page.tsx      ← ✅ Resumen diario + stats + acciones rápidas
 │           ├── calories/page.tsx       ← ✅ Vision Calorie Tracker (foto → IA → macros)
 │           ├── routine/page.tsx        ← ✅ Rutina actual con tracker de sets
 │           ├── meals/page.tsx          ← ✅ Plan de comidas asignado (por día)
 │           ├── calendar/page.tsx       ← ✅ Calendario master (entrenos, comidas, métricas)
-│           └── progress/page.tsx       ← ✅ Mediciones corporales + gráfico SVG + historial
+│           ├── progress/page.tsx       ← ✅ Mediciones corporales + gráfico SVG + historial
+│           ├── appointments/page.tsx   ← ✅ Ver/solicitar/cancelar citas con el entrenador
+│           └── chat/page.tsx           ← ✅ Chat con entrenador (Realtime, optimista, leído)
 │
 ├── api/
 │   ├── auth/google/
@@ -242,8 +304,9 @@ apps/web/app/
 │
 ├── components/
 │   ├── layout/
-│   │   ├── TrainerSidebar.tsx          ← ✅ Sidebar colapsable con 7 nav items + logout
-│   │   └── ClientBottomNav.tsx         ← ✅ Bottom nav con 5 tabs + indicador activo
+│   │   ├── AppSidebar.tsx              ← ✅ Sidebar genérico — acepta badge?: number en SidebarNavItem
+│   │   ├── TrainerSidebar.tsx          ← ✅ Wrapper de AppSidebar para el entrenador (8 nav items: Dashboard, Clientes, Rutinas, Nutrición, Personalización, Ejercicios, Formularios, Citas, Ajustes)
+│   │   └── ClientSidebar.tsx           ← ✅ Wrapper inteligente: fetch unread + Realtime badge en Chat
 │   ├── onboarding/
 │   │   ├── FormFieldEditor.tsx         ← Editor de campos con drag & drop
 │   │   └── FormPreview.tsx             ← Vista previa del formulario
@@ -323,6 +386,12 @@ NEXT_PUBLIC_GOOGLE_REDIRECT_URI=https://tu-dominio.com/api/auth/google/callback
 - `deleteCalendarEvent(token, eventId)` — Eliminar evento
 - `syncWorkoutToCalendar(token, workout)` — Crear evento de entreno
 - `syncMealToCalendar(token, meal)` — Crear evento de comida
+- `syncAppointmentToCalendar(token, appointment)` — Crear evento de cita (**PENDIENTE OAuth**)
+
+### Email notifications (`lib/email-notifications.ts`)
+- `sendAppointmentEmail(data)` — Envía email de confirmación/cancelación de cita. **STUB** — no envía hasta configurar Resend.
+- Template HTML con estilo FitOS ya incluido.
+- **Para activar:** (1) dominio verificado en resend.com, (2) RESEND_API_KEY en .env.local y Vercel, (3) `npm install resend --legacy-peer-deps`, (4) descomentar bloque TODO en la función.
 
 ---
 
@@ -358,17 +427,27 @@ apps/mobile/
 ├── src/
 │   ├── theme.ts                        ← ✅ Design system completo (colors, spacing, radius, shadows)
 │   ├── lib/supabase.ts                 ← Cliente Supabase con AsyncStorage
+│   ├── lib/widget-data.ts              ← ✅ Widget: consulta rutina + sesiones, escribe JSON a AsyncStorage
+│   ├── lib/widget-sync.ts              ← ✅ Widget: updateWidget() → syncData + requestWidgetUpdate (Android)
 │   ├── contexts/AuthContext.tsx         ← Auth state + listener de sesión
+│   ├── widgets/
+│   │   ├── TodayWorkoutWidget.tsx      ← ✅ Widget Android: JSX con FlexWidget/TextWidget/ListWidget
+│   │   └── widget-task-handler.tsx     ← ✅ Widget lifecycle handler (added/update/resize/click/delete)
 │   └── screens/
 │       ├── LoginScreen.tsx             ← ✅ Login con email/password
 │       ├── OnboardingScreen.tsx        ← ✅ Wizard 2 pasos: formulario entrenador + datos biométricos
-│       ├── DashboardScreen.tsx         ← ✅ Resumen diario (kcal ring, stats, quick actions)
+│       ├── DashboardScreen.tsx         ← ✅ Resumen diario (kcal ring, stats, quick actions) + widget sync
 │       ├── CaloriesScreen.tsx          ← ✅ Vision Calorie Tracker (cámara/galería → IA)
-│       ├── RoutineScreen.tsx           ← ✅ Rutina: 3 modos (overview + registro + activo) con ANTERIOR, semanas, rest timer
+│       ├── RoutineScreen.tsx           ← ✅ Rutina: 3 modos (overview + registro + activo) con ANTERIOR, semanas, rest timer + widget sync
 │       ├── MealsScreen.tsx             ← ✅ Plan de comidas por día con macros
-│       └── ProgressScreen.tsx          ← ✅ Mediciones + historial + tendencias
-├── app.json                            ← Config Expo + Sentry
-└── package.json                        ← Dependencias actualizadas
+│       ├── ProgressScreen.tsx          ← ✅ Mediciones + historial + tendencias
+│       ├── ChatScreen.tsx              ← ✅ Chat con entrenador (Realtime, FlatList, burbujas, agrupación por día)
+│       └── AppointmentsScreen.tsx      ← ✅ Citas: ver próximas/historial, solicitar (picker día+hora), cancelar
+├── plugins/
+│   └── withIOSWidget.js                ← ✅ Expo config plugin: genera WidgetKit Swift files + App Group entitlement
+├── app.json                            ← Config Expo + Sentry + react-native-android-widget plugin + iOS widget plugin
+├── index.ts                            ← Entry point + registerWidgetTaskHandler()
+└── package.json                        ← Dependencias actualizadas (+ react-native-android-widget)
 ```
 
 ### Dependencias a instalar (si no están)
@@ -438,7 +517,19 @@ Protege rutas por autenticación Y por rol. Trainers no acceden a rutas de clien
 
 ---
 
-## 12. Próximos Pasos Recomendados (Fase 2)
+## 12. Próximos Pasos Recomendados
+
+### Estado Fase 2 — completado parcialmente (23/03/2026)
+
+| Tarea | Estado | Notas |
+|---|---|---|
+| Chat interno trainer↔cliente | ✅ Completo | Web + Mobile. Migración 029 aplicada. |
+| Calendario de citas (CRUD) | ✅ Completo | Web + Mobile. Migración 030 — **pendiente aplicar en Supabase** |
+| Sincronización Google Calendar | ⏳ Pendiente configuración | Stub listo en `lib/google-calendar.ts`. Requiere OAuth 2.0 |
+| Emails de confirmación (Resend) | ⏳ Pendiente configuración | Stub listo en `lib/email-notifications.ts`. Requiere dominio + RESEND_API_KEY |
+| Panel de métricas negocio (MRR/churn) | ❌ Sin iniciar | Requiere Stripe |
+| Área personal entrenador (código promo, suscripción) | ⏳ Parcial | Código promo en Settings. Stripe pendiente. |
+| Supabase Realtime dashboard entrenador | ❌ Sin iniciar | body_metrics, weight_log en tiempo real |
 
 ### Paridad mobile pendiente (Fase 1)
 
@@ -447,24 +538,56 @@ Protege rutas por autenticación Y por rol. Trainers no acceden a rutas de clien
 | Notas del cliente en entrenamiento activo | ✅ Hecho | `exerciseNotes` en rest timer, se guarda en `weight_log.client_notes` |
 | Sesión resumible ("Completar rutina en curso") | ✅ Hecho | Botón naranja en overview, carga `weight_log` de sesión `in_progress`, restaura sets/notas |
 | Navegación libre entre ejercicios | ✅ Hecho | Botones Anterior/Siguiente siempre visibles, "Finalizar rutina" en último ejercicio |
-| Resumen de rutina finalizada (summary) | ✅ Hecho | Ya existía — muestra duración, volumen, series y progreso por ejercicio |
 | Trainer ve datos del cliente (Rutina + Menú tabs) | ❌ Solo web | Mobile no tiene vista de detalle de cliente aún |
 | Import Excel | ❌ Solo web | No aplica a mobile (funcionalidad exclusiva de trainer en web) |
 
-### Tareas Fase 2
+### Estado Fase 3 — parcial (23/03/2026)
 
-| Tarea | Prioridad | Descripción |
+| Tarea | Estado | Notas |
 |---|---|---|
-| Configurar Vercel | 🔴 Alta | Conectar repo GitHub, env vars, dominio |
-| Aplicar migración food_log | 🔴 Alta | `supabase db push` o aplicar `018_create_food_log.sql` |
-| Configurar ANTHROPIC_API_KEY | 🔴 Alta | `supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx` |
-| Insertar datos seed | 🟡 Media | Ejercicios y alimentos globales en las tablas correspondientes |
-| Configurar Google Calendar | 🟡 Media | Crear proyecto en Google Cloud Console, obtener OAuth credentials |
-| Instalar deps mobile | 🟡 Media | `cd apps/mobile && npx expo install ...` (ver sección 9) |
-| Stripe / suscripciones | 🟡 Media | Integrar pagos para entrenadores |
-| Gamificación / Ligas | 🟢 Baja | Implementar el sistema de ligas (tablas ya existen) |
-| Notificaciones push | 🟢 Baja | Expo Notifications para mobile |
-| Wearables / biometric_data | 🟢 Baja | Integraciones con Apple Health, Google Fit, Garmin |
+| Widget iOS y Android | ✅ Completo | Ver entrenamiento del día sin abrir la app. Android: `react-native-android-widget` con JSX. iOS: WidgetKit SwiftUI via Expo config plugin. |
+| Motor de auto-regulación | ❌ Sin iniciar | Alertas sueño < 6h, HRV bajo |
+| Comandos de voz v1.0 | ❌ Sin iniciar | Registrar series/pesos por voz |
+
+### Configuración pendiente (bloquean features)
+
+| Config | Prioridad | Qué desbloquea |
+|---|---|---|
+| Aplicar migración `030_appointments.sql` en Supabase | 🔴 Alta | Tabla citas — sin esto el módulo de citas no funciona |
+| Dominio verificado en Resend + `RESEND_API_KEY` | 🟠 Alta | Emails de confirmación de citas |
+| OAuth 2.0 Google Calendar (Google Cloud Console) | 🟠 Alta | Sync citas → Google Calendar |
+| `ANTHROPIC_API_KEY` en Supabase secrets | 🟡 Media | Edge Functions IA (actualmente retornan mock) |
+| Insertar datos seed | 🟡 Media | Ejercicios y alimentos globales |
+| Stripe / suscripciones | 🟡 Media | Pagos para entrenadores |
+| Notificaciones push (Expo Notifications) | 🟢 Baja | Avisos de nueva cita, mensaje, rutina |
+| Wearables / biometric_data | 🟢 Baja | Apple Health, Google Fit, Garmin |
+| Gamificación / Ligas | 🟢 Baja | Tablas ya existen, falta UI |
+
+### Pasos para activar Resend (cuando tengas dominio)
+```bash
+# 1. Instalar resend
+cd apps/web && npm install resend --legacy-peer-deps
+
+# 2. Añadir a .env.local
+RESEND_API_KEY=re_xxxxxxxxxxxx
+RESEND_FROM_EMAIL=citas@tu-dominio.com
+
+# 3. Añadir las mismas vars en Vercel → Settings → Environment Variables
+
+# 4. En lib/email-notifications.ts: descomentar el bloque TODO con resend.emails.send()
+```
+
+### Pasos para activar Google Calendar OAuth (cuando tengas credenciales)
+```bash
+# 1. Añadir a .env.local
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-xxx
+NEXT_PUBLIC_GOOGLE_REDIRECT_URI=https://tu-dominio.com/api/auth/google/callback
+
+# 2. En lib/google-calendar.ts ya están todas las funciones listas
+# 3. Guardar tokens en Supabase Vault (profiles.google_calendar_tokens o tabla dedicada)
+# 4. Llamar syncAppointmentToCalendar() desde una API route tras confirmar cita
+```
 
 ---
 
@@ -865,6 +988,42 @@ DELETE FROM trainer_exercise_overrides WHERE hidden = true;
 - **Qué pasó:** Next.js 15 intenta hacer prerender estático de todas las páginas durante el build. La página usaba `useSearchParams()` directamente en el componente exportado como `default`. Esto causa crash en build porque `useSearchParams` requiere contexto de request. `export const dynamic = "force-dynamic"` NO funciona en `"use client"` components para resolver este problema.
 - **Solución aplicada:** Renombrar el componente principal a `ActiveTrainingPage` (sin export default), y crear un nuevo `export default function ActiveRoutinePage()` que envuelve el primero en `<Suspense fallback={...}>`.
 - **Regla:** En Next.js 15, cualquier `"use client"` component que use `useSearchParams()` debe estar envuelto en `<Suspense>` en el `export default`. El patrón correcto es: función interna con la lógica + export default wrapper con Suspense. `export const dynamic = "force-dynamic"` solo funciona en server components.
+
+---
+
+**ERROR #35 — Mensajes del chat no aparecían tras enviar (dependencia exclusiva de Realtime)**
+- **Fecha:** 23/03/2026
+- **Archivos afectados:** `apps/web/app/(dashboard)/app/trainer/clients/[id]/page.tsx`, `apps/web/app/(dashboard)/app/client/chat/page.tsx`
+- **Qué pasó:** `handleSend` solo hacía INSERT y esperaba que Supabase Realtime devolviera el mensaje de vuelta para mostrarlo. Realtime no es garantizado — puede tardar, fallar por RLS o timing de suscripción. El mensaje enviado nunca aparecía en la UI hasta recargar la página.
+- **Solución aplicada:** Patrón optimistic updates: al enviar, añadir el mensaje inmediatamente al estado local con `id: opt-{timestamp}` y timestamp actual. Después del INSERT, hacer refetch completo de todos los mensajes para reemplazar el optimistic con el real. Realtime solo se usa para recibir mensajes del otro usuario.
+- **Regla:** En chats con Supabase, no depender de Realtime para ver los propios mensajes. Usar optimistic updates + refetch post-INSERT. Realtime solo para mensajes entrantes del otro usuario.
+
+---
+
+**ERROR #36 — Mensajes optimistas desaparecían tras INSERT fallido (migración no aplicada)**
+- **Fecha:** 23/03/2026
+- **Archivos afectados:** `apps/web/app/(dashboard)/app/client/chat/page.tsx`, `supabase/migrations/029_chat_messages.sql`
+- **Qué pasó:** El mensaje aparecía un momento (optimistic) y luego desaparecía. La causa raíz era que la migración `029_chat_messages.sql` no había sido aplicada en la base de datos — la tabla `messages` no existía. El INSERT fallaba, y el rollback eliminaba el mensaje optimista del estado.
+- **Solución aplicada:** (1) La migración debe aplicarse en Supabase SQL Editor antes de usar el chat. (2) En vez de eliminar el mensaje optimista en caso de error, mantenerlo con `id: err-{timestamp}` para dar feedback visual al usuario.
+- **Regla:** Cuando un mensaje optimista aparece y desaparece rápidamente, la causa es un INSERT que falla silenciosamente. Verificar primero que la migración de la tabla está aplicada. Nunca eliminar el optimistic en caso de error — cambiarlo a estado de error.
+
+---
+
+**ERROR #37 — Cliente tenía que recargar para ver sus propios mensajes enviados**
+- **Fecha:** 23/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/client/chat/page.tsx`
+- **Qué pasó:** Tras hacer INSERT, se intentaba `.select().single()` encadenado para obtener el mensaje confirmado. RLS o timing hacía que esta query devolviera null silenciosamente, por lo que el optimistic nunca se reemplazaba con el real. El mensaje real sí existía en DB y aparecía tras recargar.
+- **Solución aplicada:** Reemplazado `.insert().select().single()` por un flujo de dos pasos: `await supabase.from("messages").insert({...})` seguido de un `SELECT *` completo de la conversación. El refetch siempre funciona porque RLS permite al usuario ver sus propios mensajes via `client_id`.
+- **Regla:** No encadenar `.select().single()` al INSERT en contextos con RLS complejo. Hacer el INSERT por separado y luego un SELECT independiente — más robusto y más simple.
+
+---
+
+**ERROR #38 — Tab bar visual rota al añadir 6ª pestaña en chat del entrenador**
+- **Fecha:** 23/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/trainer/clients/[id]/page.tsx`
+- **Qué pasó:** Al añadir el tab "Chat" (6ª pestaña), la barra de tabs quedaba mal distribuida. Intentar cambiar de `flex-1` a `shrink-0` para las tabs rompió el espaciado uniforme.
+- **Solución aplicada:** Mantener `flex-1` en los tabs (para ocupar el espacio proporcionalmente) y reducir el padding horizontal de `px-4` a `px-2` para que quepan 6 tabs sin overflow.
+- **Regla:** Con 6+ tabs, usar `flex-1` + `px-2`. No usar `shrink-0` en tab bars — hace que los tabs no se distribuyan uniformemente.
 
 ---
 

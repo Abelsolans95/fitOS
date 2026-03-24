@@ -13,6 +13,7 @@ import Svg, { Circle, Path } from "react-native-svg";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
 import { colors, spacing, radius, shadows } from "../theme";
+import { updateWidget } from "../lib/widget-sync";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -112,6 +113,9 @@ export default function DashboardScreen() {
       kcalConsumed: Math.round(kcalConsumed),
       workoutDone: (workouts?.length || 0) > 0,
     }));
+
+    // Sync widget data in background
+    updateWidget(user.id).catch(() => {});
   };
 
   useEffect(() => {

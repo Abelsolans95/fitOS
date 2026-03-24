@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase";
 import { AppSidebar, SidebarNavItem } from "./AppSidebar";
 
-const NAV_ITEMS: SidebarNavItem[] = [
+const BASE_NAV_ITEMS: SidebarNavItem[] = [
   {
     label: "Dashboard",
     href: "/app/trainer/dashboard",
@@ -72,6 +74,24 @@ const NAV_ITEMS: SidebarNavItem[] = [
     ),
   },
   {
+    label: "Citas",
+    href: "/app/trainer/appointments",
+    icon: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+      </svg>
+    ),
+  },
+  {
+    label: "Chat",
+    href: "/app/trainer/chat",
+    icon: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+      </svg>
+    ),
+  },
+  {
     label: "Ajustes",
     href: "/app/trainer/settings",
     icon: (
@@ -84,5 +104,44 @@ const NAV_ITEMS: SidebarNavItem[] = [
 ];
 
 export function TrainerSidebar() {
-  return <AppSidebar items={NAV_ITEMS} defaultHref="/app/trainer/dashboard" />;
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    let trainerId: string | null = null;
+
+    const fetchUnread = async () => {
+      const supabase = createClient();
+      if (!trainerId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        trainerId = user.id;
+      }
+      const { count } = await supabase
+        .from("messages")
+        .select("id", { count: "exact", head: true })
+        .eq("trainer_id", trainerId)
+        .neq("sender_id", trainerId)
+        .is("read_at", null);
+      setUnreadCount(count ?? 0);
+    };
+
+    fetchUnread();
+
+    // Real-time: refresh badge when messages change
+    const supabase = createClient();
+    const channel = supabase
+      .channel("trainer-sidebar-unread")
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, fetchUnread)
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  const items: SidebarNavItem[] = BASE_NAV_ITEMS.map((item) =>
+    item.href === "/app/trainer/chat" && unreadCount > 0
+      ? { ...item, badge: unreadCount }
+      : item
+  );
+
+  return <AppSidebar items={items} defaultHref="/app/trainer/dashboard" />;
 }

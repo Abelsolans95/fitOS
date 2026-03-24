@@ -1,8 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { AppSidebar, SidebarNavItem } from "./AppSidebar";
+import { createClient } from "@/lib/supabase";
 
-const NAV_ITEMS: SidebarNavItem[] = [
+const CHAT_HREF = "/app/client/chat";
+
+const BASE_NAV: Omit<SidebarNavItem, "badge">[] = [
   {
     label: "Inicio",
     href: "/app/client/dashboard",
@@ -49,8 +54,117 @@ const NAV_ITEMS: SidebarNavItem[] = [
       </svg>
     ),
   },
+  {
+    label: "Citas",
+    href: "/app/client/appointments",
+    icon: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+      </svg>
+    ),
+  },
+  {
+    label: "Chat",
+    href: CHAT_HREF,
+    icon: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
+      </svg>
+    ),
+  },
 ];
 
 export function ClientSidebar() {
-  return <AppSidebar items={NAV_ITEMS} defaultHref="/app/client/dashboard" />;
+  const pathname = usePathname();
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    const supabase = createClient();
+    let trainerId = "";
+    let clientId = "";
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      clientId = user.id;
+
+      const { data: rel } = await supabase
+        .from("trainer_clients")
+        .select("trainer_id")
+        .eq("client_id", user.id)
+        .eq("status", "active")
+        .single();
+      if (!rel) return;
+      trainerId = rel.trainer_id as string;
+
+      // Initial unread count
+      const fetchUnread = async () => {
+        const { count } = await supabase
+          .from("messages")
+          .select("id", { count: "exact", head: true })
+          .eq("trainer_id", trainerId)
+          .eq("client_id", clientId)
+          .eq("sender_id", trainerId)
+          .is("read_at", null);
+        setUnread(count ?? 0);
+      };
+
+      await fetchUnread();
+
+      // Realtime: listen for new trainer messages
+      channel = supabase
+        .channel(`sidebar-unread-${clientId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "messages",
+            filter: `client_id=eq.${clientId}`,
+          },
+          (payload) => {
+            const msg = payload.new as { sender_id: string; read_at: string | null };
+            if (msg.sender_id === trainerId && !msg.read_at) {
+              setUnread((n) => n + 1);
+            }
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "messages",
+            filter: `client_id=eq.${clientId}`,
+          },
+          () => {
+            // Re-fetch on any update (e.g. read_at set)
+            fetchUnread();
+          }
+        )
+        .subscribe();
+    };
+
+    init();
+
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Reset badge when entering the chat page
+  useEffect(() => {
+    if (pathname === CHAT_HREF) {
+      setUnread(0);
+    }
+  }, [pathname]);
+
+  const navItems: SidebarNavItem[] = BASE_NAV.map((item) =>
+    item.href === CHAT_HREF
+      ? { ...item, badge: unread > 0 ? unread : undefined }
+      : item
+  );
+
+  return <AppSidebar items={navItems} defaultHref="/app/client/dashboard" />;
 }
