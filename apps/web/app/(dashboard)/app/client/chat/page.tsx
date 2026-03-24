@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase";
 
 interface Message {
@@ -33,10 +34,6 @@ function getInitials(name: string | null) {
   if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
   return name.slice(0, 2).toUpperCase();
 }
-
-// Refs to keep trainer/client ids available inside Realtime callbacks without stale closures
-let _trainerId = "";
-let _clientId = "";
 
 export default function ClientChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -92,21 +89,29 @@ export default function ClientChatPage() {
       trainerIdRef.current = tid;
 
       // 3. Get trainer profile
-      const { data: trainerProfile } = await supabase
+      const { data: trainerProfile, error: tpError } = await supabase
         .from("profiles")
         .select("user_id, full_name, avatar_url")
         .eq("user_id", tid)
         .single();
+      if (tpError) {
+        toast.error("Error al cargar el perfil del entrenador");
+        console.error("[ClientChat] Error cargando perfil trainer:", tpError);
+      }
       setTrainer(trainerProfile as TrainerInfo | null);
 
       // 4. Load messages
-      const { data: msgs } = await supabase
+      const { data: msgs, error: msgsError } = await supabase
         .from("messages")
         .select("*")
         .eq("trainer_id", tid)
         .eq("client_id", user.id)
         .order("created_at", { ascending: true })
         .limit(100);
+      if (msgsError) {
+        toast.error("Error al cargar los mensajes");
+        console.error("[ClientChat] Error cargando mensajes:", msgsError);
+      }
       setMessages((msgs as Message[]) ?? []);
       setLoading(false);
 
