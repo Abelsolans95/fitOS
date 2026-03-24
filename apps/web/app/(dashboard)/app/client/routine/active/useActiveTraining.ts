@@ -347,27 +347,11 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
       );
       const notes = state.exerciseNotes[exIdx]?.trim() || null;
 
-      const doSave = async () => {
-        const supabase = createClient();
-        const { data: existing } = await supabase
-          .from("weight_log")
-          .select("id")
-          .eq("session_id", state.sessionId!)
-          .eq("exercise_name", ex.name)
-          .maybeSingle();
+      const supabase = createClient();
 
-        if (existing) {
-          const { error } = await supabase
-            .from("weight_log")
-            .update({
-              sets_data: setsData,
-              total_volume_kg: totalVolume,
-              client_notes: notes,
-            })
-            .eq("id", existing.id);
-          if (error) throw error;
-        } else {
-          const { error } = await supabase.from("weight_log").insert({
+      const doSave = async () => {
+        const { error } = await supabase.from("weight_log").upsert(
+          {
             client_id: userId,
             trainer_id: trainerId,
             exercise_id: ex.exercise_id,
@@ -377,9 +361,10 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
             sets_data: setsData,
             total_volume_kg: totalVolume,
             client_notes: notes,
-          });
-          if (error) throw error;
-        }
+          },
+          { onConflict: "session_id,exercise_name" }
+        );
+        if (error) throw error;
       };
 
       try {

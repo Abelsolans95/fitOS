@@ -386,17 +386,20 @@ export function useRoutinesPage() {
           .order("name"),
       ]);
 
-      if (routinesRes.error) {
-        console.error("[RoutinesPage] Error al cargar rutinas:", routinesRes.error);
-        toast.error("Error al cargar las rutinas");
+      if (routinesRes.error || tcRes.error) {
+        console.error("[RoutinesPage] Error crítico al cargar datos:", 
+          routinesRes.error || tcRes.error);
+        dispatch({ 
+          type: "SET_ERROR", 
+          error: "Error al cargar los datos. Inténtalo de nuevo." 
+        });
+        return;
       }
-      if (tcRes.error) {
-        console.error("[RoutinesPage] Error al cargar clientes:", tcRes.error);
-        toast.error("Error al cargar los clientes");
-      }
+      
       if (exercisesRes.error) {
         console.error("[RoutinesPage] Error al cargar ejercicios:", exercisesRes.error);
         toast.error("Error al cargar la biblioteca de ejercicios");
+        // No bloqueante — continuar sin ejercicios
       }
 
       const clientIds = (tcRes.data ?? []).map((r) => r.client_id);
