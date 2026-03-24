@@ -107,9 +107,9 @@ export async function getResolvedExercises(
     if (override?.hidden) continue;
     result.push({
       id: ex.id,
-      name: override?.custom_name || ex.name,
-      description: override?.custom_description || ex.description,
-      video_url: override?.custom_video_url || ex.video_url,
+      name: override?.custom_name ?? ex.name,
+      description: override?.custom_description ?? ex.description,
+      video_url: override?.custom_video_url ?? ex.video_url,
       video_thumbnail_url: ex.video_thumbnail_url,
       muscle_groups: ex.muscle_groups ?? [],
       secondary_muscles: ex.secondary_muscles ?? [],
@@ -154,9 +154,9 @@ export async function resolveExercise(
 
   return {
     id: ex.id,
-    name: override?.custom_name || ex.name,
-    description: override?.custom_description || ex.description,
-    video_url: override?.custom_video_url || ex.video_url,
+    name: override?.custom_name ?? ex.name,
+    description: override?.custom_description ?? ex.description,
+    video_url: override?.custom_video_url ?? ex.video_url,
     video_thumbnail_url: ex.video_thumbnail_url,
     muscle_groups: ex.muscle_groups ?? [],
     secondary_muscles: ex.secondary_muscles ?? [],
