@@ -555,7 +555,7 @@ export default function ClientOnboardingPage() {
 
       if (metricsErr) {
         // Non-blocking — log but continue
-        console.error("Error inserting body_metrics:", metricsErr);
+        console.error("[ClientOnboardingPage] Error inserting body_metrics:", metricsErr);
       }
 
       // Mark onboarding as completed in user metadata

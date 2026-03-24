@@ -217,7 +217,7 @@ export default function ClientRoutinePage() {
         setUserId(user.id);
 
         // Check for in_progress session
-        const { data: pendingSession } = await supabase
+        const { data: pendingSession, error: pendingErr } = await supabase
           .from("workout_sessions")
           .select("id, routine_id, day_label, week_number")
           .eq("client_id", user.id)
@@ -226,6 +226,10 @@ export default function ClientRoutinePage() {
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
+
+        if (pendingErr) {
+          console.error("[ClientRoutine] Error al buscar sesión pendiente:", pendingErr);
+        }
 
         if (pendingSession) {
           setInProgressSession(pendingSession as { id: string; routine_id: string; day_label: string; week_number: number });
@@ -245,7 +249,7 @@ export default function ClientRoutinePage() {
         if (!e1 && r1) {
           routineData = r1;
         } else {
-          const { data: r2 } = await supabase
+          const { data: r2, error: e2 } = await supabase
             .from("user_routines")
             .select("*")
             .eq("user_id", user.id)
@@ -253,6 +257,9 @@ export default function ClientRoutinePage() {
             .order("created_at", { ascending: false })
             .limit(1)
             .maybeSingle();
+          if (e2) {
+            console.error("[ClientRoutine] Error al buscar rutina (user_id):", e2);
+          }
           if (r2) routineData = r2;
         }
 
@@ -260,12 +267,16 @@ export default function ClientRoutinePage() {
           setRoutine(routineData as RoutineRaw);
 
           // Load completed sessions for this routine (to block re-doing same day+week)
-          const { data: doneSessions } = await supabase
+          const { data: doneSessions, error: doneErr } = await supabase
             .from("workout_sessions")
             .select("day_label, week_number")
             .eq("client_id", user.id)
             .eq("routine_id", routineData.id)
             .eq("status", "completed");
+
+          if (doneErr) {
+            console.error("[ClientRoutine] Error al cargar sesiones completadas:", doneErr);
+          }
 
           if (doneSessions) {
             const keys = new Set(doneSessions.map((s: any) => `${s.day_label}::${s.week_number}`));
@@ -273,12 +284,16 @@ export default function ClientRoutinePage() {
           }
 
           // Load previous weight logs for comparison
-          const { data: logs } = await supabase
+          const { data: logs, error: logsErr } = await supabase
             .from("weight_log")
             .select("exercise_name, session_date, sets_data")
             .eq("client_id", user.id)
             .order("session_date", { ascending: false })
             .limit(200);
+
+          if (logsErr) {
+            console.error("[ClientRoutine] Error al cargar historial de pesos:", logsErr);
+          }
 
           if (logs) {
             setPreviousLogs(logs as PreviousLog[]);
@@ -454,6 +469,13 @@ export default function ClientRoutinePage() {
         .select("id")
         .single();
 
+      if (sessionError) {
+        console.error("[ClientRoutine] Error al crear sesión:", sessionError);
+        toast.error("Error al crear la sesión de entrenamiento");
+        setSaving(false);
+        return;
+      }
+
       const currentSessionId = session?.id || null;
 
       const weightLogInserts = dayExercises.map((ex) => {
@@ -495,12 +517,15 @@ export default function ClientRoutinePage() {
       if (currentSessionId) {
         const totalVol = weightLogInserts.reduce((s, w) => s + w.total_volume_kg, 0);
         const totalSets = weightLogInserts.reduce((s, w) => s + (w.sets_data?.length || 0), 0);
-        await supabase.from("workout_sessions").update({
+        const { error: updateErr } = await supabase.from("workout_sessions").update({
           total_volume_kg: totalVol,
           total_sets: totalSets,
           total_exercises: dayExercises.length,
           rpe_session: rpeGlobal,
         }).eq("id", currentSessionId);
+        if (updateErr) {
+          console.error("[ClientRoutine] Error al actualizar agregados de sesión:", updateErr);
+        }
       }
 
       // Calendar entry
@@ -513,12 +538,15 @@ export default function ClientRoutinePage() {
         .maybeSingle();
 
       if (existingCal) {
-        await supabase
+        const { error: calUpErr } = await supabase
           .from("user_calendar")
           .update({ completed: true, rpe: rpeGlobal })
           .eq("id", existingCal.id);
+        if (calUpErr) {
+          console.error("[ClientRoutine] Error al actualizar calendario:", calUpErr);
+        }
       } else {
-        await supabase.from("user_calendar").insert({
+        const { error: calInsErr } = await supabase.from("user_calendar").insert({
           user_id: userId,
           date: today,
           activity_type: "workout",
@@ -530,6 +558,9 @@ export default function ClientRoutinePage() {
           completed: true,
           rpe: rpeGlobal,
         });
+        if (calInsErr) {
+          console.error("[ClientRoutine] Error al crear entrada de calendario:", calInsErr);
+        }
       }
 
       // RPE history
@@ -546,24 +577,30 @@ export default function ClientRoutinePage() {
         .single();
 
       if (calEntry) {
-        await supabase.from("rpe_history").insert({
+        const { error: rpeErr } = await supabase.from("rpe_history").insert({
           client_id: userId,
           calendar_id: calEntry.id,
           rpe_global: rpeGlobal,
           total_volume_kg: totalVol,
         });
+        if (rpeErr) {
+          console.error("[ClientRoutine] Error al guardar historial RPE:", rpeErr);
+        }
       }
 
       toast.success("Sesión guardada correctamente");
       setIsTracking(false);
 
       // Reload previous logs
-      const { data: newLogs } = await supabase
+      const { data: newLogs, error: reloadErr } = await supabase
         .from("weight_log")
         .select("exercise_name, session_date, sets_data")
         .eq("client_id", userId)
         .order("session_date", { ascending: false })
         .limit(200);
+      if (reloadErr) {
+        console.error("[ClientRoutine] Error al recargar historial:", reloadErr);
+      }
       if (newLogs) setPreviousLogs(newLogs as PreviousLog[]);
     } catch {
       toast.error("Error inesperado");

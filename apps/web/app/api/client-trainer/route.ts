@@ -21,8 +21,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
 
-    console.log("[client-trainer] User ID:", user.id);
-
     // 2. Use service_role to query trainer_clients (bypasses RLS)
     const adminSupabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -34,22 +32,15 @@ export async function GET(request: NextRequest) {
       .select("*")
       .eq("client_id", user.id);
 
-    console.log("[client-trainer] trainer_clients query:", JSON.stringify({ data: tc, error: tcErr }));
+    if (tcErr) {
+      console.error("[client-trainer] Error al buscar trainer_clients:", tcErr);
+      return NextResponse.json(
+        { error: "Error al buscar el entrenador vinculado" },
+        { status: 500 }
+      );
+    }
 
-    // Also check user_roles and profiles for debugging
-    const { data: roles } = await adminSupabase
-      .from("user_roles")
-      .select("*")
-      .eq("user_id", user.id);
-    console.log("[client-trainer] user_roles:", JSON.stringify(roles));
-
-    const { data: promos } = await adminSupabase
-      .from("trainer_promo_codes")
-      .select("id, trainer_id, code")
-      .eq("is_active", true);
-    console.log("[client-trainer] active promo codes:", JSON.stringify(promos));
-
-    if (tcErr || !tc || tc.length === 0) {
+    if (!tc || tc.length === 0) {
       return NextResponse.json(
         { error: "No se encontró un entrenador vinculado a tu cuenta." },
         { status: 404 }
@@ -59,11 +50,15 @@ export async function GET(request: NextRequest) {
     const trainerRow = tc[0];
 
     // 3. Get trainer profile
-    const { data: profile } = await adminSupabase
+    const { data: profile, error: profileErr } = await adminSupabase
       .from("profiles")
       .select("full_name, business_name")
       .eq("user_id", trainerRow.trainer_id)
       .single();
+
+    if (profileErr) {
+      console.error("[client-trainer] Error al obtener perfil del entrenador:", profileErr);
+    }
 
     return NextResponse.json({
       trainer_id: trainerRow.trainer_id,

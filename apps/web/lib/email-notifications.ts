@@ -62,13 +62,7 @@ export async function sendAppointmentEmail(data: AppointmentEmailData): Promise<
   const fromEmail = process.env.RESEND_FROM_EMAIL || "citas@fitOS.app";
 
   if (!apiKey) {
-    // En desarrollo, loguear el email en consola en lugar de enviarlo
-    console.log("[Email STUB] Appointment notification:", {
-      to: data.to,
-      from: fromEmail,
-      subject: getEmailSubject(data),
-      body: getEmailTextBody(data),
-    });
+    // TODO: implementar cuando RESEND_API_KEY y dominio estén configurados (ver regla 44 CLAUDE.md)
     return { sent: false, error: "RESEND_API_KEY no configurada — email no enviado (solo log)" };
   }
 

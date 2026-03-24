@@ -51,7 +51,7 @@ export async function GET(request: Request) {
       new URL(`${returnTo}?google_connected=true`, request.url)
     );
   } catch (error) {
-    console.error("Google OAuth callback error:", error);
+    console.error("[GoogleOAuth] Callback error:", error);
     return NextResponse.redirect(
       new URL("/app/client/calendar?google_error=token_exchange_failed", request.url)
     );

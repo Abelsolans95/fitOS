@@ -16,7 +16,6 @@ export async function POST(request: NextRequest) {
     );
 
     // Insert trainer_clients record as pending until client confirms email and logs in
-    console.log("[complete-registration] Inserting trainer_clients:", { trainer_id, client_id, promo_code_id });
     const { error: tcError } = await supabase.from("trainer_clients").insert({
       trainer_id,
       client_id,
@@ -28,7 +27,6 @@ export async function POST(request: NextRequest) {
       console.error("[complete-registration] Insert error:", tcError);
       return NextResponse.json({ error: tcError.message }, { status: 500 });
     }
-    console.log("[complete-registration] Insert OK");
 
     // Store email in profile (column added via migration)
     if (email) {

@@ -95,13 +95,41 @@
     - `savePartialProgress()` siempre con 1 reintento automático + `toast.error` si falla ambas veces.
     - `finalizeSession()` retorna `boolean` — si falla, NO redirigir; el page muestra botón "Reintentar".
     - El `page.tsx` queda como orquestador: carga datos iniciales, llama al hook, renderiza subcomponente según fase. **Target orientativo ~200 líneas — mismo criterio que regla 50: lo que importa es responsabilidad única, no el conteo exacto.**
-    - **Ejemplo de referencia:** `apps/web/app/(dashboard)/app/client/routine/active/` — `useActiveTraining.ts` + 4 subcomponentes + `page.tsx` orquestador (196 líneas, antes 1390).
+    - **Ejemplos de referencia:**
+      - `apps/web/app/(dashboard)/app/client/routine/active/` — `useActiveTraining.ts` + 4 subcomponentes + `page.tsx` orquestador (196 líneas, antes 1390).
+      - `apps/web/app/(dashboard)/app/trainer/nutrition/` — `useNutritionPage.ts` (28 campos de estado, 30 acciones tipadas) + `page.tsx` orquestador (~930 líneas, antes 1349). Consolidó 29 `useState` de 3 sub-componentes en un solo `useReducer`.
+      - `apps/web/app/(dashboard)/app/trainer/routines/` — `useRoutinesPage.ts` (19 campos, 20 acciones) + 4 subcomponentes (`RoutineList`, `RoutineEditor`, `DaySchedule`, `ExerciseSelector`) + `page.tsx` orquestador (~55 líneas, antes 1516).
 
 52. **Tests unitarios con Vitest** — Framework de tests instalado en `apps/web` (vitest 4.x + happy-dom). Ejecutar con `npm test` (una pasada) o `npm run test:watch` (modo watch). Config en `apps/web/vitest.config.ts` con alias `@/*` resuelto. Convenciones:
     - Archivos de test junto al archivo que testean: `lib/foo.test.ts` testea `lib/foo.ts`.
     - Mocks de Supabase: pasar cliente mock como parámetro (no `vi.mock` del módulo). Usar `createChain(result)` + `createMockSupabase(table → result)` — ver `exercise-resolver.test.ts` como referencia.
     - No instalar `@testing-library/react` para utils/libs puras — solo para componentes React si se necesita.
-    - **Ejemplo de referencia:** `apps/web/lib/exercise-resolver.test.ts` — 9 tests, 6 casos del resolver three-layer + 2 smoke tests de `resolveExercise`.
+    - **Ejemplos de referencia:**
+      - `apps/web/lib/exercise-resolver.test.ts` — 9 tests, 6 casos del resolver three-layer + 2 smoke tests de `resolveExercise`.
+      - `apps/web/app/api/complete-registration/route.test.ts` — 7 tests: happy path, missing fields (400), DB errors (500), promo code resilience, invalid JSON.
+      - `apps/web/app/api/client-trainer/route.test.ts` — 8 tests: happy path, unauthenticated (401), no trainer (404), DB errors, `business_name` vs `full_name` priority.
+
+53. **Error handling obligatorio en TODA query Supabase (Patrón C)** — Toda query a Supabase DEBE destructurar `error`, loguearlo y dar feedback al usuario. No hay excepciones. Los tres patrones están prohibidos excepto el C:
+    - ❌ **Patrón A (prohibido):** `const { data } = await supabase.from(...)` — sin destructurar error.
+    - ❌ **Patrón B (prohibido):** destructura error + solo `console.error` — el usuario no sabe qué pasó.
+    - ✅ **Patrón C (obligatorio) — Componentes cliente:**
+      ```ts
+      const { data, error } = await supabase.from("tabla").select("...");
+      if (error) {
+        toast.error("Mensaje descriptivo en español para el usuario");
+        console.error("[NombreComponente] Contexto del error:", error);
+        return; // o setSaving(false) + return según contexto
+      }
+      ```
+    - ✅ **Patrón C (obligatorio) — API routes:**
+      ```ts
+      const { data, error } = await supabase.from("tabla").select("...");
+      if (error) {
+        console.error("[nombre-route] Contexto:", error);
+        return NextResponse.json({ error: "Mensaje descriptivo" }, { status: 500 });
+      }
+      ```
+    - **Queries no bloqueantes** (ej: desactivar rutinas anteriores, cargar perfiles para display): si el error no debe detener el flujo, igualmente destructurar y loguear con `console.error`, pero no hacer `return` — añadir comentario `// No bloqueante`.
 
 ---
 

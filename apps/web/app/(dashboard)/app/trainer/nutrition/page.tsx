@@ -1,67 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { createClient } from "@/lib/supabase";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
-
-/* ────────────────────────────────────────────
-   Types
-   ──────────────────────────────────────────── */
-
-type MainTab = "menus" | "biblioteca";
-
-interface ClientOption {
-  client_id: string;
-  full_name: string | null;
-  email: string | null;
-  food_preferences: string | Record<string, unknown> | null;
-}
-
-interface FoodItem {
-  id: string;
-  trainer_id: string | null;
-  name: string;
-  kcal: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  fiber: number;
-  category: string;
-  is_global: boolean;
-  created_at: string;
-}
-
-interface MealFood {
-  food_id: string;
-  name: string;
-  portion_g: number;
-  kcal: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-}
-
-interface MealSlot {
-  label: string;
-  foods: MealFood[];
-}
-
-interface DayPlan {
-  day: string;
-  meals: MealSlot[];
-  expanded: boolean;
-}
-
-interface MealPlanRow {
-  id: string;
-  title: string;
-  period: string;
-  target_kcal: number | null;
-  is_active: boolean;
-  sent_at: string | null;
-  created_at: string;
-  client_name: string | null;
-}
+import {
+  useNutritionPage,
+  getMealTotals,
+  type FoodItem,
+  type MealFood,
+} from "./useNutritionPage";
 
 /* ────────────────────────────────────────────
    Constants
@@ -76,14 +22,6 @@ const CATEGORIES = [
   "Cena",
 ] as const;
 
-const DAYS = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"];
-
-const MEAL_LABELS: Record<number, string[]> = {
-  3: ["Desayuno", "Comida", "Cena"],
-  4: ["Desayuno", "Almuerzo", "Comida", "Cena"],
-  5: ["Desayuno", "Almuerzo", "Comida", "Merienda", "Cena"],
-};
-
 /* ────────────────────────────────────────────
    Helpers
    ──────────────────────────────────────────── */
@@ -94,20 +32,6 @@ function formatDate(dateStr: string): string {
     month: "short",
     year: "numeric",
   });
-}
-
-function buildEmptyDays(mealsPerDay: number, period: "weekly" | "monthly"): DayPlan[] {
-  const dayCount = period === "weekly" ? 7 : 28;
-  const labels = MEAL_LABELS[mealsPerDay] ?? MEAL_LABELS[3];
-  const days: DayPlan[] = [];
-  for (let i = 0; i < dayCount; i++) {
-    days.push({
-      day: period === "weekly" ? DAYS[i] : `Dia ${i + 1}`,
-      meals: labels.map((label) => ({ label, foods: [] })),
-      expanded: i === 0,
-    });
-  }
-  return days;
 }
 
 /* ────────────────────────────────────────────
@@ -139,7 +63,7 @@ function EmptyState({ icon, title, description }: { icon: React.ReactNode; title
 }
 
 /* ────────────────────────────────────────────
-   Food Search Combobox
+   Food Search Combobox (self-contained state)
    ──────────────────────────────────────────── */
 
 function FoodSearchCombobox({
@@ -203,184 +127,21 @@ function FoodSearchCombobox({
    Menu Creator
    ──────────────────────────────────────────── */
 
-function MenuCreator({
-  clients,
-  foods,
-  trainerId,
-  onCreated,
-  onCancel,
-}: {
-  clients: ClientOption[];
-  foods: FoodItem[];
-  trainerId: string;
-  onCreated: () => void;
-  onCancel: () => void;
-}) {
-  const [selectedClientId, setSelectedClientId] = useState("");
-  const [title, setTitle] = useState("");
-  const [period, setPeriod] = useState<"weekly" | "monthly">("weekly");
-  const [mealsPerDay, setMealsPerDay] = useState(3);
-  const [targetKcal, setTargetKcal] = useState<number | "">(2000);
-  const [days, setDays] = useState<DayPlan[]>(buildEmptyDays(3, "weekly"));
-  const [saving, setSaving] = useState(false);
+type NutritionHook = ReturnType<typeof useNutritionPage>;
 
-  const selectedClient = useMemo(
-    () => clients.find((c) => c.client_id === selectedClientId) ?? null,
-    [clients, selectedClientId]
-  );
-
-  // Rebuild days when period or meals change
-  useEffect(() => {
-    setDays(buildEmptyDays(mealsPerDay, period));
-  }, [mealsPerDay, period]);
-
-  const toggleDay = (dayIndex: number) => {
-    setDays((prev) =>
-      prev.map((d, i) => (i === dayIndex ? { ...d, expanded: !d.expanded } : d))
-    );
-  };
-
-  const addFoodToMeal = (dayIndex: number, mealIndex: number, food: FoodItem) => {
-    setDays((prev) =>
-      prev.map((d, di) => {
-        if (di !== dayIndex) return d;
-        return {
-          ...d,
-          meals: d.meals.map((m, mi) => {
-            if (mi !== mealIndex) return m;
-            const newFood: MealFood = {
-              food_id: food.id,
-              name: food.name,
-              portion_g: 100,
-              kcal: food.kcal,
-              protein: food.protein,
-              carbs: food.carbs,
-              fat: food.fat,
-            };
-            return { ...m, foods: [...m.foods, newFood] };
-          }),
-        };
-      })
-    );
-  };
-
-  const updateFoodPortion = (
-    dayIndex: number,
-    mealIndex: number,
-    foodIndex: number,
-    portion: number
-  ) => {
-    setDays((prev) =>
-      prev.map((d, di) => {
-        if (di !== dayIndex) return d;
-        return {
-          ...d,
-          meals: d.meals.map((m, mi) => {
-            if (mi !== mealIndex) return m;
-            return {
-              ...m,
-              foods: m.foods.map((f, fi) => {
-                if (fi !== foodIndex) return f;
-                const ratio = portion / 100;
-                const original = foods.find((of) => of.id === f.food_id);
-                if (!original) return { ...f, portion_g: portion };
-                return {
-                  ...f,
-                  portion_g: portion,
-                  kcal: Math.round(original.kcal * ratio * 10) / 10,
-                  protein: Math.round(original.protein * ratio * 10) / 10,
-                  carbs: Math.round(original.carbs * ratio * 10) / 10,
-                  fat: Math.round(original.fat * ratio * 10) / 10,
-                };
-              }),
-            };
-          }),
-        };
-      })
-    );
-  };
-
-  const removeFoodFromMeal = (dayIndex: number, mealIndex: number, foodIndex: number) => {
-    setDays((prev) =>
-      prev.map((d, di) => {
-        if (di !== dayIndex) return d;
-        return {
-          ...d,
-          meals: d.meals.map((m, mi) => {
-            if (mi !== mealIndex) return m;
-            return { ...m, foods: m.foods.filter((_, fi) => fi !== foodIndex) };
-          }),
-        };
-      })
-    );
-  };
+function MenuCreator({ n }: { n: NutritionHook }) {
+  const { state, dispatch, selectedClient, addFoodToMeal, handleSendMenu } = n;
 
   const handleGenerateAI = () => {
     toast.info("Generacion IA disponible proximamente");
   };
-
-  const handleSend = async () => {
-    if (!selectedClientId) {
-      toast.error("Selecciona un cliente");
-      return;
-    }
-    if (!title.trim()) {
-      toast.error("Ingresa un titulo para el menu");
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const supabase = createClient();
-      const planData = {
-        trainer_id: trainerId,
-        client_id: selectedClientId,
-        title,
-        period,
-        meals_per_day: mealsPerDay,
-        target_kcal: targetKcal || 2000,
-        days: days.map((d) => ({
-          day: d.day,
-          meals: d.meals.map((m) => ({
-            label: m.label,
-            foods: m.foods,
-          })),
-        })),
-        is_active: true,
-        sent_at: new Date().toISOString(),
-      };
-
-      const { error } = await supabase.from("meal_plans").insert(planData);
-
-      if (error) {
-        toast.error("Error al guardar el menu");
-        console.error(error);
-        setSaving(false);
-        return;
-      }
-
-      toast.success("Menu enviado al cliente correctamente");
-      onCreated();
-    } catch {
-      toast.error("Error inesperado al guardar el menu");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const getMealTotals = (foods: MealFood[]) => ({
-    kcal: Math.round(foods.reduce((s, f) => s + f.kcal, 0) * 10) / 10,
-    protein: Math.round(foods.reduce((s, f) => s + f.protein, 0) * 10) / 10,
-    carbs: Math.round(foods.reduce((s, f) => s + f.carbs, 0) * 10) / 10,
-    fat: Math.round(foods.reduce((s, f) => s + f.fat, 0) * 10) / 10,
-  });
 
   return (
     <div className="space-y-6">
       {/* Back */}
       <button
         type="button"
-        onClick={onCancel}
+        onClick={() => dispatch({ type: "HIDE_CREATOR" })}
         className="flex items-center gap-2 text-[13px] text-[#8B8BA3] transition-colors hover:text-white"
       >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -398,12 +159,12 @@ function MenuCreator({
             Cliente
           </label>
           <select
-            value={selectedClientId}
-            onChange={(e) => setSelectedClientId(e.target.value)}
+            value={state.crSelectedClientId}
+            onChange={(e) => dispatch({ type: "CR_SET_CLIENT", clientId: e.target.value })}
             className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white outline-none transition-colors focus:border-[#00E5FF]/40"
           >
             <option value="">Seleccionar cliente...</option>
-            {clients.map((c) => (
+            {state.clients.map((c) => (
               <option key={c.client_id} value={c.client_id}>
                 {c.full_name ?? c.email ?? "Sin nombre"}
               </option>
@@ -435,8 +196,8 @@ function MenuCreator({
           </label>
           <input
             type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            value={state.crTitle}
+            onChange={(e) => dispatch({ type: "CR_SET_TITLE", title: e.target.value })}
             placeholder="Ej: Menu de definicion - Semana 1"
             className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/40"
           />
@@ -452,9 +213,9 @@ function MenuCreator({
               <button
                 key={p}
                 type="button"
-                onClick={() => setPeriod(p)}
+                onClick={() => dispatch({ type: "CR_SET_PERIOD", period: p })}
                 className={`flex items-center justify-center rounded-xl border px-4 py-3 text-[13px] font-medium transition-all ${
-                  period === p
+                  state.crPeriod === p
                     ? "border-[#00E5FF]/50 bg-[#00E5FF]/10 text-[#00E5FF]"
                     : "border-white/[0.08] bg-white/[0.02] text-[#8B8BA3] hover:border-white/[0.15] hover:text-white"
                 }`}
@@ -475,9 +236,9 @@ function MenuCreator({
               <button
                 key={n}
                 type="button"
-                onClick={() => setMealsPerDay(n)}
+                onClick={() => dispatch({ type: "CR_SET_MEALS_PER_DAY", count: n })}
                 className={`flex items-center justify-center rounded-xl border px-4 py-3 text-[13px] font-medium transition-all ${
-                  mealsPerDay === n
+                  state.crMealsPerDay === n
                     ? "border-[#00E5FF]/50 bg-[#00E5FF]/10 text-[#00E5FF]"
                     : "border-white/[0.08] bg-white/[0.02] text-[#8B8BA3] hover:border-white/[0.15] hover:text-white"
                 }`}
@@ -495,8 +256,8 @@ function MenuCreator({
           </label>
           <input
             type="number"
-            value={targetKcal}
-            onChange={(e) => setTargetKcal(e.target.value ? Number(e.target.value) : "")}
+            value={state.crTargetKcal}
+            onChange={(e) => dispatch({ type: "CR_SET_TARGET_KCAL", value: e.target.value ? Number(e.target.value) : "" })}
             placeholder="Auto-calcular segun perfil del cliente"
             className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/40"
           />
@@ -507,7 +268,7 @@ function MenuCreator({
       <div className="space-y-3">
         <h3 className="text-[16px] font-bold tracking-[-0.02em] text-white">Planificacion por dia</h3>
 
-        {days.map((day, dayIndex) => (
+        {state.crDays.map((day, dayIndex) => (
           <div
             key={dayIndex}
             className="rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl"
@@ -515,7 +276,7 @@ function MenuCreator({
             {/* Day header (accordion) */}
             <button
               type="button"
-              onClick={() => toggleDay(dayIndex)}
+              onClick={() => dispatch({ type: "CR_TOGGLE_DAY", dayIndex })}
               className="flex w-full items-center justify-between px-6 py-4 text-left transition-colors hover:bg-white/[0.04]"
             >
               <span className="text-[13px] font-semibold text-white">{day.day}</span>
@@ -566,14 +327,20 @@ function MenuCreator({
                               type="number"
                               value={food.portion_g}
                               onChange={(e) =>
-                                updateFoodPortion(dayIndex, mealIndex, foodIndex, Number(e.target.value) || 0)
+                                dispatch({
+                                  type: "CR_UPDATE_PORTION",
+                                  dayIndex,
+                                  mealIndex,
+                                  foodIndex,
+                                  portion: Number(e.target.value) || 0,
+                                })
                               }
                               className="h-8 w-20 rounded-lg border border-white/[0.08] bg-[#0E0E18]/60 backdrop-blur-xl px-2 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40"
                             />
                             <span className="text-[11px] text-[#8B8BA3]">g</span>
                             <button
                               type="button"
-                              onClick={() => removeFoodFromMeal(dayIndex, mealIndex, foodIndex)}
+                              onClick={() => dispatch({ type: "CR_REMOVE_FOOD", dayIndex, mealIndex, foodIndex })}
                               className="flex h-7 w-7 items-center justify-center rounded-lg text-[#8B8BA3] transition-colors hover:bg-[#FF1744]/10 hover:text-[#FF1744]"
                             >
                               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -586,7 +353,7 @@ function MenuCreator({
 
                       {/* Add food search */}
                       <FoodSearchCombobox
-                        foods={foods}
+                        foods={state.foods}
                         onSelect={(food) => addFoodToMeal(dayIndex, mealIndex, food)}
                       />
                     </div>
@@ -612,11 +379,11 @@ function MenuCreator({
         </button>
         <button
           type="button"
-          onClick={handleSend}
-          disabled={saving}
+          onClick={handleSendMenu}
+          disabled={state.crSaving}
           className="flex items-center justify-center gap-2 rounded-xl bg-[#00C853] px-6 py-2.5 text-[13px] font-bold text-[#0A0A0F] transition-all hover:bg-[#00C853]/90 hover:shadow-[0_0_20px_rgba(0,200,83,0.3)] disabled:opacity-50"
         >
-          {saving ? (
+          {state.crSaving ? (
             <>
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#0A0A0F] border-t-transparent" />
               Enviando...
@@ -639,142 +406,8 @@ function MenuCreator({
    Food Library Tab
    ──────────────────────────────────────────── */
 
-function FoodLibraryTab({
-  foods,
-  trainerId,
-  onFoodsChanged,
-}: {
-  foods: FoodItem[];
-  trainerId: string;
-  onFoodsChanged: () => void;
-}) {
-  const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string>("Todos");
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [editingFood, setEditingFood] = useState<FoodItem | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState<string | null>(null);
-
-  // Form state
-  const [formName, setFormName] = useState("");
-  const [formKcal, setFormKcal] = useState<number | "">(0);
-  const [formProtein, setFormProtein] = useState<number | "">(0);
-  const [formCarbs, setFormCarbs] = useState<number | "">(0);
-  const [formFat, setFormFat] = useState<number | "">(0);
-  const [formFiber, setFormFiber] = useState<number | "">(0);
-  const [formCategory, setFormCategory] = useState("Comida");
-
-  const resetForm = useCallback(() => {
-    setFormName("");
-    setFormKcal(0);
-    setFormProtein(0);
-    setFormCarbs(0);
-    setFormFat(0);
-    setFormFiber(0);
-    setFormCategory("Comida");
-    setEditingFood(null);
-    setShowAddForm(false);
-  }, []);
-
-  const startEdit = (food: FoodItem) => {
-    setEditingFood(food);
-    setFormName(food.name);
-    setFormKcal(food.kcal);
-    setFormProtein(food.protein);
-    setFormCarbs(food.carbs);
-    setFormFat(food.fat);
-    setFormFiber(food.fiber);
-    setFormCategory(food.category);
-    setShowAddForm(true);
-  };
-
-  const handleSave = async () => {
-    if (!formName.trim()) {
-      toast.error("Ingresa un nombre para el alimento");
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const supabase = createClient();
-      const payload = {
-        trainer_id: trainerId,
-        name: formName.trim(),
-        kcal: Number(formKcal) || 0,
-        protein: Number(formProtein) || 0,
-        carbs: Number(formCarbs) || 0,
-        fat: Number(formFat) || 0,
-        fiber: Number(formFiber) || 0,
-        category: formCategory,
-        is_global: false,
-      };
-
-      if (editingFood) {
-        const { error } = await supabase
-          .from("trainer_food_library")
-          .update({ ...payload, updated_at: new Date().toISOString() })
-          .eq("id", editingFood.id);
-
-        if (error) {
-          toast.error("Error al actualizar el alimento");
-          console.error(error);
-          setSaving(false);
-          return;
-        }
-        toast.success("Alimento actualizado");
-      } else {
-        const { error } = await supabase.from("trainer_food_library").insert(payload);
-        if (error) {
-          toast.error("Error al guardar el alimento");
-          console.error(error);
-          setSaving(false);
-          return;
-        }
-        toast.success("Alimento anadido a tu biblioteca");
-      }
-
-      resetForm();
-      onFoodsChanged();
-    } catch {
-      toast.error("Error inesperado");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDelete = async (foodId: string) => {
-    setDeleting(foodId);
-    try {
-      const supabase = createClient();
-      const { error } = await supabase.from("trainer_food_library").delete().eq("id", foodId);
-      if (error) {
-        toast.error("Error al eliminar el alimento");
-        console.error(error);
-        setDeleting(null);
-        return;
-      }
-      toast.success("Alimento eliminado");
-      onFoodsChanged();
-    } catch {
-      toast.error("Error inesperado");
-    } finally {
-      setDeleting(null);
-    }
-  };
-
-  const filteredFoods = useMemo(() => {
-    let result = foods;
-    if (activeCategory !== "Todos") {
-      result = result.filter(
-        (f) => f.category.toLowerCase() === activeCategory.toLowerCase()
-      );
-    }
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter((f) => f.name.toLowerCase().includes(q));
-    }
-    return result;
-  }, [foods, search, activeCategory]);
+function FoodLibraryTab({ n }: { n: NutritionHook }) {
+  const { state, dispatch, filteredFoods, handleSaveFood, handleDeleteFood } = n;
 
   return (
     <div className="space-y-5">
@@ -793,16 +426,16 @@ function FoodLibraryTab({
           <input
             type="text"
             placeholder="Buscar alimento..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={state.libSearch}
+            onChange={(e) => dispatch({ type: "LIB_SET_SEARCH", search: e.target.value })}
             className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#0E0E18]/60 backdrop-blur-xl pl-10 pr-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/40"
           />
         </div>
         <button
           type="button"
           onClick={() => {
-            resetForm();
-            setShowAddForm(true);
+            dispatch({ type: "LIB_RESET_FORM" });
+            dispatch({ type: "LIB_SHOW_ADD_FORM" });
           }}
           className="flex items-center gap-2 bg-[#00C853] text-[#0A0A0F] font-bold rounded-xl px-5 py-2.5 text-[13px] hover:bg-[#00C853]/90 hover:shadow-[0_0_20px_rgba(0,200,83,0.3)] transition-all"
         >
@@ -819,9 +452,9 @@ function FoodLibraryTab({
           <button
             key={cat}
             type="button"
-            onClick={() => setActiveCategory(cat)}
+            onClick={() => dispatch({ type: "LIB_SET_CATEGORY", category: cat })}
             className={`rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] transition-all ${
-              activeCategory === cat
+              state.libActiveCategory === cat
                 ? "bg-[#00E5FF]/10 text-[#00E5FF] border border-[#00E5FF]/30"
                 : "bg-white/[0.04] text-[#8B8BA3] border border-transparent hover:text-white"
             }`}
@@ -832,16 +465,16 @@ function FoodLibraryTab({
       </div>
 
       {/* Add/Edit form */}
-      {showAddForm && (
+      {state.libShowForm && (
         <div className="relative overflow-hidden rounded-[18px] border border-[#00C853]/20 bg-[#00C853]/5 p-6 space-y-4">
           <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(90deg, #00C853, transparent)" }} />
           <div className="flex items-center justify-between">
             <h3 className="text-[13px] font-semibold text-white">
-              {editingFood ? "Editar alimento" : "Nuevo alimento"}
+              {state.libEditingFood ? "Editar alimento" : "Nuevo alimento"}
             </h3>
             <button
               type="button"
-              onClick={resetForm}
+              onClick={() => dispatch({ type: "LIB_RESET_FORM" })}
               className="text-[#8B8BA3] transition-colors hover:text-white"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -855,8 +488,8 @@ function FoodLibraryTab({
               <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">Nombre</label>
               <input
                 type="text"
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
+                value={state.libFormName}
+                onChange={(e) => dispatch({ type: "LIB_SET_FORM_NAME", value: e.target.value })}
                 placeholder="Ej: Pechuga de pollo a la plancha"
                 className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40 transition-colors"
               />
@@ -866,8 +499,8 @@ function FoodLibraryTab({
               <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">Kcal (por 100g)</label>
               <input
                 type="number"
-                value={formKcal}
-                onChange={(e) => setFormKcal(e.target.value ? Number(e.target.value) : "")}
+                value={state.libFormKcal}
+                onChange={(e) => dispatch({ type: "LIB_SET_FORM_KCAL", value: e.target.value ? Number(e.target.value) : "" })}
                 className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
               />
             </div>
@@ -876,8 +509,8 @@ function FoodLibraryTab({
               <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">Proteina (g)</label>
               <input
                 type="number"
-                value={formProtein}
-                onChange={(e) => setFormProtein(e.target.value ? Number(e.target.value) : "")}
+                value={state.libFormProtein}
+                onChange={(e) => dispatch({ type: "LIB_SET_FORM_PROTEIN", value: e.target.value ? Number(e.target.value) : "" })}
                 className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
               />
             </div>
@@ -886,8 +519,8 @@ function FoodLibraryTab({
               <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">Carbohidratos (g)</label>
               <input
                 type="number"
-                value={formCarbs}
-                onChange={(e) => setFormCarbs(e.target.value ? Number(e.target.value) : "")}
+                value={state.libFormCarbs}
+                onChange={(e) => dispatch({ type: "LIB_SET_FORM_CARBS", value: e.target.value ? Number(e.target.value) : "" })}
                 className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
               />
             </div>
@@ -896,8 +529,8 @@ function FoodLibraryTab({
               <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">Grasa (g)</label>
               <input
                 type="number"
-                value={formFat}
-                onChange={(e) => setFormFat(e.target.value ? Number(e.target.value) : "")}
+                value={state.libFormFat}
+                onChange={(e) => dispatch({ type: "LIB_SET_FORM_FAT", value: e.target.value ? Number(e.target.value) : "" })}
                 className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
               />
             </div>
@@ -906,8 +539,8 @@ function FoodLibraryTab({
               <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">Fibra (g)</label>
               <input
                 type="number"
-                value={formFiber}
-                onChange={(e) => setFormFiber(e.target.value ? Number(e.target.value) : "")}
+                value={state.libFormFiber}
+                onChange={(e) => dispatch({ type: "LIB_SET_FORM_FIBER", value: e.target.value ? Number(e.target.value) : "" })}
                 className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
               />
             </div>
@@ -915,8 +548,8 @@ function FoodLibraryTab({
             <div className="space-y-1.5">
               <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">Categoria</label>
               <select
-                value={formCategory}
-                onChange={(e) => setFormCategory(e.target.value)}
+                value={state.libFormCategory}
+                onChange={(e) => dispatch({ type: "LIB_SET_FORM_CATEGORY", value: e.target.value })}
                 className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors"
               >
                 {CATEGORIES.filter((c) => c !== "Todos").map((cat) => (
@@ -929,23 +562,23 @@ function FoodLibraryTab({
           <div className="flex justify-end gap-3">
             <button
               type="button"
-              onClick={resetForm}
+              onClick={() => dispatch({ type: "LIB_RESET_FORM" })}
               className="border border-white/[0.1] text-[#8B8BA3] rounded-xl px-5 py-2.5 text-[13px] font-medium hover:border-white/[0.18] hover:bg-white/[0.04] hover:text-white transition-all"
             >
               Cancelar
             </button>
             <button
               type="button"
-              onClick={handleSave}
-              disabled={saving}
+              onClick={handleSaveFood}
+              disabled={state.libSaving}
               className="flex items-center gap-2 rounded-xl bg-[#00C853] px-5 py-2.5 text-[13px] font-bold text-[#0A0A0F] transition-all hover:bg-[#00C853]/90 disabled:opacity-50"
             >
-              {saving ? (
+              {state.libSaving ? (
                 <>
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#0A0A0F] border-t-transparent" />
                   Guardando...
                 </>
-              ) : editingFood ? (
+              ) : state.libEditingFood ? (
                 "Actualizar"
               ) : (
                 "Guardar"
@@ -964,7 +597,7 @@ function FoodLibraryTab({
             </svg>
           }
           title="Sin alimentos"
-          description={search.trim() ? "No se encontraron alimentos con ese nombre" : "Anade alimentos a tu biblioteca para usarlos en los menus"}
+          description={state.libSearch.trim() ? "No se encontraron alimentos con ese nombre" : "Anade alimentos a tu biblioteca para usarlos en los menus"}
         />
       ) : (
         <div className="overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl">
@@ -983,7 +616,7 @@ function FoodLibraryTab({
 
           {/* Rows */}
           {filteredFoods.map((food) => {
-            const isOwn = food.trainer_id === trainerId;
+            const isOwn = food.trainer_id === state.trainerId;
             return (
               <div
                 key={food.id}
@@ -1026,7 +659,7 @@ function FoodLibraryTab({
                     <>
                       <button
                         type="button"
-                        onClick={() => startEdit(food)}
+                        onClick={() => dispatch({ type: "LIB_START_EDIT", food })}
                         className="flex h-8 w-8 items-center justify-center rounded-lg text-[#8B8BA3] transition-colors hover:bg-white/[0.06] hover:text-white"
                         title="Editar"
                       >
@@ -1036,12 +669,12 @@ function FoodLibraryTab({
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleDelete(food.id)}
-                        disabled={deleting === food.id}
+                        onClick={() => handleDeleteFood(food.id)}
+                        disabled={state.libDeleting === food.id}
                         className="flex h-8 w-8 items-center justify-center rounded-lg text-[#8B8BA3] transition-colors hover:bg-[#FF1744]/10 hover:text-[#FF1744] disabled:opacity-50"
                         title="Eliminar"
                       >
-                        {deleting === food.id ? (
+                        {state.libDeleting === food.id ? (
                           <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#FF1744] border-t-transparent" />
                         ) : (
                           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1066,111 +699,10 @@ function FoodLibraryTab({
    ──────────────────────────────────────────── */
 
 export default function TrainerNutritionPage() {
-  const [activeTab, setActiveTab] = useState<MainTab>("menus");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [trainerId, setTrainerId] = useState("");
+  const n = useNutritionPage();
+  const { state, dispatch } = n;
 
-  // Data
-  const [mealPlans, setMealPlans] = useState<MealPlanRow[]>([]);
-  const [clients, setClients] = useState<ClientOption[]>([]);
-  const [foods, setFoods] = useState<FoodItem[]>([]);
-  const [showCreator, setShowCreator] = useState(false);
-
-  const loadData = useCallback(async () => {
-    try {
-      const supabase = createClient();
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-
-      if (authError || !user) {
-        setError("No se pudo obtener la sesion del usuario.");
-        setLoading(false);
-        return;
-      }
-
-      setTrainerId(user.id);
-
-      const [plansRes, tcRes, foodsRes] = await Promise.all([
-        supabase
-          .from("meal_plans")
-          .select("id, title, period, target_kcal, is_active, sent_at, created_at, client_id")
-          .eq("trainer_id", user.id)
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("trainer_clients")
-          .select("client_id")
-          .eq("trainer_id", user.id)
-          .eq("status", "active"),
-        supabase
-          .from("trainer_food_library")
-          .select("*")
-          .or(`trainer_id.eq.${user.id},is_global.eq.true`)
-          .order("name"),
-      ]);
-
-      // Fetch profiles for clients and meal plan users separately
-      const clientIds = (tcRes.data ?? []).map((r) => r.client_id);
-      const planUserIds = (plansRes.data ?? []).map((r) => r.client_id).filter(Boolean);
-      const allUserIds = [...new Set([...clientIds, ...planUserIds])];
-
-      const { data: profileRows } = allUserIds.length > 0
-        ? await supabase.from("profiles").select("user_id, full_name, email, food_preferences").in("user_id", allUserIds)
-        : { data: [] };
-
-      const profileMap = new Map((profileRows ?? []).map((p) => [p.user_id, p]));
-
-      // Normalize meal plans
-      const normalizedPlans: MealPlanRow[] = (plansRes.data ?? []).map((row) => ({
-        id: row.id as string,
-        title: (row.title as string) || "Sin titulo",
-        period: (row.period as string) || "weekly",
-        target_kcal: row.target_kcal as number | null,
-        is_active: row.is_active as boolean,
-        sent_at: row.sent_at as string | null,
-        created_at: row.created_at as string,
-        client_name: profileMap.get(row.client_id as string)?.full_name ?? null,
-      }));
-
-      // Normalize clients
-      const normalizedClients: ClientOption[] = clientIds.map((client_id) => {
-        const p = profileMap.get(client_id);
-        return {
-          client_id,
-          full_name: p?.full_name ?? null,
-          email: p?.email ?? null,
-          food_preferences: p?.food_preferences ?? null,
-        };
-      });
-
-      setMealPlans(normalizedPlans);
-      setClients(normalizedClients);
-      setFoods((foodsRes.data as FoodItem[]) ?? []);
-    } catch {
-      setError("Error inesperado al cargar los datos.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  const handleMenuCreated = () => {
-    setShowCreator(false);
-    setLoading(true);
-    loadData();
-  };
-
-  const handleFoodsChanged = () => {
-    setLoading(true);
-    loadData();
-  };
-
-  if (loading) {
+  if (state.loading) {
     return (
       <div className="flex items-center justify-center py-32">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#00E5FF] border-t-transparent" />
@@ -1178,26 +710,18 @@ export default function TrainerNutritionPage() {
     );
   }
 
-  if (error) {
+  if (state.error) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-32">
         <div className="rounded-xl border border-[#FF1744]/20 bg-[#FF1744]/05 px-4 py-3">
-          <p className="text-[13px] text-[#FF1744]">{error}</p>
+          <p className="text-[13px] text-[#FF1744]">{state.error}</p>
         </div>
       </div>
     );
   }
 
-  if (showCreator) {
-    return (
-      <MenuCreator
-        clients={clients}
-        foods={foods}
-        trainerId={trainerId}
-        onCreated={handleMenuCreated}
-        onCancel={() => setShowCreator(false)}
-      />
-    );
+  if (state.showCreator) {
+    return <MenuCreator n={n} />;
   }
 
   return (
@@ -1226,9 +750,9 @@ export default function TrainerNutritionPage() {
         <div className="pg-in pg-2 flex gap-1 rounded-[14px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-1">
           <button
             type="button"
-            onClick={() => setActiveTab("menus")}
+            onClick={() => dispatch({ type: "SET_TAB", tab: "menus" })}
             className={`flex-1 flex items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-[13px] font-semibold transition-all ${
-              activeTab === "menus"
+              state.activeTab === "menus"
                 ? "bg-[#00C853]/10 text-[#00C853]"
                 : "text-[#8B8BA3] hover:text-white"
             }`}
@@ -1240,9 +764,9 @@ export default function TrainerNutritionPage() {
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab("biblioteca")}
+            onClick={() => dispatch({ type: "SET_TAB", tab: "biblioteca" })}
             className={`flex-1 flex items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-[13px] font-semibold transition-all ${
-              activeTab === "biblioteca"
+              state.activeTab === "biblioteca"
                 ? "bg-[#7C3AED]/10 text-[#7C3AED]"
                 : "text-[#8B8BA3] hover:text-white"
             }`}
@@ -1255,13 +779,13 @@ export default function TrainerNutritionPage() {
         </div>
 
         {/* Tab content */}
-        {activeTab === "menus" && (
+        {state.activeTab === "menus" && (
           <div className="pg-in pg-3 space-y-5">
             {/* New menu button */}
             <div className="flex justify-end">
               <button
                 type="button"
-                onClick={() => setShowCreator(true)}
+                onClick={() => dispatch({ type: "SHOW_CREATOR" })}
                 className="flex items-center gap-2 bg-[#00C853] text-[#0A0A0F] font-bold rounded-xl px-5 py-2.5 text-[13px] hover:bg-[#00C853]/90 hover:shadow-[0_0_20px_rgba(0,200,83,0.3)] transition-all"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1272,7 +796,7 @@ export default function TrainerNutritionPage() {
             </div>
 
             {/* Meal plans list */}
-            {mealPlans.length === 0 ? (
+            {state.mealPlans.length === 0 ? (
               <EmptyState
                 icon={
                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -1298,7 +822,7 @@ export default function TrainerNutritionPage() {
                   <div className="col-span-1" />
                 </div>
 
-                {mealPlans.map((plan) => (
+                {state.mealPlans.map((plan) => (
                   <div
                     key={plan.id}
                     className="border-b border-white/[0.04] px-6 py-4 last:border-b-0 hover:bg-white/[0.025] transition-colors sm:grid sm:grid-cols-12 sm:items-center sm:gap-4"
@@ -1333,13 +857,9 @@ export default function TrainerNutritionPage() {
           </div>
         )}
 
-        {activeTab === "biblioteca" && (
+        {state.activeTab === "biblioteca" && (
           <div className="pg-in pg-3">
-            <FoodLibraryTab
-              foods={foods}
-              trainerId={trainerId}
-              onFoodsChanged={handleFoodsChanged}
-            />
+            <FoodLibraryTab n={n} />
           </div>
         )}
       </div>

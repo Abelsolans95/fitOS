@@ -1,6 +1,6 @@
 # FitOS — Estado del Desarrollo
 
-> Documento actualizado el 24/03/2026 (Chat interno + Calendario de citas + Widget iOS/Android + Refactorización entrenamiento activo: useReducer pattern). Léelo de arriba abajo antes de tocar cualquier archivo.
+> Documento actualizado el 24/03/2026 (Chat interno + Calendario de citas + Widget iOS/Android + Refactorización entrenamiento activo y nutrición: useReducer pattern + Tests API routes). Léelo de arriba abajo antes de tocar cualquier archivo.
 > Cualquier agente o desarrollador debe leer este archivo **primero** para entender el estado actual del proyecto.
 >
 > **IMPORTANTE:** Al terminar cualquier desarrollo, bugfix o cambio significativo, actualiza este archivo (`desarrollo.md`) **y** `CLAUDE.md` antes de cerrar la sesión. Refleja los archivos nuevos o modificados, añade notas para el siguiente agente/desarrollador y actualiza la sección de próximos pasos. El objetivo es que cualquier persona o agente pueda continuar el proyecto sin contexto previo.
@@ -280,8 +280,12 @@ apps/web/app/
 │       │   │   ├── TabFormulario.tsx   ← Respuestas onboarding + análisis IA
 │       │   │   └── TabChat.tsx         ← Chat trainer↔cliente con Realtime y actualización optimista
 │       │   ├── exercises/page.tsx      ← ✅ Biblioteca de ejercicios (3 capas, clone-on-edit global, overrides hidden)
-│       │   ├── routines/page.tsx       ← ✅ Constructor de rutinas (días de semana, ejercicios, sets/reps/RIR)
-│       │   ├── nutrition/page.tsx      ← ✅ Menú creator + Biblioteca de alimentos (2 tabs)
+│       │   ├── routines/page.tsx       ← ✅ Constructor de rutinas — orquestador (~55 líneas, useReducer pattern)
+│       │   ├── routines/useRoutinesPage.ts ← Custom hook: useReducer (19 campos estado, 20 acciones tipadas) + DB ops (loadData, handleSave)
+│       │   ├── routines/types.ts       ← Interfaces + constantes + helpers puros (buildScheme, getWeekDates, etc.)
+│       │   ├── routines/components/    ← RoutineList, RoutineEditor (wizard 3 pasos), ExerciseSelector, DaySchedule
+│       │   ├── nutrition/page.tsx      ← ✅ Menú creator + Biblioteca de alimentos (2 tabs, useReducer pattern)
+│       │   ├── nutrition/useNutritionPage.ts ← Custom hook: useReducer (28 campos estado, 30 acciones tipadas) + DB ops (handleSendMenu, handleSaveFood, handleDeleteFood)
 │       │   ├── import/page.tsx          ← ✅ Importar Excel (4 pasos: upload, mapeo, reconciliación, review; Haiku detecta estructura, linked array para reconciliación, clone-on-edit global)
 │       │
 │       │   # Client routes:
@@ -317,7 +321,12 @@ apps/web/app/
 │   │   ├── excel/route.ts              ← ✅ Upload Excel → Claude Haiku analysis + save
 │   │   ├── create-exercises/route.ts   ← ✅ Server-side exercise creation (service_role, bypasses RLS)
 │   │   └── reconcile/route.ts          ← ✅ Entity reconciliation via pg_trgm similarity
-│   ├── client-trainer/route.ts         ← ✅ API para relación cliente-trainer
+│   ├── complete-registration/
+│   │   ├── route.ts                    ← ✅ Registro completo (service_role, bypasses RLS)
+│   │   └── route.test.ts              ← ✅ 7 tests unitarios (Vitest) — happy path, 400, 500, promo resilience
+│   ├── client-trainer/
+│   │   ├── route.ts                    ← ✅ API para relación cliente-trainer
+│   │   └── route.test.ts              ← ✅ 8 tests unitarios (Vitest) — happy path, 401, 404, business_name priority
 │   └── fix-client-link/route.ts        ← ✅ Fix client link
 │
 ├── components/
@@ -668,6 +677,29 @@ supabase functions deploy [nombre]
 11. **Mobile**: La app necesita `npm install` después de cambios en `package.json`. Las dependencias de React Navigation se instalan con `npx expo install`.
 
 12. **Sonner (toast)**: Nutrición y rutinas usan `import { toast } from "sonner"`. El `<Toaster />` debe estar en el layout raíz o dashboard.
+
+13. **Error handling obligatorio en TODA query Supabase (Patrón C)**: Toda query DEBE destructurar `error`, loguearlo y dar feedback al usuario. Patrones prohibidos:
+    - ❌ **Patrón A:** `const { data } = await supabase.from(...)` — sin destructurar error.
+    - ❌ **Patrón B:** destructura error + solo `console.error` — el usuario no sabe qué pasó.
+    - ✅ **Patrón C (obligatorio) — Componentes cliente:**
+      ```ts
+      const { data, error } = await supabase.from("tabla").select("...");
+      if (error) {
+        toast.error("Mensaje descriptivo en español");
+        console.error("[NombreComponente] Contexto:", error);
+        return; // o setSaving(false) + return
+      }
+      ```
+    - ✅ **Patrón C (obligatorio) — API routes:**
+      ```ts
+      const { data, error } = await supabase.from("tabla").select("...");
+      if (error) {
+        console.error("[nombre-route] Contexto:", error);
+        return NextResponse.json({ error: "Mensaje" }, { status: 500 });
+      }
+      ```
+    - **Queries no bloqueantes** (ej: desactivar rutinas anteriores, perfiles para display): destructurar y loguear, pero NO hacer `return` — añadir comentario `// No bloqueante`.
+    - **Auditoría completada el 24/03/2026:** Se aplicó Patrón C a 22 queries en `register/page.tsx`, `client-trainer/route.ts`, `useNutritionPage.ts`, `useRoutinesPage.ts` y `client/routine/page.tsx`.
 
 ---
 

@@ -65,7 +65,10 @@ export default function RegisterPage() {
     if (data.max_uses !== null && data.current_uses >= data.max_uses) { setPromo({ valid: false, error: "Este código ha alcanzado su límite de usos", loading: false }); return; }
     if (data.expires_at && new Date(data.expires_at) < new Date()) { setPromo({ valid: false, error: "Este código ha expirado", loading: false }); return; }
 
-    const { data: profile } = await supabase.from("profiles").select("full_name, business_name").eq("user_id", data.trainer_id).single();
+    const { data: profile, error: profileErr } = await supabase.from("profiles").select("full_name, business_name").eq("user_id", data.trainer_id).single();
+    if (profileErr) {
+      console.error("[Register] Error al obtener perfil del entrenador:", profileErr);
+    }
     setPromo({ valid: true, trainer_name: profile?.business_name || profile?.full_name || "Entrenador", trainer_id: data.trainer_id, promo_code_id: data.id, loading: false });
   }, []);
 
@@ -102,7 +105,13 @@ export default function RegisterPage() {
     });
     if (authError) { setError(authError.message); setLoading(false); return; }
     if (authData.user) {
-      await supabase.from("user_roles").insert({ user_id: authData.user.id, role });
+      const { error: roleError } = await supabase.from("user_roles").insert({ user_id: authData.user.id, role });
+      if (roleError) {
+        console.error("[Register] Error al asignar rol:", roleError);
+        setError("Error al configurar tu cuenta. Intenta de nuevo.");
+        setLoading(false);
+        return;
+      }
       if (role === "client" && promo.trainer_id && promo.promo_code_id) {
         const res = await fetch("/api/complete-registration", {
           method: "POST",
