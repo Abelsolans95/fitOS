@@ -146,8 +146,8 @@ describe("GET /api/client-trainer", () => {
     expect(json.error).toContain("No se encontró");
   });
 
-  // 4. trainer_clients query error → 404 (route treats tcErr as 404)
-  it("returns 404 when trainer_clients query errors", async () => {
+  // 4. trainer_clients query error → 500
+  it("returns 500 when trainer_clients query errors", async () => {
     mockGetUser.mockResolvedValue({
       data: { user: { id: USER_ID } },
       error: null,
@@ -162,8 +162,8 @@ describe("GET /api/client-trainer", () => {
     const res = await GET(makeRequest() as any);
     const json = await res.json();
 
-    expect(res.status).toBe(404);
-    expect(json.error).toContain("No se encontró");
+    expect(res.status).toBe(500);
+    expect(json.error).toContain("Error al buscar");
   });
 
   // 5. Fallback name — no business_name, no full_name
