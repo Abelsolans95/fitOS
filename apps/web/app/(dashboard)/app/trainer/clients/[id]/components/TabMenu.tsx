@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase";
+import { toast } from "sonner";
 import { MealPlan, FoodLogEntry } from "./types";
 import { EmptyState, formatDate } from "./shared";
 
@@ -35,7 +36,7 @@ export function TabMenu({
       const supabase = createClient();
       const startOfDay = `${selectedDate}T00:00:00`;
       const endOfDay = `${selectedDate}T23:59:59`;
-      const { data } = await supabase
+      const { data, error: logsError } = await supabase
         .from("food_log")
         .select(
           "id, meal_type, foods, total_kcal, total_protein, total_carbs, total_fat, photo_url, source, notes, logged_at"
@@ -44,6 +45,10 @@ export function TabMenu({
         .gte("logged_at", startOfDay)
         .lte("logged_at", endOfDay)
         .order("logged_at", { ascending: true });
+      if (logsError) {
+        toast.error("Error al cargar el registro de comidas");
+        console.error("[TabMenu] Error cargando food_log:", logsError);
+      }
       setFoodLogs((data ?? []) as FoodLogEntry[]);
       setLoadingLogs(false);
     };
