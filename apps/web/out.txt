@@ -1,0 +1,2 @@
+﻿.next/dev/types/validator.ts(368,39): error TS2307: Cannot find module '../../../app/api/fix-client-link/route.js' or its corresponding type declarations.
+.next/dev/types/validator.ts(377,39): error TS2307: Cannot find module '../../../app/api/fix-hidden-overrides/route.js' or its corresponding type declarations.

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "./route";
 
 // ---------------------------------------------------------------------------
-// Mock @supabase/supabase-js
+// Mock @supabase/supabase-js (service_role client)
 // ---------------------------------------------------------------------------
 
 const mockFrom = vi.fn();
@@ -11,6 +11,20 @@ vi.mock("@supabase/supabase-js", () => ({
   createClient: vi.fn(() => ({
     from: mockFrom,
   })),
+}));
+
+// ---------------------------------------------------------------------------
+// Mock @/lib/supabase-server (auth client)
+// ---------------------------------------------------------------------------
+
+const mockGetUser = vi.fn();
+
+vi.mock("@/lib/supabase-server", () => ({
+  createClient: vi.fn(() =>
+    Promise.resolve({
+      auth: { getUser: mockGetUser },
+    }),
+  ),
 }));
 
 // ---------------------------------------------------------------------------
@@ -59,6 +73,11 @@ const VALID_BODY = {
 describe("POST /api/complete-registration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default: authenticated user
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: "user-auth-123" } },
+      error: null,
+    });
   });
 
   // 1. Happy path — all inserts succeed

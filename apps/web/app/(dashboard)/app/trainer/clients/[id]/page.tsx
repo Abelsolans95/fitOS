@@ -100,16 +100,24 @@ function ClientDetailPageInner() {
           ]);
 
         if (profileRes.error || !profileRes.data) {
+          console.error("[ClientDetail] Error cargando perfil:", profileRes.error);
           setError("No se encontró el perfil del cliente.");
           setLoading(false);
           return;
         }
 
         if (relationRes.error || !relationRes.data) {
+          console.error("[ClientDetail] Error cargando relación:", relationRes.error);
           setError("Este cliente no está asociado a tu cuenta.");
           setLoading(false);
           return;
         }
+
+        // Non-critical query errors — log but don't block
+        if (metricsRes.error) console.error("[ClientDetail] Error métricas:", metricsRes.error);
+        if (routineRes.error) console.error("[ClientDetail] Error rutina:", routineRes.error);
+        if (mealPlanRes.error) console.error("[ClientDetail] Error plan nutricional:", mealPlanRes.error);
+        if (formRes.error) console.error("[ClientDetail] Error formulario:", formRes.error);
 
         setTrainerId(user.id);
         setProfile(profileRes.data as ClientProfile);

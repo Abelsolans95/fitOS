@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase";
 import { UserRoutine, WorkoutSession, WeightLogEntry } from "./types";
 import { EmptyState, formatDate } from "./shared";
@@ -42,6 +43,14 @@ export function TabRutina({
           .order("session_date", { ascending: false })
           .limit(200),
       ]);
+      if (sessRes.error) {
+        toast.error("Error al cargar las sesiones");
+        console.error("[TabRutina] Error sesiones:", sessRes.error);
+      }
+      if (logsRes.error) {
+        toast.error("Error al cargar el historial de ejercicios");
+        console.error("[TabRutina] Error logs:", logsRes.error);
+      }
       setSessions((sessRes.data ?? []) as WorkoutSession[]);
       setWeightLogs((logsRes.data ?? []) as WeightLogEntry[]);
       setLoadingSessions(false);

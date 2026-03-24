@@ -12,7 +12,7 @@ interface Exercise {
   trainer_id: string | null;
   name: string;
   description: string | null;
-  primary_muscles: string[] | null;
+  muscle_groups: string[] | null;
   secondary_muscles: string[] | null;
   category: string | null;
   video_url: string | null;
@@ -310,9 +310,9 @@ function ExerciseCard({
       </div>
 
       {/* Muscle groups */}
-      {((exercise.primary_muscles?.length ?? 0) > 0 || (exercise.secondary_muscles?.length ?? 0) > 0) && (
+      {((exercise.muscle_groups?.length ?? 0) > 0 || (exercise.secondary_muscles?.length ?? 0) > 0) && (
         <div className="mt-2 flex flex-wrap gap-1">
-          {(exercise.primary_muscles ?? []).map((m) => (
+          {(exercise.muscle_groups ?? []).map((m) => (
             <span key={m} className="rounded-md bg-white/[0.04] px-2 py-0.5 text-[10px] font-medium text-[#E8E8ED]">
               {m}
             </span>
@@ -716,7 +716,7 @@ export default function TrainerExercisesPage() {
     setForm({
       name: exercise.name,
       description: exercise.description ?? "",
-      primary_muscles: (exercise.primary_muscles ?? []).join(", "),
+      primary_muscles: (exercise.muscle_groups ?? []).join(", "),
       secondary_muscles: (exercise.secondary_muscles ?? []).join(", "),
       category: exercise.category ?? "",
       video_url: exercise.video_url ?? "",
@@ -744,7 +744,7 @@ export default function TrainerExercisesPage() {
       const exercisePayload = {
         name: form.name.trim(),
         description: form.description.trim() || null,
-        primary_muscles: form.primary_muscles.split(",").map((s) => s.trim()).filter(Boolean),
+        muscle_groups: form.primary_muscles.split(",").map((s) => s.trim()).filter(Boolean),
         secondary_muscles: form.secondary_muscles.split(",").map((s) => s.trim()).filter(Boolean),
         category: form.category.trim() || null,
         video_url: form.video_url.trim() || null,

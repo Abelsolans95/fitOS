@@ -67,7 +67,7 @@ export interface MealPlanRow {
    Constants
    ──────────────────────────────────────────── */
 
-const DAYS = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"];
+const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
 const MEAL_LABELS: Record<number, string[]> = {
   3: ["Desayuno", "Comida", "Cena"],

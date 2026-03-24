@@ -3,10 +3,6 @@ import { createClient } from "@/lib/supabase-server";
 import Anthropic from "@anthropic-ai/sdk";
 import * as XLSX from "xlsx";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
-
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const {
@@ -27,6 +23,8 @@ export async function POST(request: NextRequest) {
   if (profile?.role !== "trainer") {
     return NextResponse.json({ error: "Solo entrenadores" }, { status: 403 });
   }
+
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
   const formData = await request.formData();
   const file = formData.get("file") as File | null;

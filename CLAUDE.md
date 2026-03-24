@@ -131,6 +131,10 @@
       ```
     - **Queries no bloqueantes** (ej: desactivar rutinas anteriores, cargar perfiles para display): si el error no debe detener el flujo, igualmente destructurar y loguear con `console.error`, pero no hacer `return` — añadir comentario `// No bloqueante`.
 
+54. **Usar `??` (no `||`) para merges de override** — `||` trata `""`, `0` y `false` como falsy, descartando overrides legítimos. Siempre usar nullish coalescing `??` al fusionar campos de override con valores originales. Ejemplo: `override?.custom_name ?? ex.name`.
+55. **Toda API route de importación debe verificar rol trainer** — No basta con verificar autenticación. Endpoints de Excel import, reconciliation, etc. deben consultar `profiles.role` y retornar 403 si no es `trainer`.
+56. **Nunca inicializar clientes de API externos a nivel de módulo en API routes** — Igual que la regla 40 para Supabase, `new Anthropic(...)`, `new Resend(...)`, etc. deben crearse dentro del handler, no fuera. Vercel evalúa módulos durante el build sin env vars.
+
 ---
 
 ## Tema visual

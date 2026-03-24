@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase";
 
 interface Appointment {
@@ -787,11 +788,17 @@ export default function TrainerAppointmentsPage() {
     if (!user) return;
     setTrainerId(user.id);
 
-    const { data } = await supabase
+    const { data, error: apptError } = await supabase
       .from("appointments")
       .select("*")
       .eq("trainer_id", user.id)
       .order("starts_at", { ascending: true });
+
+    if (apptError) {
+      toast.error("Error al cargar las citas");
+      console.error("[Appointments] Error cargando citas:", apptError);
+      return;
+    }
 
     setAppointments((data as Appointment[]) ?? []);
   }, []);
@@ -804,18 +811,27 @@ export default function TrainerAppointmentsPage() {
       setTrainerId(user.id);
 
       // Load clients
-      const { data: rels } = await supabase
+      const { data: rels, error: relsError } = await supabase
         .from("trainer_clients")
         .select("client_id")
         .eq("trainer_id", user.id)
         .eq("status", "active");
 
+      if (relsError) {
+        toast.error("Error al cargar los clientes");
+        console.error("[Appointments] Error cargando clientes:", relsError);
+      }
+
       if (rels && rels.length > 0) {
         const ids = rels.map((r) => r.client_id);
-        const { data: profiles } = await supabase
+        const { data: profiles, error: profilesError } = await supabase
           .from("profiles")
           .select("user_id, full_name")
           .in("user_id", ids);
+        if (profilesError) {
+          console.error("[Appointments] Error cargando perfiles:", profilesError);
+          // No bloqueante — continuamos sin nombres
+        }
         setClients(
           (profiles ?? []).map((p) => ({ client_id: p.user_id, full_name: p.full_name }))
         );
@@ -836,7 +852,11 @@ export default function TrainerAppointmentsPage() {
       update.cancelled_by = trainerId;
       if (reason) update.cancellation_reason = reason;
     }
-    await supabase.from("appointments").update(update).eq("id", id);
+    const { error: updateErr } = await supabase.from("appointments").update(update).eq("id", id);
+    if (updateErr) {
+      toast.error("Error al actualizar la cita");
+      console.error("[Appointments] Error actualizando cita:", updateErr);
+    }
     await fetchAppointments();
     setActionLoading(null);
     // TODO: sendAppointmentEmail cuando Resend esté configurado

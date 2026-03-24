@@ -19,18 +19,28 @@ export async function POST(request: NextRequest) {
     );
 
     // Update trainer_clients status from pending to active
-    await supabase
+    const { error: activateError } = await supabase
       .from("trainer_clients")
       .update({ status: "active" })
       .eq("client_id", user.id)
       .eq("status", "pending");
 
+    if (activateError) {
+      console.error("[activate-client] Error activando cliente:", activateError);
+      return NextResponse.json({ error: "Error al activar el cliente" }, { status: 500 });
+    }
+
     // Ensure profile has email stored (trigger may not include it)
-    await supabase
+    const { error: profileError } = await supabase
       .from("profiles")
       .update({ email: user.email })
       .eq("user_id", user.id)
       .is("email", null);
+
+    if (profileError) {
+      console.error("[activate-client] Error actualizando email en perfil:", profileError);
+      // No bloqueante — la activación ya se completó
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {
