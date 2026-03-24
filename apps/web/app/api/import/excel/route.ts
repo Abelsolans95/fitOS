@@ -3,6 +3,40 @@ import { createClient } from "@/lib/supabase-server";
 import Anthropic from "@anthropic-ai/sdk";
 import * as XLSX from "xlsx";
 
+/** Column detected by AI analysis */
+interface DetectedColumn {
+  index: number;
+  header: string;
+  type: string;
+  confidence: number;
+  series_number?: number | null;
+}
+
+/** Section detected by AI analysis */
+interface DetectedSection {
+  start_row: number;
+  day_label: string;
+  date?: string;
+}
+
+/** AI analysis result from Haiku */
+interface AIAnalysis {
+  header_row: number;
+  data_start_row: number;
+  columns: DetectedColumn[];
+  sections: DetectedSection[];
+  structure_notes: string;
+}
+
+/** Sheet result after processing */
+interface SheetResult {
+  name: string;
+  columns: (DetectedColumn & { sample_values: (string | number | null)[] })[];
+  rows: Record<string, string | number | null>[];
+  row_count: number;
+  ai_analysis: AIAnalysis;
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const {
@@ -72,13 +106,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Process ALL sheets
-  const sheetsResult: {
-    name: string;
-    columns: any[];
-    rows: Record<string, any>[];
-    row_count: number;
-    ai_analysis: any;
-  }[] = [];
+  const sheetsResult: SheetResult[] = [];
 
   try {
     for (const sheetName of workbook.SheetNames) {
@@ -143,13 +171,22 @@ IMPORTANTE:
         ],
       });
 
-      const aiText =
-        message.content[0].type === "text" ? message.content[0].text : "";
+      const firstBlock = message.content[0];
+      if (!firstBlock || firstBlock.type !== "text" || !firstBlock.text) {
+        // AI returned no text content — skip sheet
+        continue;
+      }
+      const aiText = firstBlock.text;
 
-      let analysis;
+      let analysis: AIAnalysis;
       try {
         const cleaned = aiText.replace(/```json\n?|\n?```/g, "").trim();
-        analysis = JSON.parse(cleaned);
+        const parsed = JSON.parse(cleaned) as AIAnalysis;
+        // Validate required fields
+        if (!Array.isArray(parsed.columns) || typeof parsed.data_start_row !== "number") {
+          continue;
+        }
+        analysis = parsed;
       } catch {
         // If AI fails on this sheet, skip it with a warning
         continue;
@@ -157,13 +194,7 @@ IMPORTANTE:
 
       // Build detected columns
       const detectedColumns = (analysis.columns || []).map(
-        (col: {
-          index: number;
-          header: string;
-          type: string;
-          confidence: number;
-          series_number?: number | null;
-        }) => ({
+        (col: DetectedColumn) => ({
           index: col.index,
           header: col.header,
           inferred_type: col.type,
@@ -186,7 +217,7 @@ IMPORTANTE:
 
       const rows = allDataRows.map((row: (string | number | null)[]) => {
         const obj: Record<string, string | number | null> = {};
-        for (const col of analysis.columns || []) {
+        for (const col of (analysis.columns || []) as DetectedColumn[]) {
           const key = col.header || `col_${col.index}`;
           obj[key] =
             col.index < row.length
@@ -238,7 +269,7 @@ IMPORTANTE:
       import_id: importRecord.id,
       file_name: file.name,
       needs_review: sheetsResult.some((s) =>
-        s.columns.some((c: { confidence: number }) => c.confidence < 0.9)
+        s.columns.some((c) => c.confidence < 0.9)
       ),
       sheets: sheetsResult.map(({ ai_analysis, ...rest }) => rest),
       ai_analysis: sheetsResult.map((s) => ({
