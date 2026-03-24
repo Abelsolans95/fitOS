@@ -10,6 +10,30 @@
 
 import { SupabaseClient } from "@supabase/supabase-js";
 
+/** Row shape from trainer_food_overrides */
+interface TrainerFoodOverride {
+  id: string;
+  trainer_id: string;
+  food_id: string;
+  custom_name: string | null;
+  custom_kcal: number | null;
+  custom_protein: number | null;
+  custom_carbs: number | null;
+  custom_fat: number | null;
+  custom_fiber: number | null;
+  custom_notes: string | null;
+  hidden: boolean;
+}
+
+/** Row returned by search_similar_foods RPC */
+export interface SimilarFoodResult {
+  id: string;
+  name: string;
+  similarity: number;
+  is_global: boolean;
+  trainer_id: string | null;
+}
+
 export interface ResolvedFood {
   id: string;
   name: string;
@@ -46,16 +70,16 @@ export async function getResolvedFoods(
   if (foodsRes.error) throw foodsRes.error;
   if (overridesRes.error) throw overridesRes.error;
 
-  const overrideMap = new Map<string, any>();
-  for (const ov of overridesRes.data || []) {
+  const overrideMap = new Map<string, TrainerFoodOverride>();
+  for (const ov of (overridesRes.data ?? []) as TrainerFoodOverride[]) {
     overrideMap.set(ov.food_id, ov);
   }
 
-  return (foodsRes.data || []).map((food) => {
+  return (foodsRes.data ?? []).map((food) => {
     const override = overrideMap.get(food.id);
     return {
       id: food.id,
-      name: override?.custom_name || food.name,
+      name: override?.custom_name ?? food.name,
       kcal: override?.custom_kcal ?? food.kcal,
       protein: override?.custom_protein ?? food.protein,
       carbs: override?.custom_carbs ?? food.carbs,
@@ -63,8 +87,8 @@ export async function getResolvedFoods(
       fiber: override?.custom_fiber ?? food.fiber,
       is_global: food.is_global,
       is_overridden: !!override,
-      override_id: override?.id || null,
-      notes: override?.custom_notes || null,
+      override_id: override?.id ?? null,
+      notes: override?.custom_notes ?? null,
     };
   });
 }
@@ -78,7 +102,7 @@ export async function searchSimilarFoods(
   trainerId: string,
   threshold = 0.3,
   maxResults = 10
-) {
+): Promise<SimilarFoodResult[]> {
   const { data, error } = await supabase.rpc("search_similar_foods", {
     search_term: searchTerm,
     p_trainer_id: trainerId,
@@ -87,7 +111,7 @@ export async function searchSimilarFoods(
   });
 
   if (error) throw error;
-  return data || [];
+  return (data ?? []) as SimilarFoodResult[];
 }
 
 /**
