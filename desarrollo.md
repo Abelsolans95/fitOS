@@ -327,7 +327,7 @@ apps/web/app/
 │   ├── client-trainer/
 │   │   ├── route.ts                    ← ✅ API para relación cliente-trainer
 │   │   └── route.test.ts              ← ✅ 8 tests unitarios (Vitest) — happy path, 401, 404, business_name priority
-│   └── fix-client-link/route.ts        ← ✅ Fix client link
+│   (fix-client-link/ y fix-hidden-overrides/ eliminados — eran endpoints temporales sin auth)
 │
 ├── components/
 │   ├── layout/
@@ -1094,6 +1094,60 @@ DELETE FROM trainer_exercise_overrides WHERE hidden = true;
 - **Qué pasó:** El override map estaba tipado como `Map<string, any>`. El tipo `any` hacía invisible el campo `hidden: boolean` para el compilador de TypeScript, por lo que no había alerta sobre el check faltante.
 - **Solución aplicada:** Añadido interface `TrainerExerciseOverride` con todos los campos de la tabla (incluyendo `hidden: boolean`). El map es ahora `Map<string, TrainerExerciseOverride>`.
 - **Regla:** Nunca usar `Map<string, any>` para datos de DB. Definir siempre un interface que refleje el schema real — TypeScript alertará si se intenta usar un campo que no existe, y no ocultará campos documentados como `hidden`.
+
+---
+
+**ERROR #41 — Endpoints temporales `fix-client-link` y `fix-hidden-overrides` activos en producción**
+- **Fecha:** 24/03/2026
+- **Archivos afectados:** `apps/web/app/api/fix-client-link/route.ts`, `apps/web/app/api/fix-hidden-overrides/route.ts`
+- **Qué pasó:** Ambos endpoints estaban marcados "DELETE THIS FILE after use" pero seguían activos. `fix-client-link` permitía crear relaciones trainer-client sin autenticación usando `service_role`. `fix-hidden-overrides` al menos verificaba auth pero era temporal.
+- **Solución aplicada:** Eliminados ambos archivos.
+- **Regla:** No crear endpoints temporales (Regla 39). Ejecutar los SQLs directamente en Supabase.
+
+---
+
+**ERROR #42 — `complete-registration` sin autenticación**
+- **Fecha:** 24/03/2026
+- **Archivo afectado:** `apps/web/app/api/complete-registration/route.ts`
+- **Qué pasó:** El endpoint no verificaba quién llamaba. Cualquier request con un body válido podía crear relaciones trainer-client e incrementar promo codes. Además, las queries de email update y promo code increment no aplicaban Patrón C (sin destructuring de error).
+- **Solución aplicada:** Añadida verificación de auth con `createClient` de `supabase-server`. Aplicado Patrón C a todas las queries. Documentada race condition en promo code increment con SQL de migración sugerido.
+- **Regla:** Toda API route debe verificar autenticación. Aplicar Patrón C a TODAS las queries sin excepción.
+
+---
+
+**ERROR #43 — `||` en lugar de `??` para override merges en exercise-resolver y food-resolver**
+- **Fecha:** 24/03/2026
+- **Archivos afectados:** `apps/web/lib/exercise-resolver.ts`, `apps/web/lib/food-resolver.ts`
+- **Qué pasó:** El merge de campos de override usaba `||` (OR lógico). Si `custom_name` era una cadena vacía `""`, se ignoraba el override y se usaba el valor original, porque `"" || "nombre"` evalúa a `"nombre"`.
+- **Solución aplicada:** Cambiado a `??` (nullish coalescing) en ambos archivos — 6 cambios en exercise-resolver, 1 en food-resolver.
+- **Regla:** Siempre usar `??` (no `||`) para merges de override donde el valor puede ser cadena vacía, `0` o `false`.
+
+---
+
+**ERROR #44 — `food-resolver.ts` usaba `Map<string, any>` y retornaba `any[]`**
+- **Fecha:** 24/03/2026
+- **Archivo afectado:** `apps/web/lib/food-resolver.ts`
+- **Qué pasó:** El overrideMap estaba tipado como `Map<string, any>` (igual que el error #40 en exercise-resolver). `searchSimilarFoods` retornaba `any[]` sin tipo.
+- **Solución aplicada:** Añadidas interfaces `TrainerFoodOverride` y `SimilarFoodResult`. Tipado el Map y el retorno de `searchSimilarFoods`.
+- **Regla:** Nunca usar `any` para datos de DB. Definir interfaces que reflejen el schema (misma regla que ERROR #40).
+
+---
+
+**ERROR #45 — `import/reconcile` accesible por clientes y con `any` types**
+- **Fecha:** 24/03/2026
+- **Archivo afectado:** `apps/web/app/api/import/reconcile/route.ts`
+- **Qué pasó:** El endpoint verificaba auth pero no rol — un cliente autenticado podía llamar a la reconciliación de Excel. Además usaba `(a: any, b: any)` en sort y `(m: any)` en map. El update de `excel_imports` no aplicaba Patrón C.
+- **Solución aplicada:** Añadida verificación de rol trainer. Definida interfaz `SimilarExerciseMatch`. Aplicado Patrón C al update de `excel_imports`.
+- **Regla:** Los endpoints de importación deben verificar rol trainer, no solo autenticación.
+
+---
+
+**ERROR #46 — Cliente Anthropic inicializado a nivel de módulo en `import/excel`**
+- **Fecha:** 24/03/2026
+- **Archivo afectado:** `apps/web/app/api/import/excel/route.ts`
+- **Qué pasó:** `new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })` estaba fuera del handler POST. Vercel evalúa módulos durante el build donde las env vars no están disponibles (mismo problema que ERROR #33 con Supabase client).
+- **Solución aplicada:** Movido dentro del handler POST, después de la verificación de rol.
+- **Regla:** Nunca inicializar clientes de API a nivel de módulo en API routes (Regla 40). Siempre dentro del handler.
 
 ---
 
