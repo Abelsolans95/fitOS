@@ -94,7 +94,7 @@ function ActiveTrainingPage() {
           return;
         }
       }
-      t.initializeSets(dayEx, pl);
+      t.initializeSets(dayEx);
     };
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -185,6 +185,7 @@ function ActiveTrainingPage() {
       isLastExercise={t.isLastExercise}
       isSaved={state.savedExercises.includes(state.currentExIdx)}
       elapsed={state.elapsed}
+      week={week}
       onCompleteSet={t.completeSet}
       onSetValueChange={(si, f, v) => t.dispatch({ type: "UPDATE_SET_VALUE", exIdx: state.currentExIdx, setIdx: si, field: f, value: v })}
       onNext={t.goNextExercise} onPrev={t.goPrevExercise} onFinishRoutine={t.finishRoutine}

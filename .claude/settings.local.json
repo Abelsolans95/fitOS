@@ -16,7 +16,9 @@
       "mcp__StitchMCP__list_projects",
       "mcp__magic__21st_magic_component_inspiration",
       "mcp__context7__resolve-library-id",
-      "mcp__context7__query-docs"
+      "mcp__context7__query-docs",
+      "mcp__supabase-mcp-server__execute_sql",
+      "mcp__supabase-mcp-server__list_projects"
     ]
   }
 }

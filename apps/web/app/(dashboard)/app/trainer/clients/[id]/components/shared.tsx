@@ -9,6 +9,7 @@ export const TABS: { key: TabKey; label: string }[] = [
   { key: "menu", label: "Menú" },
   { key: "formulario", label: "Formulario" },
   { key: "comunicacion", label: "Chat" },
+  { key: "salud", label: "Salud" },
 ];
 
 export const GOAL_LABELS: Record<string, string> = {

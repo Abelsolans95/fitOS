@@ -13,6 +13,7 @@
 - **Rediseño UI:** Completado — estética premium en app completa (landing, paneles trainer/cliente con *glassmorphism*, app mobile brutalista)
 - **Fase 2 (parcial, 23/03/2026):** Chat interno trainer↔cliente ✅ | Calendario de citas ✅ (migración 030 pendiente aplicar) | Google Calendar sync ⏳ (pendiente OAuth) | Emails Resend ⏳ (pendiente dominio)
 - **Fase 3 (parcial, 23/03/2026):** Widget iOS y Android ✅ (ver entrenamiento del día sin abrir la app)
+- **Fase 4 (parcial, 26/03/2026):** Sistema de lesiones/molestias ✅ — mapa anatómico SVG interactivo, reportes coach/client, Realtime sync
 
 ---
 
@@ -134,6 +135,15 @@
 54. **Usar `??` (no `||`) para merges de override** — `||` trata `""`, `0` y `false` como falsy, descartando overrides legítimos. Siempre usar nullish coalescing `??` al fusionar campos de override con valores originales. Ejemplo: `override?.custom_name ?? ex.name`.
 55. **Toda API route de importación debe verificar rol trainer** — No basta con verificar autenticación. Endpoints de Excel import, reconciliation, etc. deben consultar `profiles.role` y retornar 403 si no es `trainer`.
 56. **Nunca inicializar clientes de API externos a nivel de módulo en API routes** — Igual que la regla 40 para Supabase, `new Anthropic(...)`, `new Resend(...)`, etc. deben crearse dentro del handler, no fuera. Vercel evalúa módulos durante el build sin env vars.
+57. **Fragmentar DURANTE la creación, no después** — La Regla 50 se aplica al momento de escribir código nuevo, no como refactor posterior. Si una página va a tener modal + calendario + lista + filtros, crear los componentes separados desde el inicio. Nunca generar un archivo de >300 líneas para "fragmentar después". Ejemplo: `appointments/page.tsx` se creó con 1187 líneas y tuvo que ser fragmentado después en 5 componentes.
+58. **Tests obligatorios al crear módulos de lógica (`lib/*.ts`)** — Todo archivo en `lib/` que contenga lógica pura DEBE tener su `*.test.ts` creado en la misma sesión. No esperar a un code review. Mínimo: happy path + 1 edge case + 1 error case. Framework: Vitest (ver Regla 52). Archivos de referencia: `exercise-resolver.test.ts` (mocks Supabase), `excel-parser.test.ts` (buffers XLSX en memoria), `email-notifications.test.ts` (stub con vi.stubEnv).
+59. **Verificar estado actual antes de reportar issues** — Antes de crear un ticket de fix o proponer un cambio, leer el archivo y verificar que el problema realmente existe en el código actual. Un code review que genera trabajo innecesario (3 fixes que ya estaban correctos) es peor que no hacer code review. Leer primero, opinar después.
+60. **Appointments page fragmentada** — `apps/web/app/(dashboard)/app/trainer/appointments/` tiene `components/` con: `types.ts`, `shared.tsx`, `CreateAppointmentModal.tsx`, `AppointmentCalendar.tsx`, `AppointmentList.tsx`. El `page.tsx` es orquestador de 190 líneas. No volver a meter lógica de calendario o lista directamente en page.tsx.
+61. **Progresión semanal por ejercicio (`weekly_config`)** — Cada `RoutineExercise` puede tener `weekly_config: Record<number, WeekConfig>` con valores distintos por semana (reps, RIR, carga, descanso, notas del entrenador). `WeekConfig` incluye `sets_detail?: SetConfig[]` para modo "different" y `coach_notes?: string` para notas semanales. Se configura desde la modal "Progresión semanal" en `DaySchedule.tsx`. Los datos se guardan en el JSONB de `user_routines.exercises` junto con `mode` y `sets_config`. Botón "Replicar para siguientes semanas" copia valores de una semana a todas las siguientes.
+62. **`handleSave` debe incluir `mode`, `weekly_config` y `total_weeks`** — Al guardar una rutina desde el trainer, el `flatExercises` en `useRoutinesPage.ts` DEBE incluir `mode`, `sets_config` (si es "different") y `weekly_config` (si tiene entradas). El `routineData` debe incluir `total_weeks` y `training_days`. Sin estos campos, el cliente ve los mismos valores en todas las semanas. Error ocurrido: se añadió UI de progresión semanal pero `handleSave` no serializaba `weekly_config` → los datos se perdían.
+63. **Valores del trainer como placeholders, no pre-rellenados (web + mobile)** — En entrenamiento activo, peso/reps/RIR configurados por el trainer se muestran como `placeholder` (gris tenue) para guiar al cliente, pero los inputs empiezan vacíos. El cliente introduce sus valores reales. Los placeholders son week-aware: resuelven `weekly_config[week]` → `sets_config` → valores base del ejercicio. Si hay sesión anterior, el placeholder muestra el valor anterior en su lugar.
+64. **RIR editable por serie en entrenamiento activo (web + mobile)** — `SetEntry` incluye campo `rir: string`. Se muestra como columna adicional en la tabla de series (entre Reps y el botón ✓). El valor se guarda en `weight_log.sets_data[].rir`. Grid de 5 columnas: Serie | Peso | Reps | RIR | ✓. Se eliminó la visualización estática de RIR del header del ejercicio.
+65. **Vista del cliente muestra todas las series configuradas** — En la vista de rutina del cliente (`/app/client/routine`), cada card de ejercicio muestra un desglose por serie (S1, S2, S3...) con reps, RIR, peso y descanso para cada una. Los valores son dinámicos según la semana activa (`activeWeek`), resolviendo `weekly_config[activeWeek]` → `sets_config` → valores base. El badge de esquema también se recalcula dinámicamente.
 
 ---
 
@@ -192,6 +202,10 @@ supabase functions deploy [nombre]
 # Supabase secrets
 supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 ```
+
+66. **Tabla `health_logs` para lesiones/molestias** — Migración 031. Campos clave: `client_id`, `trainer_id`, `reported_by` ('coach'|'client'), `muscle_id` (ej. 'quadriceps_left'), `pain_score` (1-10), `incident_type` ('puntual'|'diagnosticada'|'cronica'), `status` ('active'|'recovering'|'recovered'), `notes`. RLS: trainer acceso total, cliente SELECT + INSERT (reported_by='client') + UPDATE propios. Realtime habilitado.
+67. **Mapa anatómico SVG interactivo** — Componente compartido `components/health/AnatomyMap.tsx` (web) con vista frontal (17 regiones) y posterior (15 regiones). Código de colores: gris=sin molestias, naranja=leve (1-5), rojo=grave (6-10). Mobile: SVG equivalente con `react-native-svg` en `HealthScreen.tsx`. Web trainer: tab "Salud" en detalle de cliente (`TabSalud.tsx`). Web cliente: `/app/client/health`. Mobile: tab "Salud" en bottom nav (8 tabs).
+68. **`health_logs.muscle_id` es un texto libre** — No hay enum en DB. Los IDs válidos están definidos en las constantes `FRONT_MUSCLES` y `BACK_MUSCLES` de los componentes (ej: 'neck', 'chest_left', 'quadriceps_right', 'lower_back', 'traps', 'glute_left'). Al insertar, siempre usar uno de estos IDs.
 
 ---
 

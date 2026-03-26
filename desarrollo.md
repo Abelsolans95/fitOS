@@ -106,6 +106,24 @@
 - [ ] En Xcode: añadir target Widget Extension, copiar Swift generado, configurar App Group
 - [ ] Implementar módulo nativo para escribir a App Group UserDefaults desde React Native
 
+### Fase 4 — Sistema de Lesiones/Molestias (26/03/2026)
+- [x] Migración 031: tabla `health_logs` con `muscle_id`, `pain_score`, `incident_type`, `status`, `reported_by` — RLS + Realtime
+- [x] Componente SVG interactivo `AnatomyMap.tsx` (web) — vista frontal (17 regiones) + posterior (15 regiones)
+- [x] Componente `HealthReportForm.tsx` (web) — formulario compartido: dolor 1-10, tipo incidencia, estado, notas
+- [x] Web trainer: tab "Salud" en detalle de cliente (`TabSalud.tsx`) — mapa + incidencias activas + historial
+- [x] Web cliente: `/app/client/health/page.tsx` — "Mi Salud" con mapa + reportar + timeline
+- [x] ClientSidebar: item "Salud" añadido (entre Progreso y Citas)
+- [x] Mobile: `HealthScreen.tsx` — SVG interactivo con `react-native-svg`, modal de reporte, lista de incidencias
+- [x] Mobile: tab "Salud" añadido en `App.tsx` (8 tabs en bottom nav)
+- [x] Realtime habilitado — lo que marca el cliente aparece al entrenador y viceversa
+
+**Funcionalidad:**
+- Mapa del cuerpo con código de colores: gris (sin molestias), naranja (dolor 1-5), rojo (dolor 6-10)
+- Click en músculo → formulario: nivel de dolor, tipo (puntual/diagnosticada/crónica), estado (activa/recuperando/recuperada), notas
+- Registra quién creó el reporte (coach o client)
+- Timeline con historial completo ordenado por fecha
+- Si ya existe molestia activa en un músculo, al clickarlo se abre en modo edición
+
 ### Rediseño UI — "Brutalismo Elegante" y Dashboards Premium (Actualizado — 23/03/2026)
 - Rediseño integral de 7 pantallas mobile y páginas web públicas / auth (19/03/2026)
 - **Dashboards Premium (Entrenador y Cliente):** Implementación de *glassmorphism* intensivo, texturas `.dot-grid` globales, rediseño flotante en la `AppSidebar` y transparencias en tarjetas de contenido (`backdrop-blur-xl`). Se actualizaron masivamente todas las rutas internas y layouts base para unificar estética holográfica con la landing page (23/03/2026)
@@ -149,7 +167,8 @@ fitOS/
 │   │   ├── 027_exercise_override_hidden.sql   ← hidden BOOLEAN en trainer_exercise_overrides
 │   │   ├── 028_weight_log_client_notes.sql    ← client_notes TEXT en weight_log
 │   │   ├── 029_chat_messages.sql              ← Tabla messages (chat trainer↔cliente) + RLS + Realtime
-│   │   └── 030_appointments.sql              ← Tabla appointments (citas) + RLS + Realtime
+│   │   ├── 030_appointments.sql              ← Tabla appointments (citas) + RLS + Realtime
+│   │   └── 031_health_logs.sql              ← Tabla health_logs (lesiones/molestias) + RLS + Realtime
 │   └── functions/
 │       ├── analyze-food-image/       ← Claude Vision: análisis foto → macros
 │       ├── generate-meal-plan/       ← Claude: generar plan nutricional
@@ -201,6 +220,7 @@ fitOS/
 | `workout_sessions` | **NUEVA** — Agrupa weight_log por sesión (modo registration/active) |
 | `messages` | **NUEVA** — Chat trainer↔cliente. Campos: `trainer_id`, `client_id`, `sender_id`, `content`, `read_at`. RLS doble. Realtime activo. |
 | `appointments` | **NUEVA** — Citas entre trainer y cliente. `session_type` (presencial/online/telefonica/evaluacion/seguimiento), `status` (pending/confirmed/cancelled/completed), `google_event_id` (NULL hasta OAuth), `email_sent_at` (NULL hasta Resend). RLS: trainer total, cliente SELECT+INSERT+UPDATE limitado. Realtime activo. |
+| `health_logs` | **NUEVA** — Lesiones/molestias musculares. `muscle_id` (texto: ej. 'quadriceps_left'), `pain_score` (1-10), `incident_type` ('puntual'/'diagnosticada'/'cronica'), `status` ('active'/'recovering'/'recovered'), `reported_by` ('coach'/'client'). RLS: trainer total, cliente SELECT+INSERT+UPDATE propios. Realtime activo. |
 
 ### Funciones de base de datos
 - **`handle_new_user()`** — Trigger en `auth.users` → crea `profiles`
@@ -278,7 +298,8 @@ apps/web/app/
 │       │   │   ├── TabRutina.tsx       ← Rutina activa + historial workout_sessions + weight_log expandible
 │       │   │   ├── TabMenu.tsx         ← food_log por día con selector de fecha y macros
 │       │   │   ├── TabFormulario.tsx   ← Respuestas onboarding + análisis IA
-│       │   │   └── TabChat.tsx         ← Chat trainer↔cliente con Realtime y actualización optimista
+│       │   │   ├── TabChat.tsx         ← Chat trainer↔cliente con Realtime y actualización optimista
+│       │   │   └── TabSalud.tsx       ← ✅ Mapa anatómico + reporte lesiones + timeline (Realtime)
 │       │   ├── exercises/page.tsx      ← ✅ Biblioteca de ejercicios (3 capas, clone-on-edit global, overrides hidden)
 │       │   ├── routines/page.tsx       ← ✅ Constructor de rutinas — orquestador (~55 líneas, useReducer pattern)
 │       │   ├── routines/useRoutinesPage.ts ← Custom hook: useReducer (19 campos estado, 20 acciones tipadas) + DB ops (loadData, handleSave)
@@ -311,6 +332,7 @@ apps/web/app/
 │           ├── calendar/page.tsx       ← ✅ Calendario master (entrenos, comidas, métricas)
 │           ├── progress/page.tsx       ← ✅ Mediciones corporales + gráfico SVG + historial
 │           ├── appointments/page.tsx   ← ✅ Ver/solicitar/cancelar citas con el entrenador
+│           ├── health/page.tsx        ← ✅ Mi Salud — mapa anatómico + reportar molestias + timeline
 │           └── chat/page.tsx           ← ✅ Chat con entrenador (Realtime, optimista, leído)
 │
 ├── api/
@@ -337,6 +359,9 @@ apps/web/app/
 │   ├── onboarding/
 │   │   ├── FormFieldEditor.tsx         ← Editor de campos con drag & drop
 │   │   └── FormPreview.tsx             ← Vista previa del formulario
+│   ├── health/
+│   │   ├── AnatomyMap.tsx              ← ✅ SVG interactivo: vista frontal (17 regiones) + posterior (15 regiones)
+│   │   └── HealthReportForm.tsx        ← ✅ Formulario: dolor 1-10, tipo incidencia, estado, notas
 │   └── ui/                             ← shadcn/ui components
 │
 ├── lib/
@@ -471,6 +496,7 @@ apps/mobile/
 │       ├── MealsScreen.tsx             ← ✅ Plan de comidas por día con macros
 │       ├── ProgressScreen.tsx          ← ✅ Mediciones + historial + tendencias
 │       ├── ChatScreen.tsx              ← ✅ Chat con entrenador (Realtime, FlatList, burbujas, agrupación por día)
+│       ├── HealthScreen.tsx           ← ✅ Mi Salud: mapa anatómico SVG + modal reporte + lista incidencias (Realtime)
 │       └── AppointmentsScreen.tsx      ← ✅ Citas: ver próximas/historial, solicitar (picker día+hora), cancelar
 ├── plugins/
 │   └── withIOSWidget.js                ← ✅ Expo config plugin: genera WidgetKit Swift files + App Group entitlement
@@ -583,6 +609,7 @@ Protege rutas por autenticación Y por rol. Trainers no acceden a rutas de clien
 | Config | Prioridad | Qué desbloquea |
 |---|---|---|
 | Aplicar migración `030_appointments.sql` en Supabase | 🔴 Alta | Tabla citas — sin esto el módulo de citas no funciona |
+| Aplicar migración `031_health_logs.sql` en Supabase | 🔴 Alta | Tabla lesiones/molestias — sin esto el módulo de salud no funciona |
 | Dominio verificado en Resend + `RESEND_API_KEY` | 🟠 Alta | Emails de confirmación de citas |
 | OAuth 2.0 Google Calendar (Google Cloud Console) | 🟠 Alta | Sync citas → Google Calendar |
 | `ANTHROPIC_API_KEY` en Supabase secrets | 🟡 Media | Edge Functions IA (actualmente retornan mock) |
@@ -1151,6 +1178,57 @@ DELETE FROM trainer_exercise_overrides WHERE hidden = true;
 
 ---
 
+**ERROR #47 — Página `appointments/page.tsx` creada con 1187 líneas sin fragmentar (violación Regla 50)**
+- **Fecha:** 25/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/trainer/appointments/page.tsx`
+- **Qué pasó:** La página de citas se creó monolítica con 1187 líneas: interfaces, constantes, helpers, modal de creación, calendario (3 vistas + popover + pills), lista con cards, filtros y empty states — todo en un solo archivo. Violaba la Regla 50 (fragmentar páginas >300 líneas) desde su creación.
+- **Solución aplicada:** Fragmentada en `components/` con 5 archivos:
+  - `types.ts` (interfaces `Appointment`, `ClientOption`)
+  - `shared.tsx` (SESSION_TYPES, STATUS_STYLES, STATUS_BG, formatDateTime, formatDuration)
+  - `CreateAppointmentModal.tsx` (~237 líneas)
+  - `AppointmentCalendar.tsx` (~338 líneas — calendar view, grids, popover, pills)
+  - `AppointmentList.tsx` (~213 líneas — cards, filtros, secciones upcoming/past)
+  - `page.tsx` reducido a 190 líneas (orquestador: data loading, state, render subcomponentes)
+- **Regla:** La Regla 50 se aplica DURANTE la creación, no después. Un agente no debe crear una página de >300 líneas y esperar a que otro la fragmente. Si la página va a tener múltiples secciones (modal + calendario + lista + filtros), crear los componentes separados desde el inicio.
+
+---
+
+**ERROR #48 — Tests no creados junto al código (email-notifications.ts, excel-parser.ts)**
+- **Fecha:** 25/03/2026
+- **Archivos afectados:** `apps/web/lib/email-notifications.ts`, `apps/web/lib/excel-parser.ts`
+- **Qué pasó:** Ambos archivos se crearon sin tests unitarios a pesar de que el framework Vitest ya estaba configurado y los tests de `exercise-resolver` ya existían como referencia. Los tests se tuvieron que crear en una sesión de code review posterior.
+- **Solución aplicada:** Creados `email-notifications.test.ts` (4 tests: API key missing, undefined key, status variants, no-throw) y `excel-parser.test.ts` (7 tests: parsing, empty sheets, header detection, column inference, confidence threshold, column mapping, skip rows).
+- **Regla:** Todo módulo de lógica pura (`lib/*.ts`) DEBE tener su archivo `.test.ts` creado en la misma sesión que el código. No esperar a un code review para escribir tests. Mínimo: happy path + 1 edge case + 1 error case. Ver Regla 52 de CLAUDE.md.
+
+---
+
+**ERROR #49 — Code review detecta falsos positivos por no verificar el estado actual del código**
+- **Fecha:** 25/03/2026
+- **Archivos afectados:** `useRoutinesPage.ts`, `exercises/page.tsx`, `useNutritionPage.ts`
+- **Qué pasó:** Un code review listó 3 issues (error handling en useRoutinesPage, rename `primary_muscles` en exercises, acentos DAYS en nutrition) que ya estaban correctamente implementados en el código actual. Se verificó cada archivo y se confirmó que los 3 estaban bien desde antes.
+- **Solución aplicada:** Ningún cambio necesario — los 3 ya estaban correctos.
+- **Regla:** Antes de crear un ticket de fix, verificar SIEMPRE el estado actual del archivo. Leer el código, no asumir que está mal. Un code review que genera trabajo innecesario es peor que no hacer code review.
+
+---
+
+**ERROR #50 — `handleSave` no serializaba `mode`, `weekly_config` ni `total_weeks`**
+- **Fecha:** 25/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/trainer/routines/useRoutinesPage.ts`
+- **Qué pasó:** Se implementó toda la UI de progresión semanal (modal con WeeklyConfigModal, tipos WeekConfig, etc.) pero al guardar la rutina en `handleSave`, el `flatExercises` no incluía `mode`, `weekly_config`, y `routineData` no incluía `total_weeks` ni `training_days`. Resultado: el cliente veía los mismos valores en todas las semanas porque `weekly_config` se perdía al serializar.
+- **Solución aplicada:** Añadir `mode`, `weekly_config` (si tiene entradas) a cada ejercicio serializado, y `total_weeks`, `training_days` al objeto `routineData`.
+- **Regla:** Al añadir nuevos campos a tipos/UI, SIEMPRE verificar que la función de guardado (`handleSave`, `onSubmit`, etc.) los incluye en la serialización. Probar end-to-end: crear → guardar → cargar → verificar que los datos persisten.
+
+---
+
+**ERROR #51 — Peso pre-rellenado como valor en vez de placeholder**
+- **Fecha:** 25/03/2026
+- **Archivos afectados:** `useActiveTraining.ts` (web), `RoutineScreen.tsx` (mobile)
+- **Qué pasó:** `initializeSets` pre-rellenaba `weight_kg` con el valor del ejercicio o sesión anterior como valor de input (no placeholder). Esto confundía al cliente porque parecía que ya había introducido un valor cuando en realidad era el del trainer.
+- **Solución aplicada:** Todos los inputs (peso, reps, RIR) empiezan vacíos (`""`). Los valores del trainer se muestran como `placeholder` (gris tenue). Los placeholders son week-aware: resuelven `weekly_config[week].sets_detail[setIdx]` (different) o `weekly_config[week]` (equal) → valores base.
+- **Regla:** Los valores configurados por el trainer son GUÍA (placeholder), no valor por defecto. El cliente siempre introduce sus datos reales. Si hay sesión anterior, esa tiene prioridad como placeholder.
+
+---
+
 ### Arquitectura de componentes — Buenas prácticas (desde 24/03/2026)
 
 **Patrón obligatorio para páginas con múltiples secciones (tabs, paneles, vistas):**
@@ -1179,6 +1257,9 @@ components/
 **Módulos ya fragmentados:**
 - `clients/[id]/` → 6 tabs en `components/` (referencia del patrón tabs)
 - `routine/active/` → `useActiveTraining.ts` + 4 subcomponentes (referencia del patrón useReducer + custom hook)
+- `trainer/appointments/` → `components/` con types.ts, shared.tsx, CreateAppointmentModal.tsx, AppointmentCalendar.tsx, AppointmentList.tsx (1187 → 190 líneas en page.tsx)
+- `trainer/nutrition/` → `useNutritionPage.ts` + page.tsx orquestador
+- `trainer/routines/` → `useRoutinesPage.ts` + 4 subcomponentes + page.tsx orquestador
 
 #### Patrón useReducer para páginas con estado complejo (regla 51)
 
@@ -1220,6 +1301,12 @@ npm run test:watch   # Modo watch (desarrollo)
 | Archivo | Tests | Qué cubre |
 |---|---|---|
 | `lib/exercise-resolver.test.ts` | 9 | Layer A (globales), Layer B (privados trainer), Layer C (hidden + custom_name), combinación A+B+C, edge cases (sin privados, error DB) + smoke de `resolveExercise` |
+| `lib/food-resolver.test.ts` | 6 | Three-layer resolution (global, privados, overrides) + búsqueda por similitud |
+| `lib/email-notifications.test.ts` | 4 | API key missing → `{ sent: false }`, undefined key, todos los status variants sin throw, error devuelve string |
+| `lib/excel-parser.test.ts` | 7 | Parsing con headers, hoja vacía, detección de header row, inferencia de tipo columna, confidence threshold, column mapping, skip filas sin ejercicio |
+| `lib/activate-client.test.ts` | 5 | Happy path, auth errors, DB errors, non-blocking failures |
+| `api/complete-registration/route.test.ts` | 7 | Happy path, missing fields (400), DB errors (500), promo code resilience, invalid JSON |
+| `api/client-trainer/route.test.ts` | 8 | Happy path, unauthenticated (401), no trainer (404), DB errors, `business_name` vs `full_name` priority |
 
 ---
 

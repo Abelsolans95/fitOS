@@ -10,6 +10,7 @@ import {
   type RoutineExercise,
   type TrainingDay,
   type SetConfig,
+  type WeekConfig,
   DAYS_OF_WEEK,
   buildScheme,
   makeDefaultSetConfig,
@@ -33,7 +34,7 @@ export interface RoutinesState {
   step: 1 | 2 | 3;
   crSelectedClientId: string;
   crTitle: string;
-  crGoal: "fuerza" | "hipertrofia";
+  crGoal: string;
   crMesocycleWeeks: number;
   crStartDate: string;
   crSelectedDays: string[];
@@ -63,7 +64,7 @@ const initialState: RoutinesState = {
   step: 1,
   crSelectedClientId: "",
   crTitle: "",
-  crGoal: "hipertrofia",
+  crGoal: "",
   crMesocycleWeeks: 4,
   crStartDate: getDefaultStartDate(),
   crSelectedDays: [],
@@ -96,7 +97,7 @@ export type RoutinesAction =
   /* Creator step 1 */
   | { type: "CR_SET_CLIENT"; clientId: string }
   | { type: "CR_SET_TITLE"; title: string }
-  | { type: "CR_SET_GOAL"; goal: "fuerza" | "hipertrofia" }
+  | { type: "CR_SET_GOAL"; goal: string }
   | { type: "CR_SET_WEEKS"; weeks: number }
   | { type: "CR_SET_START_DATE"; date: string }
   /* Creator step 2 */
@@ -118,6 +119,12 @@ export type RoutinesAction =
       exIndex: number;
       setIndex: number;
       updates: Partial<SetConfig>;
+    }
+  | {
+      type: "CR_UPDATE_WEEKLY_CONFIG";
+      dayKey: string;
+      exIndex: number;
+      weeklyConfig: Record<number, WeekConfig>;
     }
   | { type: "CR_REMOVE_EXERCISE"; dayKey: string; exIndex: number }
   | { type: "CR_MOVE_EXERCISE"; dayKey: string; exIndex: number; direction: -1 | 1 }
@@ -153,7 +160,7 @@ function routinesReducer(state: RoutinesState, action: RoutinesAction): Routines
         step: 1,
         crSelectedClientId: "",
         crTitle: "",
-        crGoal: "hipertrofia",
+        crGoal: "",
         crMesocycleWeeks: 4,
         crStartDate: getDefaultStartDate(),
         crSelectedDays: [],
@@ -213,18 +220,17 @@ function routinesReducer(state: RoutinesState, action: RoutinesAction): Routines
       return { ...state, crSearchModalDayKey: null };
 
     case "CR_ADD_EXERCISE": {
-      const isFuerza = state.crGoal === "fuerza";
       const newEx: RoutineExercise = {
         exercise_id: action.exercise.id,
         name: action.exercise.name,
-        scheme: isFuerza ? "4x3-6" : "3x8-12",
-        sets: isFuerza ? 4 : 3,
-        reps_min: isFuerza ? 3 : 8,
-        reps_max: isFuerza ? 6 : 12,
+        scheme: "3x8-12",
+        sets: 3,
+        reps_min: 8,
+        reps_max: 12,
         rest_pause_sets: 0,
-        rir: isFuerza ? 2 : 1,
+        rir: 1,
         target_weight: null,
-        rest_s: isFuerza ? 180 : 90,
+        rest_s: 90,
         progression_rule: "",
         coach_notes: "",
         order: 0,
@@ -302,6 +308,21 @@ function routinesReducer(state: RoutinesState, action: RoutinesAction): Routines
                   si === action.setIndex ? { ...sc, ...action.updates } : sc
                 ),
               };
+            }),
+          };
+        }),
+      };
+
+    case "CR_UPDATE_WEEKLY_CONFIG":
+      return {
+        ...state,
+        crTrainingDays: state.crTrainingDays.map((d) => {
+          if (d.key !== action.dayKey) return d;
+          return {
+            ...d,
+            exercises: d.exercises.map((e, i) => {
+              if (i !== action.exIndex) return e;
+              return { ...e, weekly_config: action.weeklyConfig };
             }),
           };
         }),
@@ -534,7 +555,11 @@ export function useRoutinesPage() {
             coach_notes: ex.coach_notes,
             order: ex.order,
             week_of_month: 1,
+            mode: ex.mode,
             sets_config: ex.mode === "different" ? ex.sets_config : undefined,
+            weekly_config: ex.weekly_config && Object.keys(ex.weekly_config).length > 0
+              ? ex.weekly_config
+              : undefined,
           };
         })
       );
@@ -545,6 +570,8 @@ export function useRoutinesPage() {
         title: state.crTitle,
         goal: state.crGoal,
         duration_months: Math.max(1, Math.ceil(state.crMesocycleWeeks / 4)),
+        total_weeks: state.crMesocycleWeeks,
+        training_days: state.crSelectedDays,
         exercises: flatExercises,
         equipment_detected: [] as string[],
         source: "trainer" as const,

@@ -79,7 +79,7 @@ export type TrainingAction =
       type: "UPDATE_SET_VALUE";
       exIdx: number;
       setIdx: number;
-      field: "weight_kg" | "reps_done";
+      field: "weight_kg" | "reps_done" | "rir";
       value: string;
     }
   | { type: "SKIP_REST" }
@@ -338,6 +338,7 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
         set_number: i + 1,
         weight_kg: Number(s.weight_kg) || 0,
         reps_done: Number(s.reps_done) || 0,
+        rir: Number(s.rir) || 0,
         type: i < (ex.sets || 3) ? "main" : "rest_pause",
         completed: s.completed,
       }));
@@ -598,23 +599,16 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
   /* ── Initialize sets (normal start) ── */
 
   const initializeSets = useCallback(
-    (exs: ExerciseData[], logs: PreviousLog[]) => {
+    (exs: ExerciseData[]) => {
       const initial: Record<number, SetEntry[]> = {};
       exs.forEach((ex, idx) => {
         const totalSetsCount = (ex.sets || 3) + (ex.rest_pause_sets || 0);
-        const prevLog = logs.find((l) => l.exercise_name === ex.name);
-        initial[idx] = Array.from({ length: totalSetsCount }, (_, i) => {
-          const prevSet = prevLog?.sets_data?.[i];
-          return {
-            weight_kg: prevSet
-              ? String(prevSet.weight_kg)
-              : ex.target_weight || ex.weight_kg
-                ? String(ex.target_weight || ex.weight_kg)
-                : "",
-            reps_done: "",
-            completed: false,
-          };
-        });
+        initial[idx] = Array.from({ length: totalSetsCount }, () => ({
+          weight_kg: "",
+          reps_done: "",
+          rir: "",
+          completed: false,
+        }));
       });
       dispatch({ type: "INIT_SETS", sets: initial });
     },
@@ -636,7 +630,6 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
         sessionCreatedAt,
         sessionLogs,
         exercises: exs,
-        previousLogs: logs,
       } = data;
       const initial: Record<number, SetEntry[]> = {};
       const restoredNotes: Record<number, string> = {};
@@ -647,28 +640,22 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
         const savedLog = sessionLogs.find(
           (l) => l.exercise_name === ex.name
         );
-        const prevLog = logs.find((l) => l.exercise_name === ex.name);
-
         if (savedLog && savedLog.sets_data) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           initial[idx] = savedLog.sets_data.map((s: any) => ({
             weight_kg: String(s.weight_kg),
             reps_done: String(s.reps_done),
+            rir: String(s.rir ?? ex.rir ?? ""),
             completed: s.completed !== false,
           }));
           const allSetsDone = initial[idx].every((s) => s.completed);
           if (allSetsDone) alreadySaved.push(idx);
           // Pad if exercise has more sets than saved
           while (initial[idx].length < totalSetsCount) {
-            const i = initial[idx].length;
-            const prevSet = prevLog?.sets_data?.[i];
             initial[idx].push({
-              weight_kg: prevSet
-                ? String(prevSet.weight_kg)
-                : ex.target_weight || ex.weight_kg
-                  ? String(ex.target_weight || ex.weight_kg)
-                  : "",
+              weight_kg: "",
               reps_done: "",
+              rir: "",
               completed: false,
             });
           }
@@ -676,15 +663,11 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
             restoredNotes[idx] = savedLog.client_notes;
           }
         } else {
-          initial[idx] = Array.from({ length: totalSetsCount }, (_, i) => {
-            const prevSet = prevLog?.sets_data?.[i];
+          initial[idx] = Array.from({ length: totalSetsCount }, () => {
             return {
-              weight_kg: prevSet
-                ? String(prevSet.weight_kg)
-                : ex.target_weight || ex.weight_kg
-                  ? String(ex.target_weight || ex.weight_kg)
-                  : "",
+              weight_kg: "",
               reps_done: "",
+              rir: "",
               completed: false,
             };
           });

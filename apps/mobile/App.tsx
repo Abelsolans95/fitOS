@@ -19,6 +19,7 @@ import MealsScreen from "./src/screens/MealsScreen";
 import ProgressScreen from "./src/screens/ProgressScreen";
 import ChatScreen from "./src/screens/ChatScreen";
 import AppointmentsScreen from "./src/screens/AppointmentsScreen";
+import HealthScreen from "./src/screens/HealthScreen";
 
 Sentry.init({
   dsn: "https://c8918d35c078388eb3680a7ac3fdbe2a@o4511044389240832.ingest.de.sentry.io/4511047824506960",
@@ -103,6 +104,17 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
       <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
         <Path
           d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"
+          stroke={color}
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </Svg>
+    ),
+    Salud: (
+      <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+        <Path
+          d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
           stroke={color}
           strokeWidth={1.8}
           strokeLinecap="round"
@@ -199,6 +211,7 @@ function AppNavigator() {
       <Tab.Screen name="Rutina" component={RoutineScreen} />
       <Tab.Screen name="Comidas" component={MealsScreen} />
       <Tab.Screen name="Progreso" component={ProgressScreen} />
+      <Tab.Screen name="Salud" component={HealthScreen} />
       <Tab.Screen name="Chat" component={ChatScreen} />
       <Tab.Screen name="Citas" component={AppointmentsScreen} />
     </Tab.Navigator>

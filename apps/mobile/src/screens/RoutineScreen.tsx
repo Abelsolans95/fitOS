@@ -22,6 +22,25 @@ import { updateWidget } from "../lib/widget-sync";
    Types
    ──────────────────────────────────────────── */
 
+interface MobileSetConfig {
+  reps_min: number;
+  reps_max: number;
+  rir: number;
+  target_weight: number | null;
+  rest_s: number;
+}
+
+interface MobileWeekConfig {
+  sets: number;
+  reps_min: number;
+  reps_max: number;
+  rir: number;
+  target_weight: number | null;
+  rest_s: number;
+  sets_detail?: MobileSetConfig[];
+  coach_notes?: string;
+}
+
 interface ExerciseData {
   exercise_id: string;
   name: string;
@@ -43,6 +62,9 @@ interface ExerciseData {
   video_url?: string;
   order?: number;
   week_of_month?: number;
+  mode?: "equal" | "different";
+  sets_config?: MobileSetConfig[];
+  weekly_config?: Record<number, MobileWeekConfig>;
 }
 
 interface DayData {
@@ -80,6 +102,7 @@ interface PreviousLog {
 interface SetEntry {
   weight_kg: string;
   reps_done: string;
+  rir: string;
   completed: boolean;
   type: "main" | "rest_pause";
 }
@@ -436,23 +459,19 @@ export default function RoutineScreen() {
       exercises.forEach((ex, idx) => {
         const mainCount = ex.sets || 3;
         const rpCount = ex.rest_pause_sets || 0;
-        const prev = getPreviousLog(ex.name);
         const total = mainCount + rpCount;
 
         initial[idx] = Array.from({ length: total }, (_, i) => ({
-          weight_kg: prev[i]
-            ? String(prev[i].weight_kg)
-            : (ex.target_weight || ex.weight_kg)
-              ? String(ex.target_weight || ex.weight_kg)
-              : "",
+          weight_kg: "",
           reps_done: "",
+          rir: "",
           completed: false,
           type: i < mainCount ? "main" as const : "rest_pause" as const,
         }));
       });
       setAllSets(initial);
     },
-    [getPreviousLog]
+    []
   );
 
   // ── Save calendar + RPE history ──
@@ -535,33 +554,31 @@ export default function RoutineScreen() {
         initial[idx] = savedLog.sets_data.map((s: any, i: number) => ({
           weight_kg: String(s.weight_kg),
           reps_done: String(s.reps_done),
-          completed: s.completed !== false, // backwards compat: old entries without flag are done
+          rir: String(s.rir ?? ""),
+          completed: s.completed !== false,
           type: i < mainCount ? "main" as const : "rest_pause" as const,
         }));
-        // Mark as fully saved only if ALL sets are completed
         const allSetsDone = initial[idx].every((s) => s.completed);
         if (allSetsDone) alreadySaved.add(idx);
         while (initial[idx].length < total) {
           const i = initial[idx].length;
-          const prevSet = prevLog?.sets_data?.[i];
           initial[idx].push({
-            weight_kg: prevSet ? String(prevSet.weight_kg) : (ex.target_weight || ex.weight_kg) ? String(ex.target_weight || ex.weight_kg) : "",
+            weight_kg: "",
             reps_done: "",
+            rir: "",
             completed: false,
             type: i < mainCount ? "main" as const : "rest_pause" as const,
           });
         }
         if (savedLog.client_notes) restoredNotes[idx] = savedLog.client_notes;
       } else {
-        initial[idx] = Array.from({ length: total }, (_, i) => {
-          const prevSet = prevLog?.sets_data?.[i];
-          return {
-            weight_kg: prevSet ? String(prevSet.weight_kg) : (ex.target_weight || ex.weight_kg) ? String(ex.target_weight || ex.weight_kg) : "",
-            reps_done: "",
-            completed: false,
-            type: i < mainCount ? "main" as const : "rest_pause" as const,
-          };
-        });
+        initial[idx] = Array.from({ length: total }, (_, i) => ({
+          weight_kg: "",
+          reps_done: "",
+          rir: "",
+          completed: false,
+          type: i < mainCount ? "main" as const : "rest_pause" as const,
+        }));
       }
     });
 
@@ -594,6 +611,7 @@ export default function RoutineScreen() {
         set_number: i + 1,
         weight_kg: Number(s.weight_kg) || 0,
         reps_done: Number(s.reps_done) || 0,
+        rir: Number(s.rir) || 0,
         type: i < mainCount ? "main" : "rest_pause",
         completed: s.completed,
       }));
@@ -1192,9 +1210,6 @@ export default function RoutineScreen() {
           <Text style={st.activeExName}>{currentEx.name}</Text>
           <View style={st.activeExMeta}>
             <View style={st.schemeBadge}><Text style={st.schemeText}>{getScheme(currentEx)}</Text></View>
-            {currentEx.rir > 0 && (
-              <View style={st.metaTag}><Text style={st.metaTagText}>RIR {currentEx.rir}</Text></View>
-            )}
             <View style={[st.metaTag, { borderColor: colors.orangeDim }]}>
               <Text style={[st.metaTagText, { color: colors.orange }]}>{currentEx.rest_s}s desc.</Text>
             </View>
@@ -1230,6 +1245,7 @@ export default function RoutineScreen() {
           <Text style={[st.setHeaderText, { width: 40 }]}>Serie</Text>
           <Text style={[st.setHeaderText, { flex: 1 }]}>Peso (kg)</Text>
           <Text style={[st.setHeaderText, { flex: 1 }]}>Reps</Text>
+          <Text style={[st.setHeaderText, { width: 48 }]}>RIR</Text>
           <View style={{ width: 44 }} />
         </View>
 
@@ -1237,6 +1253,19 @@ export default function RoutineScreen() {
           const isCurrent = setIdx === currentSetIdx;
           const prevSet = prevSets[setIdx];
           const isRP = set.type === "rest_pause";
+          // Resolve trainer-configured values for this set (week-aware)
+          const wk = currentEx.weekly_config?.[activeWeek];
+          const isDiff = currentEx.mode === "different";
+          const cfgDetail = isDiff ? (wk?.sets_detail ?? currentEx.sets_config ?? []) : [];
+          const cfg = isDiff && cfgDetail[setIdx]
+            ? cfgDetail[setIdx]
+            : {
+                reps_min: wk?.reps_min ?? currentEx.reps_min,
+                reps_max: wk?.reps_max ?? currentEx.reps_max,
+                rir: wk?.rir ?? currentEx.rir,
+                target_weight: wk?.target_weight ?? currentEx.target_weight ?? null,
+                rest_s: wk?.rest_s ?? currentEx.rest_s,
+              };
 
           return (
             <View
@@ -1271,7 +1300,11 @@ export default function RoutineScreen() {
                   });
                 }}
                 editable={!set.completed}
-                placeholder={prevSet ? String(prevSet.weight_kg) : "0"}
+                placeholder={
+                  prevSet ? String(prevSet.weight_kg)
+                    : cfg.target_weight ? String(cfg.target_weight)
+                    : "0"
+                }
                 placeholderTextColor="rgba(90,90,114,0.4)"
               />
 
@@ -1289,7 +1322,30 @@ export default function RoutineScreen() {
                   });
                 }}
                 editable={!set.completed}
-                placeholder={prevSet ? String(prevSet.reps_done) : `${currentEx.reps_min}`}
+                placeholder={
+                  prevSet ? String(prevSet.reps_done)
+                    : cfg.reps_min === cfg.reps_max
+                      ? String(cfg.reps_min)
+                      : `${cfg.reps_min}-${cfg.reps_max}`
+                }
+                placeholderTextColor="rgba(90,90,114,0.4)"
+              />
+
+              <TextInput
+                style={[st.setInput, isCurrent && st.setInputActive, { width: 48, flex: 0 }]}
+                keyboardType="number-pad"
+                value={set.rir}
+                onChangeText={(val) => {
+                  setAllSets((prev) => {
+                    const u = { ...prev };
+                    const exS = [...(u[currentExIdx] || [])];
+                    exS[setIdx] = { ...exS[setIdx], rir: val };
+                    u[currentExIdx] = exS;
+                    return u;
+                  });
+                }}
+                editable={!set.completed}
+                placeholder={String(cfg.rir)}
                 placeholderTextColor="rgba(90,90,114,0.4)"
               />
 

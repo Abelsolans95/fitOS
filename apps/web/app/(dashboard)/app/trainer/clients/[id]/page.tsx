@@ -12,6 +12,7 @@ import { TabRutina } from "./components/TabRutina";
 import { TabMenu } from "./components/TabMenu";
 import { TabFormulario } from "./components/TabFormulario";
 import { TabChat } from "./components/TabChat";
+import { TabSalud } from "./components/TabSalud";
 
 function ClientDetailPageInner() {
   const params = useParams();
@@ -232,6 +233,9 @@ function ClientDetailPageInner() {
         {activeTab === "formulario" && <TabFormulario responses={formResponses} />}
         {activeTab === "comunicacion" && trainerId && (
           <TabChat trainerId={trainerId} clientId={clientId} clientName={profile.full_name} />
+        )}
+        {activeTab === "salud" && trainerId && (
+          <TabSalud trainerId={trainerId} clientId={clientId} />
         )}
       </div>
     </div>

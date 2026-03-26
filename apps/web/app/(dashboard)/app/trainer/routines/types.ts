@@ -23,6 +23,21 @@ export interface SetConfig {
   rest_s: number;
 }
 
+/** Per-week override for an exercise (progressive overload across mesocycle) */
+export interface WeekConfig {
+  /** Used in "equal" mode */
+  sets: number;
+  reps_min: number;
+  reps_max: number;
+  rir: number;
+  target_weight: number | null;
+  rest_s: number;
+  /** Used in "different" mode — one entry per set */
+  sets_detail?: SetConfig[];
+  /** Per-week coach notes (dynamic per week, unlike progression_rule which is per exercise) */
+  coach_notes?: string;
+}
+
 export interface RoutineExercise {
   exercise_id: string;
   name: string;
@@ -39,6 +54,8 @@ export interface RoutineExercise {
   order: number;
   mode: "equal" | "different";
   sets_config: SetConfig[];
+  /** Per-week overrides keyed by week number (1-based). If absent, uses base values. */
+  weekly_config?: Record<number, WeekConfig>;
 }
 
 export interface TrainingDay {

@@ -133,6 +133,7 @@ export default function RoutineEditor({
               day={day}
               totalSets={totalSets(day.key)}
               dateStr={weekDates.find((wd) => wd.day === day.key)?.date}
+              mesocycleWeeks={crMesocycleWeeks}
               dispatch={dispatch}
             />
           ))}
@@ -200,7 +201,7 @@ function Step1Config({
   clients: ClientOption[];
   selectedClientId: string;
   title: string;
-  goal: "fuerza" | "hipertrofia";
+  goal: string;
   mesocycleWeeks: number;
   startDate: string;
   dispatch: Dispatch<RoutinesAction>;
@@ -218,11 +219,11 @@ function Step1Config({
           <select
             value={selectedClientId}
             onChange={(e) => dispatch({ type: "CR_SET_CLIENT", clientId: e.target.value })}
-            className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white outline-none transition-colors focus:border-[#00E5FF]/40"
+            className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#12121A] px-4 text-[13px] text-white outline-none transition-colors focus:border-[#00E5FF]/40"
           >
-            <option value="">Seleccionar cliente...</option>
+            <option value="" className="bg-[#12121A] text-[#5A5A72]">Seleccionar cliente...</option>
             {clients.map((c) => (
-              <option key={c.client_id} value={c.client_id}>
+              <option key={c.client_id} value={c.client_id} className="bg-[#12121A] text-white">
                 {c.full_name ?? c.email ?? "Sin nombre"}
               </option>
             ))}
@@ -248,31 +249,13 @@ function Step1Config({
           <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">
             Objetivo
           </label>
-          <div className="grid grid-cols-2 gap-3">
-            {(["fuerza", "hipertrofia"] as const).map((g) => (
-              <button
-                key={g}
-                type="button"
-                onClick={() => dispatch({ type: "CR_SET_GOAL", goal: g })}
-                className={`rounded-xl border px-4 py-3 text-left transition-all ${
-                  goal === g
-                    ? "border-[#00E5FF]/40 bg-[#00E5FF]/5"
-                    : "border-white/[0.08] bg-white/[0.02] hover:border-white/[0.15]"
-                }`}
-              >
-                <span
-                  className={`text-[13px] font-semibold ${
-                    goal === g ? "text-[#00E5FF]" : "text-[#8B8BA3]"
-                  }`}
-                >
-                  {g === "fuerza" ? "Fuerza" : "Hipertrofia"}
-                </span>
-                <span className="mt-0.5 block text-[11px] text-[#5A5A72]">
-                  {g === "fuerza" ? "3-6 reps · descanso largo" : "8-12 reps · descanso moderado"}
-                </span>
-              </button>
-            ))}
-          </div>
+          <input
+            type="text"
+            value={goal}
+            onChange={(e) => dispatch({ type: "CR_SET_GOAL", goal: e.target.value })}
+            placeholder="Ej: Hipertrofia, Fuerza, Recomposición, Pérdida de grasa…"
+            className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/40"
+          />
         </div>
 
         {/* Duration & Start */}
@@ -284,10 +267,10 @@ function Step1Config({
             <select
               value={mesocycleWeeks}
               onChange={(e) => dispatch({ type: "CR_SET_WEEKS", weeks: Number(e.target.value) })}
-              className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white outline-none transition-colors focus:border-[#00E5FF]/40"
+              className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#12121A] px-4 text-[13px] text-white outline-none transition-colors focus:border-[#00E5FF]/40"
             >
               {Array.from({ length: 12 }, (_, i) => i + 1).map((w) => (
-                <option key={w} value={w}>
+                <option key={w} value={w} className="bg-[#12121A]">
                   {w} semana{w > 1 ? "s" : ""}
                 </option>
               ))}
