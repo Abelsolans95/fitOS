@@ -15,7 +15,7 @@ import {
 import Svg, { Path } from "react-native-svg";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
-import { colors, spacing, radius } from "../theme";
+import { colors, spacing, radius , fonts} from "../theme";
 
 interface Message {
   id: string;
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
   headerAvatarText: {
     color: colors.cyan,
     fontSize: 13,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
   },
   headerInfo: {
     flex: 1,
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
   headerName: {
     color: colors.white,
     fontSize: 15,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
   },
   headerSub: {
     color: colors.muted,
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
   avatarSmallText: {
     color: colors.cyan,
     fontSize: 9,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
   },
   bubble: {
     maxWidth: "75%",
@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
   emptyTitle: {
     color: colors.white,
     fontSize: 15,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
   },
   emptySubtitle: {
     color: colors.muted,

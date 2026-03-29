@@ -72,6 +72,13 @@ export interface MealPlanRow {
   client_name: string | null;
 }
 
+export interface WeekTarget {
+  kcal: number | "";
+  proteinPct: number;
+  carbsPct: number;
+  fatPct: number;
+}
+
 export interface SavedMenuTemplate {
   id: string;
   name: string;
@@ -87,6 +94,7 @@ export interface SavedMenuTemplate {
     targetFatPct: number;
     days: DayPlan[];
     weekDays: Record<number, DayPlan[]>;
+    weeklyTargets?: Record<number, WeekTarget>;
   };
   created_at: string;
 }
@@ -209,6 +217,15 @@ function buildEmptyDays(
   }));
 }
 
+/** Returns the target for a given week, falling back to the global defaults. */
+export function getWeekTarget(
+  week: number,
+  weeklyTargets: Record<number, WeekTarget>,
+  defaults: { kcal: number | ""; proteinPct: number; carbsPct: number; fatPct: number }
+): WeekTarget {
+  return weeklyTargets[week] ?? { kcal: defaults.kcal, proteinPct: defaults.proteinPct, carbsPct: defaults.carbsPct, fatPct: defaults.fatPct };
+}
+
 export function getMealTotals(foods: MealFood[]) {
   return {
     kcal: Math.round(foods.reduce((s, f) => s + f.kcal, 0) * 10) / 10,
@@ -234,6 +251,7 @@ export interface NutritionState {
   showCreator: boolean;
   /* Menu Creator */
   crSelectedClientId: string;
+  crLoadedMenuId: string;
   crTitle: string;
   crSelectedDays: string[];
   crMesocycleWeeks: number;
@@ -247,6 +265,7 @@ export interface NutritionState {
   crDays: DayPlan[];
   crCurrentWeek: number;
   crWeekDays: Record<number, DayPlan[]>;
+  crWeeklyTargets: Record<number, WeekTarget>;
   crSaving: boolean;
   crSavingTemplate: boolean;
   savedMenus: SavedMenuTemplate[];
@@ -277,6 +296,7 @@ const initialState: NutritionState = {
   showCreator: false,
 
   crSelectedClientId: "",
+  crLoadedMenuId: "",
   crTitle: "",
   crSelectedDays: DAYS_OF_WEEK.map((d) => d.key),
   crMesocycleWeeks: 1,
@@ -290,6 +310,7 @@ const initialState: NutritionState = {
   crDays: buildEmptyDays(3, 0, DAYS_OF_WEEK.map((d) => d.key)),
   crCurrentWeek: 1,
   crWeekDays: {},
+  crWeeklyTargets: {},
   crSaving: false,
   crSavingTemplate: false,
   savedMenus: [],
@@ -339,6 +360,10 @@ export type NutritionAction =
   | { type: "CR_SET_TARGET_PROTEIN_PCT"; value: number }
   | { type: "CR_SET_TARGET_CARBS_PCT"; value: number }
   | { type: "CR_SET_TARGET_FAT_PCT"; value: number }
+  | { type: "CR_SET_WEEK_TARGET_KCAL"; week: number; value: number | "" }
+  | { type: "CR_SET_WEEK_TARGET_PROTEIN_PCT"; week: number; value: number }
+  | { type: "CR_SET_WEEK_TARGET_CARBS_PCT"; week: number; value: number }
+  | { type: "CR_SET_WEEK_TARGET_FAT_PCT"; week: number; value: number }
   /* Creator — day/meal operations */
   | { type: "CR_TOGGLE_DAY"; dayIndex: number }
   | { type: "CR_ADD_FOOD"; dayIndex: number; mealIndex: number; food: MealFood }
@@ -411,6 +436,7 @@ function nutritionReducer(state: NutritionState, action: NutritionAction): Nutri
         ...state,
         showCreator: false,
         crSelectedClientId: "",
+        crLoadedMenuId: "",
         crTitle: "",
         crSelectedDays: DAYS_OF_WEEK.map((d) => d.key),
         crMesocycleWeeks: 1,
@@ -424,6 +450,7 @@ function nutritionReducer(state: NutritionState, action: NutritionAction): Nutri
         crDays: buildEmptyDays(3, 0, DAYS_OF_WEEK.map((d) => d.key)),
         crCurrentWeek: 1,
         crWeekDays: {},
+        crWeeklyTargets: {},
         crSaving: false,
         crSavingTemplate: false,
       };
@@ -467,6 +494,22 @@ function nutritionReducer(state: NutritionState, action: NutritionAction): Nutri
       return { ...state, crTargetCarbsPct: action.value };
     case "CR_SET_TARGET_FAT_PCT":
       return { ...state, crTargetFatPct: action.value };
+    case "CR_SET_WEEK_TARGET_KCAL": {
+      const prev = state.crWeeklyTargets[action.week] ?? { kcal: state.crTargetKcal, proteinPct: state.crTargetProteinPct, carbsPct: state.crTargetCarbsPct, fatPct: state.crTargetFatPct };
+      return { ...state, crWeeklyTargets: { ...state.crWeeklyTargets, [action.week]: { ...prev, kcal: action.value } } };
+    }
+    case "CR_SET_WEEK_TARGET_PROTEIN_PCT": {
+      const prev = state.crWeeklyTargets[action.week] ?? { kcal: state.crTargetKcal, proteinPct: state.crTargetProteinPct, carbsPct: state.crTargetCarbsPct, fatPct: state.crTargetFatPct };
+      return { ...state, crWeeklyTargets: { ...state.crWeeklyTargets, [action.week]: { ...prev, proteinPct: action.value } } };
+    }
+    case "CR_SET_WEEK_TARGET_CARBS_PCT": {
+      const prev = state.crWeeklyTargets[action.week] ?? { kcal: state.crTargetKcal, proteinPct: state.crTargetProteinPct, carbsPct: state.crTargetCarbsPct, fatPct: state.crTargetFatPct };
+      return { ...state, crWeeklyTargets: { ...state.crWeeklyTargets, [action.week]: { ...prev, carbsPct: action.value } } };
+    }
+    case "CR_SET_WEEK_TARGET_FAT_PCT": {
+      const prev = state.crWeeklyTargets[action.week] ?? { kcal: state.crTargetKcal, proteinPct: state.crTargetProteinPct, carbsPct: state.crTargetCarbsPct, fatPct: state.crTargetFatPct };
+      return { ...state, crWeeklyTargets: { ...state.crWeeklyTargets, [action.week]: { ...prev, fatPct: action.value } } };
+    }
 
     /* ── Creator — day/meal operations ── */
     case "CR_TOGGLE_DAY":
@@ -678,6 +721,7 @@ function nutritionReducer(state: NutritionState, action: NutritionAction): Nutri
       const cfg = action.menu.config;
       return {
         ...state,
+        crLoadedMenuId: action.menu.id,
         crTitle: cfg.title,
         crSelectedDays: cfg.selectedDays,
         crMesocycleWeeks: cfg.mesocycleWeeks,
@@ -690,12 +734,14 @@ function nutritionReducer(state: NutritionState, action: NutritionAction): Nutri
         crDays: cfg.days.length > 0 ? cfg.days : buildEmptyDays(cfg.mainMeals, cfg.snacksPerDay, cfg.selectedDays),
         crCurrentWeek: 1,
         crWeekDays: cfg.weekDays ?? {},
+        crWeeklyTargets: cfg.weeklyTargets ?? {},
       };
     }
     case "CR_RESET":
       return {
         ...state,
         crSelectedClientId: "",
+        crLoadedMenuId: "",
         crTitle: "",
         crSelectedDays: DAYS_OF_WEEK.map((d) => d.key),
         crMesocycleWeeks: 1,
@@ -709,6 +755,7 @@ function nutritionReducer(state: NutritionState, action: NutritionAction): Nutri
         crDays: buildEmptyDays(3, 0, DAYS_OF_WEEK.map((d) => d.key)),
         crCurrentWeek: 1,
         crWeekDays: {},
+        crWeeklyTargets: {},
         crSaving: false,
         crSavingTemplate: false,
       };
@@ -979,6 +1026,7 @@ export function useNutritionPage() {
               ),
               total_weeks: state.crMesocycleWeeks,
               start_date: state.crStartDate,
+              weekly_targets: state.crWeeklyTargets,
             }
           : serializeDays(state.crDays);
 
@@ -1019,6 +1067,7 @@ export function useNutritionPage() {
     state.crDays,
     state.crCurrentWeek,
     state.crWeekDays,
+    state.crWeeklyTargets,
     state.crMesocycleWeeks,
     state.crSelectedDays,
     state.crStartDate,
@@ -1144,6 +1193,7 @@ export function useNutritionPage() {
         targetFatPct: state.crTargetFatPct,
         days: state.crDays,
         weekDays: allWeekDays,
+        weeklyTargets: state.crWeeklyTargets,
       };
 
       const { error } = await supabase.from("saved_menu_templates").insert({

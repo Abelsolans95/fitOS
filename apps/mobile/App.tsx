@@ -1,4 +1,16 @@
-import React from "react";
+import React, { useEffect } from "react";
+import * as SplashScreen from "expo-splash-screen";
+import {
+  useFonts,
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+} from "@expo-google-fonts/plus-jakarta-sans";
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -200,7 +212,7 @@ function AppNavigator() {
         },
         tabBarLabelStyle: {
           fontSize: 10,
-          fontWeight: "600" as const,
+          fontFamily: "PlusJakartaSans_600SemiBold",
           letterSpacing: 0.3,
           marginTop: -2,
         },
@@ -219,6 +231,24 @@ function AppNavigator() {
 }
 
 export default Sentry.wrap(function App() {
+  const [fontsLoaded] = useFonts({
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
     <AuthProvider>
       <NavigationContainer>
@@ -238,7 +268,7 @@ const styles = StyleSheet.create({
   },
   logo: {
     fontSize: 52,
-    fontWeight: "900",
+    fontFamily: "PlusJakartaSans_800ExtraBold",
     color: colors.white,
     letterSpacing: -2,
   },

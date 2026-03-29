@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
-import { colors } from "../theme";
+import { colors , fonts} from "../theme";
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                      */
@@ -642,7 +642,7 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 24, paddingBottom: 60 },
   centered: { flex: 1, backgroundColor: colors.bg, justifyContent: "center", alignItems: "center", padding: 24 },
 
-  logo: { fontSize: 36, fontWeight: "800", color: colors.white, textAlign: "center", marginTop: 16 },
+  logo: { fontSize: 36, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white, textAlign: "center", marginTop: 16 },
   subtitle: { fontSize: 14, color: colors.muted, textAlign: "center", marginTop: 8, marginBottom: 20 },
   loadingText: { fontSize: 13, color: colors.muted, marginTop: 12 },
 
@@ -656,12 +656,12 @@ const styles = StyleSheet.create({
 
   // Sections
   section: { gap: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: "700", color: colors.white, textAlign: "center" },
+  sectionTitle: { fontSize: 18, fontFamily: fonts.bold, color: colors.white, textAlign: "center" },
   sectionSubtitle: { fontSize: 13, color: colors.muted, textAlign: "center", marginBottom: 4 },
 
   // Fields
   fieldGroup: { gap: 8 },
-  fieldLabel: { fontSize: 13, fontWeight: "600", color: colors.muted },
+  fieldLabel: { fontSize: 13, fontFamily: fonts.medium, color: colors.muted },
   input: {
     backgroundColor: colors.bg,
     borderWidth: 1,
@@ -713,7 +713,7 @@ const styles = StyleSheet.create({
     justifyContent: "center", alignItems: "center",
   },
   scaleButtonActive: { backgroundColor: colors.cyan, borderColor: colors.cyan },
-  scaleText: { fontSize: 14, fontWeight: "600", color: colors.muted },
+  scaleText: { fontSize: 14, fontFamily: fonts.medium, color: colors.muted },
   scaleTextActive: { color: colors.bg },
 
   // No form
@@ -741,7 +741,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 8,
   },
-  primaryButtonText: { fontSize: 16, fontWeight: "700", color: colors.bg },
+  primaryButtonText: { fontSize: 16, fontFamily: fonts.bold, color: colors.bg },
   completeButton: {
     flex: 1,
     backgroundColor: colors.green,
@@ -749,7 +749,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: "center",
   },
-  completeButtonText: { fontSize: 16, fontWeight: "700", color: colors.bg },
+  completeButtonText: { fontSize: 16, fontFamily: fonts.bold, color: colors.bg },
   backButton: {
     borderWidth: 1,
     borderColor: colors.border,
@@ -758,7 +758,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     alignItems: "center",
   },
-  backButtonText: { fontSize: 14, fontWeight: "600", color: colors.muted },
+  backButtonText: { fontSize: 14, fontFamily: fonts.medium, color: colors.muted },
   actionsRow: { flexDirection: "row", gap: 12, marginTop: 8 },
 
   // Error
@@ -778,5 +778,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     marginTop: 16,
   },
-  retryButtonText: { fontSize: 15, fontWeight: "700", color: colors.bg },
+  retryButtonText: { fontSize: 15, fontFamily: fonts.bold, color: colors.bg },
 });

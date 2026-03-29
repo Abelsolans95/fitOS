@@ -12,14 +12,18 @@
     "lint": "eslint . --ext .ts,.tsx"
   },
   "dependencies": {
+    "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
     "@react-native-async-storage/async-storage": "2.1.2",
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/native": "^7.1.6",
     "@sentry/react-native": "^8.4.0",
     "@supabase/supabase-js": "^2.49.4",
     "expo": "~55.0.6",
+    "expo-app-loading": "^2.1.1",
+    "expo-font": "^55.0.4",
     "expo-image-picker": "~16.1.4",
     "expo-linear-gradient": "~55.0.9",
+    "expo-splash-screen": "^0.17.5",
     "expo-status-bar": "~55.0.4",
     "react": "19.2.0",
     "react-native": "0.83.2",

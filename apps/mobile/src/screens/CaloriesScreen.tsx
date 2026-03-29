@@ -13,7 +13,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path } from "react-native-svg";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
-import { colors, spacing, radius, shadows } from "../theme";
+import { colors, spacing, radius, shadows , fonts} from "../theme";
 
 interface FoodLogEntry {
   id: string;
@@ -301,19 +301,19 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     ...shadows.card,
   },
-  heroLabel: { fontSize: 10, fontWeight: "700", color: colors.dimmed, letterSpacing: 3, marginBottom: 8 },
-  heroKcal: { fontSize: 56, fontWeight: "900", color: colors.cyan, letterSpacing: -3 },
+  heroLabel: { fontSize: 10, fontFamily: fonts.bold, color: colors.dimmed, letterSpacing: 3, marginBottom: 8 },
+  heroKcal: { fontSize: 56, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.cyan, letterSpacing: -3 },
   heroUnit: { fontSize: 12, color: colors.muted, letterSpacing: 2, marginBottom: spacing.xl },
 
   // Macros
   macroGrid: { flexDirection: "row", width: "100%", justifyContent: "space-around" },
   macroCell: { alignItems: "center", gap: 6 },
   macroBar: { width: 3, height: 16, borderRadius: 2 },
-  macroValue: { fontSize: 16, fontWeight: "800" },
-  macroLabel: { fontSize: 9, fontWeight: "700", color: colors.dimmed, letterSpacing: 1.5 },
+  macroValue: { fontSize: 16, fontFamily: fonts.extraBold, letterSpacing: -0.5 },
+  macroLabel: { fontSize: 9, fontFamily: fonts.bold, color: colors.dimmed, letterSpacing: 1.5 },
 
   // Section
-  sectionLabel: { fontSize: 10, fontWeight: "700", color: colors.dimmed, letterSpacing: 2, marginBottom: spacing.md },
+  sectionLabel: { fontSize: 10, fontFamily: fonts.bold, color: colors.dimmed, letterSpacing: 2, marginBottom: spacing.md },
 
   // Pills
   pillScroll: { marginBottom: spacing.xl },
@@ -329,8 +329,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cyanDim,
     borderColor: colors.cyanGlow,
   },
-  pillText: { fontSize: 13, color: colors.muted, fontWeight: "500" },
-  pillTextActive: { color: colors.cyan, fontWeight: "700" },
+  pillText: { fontSize: 13, color: colors.muted, fontFamily: fonts.medium },
+  pillTextActive: { color: colors.cyan, fontFamily: fonts.bold },
 
   // Capture
   captureRow: { flexDirection: "row", gap: spacing.md, marginBottom: spacing.xxl },
@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: spacing.sm,
   },
-  captureMainText: { fontSize: 15, fontWeight: "800", color: colors.bg },
+  captureMainText: { fontSize: 15, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.bg },
   captureSecondary: {
     flex: 1,
     backgroundColor: colors.surface,
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingVertical: 18,
   },
-  captureSecondaryText: { fontSize: 14, fontWeight: "700", color: colors.white },
+  captureSecondaryText: { fontSize: 14, fontFamily: fonts.bold, color: colors.white },
 
   // Empty
   emptyState: {
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: spacing.md,
   },
-  emptyText: { fontSize: 14, fontWeight: "600", color: colors.muted },
+  emptyText: { fontSize: 14, fontFamily: fonts.medium, color: colors.muted },
   emptySubtext: { fontSize: 12, color: colors.dimmed, marginTop: 4 },
 
   // Log entries
@@ -403,12 +403,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  logTime: { fontSize: 10, fontWeight: "700", color: colors.dimmed, letterSpacing: 0.5 },
-  logMealType: { fontSize: 14, fontWeight: "700", color: colors.white },
+  logTime: { fontSize: 10, fontFamily: fonts.bold, color: colors.dimmed, letterSpacing: 0.5 },
+  logMealType: { fontSize: 14, fontFamily: fonts.bold, color: colors.white },
   logMacroRow: { flexDirection: "row", gap: 8, marginTop: 3 },
-  logMacro: { fontSize: 11, fontWeight: "600" },
+  logMacro: { fontSize: 11, fontFamily: fonts.medium },
   logRight: { alignItems: "flex-end" },
-  logKcal: { fontSize: 20, fontWeight: "800", color: colors.white },
+  logKcal: { fontSize: 20, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white },
   logKcalUnit: { fontSize: 10, color: colors.dimmed, letterSpacing: 1 },
   aiBadge: {
     backgroundColor: colors.violetDim,
@@ -417,5 +417,5 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginTop: 4,
   },
-  aiBadgeText: { fontSize: 9, fontWeight: "700", color: colors.violet, letterSpacing: 1 },
+  aiBadgeText: { fontSize: 9, fontFamily: fonts.bold, color: colors.violet, letterSpacing: 1 },
 });

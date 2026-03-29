@@ -173,7 +173,7 @@ export function AppSidebar({ items, defaultHref }: AppSidebarProps) {
                   {!collapsed && (
                     <div
                       className="overflow-hidden transition-all duration-200 ease-in-out"
-                      style={{ maxHeight: isOpen ? `${item.children!.length * 44}px` : "0px", opacity: isOpen ? 1 : 0 }}
+                      style={{ maxHeight: isOpen ? `${item.children!.length * 60}px` : "0px", opacity: isOpen ? 1 : 0 }}
                     >
                       <div className="ml-5 mt-1 border-l border-white/[0.06] flex flex-col gap-0.5 pl-3 pb-1">
                         {item.children!.map((child) => {

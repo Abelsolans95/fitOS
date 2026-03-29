@@ -13,7 +13,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path } from "react-native-svg";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
-import { colors, spacing, radius, shadows } from "../theme";
+import { colors, spacing, radius, shadows , fonts} from "../theme";
 
 interface BodyMetric {
   id: string;
@@ -288,10 +288,10 @@ const styles = StyleSheet.create({
 
   // Header
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.xxl },
-  title: { fontSize: 28, fontWeight: "900", color: colors.white, letterSpacing: -0.5 },
+  title: { fontSize: 28, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white, letterSpacing: -0.5 },
   addButton: { borderRadius: radius.md, overflow: "hidden", ...shadows.glow(colors.cyan) },
   addButtonGradient: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 10 },
-  addButtonText: { fontSize: 14, fontWeight: "800", color: colors.bg },
+  addButtonText: { fontSize: 14, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.bg },
 
   // Stats bento
   statsGrid: { flexDirection: "row", gap: spacing.md, marginBottom: spacing.xxl },
@@ -302,15 +302,15 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.border, padding: spacing.lg,
     ...shadows.subtle,
   },
-  statLabel: { fontSize: 9, fontWeight: "700", color: colors.dimmed, letterSpacing: 2, marginBottom: 8 },
-  statValue: { fontSize: 36, fontWeight: "900", color: colors.white, letterSpacing: -1 },
-  statUnit: { fontSize: 14, color: colors.muted, fontWeight: "600", marginTop: -2 },
-  statValueSmall: { fontSize: 22, fontWeight: "800" },
+  statLabel: { fontSize: 9, fontFamily: fonts.bold, color: colors.dimmed, letterSpacing: 2, marginBottom: 8 },
+  statValue: { fontSize: 36, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white, letterSpacing: -1 },
+  statUnit: { fontSize: 14, color: colors.muted, fontFamily: fonts.medium, marginTop: -2 },
+  statValueSmall: { fontSize: 22, fontFamily: fonts.extraBold, letterSpacing: -0.5 },
   trendBadge: {
     alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 4,
     borderRadius: 6, marginTop: 8,
   },
-  trendText: { fontSize: 12, fontWeight: "700" },
+  trendText: { fontSize: 12, fontFamily: fonts.bold },
 
   // Form
   formCard: {
@@ -319,10 +319,10 @@ const styles = StyleSheet.create({
     padding: spacing.xl, marginBottom: spacing.xxl,
     ...shadows.card,
   },
-  formTitle: { fontSize: 16, fontWeight: "700", color: colors.white, marginBottom: spacing.md },
+  formTitle: { fontSize: 16, fontFamily: fonts.bold, color: colors.white, marginBottom: spacing.md },
   formRow: { flexDirection: "row", gap: spacing.sm },
   formField: { flex: 1 },
-  formLabel: { fontSize: 9, fontWeight: "700", color: colors.dimmed, letterSpacing: 1.5, marginBottom: 4 },
+  formLabel: { fontSize: 9, fontFamily: fonts.bold, color: colors.dimmed, letterSpacing: 1.5, marginBottom: 4 },
   formInput: {
     backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border,
     borderRadius: radius.sm, paddingHorizontal: 12, paddingVertical: 11,
@@ -330,10 +330,10 @@ const styles = StyleSheet.create({
   },
   saveButton: { borderRadius: radius.md, overflow: "hidden", marginTop: spacing.md },
   saveGradient: { paddingVertical: 14, alignItems: "center" },
-  saveButtonText: { fontSize: 15, fontWeight: "800", color: colors.bg },
+  saveButtonText: { fontSize: 15, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.bg },
 
   // Section
-  sectionLabel: { fontSize: 10, fontWeight: "700", color: colors.dimmed, letterSpacing: 2, marginBottom: spacing.md },
+  sectionLabel: { fontSize: 10, fontFamily: fonts.bold, color: colors.dimmed, letterSpacing: 2, marginBottom: spacing.md },
   emptyState: { alignItems: "center", paddingVertical: 30 },
   emptyText: { color: colors.muted, fontSize: 14 },
 
@@ -351,12 +351,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceHover,
     alignItems: "center", justifyContent: "center",
   },
-  historyDay: { fontSize: 16, fontWeight: "800", color: colors.white, lineHeight: 18 },
-  historyMonth: { fontSize: 8, fontWeight: "700", color: colors.dimmed, letterSpacing: 1 },
+  historyDay: { fontSize: 16, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white, lineHeight: 18 },
+  historyMonth: { fontSize: 8, fontFamily: fonts.bold, color: colors.dimmed, letterSpacing: 1 },
   historyRight: { flex: 1, justifyContent: "center" },
   historyValues: { flexDirection: "row", gap: 14 },
   historyMetric: { flexDirection: "row", alignItems: "center", gap: 4 },
   historyDot: { width: 4, height: 4, borderRadius: 2 },
-  historyValue: { fontSize: 14, fontWeight: "700" },
+  historyValue: { fontSize: 14, fontFamily: fonts.bold },
   historyNotes: { fontSize: 11, color: colors.dimmed, marginTop: 6, fontStyle: "italic" },
 });

@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "../lib/supabase";
-import { colors, spacing, radius, shadows } from "../theme";
+import { colors, spacing, radius, shadows , fonts} from "../theme";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   },
   logo: {
     fontSize: 56,
-    fontWeight: "900",
+    fontFamily: fonts.extraBold, letterSpacing: -0.5,
     color: colors.white,
     letterSpacing: -3,
   },
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
   },
   tagline: {
     fontSize: 10,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: colors.dimmed,
     letterSpacing: 4,
   },
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   },
   formTitle: {
     fontSize: 18,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: colors.white,
     marginBottom: spacing.xs,
   },
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 10,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: colors.dimmed,
     letterSpacing: 2,
   },
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 16,
-    fontWeight: "800",
+    fontFamily: fonts.extraBold, letterSpacing: -0.5,
     color: colors.bg,
     letterSpacing: 0.5,
   },

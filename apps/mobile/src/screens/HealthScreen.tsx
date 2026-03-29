@@ -14,7 +14,7 @@ import {
 import Svg, { Path, Text as SvgText, Defs, G, Line, Filter, FeGaussianBlur, FeColorMatrix, FeMerge, FeMergeNode } from "react-native-svg";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
-import { colors, spacing, radius, shadows } from "../theme";
+import { colors, spacing, radius, shadows , fonts} from "../theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -282,7 +282,7 @@ function ReportModal({
                         modalStyles.painBtnText,
                         painScore === n && {
                           color: n >= 6 ? colors.red : colors.orange,
-                          fontWeight: "900",
+                          fontFamily: fonts.extraBold, letterSpacing: -0.5,
                         },
                       ]}
                     >
@@ -728,7 +728,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: "900",
+    fontFamily: fonts.extraBold, letterSpacing: -0.5,
     color: colors.white,
     letterSpacing: -1,
   },
@@ -758,7 +758,7 @@ const styles = StyleSheet.create({
   },
   toggleBtnText: {
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: colors.muted,
     letterSpacing: 1,
   },
@@ -807,12 +807,12 @@ const styles = StyleSheet.create({
   },
   activeBadgeText: {
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: colors.red,
   },
   sectionTitle: {
     fontSize: 10,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: colors.dimmed,
     letterSpacing: 2,
     marginBottom: spacing.md,
@@ -829,7 +829,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: fonts.medium,
     color: colors.white,
   },
   emptySubtitle: {
@@ -851,12 +851,12 @@ const styles = StyleSheet.create({
   },
   logMuscle: {
     fontSize: 14,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: colors.white,
   },
   logPainScore: {
     fontSize: 18,
-    fontWeight: "900",
+    fontFamily: fonts.extraBold, letterSpacing: -0.5,
   },
   statusBadge: {
     borderRadius: radius.pill,
@@ -865,7 +865,7 @@ const styles = StyleSheet.create({
   },
   statusBadgeText: {
     fontSize: 10,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
   },
   logMeta: {
     marginTop: spacing.xs,
@@ -910,7 +910,7 @@ const modalStyles = StyleSheet.create({
   },
   muscleTitle: {
     fontSize: 16,
-    fontWeight: "800",
+    fontFamily: fonts.extraBold, letterSpacing: -0.5,
     color: colors.white,
   },
   muscleSubtitle: {
@@ -919,7 +919,7 @@ const modalStyles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 10,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: colors.dimmed,
     letterSpacing: 2,
     marginBottom: spacing.sm,
@@ -947,12 +947,12 @@ const modalStyles = StyleSheet.create({
   },
   painBtnText: {
     fontSize: 12,
-    fontWeight: "600",
+    fontFamily: fonts.medium,
     color: colors.muted,
   },
   painValue: {
     fontSize: 32,
-    fontWeight: "900",
+    fontFamily: fonts.extraBold, letterSpacing: -0.5,
     letterSpacing: -1,
     minWidth: 40,
     textAlign: "center",
@@ -975,7 +975,7 @@ const modalStyles = StyleSheet.create({
   },
   optionBtnText: {
     fontSize: 11,
-    fontWeight: "600",
+    fontFamily: fonts.medium,
     color: colors.muted,
   },
   optionBtnTextActive: {
@@ -1008,7 +1008,7 @@ const modalStyles = StyleSheet.create({
   },
   cancelBtnText: {
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: fonts.medium,
     color: colors.muted,
   },
   saveBtn: {
@@ -1020,7 +1020,7 @@ const modalStyles = StyleSheet.create({
   },
   saveBtnText: {
     fontSize: 14,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: colors.bg,
   },
 });

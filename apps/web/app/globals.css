@@ -145,6 +145,18 @@
                 0 0 60px rgba(124, 58, 237, 0.05);
   }
 
+  /* Typography Overrides */
+  h1, h2, h3, h4, h5, h6, [data-slot="card-title"] {
+    font-family: var(--font-jakarta) !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em !important;
+  }
+
+  button, [role="button"], [data-slot="button"] {
+    font-family: var(--font-jakarta) !important;
+    font-weight: 500 !important;
+  }
+
   .dot-grid {
     background-image: radial-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px);
     background-size: 26px 26px;

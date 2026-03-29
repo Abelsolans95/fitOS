@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { createClient } from "@/lib/supabase";
 
 interface BodyMetric {
@@ -301,90 +302,94 @@ export default function ProgressPage() {
             </p>
           </div>
         ) : (
-          <div className="relative h-48">
-            {/* Simple SVG line chart */}
-            <svg viewBox={`0 0 ${chartData.length * 60} 200`} className="h-full w-full" preserveAspectRatio="none">
-              {/* Grid lines */}
-              {[0, 0.25, 0.5, 0.75, 1].map((pct) => (
-                <line
-                  key={pct}
-                  x1="0"
-                  y1={200 - pct * 180 - 10}
-                  x2={chartData.length * 60}
-                  y2={200 - pct * 180 - 10}
-                  stroke="rgba(255,255,255,0.04)"
-                  strokeWidth="1"
+          <div className="relative h-[300px] w-full pt-6">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="splitColor" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={selectedConfig.color} stopOpacity={0.4} />
+                    <stop offset="95%" stopColor={selectedConfig.color} stopOpacity={0} />
+                  </linearGradient>
+                  {/* Neon glow filter for lines */}
+                  <filter id="neonGlow">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                    <feMerge>
+                      <feMergeNode in="coloredBlur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                </defs>
+                <CartesianGrid 
+                  strokeDasharray="4 4" 
+                  vertical={false} 
+                  stroke="currentColor" 
+                  className="stroke-white/5" 
                 />
-              ))}
-              {/* Area gradient */}
-              <defs>
-                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={selectedConfig.color} stopOpacity="0.2" />
-                  <stop offset="100%" stopColor={selectedConfig.color} stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              {/* Area */}
-              <path
-                d={
-                  chartData
-                    .map((d, i) => {
-                      const x = i * 60 + 30;
-                      const y = 190 - ((d.value - chartMin) / chartRange) * 180;
-                      return `${i === 0 ? "M" : "L"} ${x} ${y}`;
-                    })
-                    .join(" ") +
-                  ` L ${(chartData.length - 1) * 60 + 30} 190 L 30 190 Z`
-                }
-                fill="url(#areaGrad)"
-              />
-              {/* Line */}
-              <polyline
-                points={chartData
-                  .map((d, i) => {
-                    const x = i * 60 + 30;
-                    const y = 190 - ((d.value - chartMin) / chartRange) * 180;
-                    return `${x},${y}`;
-                  })
-                  .join(" ")}
-                fill="none"
-                stroke={selectedConfig.color}
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              {/* Dots */}
-              {chartData.map((d, i) => {
-                const x = i * 60 + 30;
-                const y = 190 - ((d.value - chartMin) / chartRange) * 180;
-                return (
-                  <circle
-                    key={i}
-                    cx={x}
-                    cy={y}
-                    r="4"
-                    fill={selectedConfig.color}
-                    stroke="#12121A"
-                    strokeWidth="2"
-                  />
-                );
-              })}
-            </svg>
-            {/* X-axis labels */}
-            <div className="mt-2 flex justify-between px-4">
-              {chartData.length <= 10
-                ? chartData.map((d, i) => (
-                    <span key={i} className="text-[10px] text-[#8B8BA3]/60">
-                      {d.date}
-                    </span>
-                  ))
-                : [chartData[0], chartData[Math.floor(chartData.length / 2)], chartData[chartData.length - 1]].map(
-                    (d, i) => (
-                      <span key={i} className="text-[10px] text-[#8B8BA3]/60">
-                        {d.date}
-                      </span>
-                    )
-                  )}
-            </div>
+                <XAxis 
+                  dataKey="date" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: "#8B8BA3", fontSize: 11, fontWeight: 500 }}
+                  dy={10}
+                />
+                <YAxis
+                  domain={["auto", "auto"]}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#8B8BA3", fontSize: 11, fontWeight: 500 }}
+                  dx={-10}
+                  tickFormatter={(val) => `${val}`}
+                />
+                <Tooltip
+                  cursor={{ stroke: selectedConfig.color, strokeWidth: 1, strokeDasharray: "4 4", opacity: 0.4 }}
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const value = payload[0].value;
+                      return (
+                        <div className="rounded-xl border border-white/10 bg-[#0A0A0F]/90 p-4 shadow-2xl backdrop-blur-xl transition-all">
+                          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#8B8BA3]">{label}</p>
+                          <div className="flex items-baseline gap-1">
+                            <span 
+                              className="text-2xl font-bold" 
+                              style={{ color: selectedConfig.color, textShadow: `0 0 16px ${selectedConfig.color}60` }}
+                            >
+                              {value}
+                            </span>
+                            <span className="text-xs font-medium text-[#8B8BA3] uppercase">{selectedConfig.unit}</span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke={selectedConfig.color}
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#splitColor)"
+                  animationDuration={1500}
+                  animationEasing="ease-out"
+                  filter="url(#neonGlow)"
+                  activeDot={{
+                    r: 6,
+                    fill: "#0E0E18",
+                    stroke: selectedConfig.color,
+                    strokeWidth: 3,
+                    style: { filter: `drop-shadow(0 0 8px ${selectedConfig.color}90)` }
+                  } as any}
+                  dot={{
+                    r: 4,
+                    fill: "#0A0A0F",
+                    stroke: selectedConfig.color,
+                    strokeWidth: 2,
+                    strokeOpacity: 0.8
+                  } as any}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         )}
       </div>

@@ -12,7 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Circle, Path } from "react-native-svg";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
-import { colors, spacing, radius, shadows } from "../theme";
+import { colors, spacing, radius, shadows , fonts} from "../theme";
 import { updateWidget } from "../lib/widget-sync";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   greeting: { fontSize: 13, color: colors.muted, letterSpacing: 0.3 },
-  name: { fontSize: 28, fontWeight: "900", color: colors.white, letterSpacing: -0.5, marginTop: 2 },
+  name: { fontSize: 28, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white, letterSpacing: -0.5, marginTop: 2 },
   avatarContainer: { ...shadows.glow(colors.cyan) },
   avatarGradient: {
     width: 44,
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarText: { fontSize: 18, fontWeight: "800", color: colors.bg },
+  avatarText: { fontSize: 18, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.bg },
 
   // Bento Grid
   bentoRow: {
@@ -352,14 +352,14 @@ const styles = StyleSheet.create({
   },
   bentoCardLabel: {
     fontSize: 10,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: colors.dimmed,
     letterSpacing: 2,
     marginBottom: spacing.lg,
   },
 
   // Calorie ring
-  ringNumber: { fontSize: 26, fontWeight: "900", color: colors.white, letterSpacing: -1 },
+  ringNumber: { fontSize: 26, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white, letterSpacing: -1 },
   ringUnit: { fontSize: 10, color: colors.muted, marginTop: -2, letterSpacing: 1 },
 
   // Kcal meta
@@ -370,20 +370,20 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
   kcalMetaItem: { alignItems: "center" },
-  kcalMetaValue: { fontSize: 16, fontWeight: "800", color: colors.white },
+  kcalMetaValue: { fontSize: 16, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white },
   kcalMetaLabel: { fontSize: 9, color: colors.dimmed, letterSpacing: 1, marginTop: 2 },
   kcalMetaDivider: { width: 1, height: 24, backgroundColor: colors.border },
 
   // Status cards
   statusIndicator: { width: 6, height: 6, borderRadius: 3, marginBottom: spacing.sm },
-  bentoSmallLabel: { fontSize: 9, fontWeight: "700", color: colors.dimmed, letterSpacing: 1.5, marginBottom: 4 },
-  bentoSmallValue: { fontSize: 18, fontWeight: "800", color: colors.white },
-  bentoSmallUnit: { fontSize: 12, fontWeight: "600" },
+  bentoSmallLabel: { fontSize: 9, fontFamily: fonts.bold, color: colors.dimmed, letterSpacing: 1.5, marginBottom: 4 },
+  bentoSmallValue: { fontSize: 18, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white },
+  bentoSmallUnit: { fontSize: 12, fontFamily: fonts.medium },
 
   // Section
   sectionTitle: {
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: colors.dimmed,
     letterSpacing: 2,
     marginBottom: spacing.md,
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
   },
   actionLabel: {
     fontSize: 13,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: colors.white,
     lineHeight: 18,
   },

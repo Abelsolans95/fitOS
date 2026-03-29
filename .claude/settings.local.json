@@ -18,7 +18,8 @@
       "mcp__context7__resolve-library-id",
       "mcp__context7__query-docs",
       "mcp__supabase-mcp-server__execute_sql",
-      "mcp__supabase-mcp-server__list_projects"
+      "mcp__supabase-mcp-server__list_projects",
+      "mcp__supabase-mcp-server__apply_migration"
     ]
   }
 }

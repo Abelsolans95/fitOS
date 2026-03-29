@@ -129,7 +129,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${syne.variable} ${inter.variable} ${jakarta.variable} font-[family-name:var(--font-syne)] antialiased overflow-x-hidden`}
+        className={`${syne.variable} ${inter.variable} ${jakarta.variable} font-[family-name:var(--font-jakarta)] antialiased overflow-x-hidden`}
       >
         {children}
         <Toaster theme="dark" position="bottom-right" richColors />
