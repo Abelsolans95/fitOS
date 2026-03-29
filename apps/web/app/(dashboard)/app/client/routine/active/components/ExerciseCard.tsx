@@ -1,4 +1,4 @@
-import type { ExerciseData, SetEntry, PreviousSet } from "../types";
+import type { ExerciseData, SetEntry, SetConfig, PreviousSet } from "../types";
 import { formatTime } from "../types";
 
 interface ExerciseCardProps {
@@ -12,10 +12,11 @@ interface ExerciseCardProps {
   isLastExercise: boolean;
   isSaved: boolean;
   elapsed: number;
+  week: number;
   onCompleteSet: (setIdx: number) => void;
   onSetValueChange: (
     setIdx: number,
-    field: "weight_kg" | "reps_done",
+    field: "weight_kg" | "reps_done" | "rir",
     value: string
   ) => void;
   onNext: () => void;
@@ -34,6 +35,7 @@ export function ExerciseCard({
   isLastExercise,
   isSaved,
   elapsed,
+  week,
   onCompleteSet,
   onSetValueChange,
   onNext,
@@ -43,11 +45,32 @@ export function ExerciseCard({
   const scheme =
     exercise.scheme ||
     `${exercise.sets}x${exercise.reps_min}${exercise.reps_max !== exercise.reps_min ? `-${exercise.reps_max}` : ""}`;
-  const notes =
+
+  // Resolve week-aware trainer config per set
+  const wk = exercise.weekly_config?.[week];
+  const weekNotes = wk?.coach_notes || "";
+  const baseNotes =
     exercise.coach_notes ||
     exercise.trainer_notes ||
     exercise.technique_notes ||
     "";
+  const notes = weekNotes || baseNotes;
+
+  const getTrainerConfig = (setIdx: number): SetConfig => {
+    const isDifferent = exercise.mode === "different";
+    if (isDifferent) {
+      const detail = wk?.sets_detail ?? exercise.sets_config ?? [];
+      if (detail[setIdx]) return detail[setIdx];
+    }
+    // Equal mode or fallback
+    return {
+      reps_min: wk?.reps_min ?? exercise.reps_min,
+      reps_max: wk?.reps_max ?? exercise.reps_max,
+      rir: wk?.rir ?? exercise.rir,
+      target_weight: wk?.target_weight ?? exercise.target_weight ?? null,
+      rest_s: wk?.rest_s ?? exercise.rest_s,
+    };
+  };
 
   return (
     <div className="mx-auto max-w-lg space-y-5 px-4 py-4">
@@ -107,11 +130,6 @@ export function ExerciseCard({
             <span className="rounded-lg bg-[#00E5FF]/10 px-3 py-1 text-xs font-bold text-[#00E5FF]">
               {scheme}
             </span>
-            {exercise.rir > 0 && (
-              <span className="text-[10px] text-[#8B8BA3]">
-                RIR {exercise.rir}
-              </span>
-            )}
           </div>
         </div>
 
@@ -179,7 +197,7 @@ export function ExerciseCard({
       {/* Sets */}
       <div className="space-y-2">
         {/* Header */}
-        <div className="grid grid-cols-[3rem_1fr_1fr_3rem] gap-2 px-1">
+        <div className="grid grid-cols-[3rem_1fr_1fr_3.5rem_3rem] gap-2 px-1">
           <span className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-[#5A5A72]">
             Serie
           </span>
@@ -189,6 +207,9 @@ export function ExerciseCard({
           <span className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-[#5A5A72]">
             Reps
           </span>
+          <span className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-[#5A5A72]">
+            RIR
+          </span>
           <span />
         </div>
 
@@ -196,11 +217,12 @@ export function ExerciseCard({
           const prevSet = previousSets[setIdx];
           const isCurrent = setIdx === currentSetIdx;
           const isRP = setIdx >= (exercise.sets || 3);
+          const cfg = getTrainerConfig(setIdx);
 
           return (
             <div
               key={setIdx}
-              className={`grid grid-cols-[3rem_1fr_1fr_3rem] gap-2 rounded-xl px-1 py-1 transition-all ${
+              className={`grid grid-cols-[3rem_1fr_1fr_3.5rem_3rem] gap-2 rounded-xl px-1 py-1 transition-all ${
                 set.completed
                   ? "opacity-50"
                   : isCurrent
@@ -231,7 +253,11 @@ export function ExerciseCard({
                   onSetValueChange(setIdx, "weight_kg", e.target.value)
                 }
                 disabled={set.completed}
-                placeholder={prevSet ? String(prevSet.weight_kg) : "0"}
+                placeholder={
+                  prevSet ? String(prevSet.weight_kg)
+                    : cfg.target_weight ? String(cfg.target_weight)
+                    : "0"
+                }
                 className="h-11 w-full rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 text-center text-base font-semibold tabular-nums text-white placeholder:text-[#5A5A72]/40 outline-none transition-colors focus:border-[#00E5FF]/50 disabled:opacity-40"
               />
 
@@ -245,11 +271,27 @@ export function ExerciseCard({
                 }
                 disabled={set.completed}
                 placeholder={
-                  prevSet
-                    ? String(prevSet.reps_done)
-                    : `${exercise.reps_min || 0}`
+                  prevSet ? String(prevSet.reps_done)
+                    : cfg.reps_min === cfg.reps_max
+                      ? String(cfg.reps_min)
+                      : `${cfg.reps_min}-${cfg.reps_max}`
                 }
                 className="h-11 w-full rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 text-center text-base font-semibold tabular-nums text-white placeholder:text-[#5A5A72]/40 outline-none transition-colors focus:border-[#00E5FF]/50 disabled:opacity-40"
+              />
+
+              {/* RIR */}
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={10}
+                value={set.rir}
+                onChange={(e) =>
+                  onSetValueChange(setIdx, "rir", e.target.value)
+                }
+                disabled={set.completed}
+                placeholder={String(cfg.rir)}
+                className="h-11 w-full rounded-lg border border-white/[0.08] bg-white/[0.02] px-1 text-center text-base font-semibold tabular-nums text-white placeholder:text-[#5A5A72]/40 outline-none transition-colors focus:border-[#00E5FF]/50 disabled:opacity-40"
               />
 
               {/* Complete set button */}

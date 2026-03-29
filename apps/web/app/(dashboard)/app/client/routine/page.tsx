@@ -8,6 +8,25 @@ import { toast } from "sonner";
    Types
    ──────────────────────────────────────────── */
 
+interface SetConfig {
+  reps_min: number;
+  reps_max: number;
+  rir: number;
+  target_weight: number | null;
+  rest_s: number;
+}
+
+interface WeekConfig {
+  sets: number;
+  reps_min: number;
+  reps_max: number;
+  rir: number;
+  target_weight: number | null;
+  rest_s: number;
+  sets_detail?: SetConfig[];
+  coach_notes?: string;
+}
+
 interface ExerciseData {
   exercise_id: string;
   name: string;
@@ -29,6 +48,9 @@ interface ExerciseData {
   video_url?: string;
   order?: number;
   week_of_month?: number;
+  mode?: "equal" | "different";
+  sets_config?: SetConfig[];
+  weekly_config?: Record<number, WeekConfig>;
 }
 
 interface DayData {
@@ -41,6 +63,7 @@ interface RoutineRaw {
   id: string;
   title: string;
   duration_months: number;
+  total_weeks?: number;
   goal: string;
   exercises?: ExerciseData[];
   days?: DayData[];
@@ -610,7 +633,9 @@ export default function ClientRoutinePage() {
   };
 
   // Week count
-  const weekCount = routine ? Math.max(1, (routine.duration_months || 1) * 4) : 0;
+  const weekCount = routine
+    ? (routine.total_weeks ?? Math.max(1, (routine.duration_months || 1) * 4))
+    : 0;
 
   if (loading) {
     return (
@@ -983,12 +1008,59 @@ export default function ClientRoutinePage() {
         <>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {dayExercises.map((ex, idx) => {
-              const scheme =
-                ex.scheme || `${ex.sets}x${ex.reps_min}-${ex.reps_max}`;
+              // Resolve effective config for the active week
+              const wk = ex.weekly_config?.[activeWeek];
+              const effectiveMode = ex.mode ?? "equal";
+              const effectiveSets = wk?.sets ?? ex.sets;
               const prevStr = formatPrevious(ex.name);
-              const notes =
+              const weekNotes = wk?.coach_notes || "";
+              const baseNotes =
                 ex.coach_notes || ex.trainer_notes || ex.technique_notes || "";
+              const notes = weekNotes || baseNotes;
               const progressionRule = ex.progression_rule || "";
+
+              // Build per-set rows
+              let setRows: { idx: number; repsMin: number; repsMax: number; rir: number; weight: number | null; rest: number }[] = [];
+
+              if (effectiveMode === "different") {
+                // Different mode: use sets_detail from weekly_config or base sets_config
+                const detail = wk?.sets_detail ?? ex.sets_config ?? [];
+                setRows = detail.map((s, i) => ({
+                  idx: i + 1,
+                  repsMin: s.reps_min,
+                  repsMax: s.reps_max,
+                  rir: s.rir,
+                  weight: s.target_weight,
+                  rest: s.rest_s,
+                }));
+              } else {
+                // Equal mode: all sets share the same values
+                const rMin = wk?.reps_min ?? ex.reps_min;
+                const rMax = wk?.reps_max ?? ex.reps_max;
+                const rir = wk?.rir ?? ex.rir;
+                const weight = wk?.target_weight ?? ex.target_weight ?? ex.weight_kg ?? null;
+                const rest = wk?.rest_s ?? ex.rest_s;
+                setRows = Array.from({ length: effectiveSets }, (_, i) => ({
+                  idx: i + 1,
+                  repsMin: rMin,
+                  repsMax: rMax,
+                  rir,
+                  weight,
+                  rest,
+                }));
+              }
+
+              // Scheme label
+              const scheme = setRows.length > 0
+                ? (() => {
+                    const allReps = setRows.flatMap(s => [s.repsMin, s.repsMax]);
+                    const minR = Math.min(...allReps);
+                    const maxR = Math.max(...allReps);
+                    return minR === maxR
+                      ? `${setRows.length}x${minR}`
+                      : `${setRows.length}x${minR}-${maxR}`;
+                  })()
+                : (ex.scheme || `${ex.sets}x${ex.reps_min}-${ex.reps_max}`);
 
               return (
                 <div
@@ -1009,19 +1081,36 @@ export default function ClientRoutinePage() {
                     </span>
                   </div>
 
-                  {/* Meta */}
-                  <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-[#5A5A72]">
-                    <span>RIR {ex.rir}</span>
-                    {(ex.target_weight || ex.weight_kg) ? (
-                      <span>{ex.target_weight || ex.weight_kg}kg</span>
-                    ) : null}
-                    <span>{ex.rest_s}s</span>
-                    {prevStr && (
-                      <span className="text-[#8B8BA3]">
-                        Ant: {prevStr}
-                      </span>
-                    )}
+                  {/* Per-set breakdown */}
+                  <div className="mt-1.5 space-y-0.5">
+                    {setRows.map((s) => (
+                      <div
+                        key={s.idx}
+                        className="flex items-center gap-x-2 text-[10px] text-[#5A5A72]"
+                      >
+                        <span className="w-[26px] shrink-0 text-[9px] font-bold text-[#8B8BA3]">
+                          S{s.idx}
+                        </span>
+                        <span>
+                          {s.repsMin === s.repsMax
+                            ? `${s.repsMin} reps`
+                            : `${s.repsMin}-${s.repsMax} reps`}
+                        </span>
+                        <span>RIR {s.rir}</span>
+                        {s.weight != null && s.weight > 0 && (
+                          <span>{s.weight}kg</span>
+                        )}
+                        <span>{s.rest}s</span>
+                      </div>
+                    ))}
                   </div>
+
+                  {/* Previous session */}
+                  {prevStr && (
+                    <div className="mt-1 text-[10px] text-[#8B8BA3]">
+                      Ant: {prevStr}
+                    </div>
+                  )}
 
                   {/* Notes */}
                   {(notes || progressionRule) && (

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase";
+import { toast } from "sonner";
 import { Message } from "./types";
 
 export function TabChat({
@@ -24,24 +25,32 @@ export function TabChat({
     const supabase = createClient();
 
     const load = async () => {
-      const { data } = await supabase
+      const { data, error: msgsError } = await supabase
         .from("messages")
         .select("*")
         .eq("trainer_id", trainerId)
         .eq("client_id", clientId)
         .order("created_at", { ascending: true })
         .limit(100);
+      if (msgsError) {
+        toast.error("Error al cargar los mensajes");
+        console.error("[TabChat] Error cargando mensajes:", msgsError);
+      }
       setMessages((data as Message[]) ?? []);
       setLoading(false);
 
       // Mark client messages as read
-      await supabase
+      const { error: markError } = await supabase
         .from("messages")
         .update({ read_at: new Date().toISOString() })
         .eq("trainer_id", trainerId)
         .eq("client_id", clientId)
         .eq("sender_id", clientId)
         .is("read_at", null);
+      if (markError) {
+        console.error("[TabChat] Error marcando mensajes como leídos:", markError);
+        // No bloqueante
+      }
     };
 
     load();

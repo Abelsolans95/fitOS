@@ -1,6 +1,6 @@
 # FitOS — Estado del Desarrollo
 
-> Documento actualizado el 24/03/2026 (Chat interno + Calendario de citas + Widget iOS/Android + Refactorización entrenamiento activo y nutrición: useReducer pattern + Tests API routes). Léelo de arriba abajo antes de tocar cualquier archivo.
+> Documento actualizado el 29/03/2026 (Menús guardados + DarkSelect + navegación semanal mejorada). Léelo de arriba abajo antes de tocar cualquier archivo.
 > Cualquier agente o desarrollador debe leer este archivo **primero** para entender el estado actual del proyecto.
 >
 > **IMPORTANTE:** Al terminar cualquier desarrollo, bugfix o cambio significativo, actualiza este archivo (`desarrollo.md`) **y** `CLAUDE.md` antes de cerrar la sesión. Refleja los archivos nuevos o modificados, añade notas para el siguiente agente/desarrollador y actualiza la sección de próximos pasos. El objetivo es que cualquier persona o agente pueda continuar el proyecto sin contexto previo.
@@ -106,6 +106,89 @@
 - [ ] En Xcode: añadir target Widget Extension, copiar Swift generado, configurar App Group
 - [ ] Implementar módulo nativo para escribir a App Group UserDefaults desde React Native
 
+### Fase 4 — Sistema de Lesiones/Molestias (26/03/2026)
+- [x] Migración 031: tabla `health_logs` con `muscle_id`, `pain_score`, `incident_type`, `status`, `reported_by` — RLS + Realtime
+- [x] Componente SVG interactivo `AnatomyMap.tsx` (web) — vista frontal (17 regiones) + posterior (15 regiones)
+- [x] Componente `HealthReportForm.tsx` (web) — formulario compartido: dolor 1-10, tipo incidencia, estado, notas
+- [x] Web trainer: tab "Salud" en detalle de cliente (`TabSalud.tsx`) — mapa + incidencias activas + historial
+- [x] Web cliente: `/app/client/health/page.tsx` — "Mi Salud" con mapa + reportar + timeline
+- [x] ClientSidebar: item "Salud" añadido (entre Progreso y Citas)
+- [x] Mobile: `HealthScreen.tsx` — SVG interactivo con `react-native-svg`, modal de reporte, lista de incidencias
+- [x] Mobile: tab "Salud" añadido en `App.tsx` (8 tabs en bottom nav)
+- [x] Realtime habilitado — lo que marca el cliente aparece al entrenador y viceversa
+
+**Funcionalidad:**
+- Mapa del cuerpo con código de colores: gris (sin molestias), naranja (dolor 1-5), rojo (dolor 6-10)
+- Click en músculo → formulario: nivel de dolor, tipo (puntual/diagnosticada/crónica), estado (activa/recuperando/recuperada), notas
+- Registra quién creó el reporte (coach o client)
+- Timeline con historial completo ordenado por fecha
+- Si ya existe molestia activa en un músculo, al clickarlo se abre en modo edición
+
+### Fase 5 — Plantillas de Rutina (26/03/2026)
+- [x] Migración 032: tabla `routine_templates` con `trainer_id`, `name`, `training_days`, `day_labels`, `exercises` (JSONB sin weight/RIR), `total_weeks`, `goal` — RLS trainer full CRUD
+- [x] Tipos `RoutineTemplate`, `TemplateExercise`, `TemplateSetConfig`, `TemplateWeekConfig` en `types.ts`
+- [x] Estado y acciones en `useRoutinesPage.ts`: `templates`, `crSelectedTemplateId`, `crShowTemplateModal`, `crSavingTemplate` + acciones LOAD_TEMPLATES, CR_SELECT_TEMPLATE, CR_APPLY_TEMPLATE, CR_SHOW_TEMPLATE_MODAL + `handleSaveTemplate()`
+- [x] Step 1: dropdown "Cargar plantilla" (violeta) que aplica goal, semanas, días y labels
+- [x] Step 2: dropdown de labels de la plantilla por día (en vez de solo input libre)
+- [x] Step 3: botón "Guardar plantilla" (violeta) junto a "Enviar al cliente" → modal para nombrar
+- [x] `INIT_TRAINING_DAYS` carga ejercicios de la plantilla mapeando por `day_of_week` + `day_label`
+- [x] El trainer puede modificar ejercicios libremente y re-guardar como nueva plantilla
+
+**Flujo:**
+1. Trainer selecciona plantilla en Step 1 (opcional) → pre-configura goal, semanas, días, labels
+2. Step 2: días pre-seleccionados, labels via dropdown de la plantilla o input personalizado
+3. Step 3: ejercicios cargados automáticamente por mapping day_of_week + day_label. Trainer modifica libremente. "Guardar plantilla" guarda como nueva; "Enviar al cliente" envía a `user_routines`
+
+### Fase 6 — Rediseño Planificador de Menú (28/03/2026) — **COMPLETADO**
+- [x] Eliminado toggle Semanal/Mensual (`crPeriod`) del estado del hook
+- [x] Nuevo modelo: selección de días de la semana con fechas reales (como rutinas)
+- [x] Semanas de mesociclo (`crMesocycleWeeks`) con dropdown (1-8 semanas)
+- [x] Fecha de inicio (`crStartDate`) — por defecto próximo lunes
+- [x] Porcentajes de macros: proteína (`crTargetProteinPct`), carbohidratos (`crTargetCarbsPct`), grasa (`crTargetFatPct`)
+- [x] Helpers `getWeekDates()` y `DAYS_OF_WEEK` replicados en `useNutritionPage.ts`
+- [x] `buildEmptyDays()` refactorizado: recibe `selectedDays: string[]` en vez de `period`
+- [x] Panel flotante derecho con info en tiempo real: kcal objetivo vs actual, % macros objetivo vs actual
+- [x] Actualizar `page.tsx` MenuCreator con la nueva UI
+- [x] Validación visual: advertencia roja si los % de macros no suman 100%
+- [x] Day headers con fecha real (ej: "Lunes 31/03")
+- [x] Barras de progreso por macro con colores temáticos (verde=proteína, naranja=carbs, violeta=grasas)
+
+### Fase 6 ampliada — Sistema de Menús Híbrido Flexible (28/03/2026) — **COMPLETADO**
+- [x] **Snacks/Meriendas**: selector de 0/1/2 snacks reemplaza el antiguo selector 3/4/5 comidas. `crSnacksPerDay` en estado; `buildMealSlots(snacksPerDay)` genera: sin snacks (3 comidas), 1 snack (Merienda entre Comida y Cena), 2 snacks (Media Mañana + Merienda)
+- [x] **Slots de snack marcados**: `MealSlot.isSnack` distingue visualmente snacks (borde naranja, badge "Snack") de comidas principales
+- [x] **Clone day**: botón "Copiar a..." en cada header de día abre dropdown con los demás días. Dispatcha `CR_CLONE_DAY` que deep-copia meals (foods, supplements, notes)
+- [x] **Notas del coach por comida**: `MealSlot.notes` con textarea auto-resize. Se serializa en el JSONB `days` al guardar
+- [x] **Suplementos por comida**: `MealSlot.supplements: Supplement[]` (`name`, `timing` opcional). Componente `SupplementAdder` con inputs inline. Los suplementos se muestran como tags naranjas eliminables. No afectan macros
+- [x] **Deltas en panel flotante**: cada macro muestra "Faltan Xg" (gris) o "Excedido Xg" (rojo) respecto al objetivo
+- [x] **Transiciones suaves**: barras de progreso tienen `duration-500 ease-out`
+- [x] `handleSendMenu` guarda notas, supplements e isSnack en el JSONB `days`; `meals_per_day = 3 + crSnacksPerDay`
+
+**Archivos modificados:**
+- `apps/web/app/(dashboard)/app/trainer/nutrition/useNutritionPage.ts` — eliminado `crPeriod`, añadido `crSelectedDays`, `crMesocycleWeeks`, `crStartDate`, `crTargetProteinPct/CarbsPct/FatPct`, `crSnacksPerDay` (reemplaza `crMealsPerDay`), tipos `Supplement`/`MealSlot` extendidos, función `buildMealSlots()`, nuevas acciones `CR_SET_SNACKS_PER_DAY`, `CR_CLONE_DAY`, `CR_SET_MEAL_NOTES`, `CR_ADD_SUPPLEMENT`, `CR_REMOVE_SUPPLEMENT`
+- `apps/web/app/(dashboard)/app/trainer/nutrition/page.tsx` — selector de snacks (0/1/2), clone day con dropdown, notas textarea por comida, sección suplementos con `SupplementAdder`, deltas en panel flotante, transiciones CSS
+
+### Fase 6 ampliada — Menús Guardados + DarkSelect (29/03/2026) — **COMPLETADO**
+- [x] Migración 033: tabla `saved_menu_templates` con `trainer_id`, `name`, `config` (JSONB completo del menú). RLS trainer full CRUD. Trigger `set_updated_at()`.
+- [x] `handleSaveTemplate()` en `useNutritionPage.ts` — serializa todo el estado `cr*` (días, semanas, macros, meals, supplements, notes, snacks) en `config`. Abre modal para que el trainer nombre el menú antes de guardar.
+- [x] `handleLoadSavedTemplate(id)` en `useNutritionPage.ts` — carga `config` de `saved_menu_templates` y lo aplica al estado via `CR_LOAD_SAVED_TEMPLATE`. Los suplementos se restauran con `id` generado por `crypto.randomUUID()`.
+- [x] Dropdown "Cargar menú guardado" en el formulario inicial de nuevo menú — muestra todos los menús guardados del trainer.
+- [x] Botón "Guardar menú" (violeta) en la barra de acciones del planificador — abre modal de nombre.
+- [x] `DarkSelect` — componente custom en `components/ui/DarkSelect.tsx` que reemplaza todos los `<select>` nativos. Soporta `value`, `onChange`, `options: DarkSelectOption[]`, `placeholder`, `className`. Dropdown div-based con backdrop-blur y animación de rotación en la flecha.
+- [x] Todos los `<select>` nativos en sección trainer reemplazados: `nutrition/page.tsx` (menú guardado, cliente, semanas), `appointments/CreateAppointmentModal.tsx` (cliente, tipo, duración), `routines/RoutineEditor.tsx` (plantilla, cliente, semanas, label de día).
+- [x] Todos los `<select>` nativos en sección cliente reemplazados: `client/appointments/page.tsx` (tipo de sesión, duración).
+- [x] Botones "Semana anterior" / "Semana siguiente" añadidos en la parte inferior del planificador de menú (además del selector de cabecera).
+- [x] Botón "Copiar menú al resto de semanas" — clona `crDays` de la semana actual a todas las demás recalculando fechas reales con `getWeekDates(crStartDate, semana)`.
+- [x] Botón "Generar con IA" reubicado a la derecha del título "Planificacion por dia" (cabecera del planificador). Pendiente integración Edge Function.
+
+**Archivos modificados (29/03/2026):**
+- `apps/web/app/(dashboard)/app/trainer/nutrition/useNutritionPage.ts` — añadido `savedTemplates`, `crShowSaveModal`, `crSaveModalName`, `crSavingTemplate`, acciones `CR_SHOW_SAVE_MODAL`, `CR_SET_SAVE_MODAL_NAME`, `CR_LOAD_SAVED_TEMPLATE`, `handleSaveTemplate()`, `handleLoadSavedTemplate()`, carga inicial de `saved_menu_templates`
+- `apps/web/app/(dashboard)/app/trainer/nutrition/page.tsx` — añadido dropdown de menús guardados, botón "Guardar menú", modal de nombre, botones semana arriba/abajo, botón "Generar con IA" en cabecera, `DarkSelect` en todos los selects
+- `apps/web/app/(dashboard)/app/trainer/appointments/components/CreateAppointmentModal.tsx` — `DarkSelect` en cliente, tipo, duración
+- `apps/web/app/(dashboard)/app/trainer/routines/components/RoutineEditor.tsx` — `DarkSelect` en plantilla, cliente, semanas, label de día
+- `apps/web/app/(dashboard)/app/client/appointments/page.tsx` — `DarkSelect` en tipo de sesión, duración
+- `apps/web/components/ui/DarkSelect.tsx` — **NUEVO** componente custom select dark
+- `supabase/migrations/033_saved_menu_templates.sql` — **NUEVA** migración tabla `saved_menu_templates`
+
 ### Rediseño UI — "Brutalismo Elegante" y Dashboards Premium (Actualizado — 23/03/2026)
 - Rediseño integral de 7 pantallas mobile y páginas web públicas / auth (19/03/2026)
 - **Dashboards Premium (Entrenador y Cliente):** Implementación de *glassmorphism* intensivo, texturas `.dot-grid` globales, rediseño flotante en la `AppSidebar` y transparencias en tarjetas de contenido (`backdrop-blur-xl`). Se actualizaron masivamente todas las rutas internas y layouts base para unificar estética holográfica con la landing page (23/03/2026)
@@ -149,7 +232,10 @@ fitOS/
 │   │   ├── 027_exercise_override_hidden.sql   ← hidden BOOLEAN en trainer_exercise_overrides
 │   │   ├── 028_weight_log_client_notes.sql    ← client_notes TEXT en weight_log
 │   │   ├── 029_chat_messages.sql              ← Tabla messages (chat trainer↔cliente) + RLS + Realtime
-│   │   └── 030_appointments.sql              ← Tabla appointments (citas) + RLS + Realtime
+│   │   ├── 030_appointments.sql              ← Tabla appointments (citas) + RLS + Realtime
+│   │   ├── 031_health_logs.sql              ← Tabla health_logs (lesiones/molestias) + RLS + Realtime
+│   │   ├── 032_routine_templates.sql        ← Tabla routine_templates (plantillas rutina) + RLS
+│   │   └── 033_saved_menu_templates.sql     ← Tabla saved_menu_templates (menús guardados trainer) + RLS
 │   └── functions/
 │       ├── analyze-food-image/       ← Claude Vision: análisis foto → macros
 │       ├── generate-meal-plan/       ← Claude: generar plan nutricional
@@ -201,6 +287,9 @@ fitOS/
 | `workout_sessions` | **NUEVA** — Agrupa weight_log por sesión (modo registration/active) |
 | `messages` | **NUEVA** — Chat trainer↔cliente. Campos: `trainer_id`, `client_id`, `sender_id`, `content`, `read_at`. RLS doble. Realtime activo. |
 | `appointments` | **NUEVA** — Citas entre trainer y cliente. `session_type` (presencial/online/telefonica/evaluacion/seguimiento), `status` (pending/confirmed/cancelled/completed), `google_event_id` (NULL hasta OAuth), `email_sent_at` (NULL hasta Resend). RLS: trainer total, cliente SELECT+INSERT+UPDATE limitado. Realtime activo. |
+| `health_logs` | **NUEVA** — Lesiones/molestias musculares. `muscle_id` (texto: ej. 'quadriceps_left'), `pain_score` (1-10), `incident_type` ('puntual'/'diagnosticada'/'cronica'), `status` ('active'/'recovering'/'recovered'), `reported_by` ('coach'/'client'). RLS: trainer total, cliente SELECT+INSERT+UPDATE propios. Realtime activo. |
+| `routine_templates` | **NUEVA** — Plantillas de rutina reutilizables. `trainer_id`, `name`, `training_days` (TEXT[]), `day_labels` (JSONB), `exercises` (JSONB — sin weight/RIR), `total_weeks`, `goal`. RLS: trainer full CRUD sobre sus plantillas. Trigger `set_updated_at()`. |
+| `saved_menu_templates` | **NUEVA** — Menús guardados reutilizables. `trainer_id`, `name`, `config` (JSONB — serialización completa del estado del planificador: días, semanas, macros, meals con alimentos, suplementos y notas). RLS: trainer full CRUD. Trigger `set_updated_at()`. |
 
 ### Funciones de base de datos
 - **`handle_new_user()`** — Trigger en `auth.users` → crea `profiles`
@@ -278,7 +367,8 @@ apps/web/app/
 │       │   │   ├── TabRutina.tsx       ← Rutina activa + historial workout_sessions + weight_log expandible
 │       │   │   ├── TabMenu.tsx         ← food_log por día con selector de fecha y macros
 │       │   │   ├── TabFormulario.tsx   ← Respuestas onboarding + análisis IA
-│       │   │   └── TabChat.tsx         ← Chat trainer↔cliente con Realtime y actualización optimista
+│       │   │   ├── TabChat.tsx         ← Chat trainer↔cliente con Realtime y actualización optimista
+│       │   │   └── TabSalud.tsx       ← ✅ Mapa anatómico + reporte lesiones + timeline (Realtime)
 │       │   ├── exercises/page.tsx      ← ✅ Biblioteca de ejercicios (3 capas, clone-on-edit global, overrides hidden)
 │       │   ├── routines/page.tsx       ← ✅ Constructor de rutinas — orquestador (~55 líneas, useReducer pattern)
 │       │   ├── routines/useRoutinesPage.ts ← Custom hook: useReducer (19 campos estado, 20 acciones tipadas) + DB ops (loadData, handleSave)
@@ -311,6 +401,7 @@ apps/web/app/
 │           ├── calendar/page.tsx       ← ✅ Calendario master (entrenos, comidas, métricas)
 │           ├── progress/page.tsx       ← ✅ Mediciones corporales + gráfico SVG + historial
 │           ├── appointments/page.tsx   ← ✅ Ver/solicitar/cancelar citas con el entrenador
+│           ├── health/page.tsx        ← ✅ Mi Salud — mapa anatómico + reportar molestias + timeline
 │           └── chat/page.tsx           ← ✅ Chat con entrenador (Realtime, optimista, leído)
 │
 ├── api/
@@ -337,7 +428,10 @@ apps/web/app/
 │   ├── onboarding/
 │   │   ├── FormFieldEditor.tsx         ← Editor de campos con drag & drop
 │   │   └── FormPreview.tsx             ← Vista previa del formulario
-│   └── ui/                             ← shadcn/ui components
+│   ├── health/
+│   │   ├── AnatomyMap.tsx              ← ✅ SVG interactivo: vista frontal (17 regiones) + posterior (15 regiones)
+│   │   └── HealthReportForm.tsx        ← ✅ Formulario: dolor 1-10, tipo incidencia, estado, notas
+│   └── ui/                             ← shadcn/ui components + DarkSelect.tsx (custom select dark)
 │
 ├── lib/
 │   ├── supabase.ts                     ← createClient() browser
@@ -471,6 +565,7 @@ apps/mobile/
 │       ├── MealsScreen.tsx             ← ✅ Plan de comidas por día con macros
 │       ├── ProgressScreen.tsx          ← ✅ Mediciones + historial + tendencias
 │       ├── ChatScreen.tsx              ← ✅ Chat con entrenador (Realtime, FlatList, burbujas, agrupación por día)
+│       ├── HealthScreen.tsx           ← ✅ Mi Salud: mapa anatómico SVG + modal reporte + lista incidencias (Realtime)
 │       └── AppointmentsScreen.tsx      ← ✅ Citas: ver próximas/historial, solicitar (picker día+hora), cancelar
 ├── plugins/
 │   └── withIOSWidget.js                ← ✅ Expo config plugin: genera WidgetKit Swift files + App Group entitlement
@@ -548,6 +643,15 @@ Protege rutas por autenticación Y por rol. Trainers no acceden a rutas de clien
 
 ## 12. Próximos Pasos Recomendados
 
+### Estado Fase 6 — COMPLETADO (28/03/2026)
+
+| Tarea | Estado | Notas |
+|---|---|---|
+| Refactor `useNutritionPage.ts` — eliminar period, añadir días/semanas/macros | ✅ Completo | Eliminado `crPeriod`, añadidos 6 nuevos campos de estado, 6 nuevos reducers |
+| Refactor `page.tsx` MenuCreator — nueva UI con días/fechas, semanas, % macros | ✅ Completo | Grid días, dropdown semanas, date picker, grid % macros con validación |
+| Panel flotante de info nutricional en tiempo real | ✅ Completo | Panel sticky derecho con barras de progreso kcal/P/C/G, visible en lg+ |
+| Type check sin errores | ✅ Completo | `npx tsc --noEmit` pasa sin errores |
+
 ### Estado Fase 2 — completado parcialmente (23/03/2026)
 
 | Tarea | Estado | Notas |
@@ -583,6 +687,9 @@ Protege rutas por autenticación Y por rol. Trainers no acceden a rutas de clien
 | Config | Prioridad | Qué desbloquea |
 |---|---|---|
 | Aplicar migración `030_appointments.sql` en Supabase | 🔴 Alta | Tabla citas — sin esto el módulo de citas no funciona |
+| Aplicar migración `031_health_logs.sql` en Supabase | 🔴 Alta | Tabla lesiones/molestias — sin esto el módulo de salud no funciona |
+| Aplicar migración `032_routine_templates.sql` en Supabase | 🔴 Alta | Tabla plantillas — sin esto no se pueden guardar/cargar plantillas de rutina |
+| Aplicar migración `033_saved_menu_templates.sql` en Supabase | 🔴 Alta | Tabla menús guardados — sin esto el botón "Guardar menú" falla |
 | Dominio verificado en Resend + `RESEND_API_KEY` | 🟠 Alta | Emails de confirmación de citas |
 | OAuth 2.0 Google Calendar (Google Cloud Console) | 🟠 Alta | Sync citas → Google Calendar |
 | `ANTHROPIC_API_KEY` en Supabase secrets | 🟡 Media | Edge Functions IA (actualmente retornan mock) |
@@ -1151,6 +1258,81 @@ DELETE FROM trainer_exercise_overrides WHERE hidden = true;
 
 ---
 
+**ERROR #47 — Página `appointments/page.tsx` creada con 1187 líneas sin fragmentar (violación Regla 50)**
+- **Fecha:** 25/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/trainer/appointments/page.tsx`
+- **Qué pasó:** La página de citas se creó monolítica con 1187 líneas: interfaces, constantes, helpers, modal de creación, calendario (3 vistas + popover + pills), lista con cards, filtros y empty states — todo en un solo archivo. Violaba la Regla 50 (fragmentar páginas >300 líneas) desde su creación.
+- **Solución aplicada:** Fragmentada en `components/` con 5 archivos:
+  - `types.ts` (interfaces `Appointment`, `ClientOption`)
+  - `shared.tsx` (SESSION_TYPES, STATUS_STYLES, STATUS_BG, formatDateTime, formatDuration)
+  - `CreateAppointmentModal.tsx` (~237 líneas)
+  - `AppointmentCalendar.tsx` (~338 líneas — calendar view, grids, popover, pills)
+  - `AppointmentList.tsx` (~213 líneas — cards, filtros, secciones upcoming/past)
+  - `page.tsx` reducido a 190 líneas (orquestador: data loading, state, render subcomponentes)
+- **Regla:** La Regla 50 se aplica DURANTE la creación, no después. Un agente no debe crear una página de >300 líneas y esperar a que otro la fragmente. Si la página va a tener múltiples secciones (modal + calendario + lista + filtros), crear los componentes separados desde el inicio.
+
+---
+
+**ERROR #48 — Tests no creados junto al código (email-notifications.ts, excel-parser.ts)**
+- **Fecha:** 25/03/2026
+- **Archivos afectados:** `apps/web/lib/email-notifications.ts`, `apps/web/lib/excel-parser.ts`
+- **Qué pasó:** Ambos archivos se crearon sin tests unitarios a pesar de que el framework Vitest ya estaba configurado y los tests de `exercise-resolver` ya existían como referencia. Los tests se tuvieron que crear en una sesión de code review posterior.
+- **Solución aplicada:** Creados `email-notifications.test.ts` (4 tests: API key missing, undefined key, status variants, no-throw) y `excel-parser.test.ts` (7 tests: parsing, empty sheets, header detection, column inference, confidence threshold, column mapping, skip rows).
+- **Regla:** Todo módulo de lógica pura (`lib/*.ts`) DEBE tener su archivo `.test.ts` creado en la misma sesión que el código. No esperar a un code review para escribir tests. Mínimo: happy path + 1 edge case + 1 error case. Ver Regla 52 de CLAUDE.md.
+
+---
+
+**ERROR #49 — Code review detecta falsos positivos por no verificar el estado actual del código**
+- **Fecha:** 25/03/2026
+- **Archivos afectados:** `useRoutinesPage.ts`, `exercises/page.tsx`, `useNutritionPage.ts`
+- **Qué pasó:** Un code review listó 3 issues (error handling en useRoutinesPage, rename `primary_muscles` en exercises, acentos DAYS en nutrition) que ya estaban correctamente implementados en el código actual. Se verificó cada archivo y se confirmó que los 3 estaban bien desde antes.
+- **Solución aplicada:** Ningún cambio necesario — los 3 ya estaban correctos.
+- **Regla:** Antes de crear un ticket de fix, verificar SIEMPRE el estado actual del archivo. Leer el código, no asumir que está mal. Un code review que genera trabajo innecesario es peor que no hacer code review.
+
+---
+
+**ERROR #50 — `handleSave` no serializaba `mode`, `weekly_config` ni `total_weeks`**
+- **Fecha:** 25/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/trainer/routines/useRoutinesPage.ts`
+- **Qué pasó:** Se implementó toda la UI de progresión semanal (modal con WeeklyConfigModal, tipos WeekConfig, etc.) pero al guardar la rutina en `handleSave`, el `flatExercises` no incluía `mode`, `weekly_config`, y `routineData` no incluía `total_weeks` ni `training_days`. Resultado: el cliente veía los mismos valores en todas las semanas porque `weekly_config` se perdía al serializar.
+- **Solución aplicada:** Añadir `mode`, `weekly_config` (si tiene entradas) a cada ejercicio serializado, y `total_weeks`, `training_days` al objeto `routineData`.
+- **Regla:** Al añadir nuevos campos a tipos/UI, SIEMPRE verificar que la función de guardado (`handleSave`, `onSubmit`, etc.) los incluye en la serialización. Probar end-to-end: crear → guardar → cargar → verificar que los datos persisten.
+
+---
+
+**ERROR #51 — Peso pre-rellenado como valor en vez de placeholder**
+- **Fecha:** 25/03/2026
+- **Archivos afectados:** `useActiveTraining.ts` (web), `RoutineScreen.tsx` (mobile)
+- **Qué pasó:** `initializeSets` pre-rellenaba `weight_kg` con el valor del ejercicio o sesión anterior como valor de input (no placeholder). Esto confundía al cliente porque parecía que ya había introducido un valor cuando en realidad era el del trainer.
+- **Solución aplicada:** Todos los inputs (peso, reps, RIR) empiezan vacíos (`""`). Los valores del trainer se muestran como `placeholder` (gris tenue). Los placeholders son week-aware: resuelven `weekly_config[week].sets_detail[setIdx]` (different) o `weekly_config[week]` (equal) → valores base.
+- **Regla:** Los valores configurados por el trainer son GUÍA (placeholder), no valor por defecto. El cliente siempre introduce sus datos reales. Si hay sesión anterior, esa tiene prioridad como placeholder.
+
+---
+
+**ERROR #52 — `detectedColumns` en excel import perdía el campo `type` al renombrar a `inferred_type`**
+- **Fecha:** 28/03/2026
+- **Archivo afectado:** `apps/web/app/api/import/excel/route.ts` (línea 196-212)
+- **Qué pasó:** El `.map()` sobre `analysis.columns` renombraba `col.type` a `inferred_type` pero eliminaba el campo `type` original. El tipo de retorno esperado era `(DetectedColumn & { sample_values })[]` donde `DetectedColumn` requiere `type`. Resultado: error TS2322 permanente que se arrastraba sin corregir.
+- **Solución aplicada:** Incluir AMBOS campos en el mapeo: `type: col.type` (para satisfacer `DetectedColumn`) e `inferred_type: col.type` (para el uso posterior).
+- **Regla:** Cuando se hace `.map()` sobre un tipo y se renombra un campo, incluir TAMBIÉN el campo original si el tipo destino lo requiere. No asumir que renombrar un campo es equivalente a mantenerlo — el tipo de retorno debe satisfacer todas las propiedades requeridas de la interfaz.
+
+**ERROR #54 — `<select>` nativo muestra dropdown blanco en Chrome/Windows**
+- **Fecha:** 29/03/2026
+- **Archivos afectados:** `nutrition/page.tsx`, `appointments/CreateAppointmentModal.tsx`, `routines/RoutineEditor.tsx`, `client/appointments/page.tsx`
+- **Qué pasó:** Chrome en Windows ignora completamente `background-color` y `color` en elementos `<option>`. Ni `color-scheme: dark`, ni `select option { background-color: #12121A }` en globals.css, ni el atributo `className` en `<option>` funcionan — el OS renderiza el dropdown con su tema nativo (blanco con texto negro).
+- **Solución aplicada:** Componente custom `DarkSelect` en `components/ui/DarkSelect.tsx` que usa un `<button>` + div absoluto con backdrop-blur en vez del elemento nativo. Las opciones son `<button>` con hover y text-color correctos. Reemplazados todos los `<select>` de trainer y cliente.
+- **Regla:** Nunca usar `<select>` nativo en este proyecto. Usar siempre `DarkSelect` de `@/components/ui/DarkSelect`. Para mezcla de `value`/`label` usar la interfaz `DarkSelectOption`. Las clases CSS no pueden estilizar dropdowns nativos del SO.
+
+---
+
+**ERROR #53 — `buildEmptyDays()` crasheaba con `Cannot read properties of undefined (reading 'map')`**
+- **Archivo:** `apps/web/app/(dashboard)/app/trainer/nutrition/useNutritionPage.ts:128`
+- **Qué pasó:** Se refactorizó la firma de `buildEmptyDays()` de `(mealsPerDay, period: string)` a `(mealsPerDay, selectedDays: string[])`, pero el reducer tenía 3 llamadas que seguían pasando argumentos antiguos: `CR_SET_PERIOD` pasaba `action.period` (string), `CR_SET_MEALS_PER_DAY` pasaba `state.crPeriod` (campo eliminado), y `CR_RESET` pasaba `"weekly"` (string en vez de array). Al llamar `.map()` sobre un string en vez de un array → crash.
+- **Solución aplicada:** (1) Eliminar el caso `CR_SET_PERIOD` del reducer (acción ya no existe en types). (2) `CR_SET_MEALS_PER_DAY` pasa `state.crSelectedDays`. (3) `CR_RESET` inicializa `crSelectedDays: []` y `crDays: []`. (4) `handleSendMenu` usa `period: "weekly"` fijo. (5) Añadir los 6 nuevos casos de reducer que faltaban (`CR_TOGGLE_DAY_SELECTION`, `CR_SET_MESOCYCLE_WEEKS`, `CR_SET_START_DATE`, `CR_SET_TARGET_*_PCT`). (6) Actualizar `page.tsx` eliminando UI de Period y reemplazando con nuevos selectores.
+- **Regla:** Al cambiar la firma de una función helper usada en un reducer, buscar TODAS las llamadas a esa función en el reducer (no solo en los tipos) y actualizarlas. Un `grep` de la función es obligatorio antes de dar por terminada la refactorización.
+
+---
+
 ### Arquitectura de componentes — Buenas prácticas (desde 24/03/2026)
 
 **Patrón obligatorio para páginas con múltiples secciones (tabs, paneles, vistas):**
@@ -1179,6 +1361,9 @@ components/
 **Módulos ya fragmentados:**
 - `clients/[id]/` → 6 tabs en `components/` (referencia del patrón tabs)
 - `routine/active/` → `useActiveTraining.ts` + 4 subcomponentes (referencia del patrón useReducer + custom hook)
+- `trainer/appointments/` → `components/` con types.ts, shared.tsx, CreateAppointmentModal.tsx, AppointmentCalendar.tsx, AppointmentList.tsx (1187 → 190 líneas en page.tsx)
+- `trainer/nutrition/` → `useNutritionPage.ts` + page.tsx orquestador
+- `trainer/routines/` → `useRoutinesPage.ts` + 4 subcomponentes + page.tsx orquestador
 
 #### Patrón useReducer para páginas con estado complejo (regla 51)
 
@@ -1220,6 +1405,12 @@ npm run test:watch   # Modo watch (desarrollo)
 | Archivo | Tests | Qué cubre |
 |---|---|---|
 | `lib/exercise-resolver.test.ts` | 9 | Layer A (globales), Layer B (privados trainer), Layer C (hidden + custom_name), combinación A+B+C, edge cases (sin privados, error DB) + smoke de `resolveExercise` |
+| `lib/food-resolver.test.ts` | 6 | Three-layer resolution (global, privados, overrides) + búsqueda por similitud |
+| `lib/email-notifications.test.ts` | 4 | API key missing → `{ sent: false }`, undefined key, todos los status variants sin throw, error devuelve string |
+| `lib/excel-parser.test.ts` | 7 | Parsing con headers, hoja vacía, detección de header row, inferencia de tipo columna, confidence threshold, column mapping, skip filas sin ejercicio |
+| `lib/activate-client.test.ts` | 5 | Happy path, auth errors, DB errors, non-blocking failures |
+| `api/complete-registration/route.test.ts` | 7 | Happy path, missing fields (400), DB errors (500), promo code resilience, invalid JSON |
+| `api/client-trainer/route.test.ts` | 8 | Happy path, unauthenticated (401), no trainer (404), DB errors, `business_name` vs `full_name` priority |
 
 ---
 

@@ -23,6 +23,21 @@ export interface SetConfig {
   rest_s: number;
 }
 
+/** Per-week override for an exercise (progressive overload across mesocycle) */
+export interface WeekConfig {
+  /** Used in "equal" mode */
+  sets: number;
+  reps_min: number;
+  reps_max: number;
+  rir: number;
+  target_weight: number | null;
+  rest_s: number;
+  /** Used in "different" mode — one entry per set */
+  sets_detail?: SetConfig[];
+  /** Per-week coach notes (dynamic per week, unlike progression_rule which is per exercise) */
+  coach_notes?: string;
+}
+
 export interface RoutineExercise {
   exercise_id: string;
   name: string;
@@ -39,6 +54,8 @@ export interface RoutineExercise {
   order: number;
   mode: "equal" | "different";
   sets_config: SetConfig[];
+  /** Per-week overrides keyed by week number (1-based). If absent, uses base values. */
+  weekly_config?: Record<number, WeekConfig>;
 }
 
 export interface TrainingDay {
@@ -57,6 +74,54 @@ export interface RoutineRow {
   sent_at: string | null;
   created_at: string;
   client_name: string | null;
+}
+
+/** Saved routine template (exercises without weight/RIR) */
+export interface RoutineTemplate {
+  id: string;
+  name: string;
+  training_days: string[];
+  day_labels: Record<string, string>;
+  exercises: TemplateExercise[];
+  total_weeks: number;
+  goal: string | null;
+  created_at: string;
+}
+
+/** Set config stored in a template — no weight/RIR */
+export interface TemplateSetConfig {
+  reps_min: number;
+  reps_max: number;
+  rest_s: number;
+}
+
+/** Week config stored in a template — no weight/RIR */
+export interface TemplateWeekConfig {
+  sets: number;
+  reps_min: number;
+  reps_max: number;
+  rest_s: number;
+  sets_detail?: TemplateSetConfig[];
+  coach_notes?: string;
+}
+
+/** Exercise stored inside a template — no weight/RIR */
+export interface TemplateExercise {
+  exercise_id: string;
+  name: string;
+  day_of_week: string;
+  day_label: string;
+  sets: number;
+  reps_min: number;
+  reps_max: number;
+  rest_pause_sets: number;
+  rest_s: number;
+  progression_rule: string;
+  coach_notes: string;
+  order: number;
+  mode: "equal" | "different";
+  sets_config?: TemplateSetConfig[];
+  weekly_config?: Record<number, TemplateWeekConfig>;
 }
 
 /* ────────────────────────────────────────────

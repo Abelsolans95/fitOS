@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
       // Check if the matched exercise name is identical (case-insensitive) to trainer's name
       const { data: matchedEx } = await supabaseAdmin
         .from("trainer_exercise_library")
-        .select("id, name")
+        .select("id, name, category")
         .eq("id", link.global_exercise_id)
         .single();
 
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
           trainer_id: user.id,
           name: trainerName,
           is_global: false,
-          category: matchedEx ? (matchedEx as any).category || null : null,
+          category: matchedEx?.category ?? null,
         })
         .select("id, name")
         .single();

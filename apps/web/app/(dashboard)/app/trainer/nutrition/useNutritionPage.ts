@@ -41,9 +41,18 @@ export interface MealFood {
   fat: number;
 }
 
+export interface Supplement {
+  name: string;
+  timing?: string;
+}
+
 export interface MealSlot {
   label: string;
   foods: MealFood[];
+  isSnack?: boolean;
+  isCheatMeal?: boolean;
+  notes?: string;
+  supplements?: Supplement[];
 }
 
 export interface DayPlan {
@@ -63,14 +72,42 @@ export interface MealPlanRow {
   client_name: string | null;
 }
 
+export interface SavedMenuTemplate {
+  id: string;
+  name: string;
+  config: {
+    title: string;
+    selectedDays: string[];
+    mesocycleWeeks: number;
+    mainMeals: number;
+    snacksPerDay: number;
+    targetKcal: number | "";
+    targetProteinPct: number;
+    targetCarbsPct: number;
+    targetFatPct: number;
+    days: DayPlan[];
+    weekDays: Record<number, DayPlan[]>;
+  };
+  created_at: string;
+}
+
 /* ────────────────────────────────────────────
    Constants
    ──────────────────────────────────────────── */
 
-const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+export const DAYS_OF_WEEK = [
+  { label: "Lunes", key: "lunes", short: "L" },
+  { label: "Martes", key: "martes", short: "M" },
+  { label: "Miércoles", key: "miercoles", short: "X" },
+  { label: "Jueves", key: "jueves", short: "J" },
+  { label: "Viernes", key: "viernes", short: "V" },
+  { label: "Sábado", key: "sabado", short: "S" },
+  { label: "Domingo", key: "domingo", short: "D" },
+] as const;
 
-const MEAL_LABELS: Record<number, string[]> = {
-  3: ["Desayuno", "Comida", "Cena"],
+/** Labels for each main-meal count (3/4/5). */
+const MAIN_MEAL_LABELS: Record<number, string[]> = {
+  3: ["Desayuno", "Almuerzo", "Cena"],
   4: ["Desayuno", "Almuerzo", "Comida", "Cena"],
   5: ["Desayuno", "Almuerzo", "Comida", "Merienda", "Cena"],
 };
@@ -79,18 +116,97 @@ const MEAL_LABELS: Record<number, string[]> = {
    Helpers
    ──────────────────────────────────────────── */
 
-function buildEmptyDays(mealsPerDay: number, period: "weekly" | "monthly"): DayPlan[] {
-  const dayCount = period === "weekly" ? 7 : 28;
-  const labels = MEAL_LABELS[mealsPerDay] ?? MEAL_LABELS[3];
-  const days: DayPlan[] = [];
-  for (let i = 0; i < dayCount; i++) {
-    days.push({
-      day: period === "weekly" ? DAYS[i] : `Dia ${i + 1}`,
-      meals: labels.map((label) => ({ label, foods: [] })),
-      expanded: i === 0,
-    });
+function getDefaultStartDate(): string {
+  const d = new Date();
+  const day = d.getDay();
+  const diff = day === 0 ? 1 : day === 1 ? 0 : 8 - day;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().split("T")[0];
+}
+
+export function getWeekDates(
+  startDate: Date,
+  weekNumber: number,
+  selectedDays: string[]
+): { day: string; date: string }[] {
+  const dayMap: Record<string, number> = {
+    lunes: 1, martes: 2, miercoles: 3, jueves: 4,
+    viernes: 5, sabado: 6, domingo: 0,
+  };
+  const weekStart = new Date(startDate);
+  weekStart.setDate(weekStart.getDate() + (weekNumber - 1) * 7);
+  return selectedDays.map((dayKey) => {
+    const targetDow = dayMap[dayKey];
+    const currentDow = weekStart.getDay();
+    let diff = targetDow - currentDow;
+    if (diff < 0) diff += 7;
+    const date = new Date(weekStart);
+    date.setDate(date.getDate() + diff);
+    const dd = String(date.getDate()).padStart(2, "0");
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    return { day: dayKey, date: `${dd}/${mm}` };
+  });
+}
+
+const DAY_ORDER: Record<string, number> = {
+  lunes: 0, martes: 1, miercoles: 2, jueves: 3, viernes: 4, sabado: 5, domingo: 6,
+};
+
+/**
+ * Generates meal slots interleaving snacks between main meals.
+ *
+ * Strategy: place one snack after each main meal (except the last),
+ * until the snack quota is exhausted. Remaining snacks are appended at the end.
+ *
+ * Examples (3 main meals):
+ *   snacks=0 → [D, A, Cena]
+ *   snacks=1 → [D, Snack, A, Cena]
+ *   snacks=2 → [D, Snack, A, Snack, Cena]
+ *   snacks=3 → [D, Snack, A, Snack, Cena, Snack]
+ */
+export function buildMealSlots(
+  mainMeals: number,
+  snacksPerDay: number
+): Pick<MealSlot, "label" | "isSnack">[] {
+  const mainLabels = MAIN_MEAL_LABELS[mainMeals] ?? MAIN_MEAL_LABELS[3];
+  const result: { label: string; isSnack: boolean }[] = [];
+  let snacksLeft = snacksPerDay;
+
+  for (let i = 0; i < mainLabels.length; i++) {
+    result.push({ label: mainLabels[i], isSnack: false });
+    // After each meal except the last, insert a snack if quota remains
+    if (i < mainLabels.length - 1 && snacksLeft > 0) {
+      result.push({ label: "Snack", isSnack: true });
+      snacksLeft--;
+    }
   }
-  return days;
+  // Append any remaining snacks after the last main meal
+  while (snacksLeft > 0) {
+    result.push({ label: "Snack", isSnack: true });
+    snacksLeft--;
+  }
+
+  return result;
+}
+
+function buildEmptyDays(
+  mainMeals: number,
+  snacksPerDay: number,
+  selectedDays: string[]
+): DayPlan[] {
+  const slotDefs = buildMealSlots(mainMeals, snacksPerDay);
+  const dayLabelMap: Record<string, string> = {
+    lunes: "Lunes", martes: "Martes", miercoles: "Miércoles",
+    jueves: "Jueves", viernes: "Viernes", sabado: "Sábado", domingo: "Domingo",
+  };
+  const sorted = [...selectedDays].sort(
+    (a, b) => (DAY_ORDER[a] ?? 99) - (DAY_ORDER[b] ?? 99)
+  );
+  return sorted.map((key, i) => ({
+    day: dayLabelMap[key] ?? key,
+    meals: slotDefs.map((s) => ({ label: s.label, foods: [], isSnack: s.isSnack })),
+    expanded: i === 0,
+  }));
 }
 
 export function getMealTotals(foods: MealFood[]) {
@@ -119,11 +235,21 @@ export interface NutritionState {
   /* Menu Creator */
   crSelectedClientId: string;
   crTitle: string;
-  crPeriod: "weekly" | "monthly";
-  crMealsPerDay: number;
+  crSelectedDays: string[];
+  crMesocycleWeeks: number;
+  crStartDate: string;
+  crMainMeals: number;   // 3 / 4 / 5 — fixed main meals
+  crSnacksPerDay: number; // 0 / 1 / 2 / 3 — base snacks to interleave
   crTargetKcal: number | "";
+  crTargetProteinPct: number;
+  crTargetCarbsPct: number;
+  crTargetFatPct: number;
   crDays: DayPlan[];
+  crCurrentWeek: number;
+  crWeekDays: Record<number, DayPlan[]>;
   crSaving: boolean;
+  crSavingTemplate: boolean;
+  savedMenus: SavedMenuTemplate[];
   /* Food Library */
   libSearch: string;
   libActiveCategory: string;
@@ -152,11 +278,21 @@ const initialState: NutritionState = {
 
   crSelectedClientId: "",
   crTitle: "",
-  crPeriod: "weekly",
-  crMealsPerDay: 3,
+  crSelectedDays: DAYS_OF_WEEK.map((d) => d.key),
+  crMesocycleWeeks: 1,
+  crStartDate: getDefaultStartDate(),
+  crMainMeals: 3,
+  crSnacksPerDay: 0,
   crTargetKcal: 2000,
-  crDays: buildEmptyDays(3, "weekly"),
+  crTargetProteinPct: 30,
+  crTargetCarbsPct: 45,
+  crTargetFatPct: 25,
+  crDays: buildEmptyDays(3, 0, DAYS_OF_WEEK.map((d) => d.key)),
+  crCurrentWeek: 1,
+  crWeekDays: {},
   crSaving: false,
+  crSavingTemplate: false,
+  savedMenus: [],
 
   libSearch: "",
   libActiveCategory: "Todos",
@@ -191,12 +327,19 @@ export type NutritionAction =
     }
   | { type: "SHOW_CREATOR" }
   | { type: "HIDE_CREATOR" }
-  /* Creator */
+  /* Creator — global config */
   | { type: "CR_SET_CLIENT"; clientId: string }
   | { type: "CR_SET_TITLE"; title: string }
-  | { type: "CR_SET_PERIOD"; period: "weekly" | "monthly" }
-  | { type: "CR_SET_MEALS_PER_DAY"; count: number }
+  | { type: "CR_TOGGLE_DAY_SELECTION"; dayKey: string }
+  | { type: "CR_SET_MESOCYCLE_WEEKS"; weeks: number }
+  | { type: "CR_SET_START_DATE"; date: string }
+  | { type: "CR_SET_MAIN_MEALS"; count: number }
+  | { type: "CR_SET_SNACKS_PER_DAY"; count: number }
   | { type: "CR_SET_TARGET_KCAL"; value: number | "" }
+  | { type: "CR_SET_TARGET_PROTEIN_PCT"; value: number }
+  | { type: "CR_SET_TARGET_CARBS_PCT"; value: number }
+  | { type: "CR_SET_TARGET_FAT_PCT"; value: number }
+  /* Creator — day/meal operations */
   | { type: "CR_TOGGLE_DAY"; dayIndex: number }
   | { type: "CR_ADD_FOOD"; dayIndex: number; mealIndex: number; food: MealFood }
   | {
@@ -207,7 +350,20 @@ export type NutritionAction =
       portion: number;
     }
   | { type: "CR_REMOVE_FOOD"; dayIndex: number; mealIndex: number; foodIndex: number }
+  | { type: "CR_REMOVE_MEAL"; dayIndex: number; mealIndex: number }
+  | { type: "CR_ADD_SNACK_TO_DAY"; dayIndex: number }
+  | { type: "CR_TOGGLE_CHEAT_MEAL"; dayIndex: number; mealIndex: number }
+  | { type: "CR_CLONE_DAY"; fromIndex: number; toIndex: number }
+  | { type: "CR_SET_MEAL_NOTES"; dayIndex: number; mealIndex: number; notes: string }
+  | { type: "CR_ADD_SUPPLEMENT"; dayIndex: number; mealIndex: number; supplement: Supplement }
+  | { type: "CR_REMOVE_SUPPLEMENT"; dayIndex: number; mealIndex: number; suppIndex: number }
   | { type: "CR_SET_SAVING"; saving: boolean }
+  | { type: "CR_NEXT_WEEK" }
+  | { type: "CR_PREV_WEEK" }
+  | { type: "CR_CLONE_WEEK_TO_REST" }
+  | { type: "CR_SET_SAVING_TEMPLATE"; saving: boolean }
+  | { type: "SET_SAVED_MENUS"; menus: SavedMenuTemplate[] }
+  | { type: "CR_LOAD_SAVED_MENU"; menu: SavedMenuTemplate }
   | { type: "CR_RESET" }
   /* Library */
   | { type: "LIB_SET_SEARCH"; search: string }
@@ -256,32 +412,63 @@ function nutritionReducer(state: NutritionState, action: NutritionAction): Nutri
         showCreator: false,
         crSelectedClientId: "",
         crTitle: "",
-        crPeriod: "weekly",
-        crMealsPerDay: 3,
+        crSelectedDays: DAYS_OF_WEEK.map((d) => d.key),
+        crMesocycleWeeks: 1,
+        crStartDate: getDefaultStartDate(),
+        crMainMeals: 3,
+        crSnacksPerDay: 0,
         crTargetKcal: 2000,
-        crDays: buildEmptyDays(3, "weekly"),
+        crTargetProteinPct: 30,
+        crTargetCarbsPct: 45,
+        crTargetFatPct: 25,
+        crDays: buildEmptyDays(3, 0, DAYS_OF_WEEK.map((d) => d.key)),
+        crCurrentWeek: 1,
+        crWeekDays: {},
         crSaving: false,
+        crSavingTemplate: false,
       };
 
-    /* ── Creator ── */
+    /* ── Creator — global config ── */
     case "CR_SET_CLIENT":
       return { ...state, crSelectedClientId: action.clientId };
     case "CR_SET_TITLE":
       return { ...state, crTitle: action.title };
-    case "CR_SET_PERIOD":
+    case "CR_TOGGLE_DAY_SELECTION": {
+      const days = state.crSelectedDays.includes(action.dayKey)
+        ? state.crSelectedDays.filter((d) => d !== action.dayKey)
+        : [...state.crSelectedDays, action.dayKey];
       return {
         ...state,
-        crPeriod: action.period,
-        crDays: buildEmptyDays(state.crMealsPerDay, action.period),
+        crSelectedDays: days,
+        crDays: buildEmptyDays(state.crMainMeals, state.crSnacksPerDay, days),
       };
-    case "CR_SET_MEALS_PER_DAY":
+    }
+    case "CR_SET_MESOCYCLE_WEEKS":
+      return { ...state, crMesocycleWeeks: action.weeks };
+    case "CR_SET_START_DATE":
+      return { ...state, crStartDate: action.date };
+    case "CR_SET_MAIN_MEALS":
       return {
         ...state,
-        crMealsPerDay: action.count,
-        crDays: buildEmptyDays(action.count, state.crPeriod),
+        crMainMeals: action.count,
+        crDays: buildEmptyDays(action.count, state.crSnacksPerDay, state.crSelectedDays),
+      };
+    case "CR_SET_SNACKS_PER_DAY":
+      return {
+        ...state,
+        crSnacksPerDay: action.count,
+        crDays: buildEmptyDays(state.crMainMeals, action.count, state.crSelectedDays),
       };
     case "CR_SET_TARGET_KCAL":
       return { ...state, crTargetKcal: action.value };
+    case "CR_SET_TARGET_PROTEIN_PCT":
+      return { ...state, crTargetProteinPct: action.value };
+    case "CR_SET_TARGET_CARBS_PCT":
+      return { ...state, crTargetCarbsPct: action.value };
+    case "CR_SET_TARGET_FAT_PCT":
+      return { ...state, crTargetFatPct: action.value };
+
+    /* ── Creator — day/meal operations ── */
     case "CR_TOGGLE_DAY":
       return {
         ...state,
@@ -349,18 +536,181 @@ function nutritionReducer(state: NutritionState, action: NutritionAction): Nutri
           };
         }),
       };
+    case "CR_TOGGLE_CHEAT_MEAL":
+      return {
+        ...state,
+        crDays: state.crDays.map((d, di) => {
+          if (di !== action.dayIndex) return d;
+          return {
+            ...d,
+            meals: d.meals.map((m, mi) => {
+              if (mi !== action.mealIndex) return m;
+              return { ...m, isCheatMeal: !m.isCheatMeal };
+            }),
+          };
+        }),
+      };
+    // Removes a meal slot from a day (only intended for snack slots)
+    case "CR_REMOVE_MEAL":
+      return {
+        ...state,
+        crDays: state.crDays.map((d, di) => {
+          if (di !== action.dayIndex) return d;
+          return {
+            ...d,
+            meals: d.meals.filter((_, mi) => mi !== action.mealIndex),
+          };
+        }),
+      };
+    // Appends a new snack slot at the end of a day
+    case "CR_ADD_SNACK_TO_DAY":
+      return {
+        ...state,
+        crDays: state.crDays.map((d, di) => {
+          if (di !== action.dayIndex) return d;
+          return {
+            ...d,
+            meals: [...d.meals, { label: "Snack", foods: [], isSnack: true }],
+          };
+        }),
+      };
+    case "CR_CLONE_DAY": {
+      const sourceDay = state.crDays[action.fromIndex];
+      if (!sourceDay) return state;
+      return {
+        ...state,
+        crDays: state.crDays.map((d, i) => {
+          if (i !== action.toIndex) return d;
+          return {
+            ...d,
+            meals: sourceDay.meals.map((m) => ({
+              ...m,
+              foods: m.foods.map((f) => ({ ...f })),
+              supplements: m.supplements ? m.supplements.map((s) => ({ ...s })) : undefined,
+              notes: m.notes,
+            })),
+          };
+        }),
+      };
+    }
+    case "CR_SET_MEAL_NOTES":
+      return {
+        ...state,
+        crDays: state.crDays.map((d, di) => {
+          if (di !== action.dayIndex) return d;
+          return {
+            ...d,
+            meals: d.meals.map((m, mi) => {
+              if (mi !== action.mealIndex) return m;
+              return { ...m, notes: action.notes };
+            }),
+          };
+        }),
+      };
+    case "CR_ADD_SUPPLEMENT":
+      return {
+        ...state,
+        crDays: state.crDays.map((d, di) => {
+          if (di !== action.dayIndex) return d;
+          return {
+            ...d,
+            meals: d.meals.map((m, mi) => {
+              if (mi !== action.mealIndex) return m;
+              return { ...m, supplements: [...(m.supplements ?? []), action.supplement] };
+            }),
+          };
+        }),
+      };
+    case "CR_REMOVE_SUPPLEMENT":
+      return {
+        ...state,
+        crDays: state.crDays.map((d, di) => {
+          if (di !== action.dayIndex) return d;
+          return {
+            ...d,
+            meals: d.meals.map((m, mi) => {
+              if (mi !== action.mealIndex) return m;
+              return {
+                ...m,
+                supplements: (m.supplements ?? []).filter((_, si) => si !== action.suppIndex),
+              };
+            }),
+          };
+        }),
+      };
+    case "CR_NEXT_WEEK": {
+      if (state.crCurrentWeek >= state.crMesocycleWeeks) return state;
+      const nextWeek = state.crCurrentWeek + 1;
+      const savedCurrent = { ...state.crWeekDays, [state.crCurrentWeek]: state.crDays };
+      const nextDays = savedCurrent[nextWeek] ?? buildEmptyDays(state.crMainMeals, state.crSnacksPerDay, state.crSelectedDays);
+      return { ...state, crWeekDays: savedCurrent, crCurrentWeek: nextWeek, crDays: nextDays };
+    }
+    case "CR_PREV_WEEK": {
+      if (state.crCurrentWeek <= 1) return state;
+      const prevWeek = state.crCurrentWeek - 1;
+      const savedCurrent = { ...state.crWeekDays, [state.crCurrentWeek]: state.crDays };
+      const prevDays = savedCurrent[prevWeek] ?? buildEmptyDays(state.crMainMeals, state.crSnacksPerDay, state.crSelectedDays);
+      return { ...state, crWeekDays: savedCurrent, crCurrentWeek: prevWeek, crDays: prevDays };
+    }
+    case "CR_CLONE_WEEK_TO_REST": {
+      const cloned: Record<number, DayPlan[]> = { ...state.crWeekDays, [state.crCurrentWeek]: state.crDays };
+      for (let w = 1; w <= state.crMesocycleWeeks; w++) {
+        if (w === state.crCurrentWeek) continue;
+        cloned[w] = state.crDays.map((d) => ({
+          ...d,
+          meals: d.meals.map((m) => ({
+            ...m,
+            foods: m.foods.map((f) => ({ ...f })),
+            supplements: m.supplements ? m.supplements.map((s) => ({ ...s })) : undefined,
+            notes: m.notes,
+          })),
+        }));
+      }
+      return { ...state, crWeekDays: cloned };
+    }
     case "CR_SET_SAVING":
       return { ...state, crSaving: action.saving };
+    case "CR_SET_SAVING_TEMPLATE":
+      return { ...state, crSavingTemplate: action.saving };
+    case "SET_SAVED_MENUS":
+      return { ...state, savedMenus: action.menus };
+    case "CR_LOAD_SAVED_MENU": {
+      const cfg = action.menu.config;
+      return {
+        ...state,
+        crTitle: cfg.title,
+        crSelectedDays: cfg.selectedDays,
+        crMesocycleWeeks: cfg.mesocycleWeeks,
+        crMainMeals: cfg.mainMeals,
+        crSnacksPerDay: cfg.snacksPerDay,
+        crTargetKcal: cfg.targetKcal,
+        crTargetProteinPct: cfg.targetProteinPct,
+        crTargetCarbsPct: cfg.targetCarbsPct,
+        crTargetFatPct: cfg.targetFatPct,
+        crDays: cfg.days.length > 0 ? cfg.days : buildEmptyDays(cfg.mainMeals, cfg.snacksPerDay, cfg.selectedDays),
+        crCurrentWeek: 1,
+        crWeekDays: cfg.weekDays ?? {},
+      };
+    }
     case "CR_RESET":
       return {
         ...state,
         crSelectedClientId: "",
         crTitle: "",
-        crPeriod: "weekly",
-        crMealsPerDay: 3,
+        crSelectedDays: DAYS_OF_WEEK.map((d) => d.key),
+        crMesocycleWeeks: 1,
+        crStartDate: getDefaultStartDate(),
+        crMainMeals: 3,
+        crSnacksPerDay: 0,
         crTargetKcal: 2000,
-        crDays: buildEmptyDays(3, "weekly"),
+        crTargetProteinPct: 30,
+        crTargetCarbsPct: 45,
+        crTargetFatPct: 25,
+        crDays: buildEmptyDays(3, 0, DAYS_OF_WEEK.map((d) => d.key)),
+        crCurrentWeek: 1,
+        crWeekDays: {},
         crSaving: false,
+        crSavingTemplate: false,
       };
 
     /* ── Library ── */
@@ -443,7 +793,7 @@ export function useNutritionPage() {
         return;
       }
 
-      const [plansRes, tcRes, foodsRes] = await Promise.all([
+      const [plansRes, tcRes, foodsRes, savedMenusRes] = await Promise.all([
         supabase
           .from("meal_plans")
           .select("id, title, period, target_kcal, is_active, sent_at, created_at, client_id")
@@ -459,6 +809,11 @@ export function useNutritionPage() {
           .select("*")
           .or(`trainer_id.eq.${user.id},is_global.eq.true`)
           .order("name"),
+        supabase
+          .from("saved_menu_templates")
+          .select("id, name, config, created_at")
+          .eq("trainer_id", user.id)
+          .order("created_at", { ascending: false }),
       ]);
 
       if (plansRes.error) {
@@ -472,6 +827,10 @@ export function useNutritionPage() {
       if (foodsRes.error) {
         console.error("[NutritionPage] Error al cargar alimentos:", foodsRes.error);
         toast.error("Error al cargar la biblioteca de alimentos");
+      }
+      if (savedMenusRes.error) {
+        console.error("[NutritionPage] Error al cargar menus guardados:", savedMenusRes.error);
+        // No bloqueante
       }
 
       const clientIds = (tcRes.data ?? []).map((r) => r.client_id);
@@ -521,6 +880,10 @@ export function useNutritionPage() {
         mealPlans: normalizedPlans,
         clients: normalizedClients,
         foods: (foodsRes.data as FoodItem[]) ?? [],
+      });
+      dispatch({
+        type: "SET_SAVED_MENUS",
+        menus: (savedMenusRes.data as SavedMenuTemplate[]) ?? [],
       });
     } catch {
       dispatch({ type: "SET_ERROR", error: "Error inesperado al cargar los datos." });
@@ -585,20 +948,48 @@ export function useNutritionPage() {
     dispatch({ type: "CR_SET_SAVING", saving: true });
     try {
       const supabase = createClient();
-      const planData = {
-        trainer_id: state.trainerId,
-        client_id: state.crSelectedClientId,
-        title: state.crTitle,
-        period: state.crPeriod,
-        meals_per_day: state.crMealsPerDay,
-        target_kcal: state.crTargetKcal || 2000,
-        days: state.crDays.map((d) => ({
+      // meals_per_day stores main meals count (3/4/5) — DB CHECK constraint accepts 3,4,5.
+      const mealsPerDay = state.crMainMeals as 3 | 4 | 5;
+
+      // Build all weeks' data: merge crWeekDays with current crDays
+      const allWeekDays = { ...state.crWeekDays, [state.crCurrentWeek]: state.crDays };
+      const serializeDays = (days: DayPlan[]) =>
+        days.map((d) => ({
           day: d.day,
           meals: d.meals.map((m) => ({
             label: m.label,
             foods: m.foods,
+            isSnack: m.isSnack,
+            isCheatMeal: m.isCheatMeal,
+            notes: m.notes,
+            supplements: m.supplements,
           })),
-        })),
+        }));
+
+      // If multi-week, save as { weeks: { 1: [...], 2: [...] } }; otherwise flat array for backward compat
+      const daysPayload =
+        state.crMesocycleWeeks > 1
+          ? {
+              weeks: Object.fromEntries(
+                Array.from({ length: state.crMesocycleWeeks }, (_, i) => {
+                  const w = i + 1;
+                  const weekDays = allWeekDays[w] ?? buildEmptyDays(state.crMainMeals, state.crSnacksPerDay, state.crSelectedDays);
+                  return [w, serializeDays(weekDays)];
+                })
+              ),
+              total_weeks: state.crMesocycleWeeks,
+              start_date: state.crStartDate,
+            }
+          : serializeDays(state.crDays);
+
+      const planData = {
+        trainer_id: state.trainerId,
+        client_id: state.crSelectedClientId,
+        title: state.crTitle,
+        period: "weekly",
+        meals_per_day: mealsPerDay,
+        target_kcal: state.crTargetKcal || 2000,
+        days: daysPayload,
         is_active: true,
         sent_at: new Date().toISOString(),
       };
@@ -622,10 +1013,15 @@ export function useNutritionPage() {
   }, [
     state.crSelectedClientId,
     state.crTitle,
-    state.crPeriod,
-    state.crMealsPerDay,
+    state.crMainMeals,
+    state.crSnacksPerDay,
     state.crTargetKcal,
     state.crDays,
+    state.crCurrentWeek,
+    state.crWeekDays,
+    state.crMesocycleWeeks,
+    state.crSelectedDays,
+    state.crStartDate,
     state.trainerId,
     loadData,
   ]);
@@ -724,6 +1120,69 @@ export function useNutritionPage() {
     [loadData]
   );
 
+  /* ── Creator: save as template ── */
+
+  const handleSaveTemplate = useCallback(async (templateName: string) => {
+    if (!templateName.trim()) {
+      toast.error("Ingresa un nombre para guardar el menu");
+      return;
+    }
+
+    dispatch({ type: "CR_SET_SAVING_TEMPLATE", saving: true });
+    try {
+      const supabase = createClient();
+      const allWeekDays = { ...state.crWeekDays, [state.crCurrentWeek]: state.crDays };
+      const config = {
+        title: state.crTitle,
+        selectedDays: state.crSelectedDays,
+        mesocycleWeeks: state.crMesocycleWeeks,
+        mainMeals: state.crMainMeals,
+        snacksPerDay: state.crSnacksPerDay,
+        targetKcal: state.crTargetKcal,
+        targetProteinPct: state.crTargetProteinPct,
+        targetCarbsPct: state.crTargetCarbsPct,
+        targetFatPct: state.crTargetFatPct,
+        days: state.crDays,
+        weekDays: allWeekDays,
+      };
+
+      const { error } = await supabase.from("saved_menu_templates").insert({
+        trainer_id: state.trainerId,
+        name: templateName.trim(),
+        config,
+      });
+
+      if (error) {
+        toast.error("Error al guardar el menu");
+        console.error("[NutritionPage] Error guardando template:", error);
+        dispatch({ type: "CR_SET_SAVING_TEMPLATE", saving: false });
+        return;
+      }
+
+      toast.success("Menu guardado correctamente");
+      dispatch({ type: "CR_SET_SAVING_TEMPLATE", saving: false });
+      loadData();
+    } catch {
+      toast.error("Error inesperado al guardar el menu");
+      dispatch({ type: "CR_SET_SAVING_TEMPLATE", saving: false });
+    }
+  }, [
+    state.crTitle,
+    state.crSelectedDays,
+    state.crMesocycleWeeks,
+    state.crMainMeals,
+    state.crSnacksPerDay,
+    state.crTargetKcal,
+    state.crTargetProteinPct,
+    state.crTargetCarbsPct,
+    state.crTargetFatPct,
+    state.crDays,
+    state.crCurrentWeek,
+    state.crWeekDays,
+    state.trainerId,
+    loadData,
+  ]);
+
   return {
     state,
     dispatch,
@@ -733,6 +1192,7 @@ export function useNutritionPage() {
     // Actions
     addFoodToMeal,
     handleSendMenu,
+    handleSaveTemplate,
     handleSaveFood,
     handleDeleteFood,
   };

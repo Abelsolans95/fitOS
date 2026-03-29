@@ -2,6 +2,25 @@
    Active Training — Shared Types & Helpers
    ──────────────────────────────────────────── */
 
+export interface SetConfig {
+  reps_min: number;
+  reps_max: number;
+  rir: number;
+  target_weight: number | null;
+  rest_s: number;
+}
+
+export interface WeekConfig {
+  sets: number;
+  reps_min: number;
+  reps_max: number;
+  rir: number;
+  target_weight: number | null;
+  rest_s: number;
+  sets_detail?: SetConfig[];
+  coach_notes?: string;
+}
+
 export interface ExerciseData {
   exercise_id: string;
   name: string;
@@ -22,6 +41,9 @@ export interface ExerciseData {
   technique_notes?: string;
   video_url?: string;
   order?: number;
+  mode?: "equal" | "different";
+  sets_config?: SetConfig[];
+  weekly_config?: Record<number, WeekConfig>;
 }
 
 export interface DayData {
@@ -53,6 +75,7 @@ export interface PreviousLog {
 export interface SetEntry {
   weight_kg: string;
   reps_done: string;
+  rir: string;
   completed: boolean;
 }
 

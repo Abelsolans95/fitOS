@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { DarkSelect } from "@/components/ui/DarkSelect";
 import { createClient } from "@/lib/supabase";
 
 interface Appointment {
@@ -148,33 +149,21 @@ function RequestAppointmentModal({ trainerId, clientId, onClose, onCreated }: Re
               <label className="mb-1 block text-[11px] font-bold uppercase tracking-[0.15em] text-[#5A5A72]">
                 Tipo de sesión *
               </label>
-              <select
+              <DarkSelect
                 value={form.session_type}
-                onChange={(e) => setForm((f) => ({ ...f, session_type: e.target.value }))}
-                className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm text-white outline-none focus:border-[#00E5FF]/40"
-              >
-                {SESSION_TYPES.map((t) => (
-                  <option key={t.value} value={t.value} className="bg-[#12121A]">
-                    {t.label}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => setForm((f) => ({ ...f, session_type: v }))}
+                options={SESSION_TYPES.map((t) => ({ value: t.value, label: t.label }))}
+              />
             </div>
             <div>
               <label className="mb-1 block text-[11px] font-bold uppercase tracking-[0.15em] text-[#5A5A72]">
                 Duración estimada
               </label>
-              <select
+              <DarkSelect
                 value={form.duration}
-                onChange={(e) => setForm((f) => ({ ...f, duration: e.target.value }))}
-                className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm text-white outline-none focus:border-[#00E5FF]/40"
-              >
-                {[30, 45, 60, 75, 90, 120].map((d) => (
-                  <option key={d} value={String(d)} className="bg-[#12121A]">
-                    {d} min
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => setForm((f) => ({ ...f, duration: v }))}
+                options={[30, 45, 60, 75, 90, 120].map((d) => ({ value: String(d), label: `${d} min` }))}
+              />
             </div>
           </div>
 
