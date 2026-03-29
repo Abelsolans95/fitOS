@@ -1481,3 +1481,55 @@ npm run test:watch   # Modo watch (desarrollo)
 5. **Verificar paridad web ↔ mobile**: cualquier cambio en web debe reflejarse en mobile y viceversa. No dar una tarea por terminada si solo está implementada en una plataforma.
 
 El objetivo es que cualquier persona o agente que llegue al proyecto pueda continuar sin contexto previo y sin repetir los mismos errores.
+
+---
+
+### Revisión profunda de código #2 — Velocidad de carga (29/03/2026)
+
+Segunda revisión enfocada en rendimiento de carga, seguridad adicional y calidad. 43 hallazgos aplicados:
+
+**Seguridad aplicada:**
+- `complete-registration`: validación `client_id === user.id` (evita que un usuario se vincule como otro)
+- Google OAuth: validación open redirect en `returnTo`/`state` params (solo rutas relativas con `/`)
+- `auth/google/callback`: manejo explícito de error en update de tokens + null check de user
+- `activate-client`: verificación de `role === "client"` antes de activar
+
+**Rendimiento — waterfalls eliminados:**
+- `client/dashboard/page.tsx`: 6 queries secuenciales → 2 grupos Promise.all + activate-client fire-and-forget
+- `trainer/settings/page.tsx`: 3 queries → Promise.all
+- `trainer/appointments/page.tsx`: 4 queries → Promise.all + filtro de rango de fechas (1 mes atrás / 3 adelante)
+- `client/routine/page.tsx`: 5 queries → 2 grupos Promise.all
+- `mobile/DashboardScreen.tsx`: 3 queries → Promise.all
+
+**Rendimiento — queries sin límite corregidas:**
+- `trainer/chat/page.tsx`: `.limit(500)` + Realtime incremental (sin refetch completo)
+- `community_posts`: `.limit(50)` en trainer y cliente
+- `body_metrics`: `.limit(100)`
+- `trainer_clients` en hook: `.limit(200)` safety net
+- `CHAT_MESSAGES_LIMIT = 100` como constante nombrada
+
+**Rendimiento — SELECT * eliminados:**
+- `exercise-resolver.ts`: columnas específicas en 4 queries
+- `food-resolver.ts`: columnas específicas en 2 queries
+
+**Rendimiento — N+1 eliminado:**
+- `api/import/create-exercises/route.ts`: batch insert para crear y vincular ejercicios (de N queries a 2-3 queries totales)
+
+**Infraestructura web:**
+- `loading.tsx` creados en `(dashboard)/`, `trainer/` y `client/` — skeletons inmediatos
+- `React.memo` en `CommunityFeed`, `AppointmentList`
+- `useCallback` para handlers en community trainer page
+- `next/image` para imágenes de posts de comunidad (con `remotePatterns` en next.config.ts)
+- Constantes nombradas en `api/import/excel/route.ts`: `MAX_FILE_SIZE_BYTES`, `MAX_PREVIEW_ROWS`
+
+**Calidad:**
+- `client/community/page.tsx`: 18 useState → `useReducer` con `useClientCommunityPage.ts` (689 → 319 líneas)
+- `useTrainerDashboard` duplicado consolidado en `lib/hooks/useTrainerDashboard.ts`
+- `trainer/dashboard/page.tsx`: hook local eliminado, usa `lib/hooks/` (-58 líneas)
+
+**Mobile:**
+- `AppointmentsScreen.tsx`: instancia duplicada de Supabase → usa instancia compartida
+- `DashboardScreen.tsx`: 3 queries → Promise.all, `CalorieRing` con React.memo, letterSpacing duplicado corregido
+- `CaloriesScreen.tsx`: error handling + useMemo para totales + stale date fix
+- `MealsScreen.tsx`: error handling con Alert
+- `ProgressScreen.tsx` + `AppointmentsScreen.tsx modal`: KeyboardAvoidingView añadido
