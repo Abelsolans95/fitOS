@@ -65,6 +65,15 @@ const BASE_NAV_ITEMS: SidebarNavItem[] = [
     ),
   },
   {
+    label: "Comunidad",
+    href: "/app/trainer/community",
+    icon: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+      </svg>
+    ),
+  },
+  {
     label: "Chat",
     href: "/app/trainer/chat",
     icon: (
@@ -91,12 +100,13 @@ const BASE_NAV_ITEMS: SidebarNavItem[] = [
 
 export function TrainerSidebar() {
   const [unreadCount, setUnreadCount] = useState(0);
+  const [communityUnread, setCommunityUnread] = useState(0);
 
   useEffect(() => {
     let trainerId: string | null = null;
+    const supabase = createClient();
 
     const fetchUnread = async () => {
-      const supabase = createClient();
       if (!trainerId) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
@@ -111,23 +121,64 @@ export function TrainerSidebar() {
       setUnreadCount(count ?? 0);
     };
 
-    fetchUnread();
+    const fetchCommunityUnread = async () => {
+      if (!trainerId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        trainerId = user.id;
+      }
 
-    // Real-time: refresh badge when messages change
-    const supabase = createClient();
+      // Get trainer's community
+      const { data: community } = await supabase
+        .from("communities")
+        .select("id")
+        .eq("coach_id", trainerId)
+        .single();
+      if (!community) { setCommunityUnread(0); return; }
+
+      // Get last seen timestamp
+      const { data: readStatus } = await supabase
+        .from("community_read_status")
+        .select("last_seen_at")
+        .eq("community_id", community.id)
+        .eq("user_id", trainerId)
+        .single();
+
+      // Count posts newer than last_seen_at (by other authors)
+      let query = supabase
+        .from("community_posts")
+        .select("id", { count: "exact", head: true })
+        .eq("community_id", community.id)
+        .neq("author_id", trainerId);
+
+      if (readStatus?.last_seen_at) {
+        query = query.gt("created_at", readStatus.last_seen_at);
+      }
+
+      const { count } = await query;
+      setCommunityUnread(count ?? 0);
+    };
+
+    fetchUnread();
+    fetchCommunityUnread();
+
+    // Real-time: refresh badges
     const channel = supabase
       .channel("trainer-sidebar-unread")
       .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, fetchUnread)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "community_posts" }, fetchCommunityUnread)
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  const items: SidebarNavItem[] = BASE_NAV_ITEMS.map((item) =>
-    item.href === "/app/trainer/chat" && unreadCount > 0
-      ? { ...item, badge: unreadCount }
-      : item
-  );
+  const items: SidebarNavItem[] = BASE_NAV_ITEMS.map((item) => {
+    if (item.href === "/app/trainer/chat" && unreadCount > 0)
+      return { ...item, badge: unreadCount };
+    if (item.href === "/app/trainer/community" && communityUnread > 0)
+      return { ...item, badge: communityUnread };
+    return item;
+  });
 
   return <AppSidebar items={items} defaultHref="/app/trainer/dashboard" />;
 }

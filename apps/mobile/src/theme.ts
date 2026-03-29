@@ -55,9 +55,10 @@ export const radius = {
 } as const;
 
 export const fonts = {
-  regular: "System",
-  medium: "System",
-  bold: "System",
+  regular: "PlusJakartaSans_400Regular",
+  medium: "PlusJakartaSans_500Medium",
+  bold: "PlusJakartaSans_700Bold",
+  extraBold: "PlusJakartaSans_800ExtraBold",
 } as const;
 
 // Shadow utilities for iOS

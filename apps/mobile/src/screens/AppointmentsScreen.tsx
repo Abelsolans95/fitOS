@@ -12,7 +12,7 @@ import {
   Platform,
 } from "react-native";
 import { createClient } from "@supabase/supabase-js";
-import { colors, spacing, radius, shadows } from "../theme";
+import { colors, spacing, radius, shadows , fonts} from "../theme";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 28,
-    fontWeight: "900",
+    fontFamily: fonts.extraBold, letterSpacing: -0.5,
     color: colors.white,
     letterSpacing: -0.5,
   },
@@ -538,7 +538,7 @@ const styles = StyleSheet.create({
   },
   newButtonText: {
     color: "#0A0A0F",
-    fontWeight: "800",
+    fontFamily: fonts.extraBold, letterSpacing: -0.5,
     fontSize: 13,
   },
   scroll: {
@@ -554,7 +554,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 10,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: colors.dimmed,
     letterSpacing: 1.5,
     marginBottom: spacing.md,
@@ -581,7 +581,7 @@ const styles = StyleSheet.create({
   },
   statusBadgeText: {
     fontSize: 10,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
@@ -591,7 +591,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 16,
-    fontWeight: "800",
+    fontFamily: fonts.extraBold, letterSpacing: -0.5,
     color: colors.white,
     marginBottom: spacing.sm,
   },
@@ -602,7 +602,7 @@ const styles = StyleSheet.create({
   },
   cardDate: {
     fontSize: 13,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: colors.cyan,
   },
   cardDot: {
@@ -642,7 +642,7 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     color: colors.red,
     fontSize: 12,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
   },
   emptyState: {
     borderRadius: radius.xl,
@@ -666,7 +666,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 15,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: colors.white,
     marginBottom: spacing.xs,
   },
@@ -685,7 +685,7 @@ const styles = StyleSheet.create({
   emptyButtonText: {
     color: colors.cyan,
     fontSize: 13,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
   },
   // Modal
   modalContainer: {
@@ -704,7 +704,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 17,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: colors.white,
   },
   modalCancel: {
@@ -713,7 +713,7 @@ const styles = StyleSheet.create({
   },
   modalSubmit: {
     fontSize: 15,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: colors.cyan,
   },
   modalContent: {
@@ -723,7 +723,7 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: 10,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: colors.dimmed,
     letterSpacing: 1.5,
     marginBottom: spacing.sm,
@@ -753,7 +753,7 @@ const styles = StyleSheet.create({
   typeChipText: {
     color: colors.dimmed,
     fontSize: 13,
-    fontWeight: "600",
+    fontFamily: fonts.medium,
   },
   typeChipTextActive: {
     color: colors.cyan,
@@ -774,13 +774,13 @@ const styles = StyleSheet.create({
   },
   dayChipWeekday: {
     fontSize: 9,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: colors.dimmed,
     letterSpacing: 0.5,
   },
   dayChipDay: {
     fontSize: 16,
-    fontWeight: "800",
+    fontFamily: fonts.extraBold, letterSpacing: -0.5,
     color: colors.muted,
     marginTop: 2,
   },
@@ -798,7 +798,7 @@ const styles = StyleSheet.create({
   },
   hourChipText: {
     fontSize: 13,
-    fontWeight: "600",
+    fontFamily: fonts.medium,
     color: colors.muted,
   },
   errorText: {

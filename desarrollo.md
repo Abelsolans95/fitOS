@@ -1,6 +1,6 @@
 # FitOS — Estado del Desarrollo
 
-> Documento actualizado el 29/03/2026 (Menús guardados + DarkSelect + navegación semanal mejorada). Léelo de arriba abajo antes de tocar cualquier archivo.
+> Documento actualizado el 29/03/2026 (Comunidad Premium — Feed de Alto Rendimiento). Léelo de arriba abajo antes de tocar cualquier archivo.
 > Cualquier agente o desarrollador debe leer este archivo **primero** para entender el estado actual del proyecto.
 >
 > **IMPORTANTE:** Al terminar cualquier desarrollo, bugfix o cambio significativo, actualiza este archivo (`desarrollo.md`) **y** `CLAUDE.md` antes de cerrar la sesión. Refleja los archivos nuevos o modificados, añade notas para el siguiente agente/desarrollador y actualiza la sección de próximos pasos. El objetivo es que cualquier persona o agente pueda continuar el proyecto sin contexto previo.
@@ -189,6 +189,45 @@
 - `apps/web/components/ui/DarkSelect.tsx` — **NUEVO** componente custom select dark
 - `supabase/migrations/033_saved_menu_templates.sql` — **NUEVA** migración tabla `saved_menu_templates`
 
+### Fase 7 — Comunidad Premium (29/03/2026) — **COMPLETADO**
+- [x] Migración 034: tablas `communities`, `community_posts`, `community_comments`, `community_likes`. RLS completo. Realtime en posts, comments, likes.
+- [x] Storage bucket `community-images` (5MB, jpeg/png/webp/gif) con políticas de upload/select/delete.
+- [x] `communities` 1:1 con coach. Auto-creación al visitar la página si no existe. Campos: `name`, `description`, `mode` (OPEN/READ_ONLY_CLIENTS), `is_active`.
+- [x] `community_posts` con soporte texto + imagen (Supabase Storage). `is_pinned` para fijar posts.
+- [x] `community_comments` y `community_likes` (unique post+user) con RLS por membresía.
+- [x] RLS: trainer full CRUD. Cliente: SELECT si `trainer_clients.status='active'` y `communities.is_active=true`. INSERT en posts solo si `mode='OPEN'`. Comments/likes siempre permitidos.
+- [x] Web trainer: `/app/trainer/community/` — `useCommunityPage.ts` (hook useReducer, 30 acciones) + `components/CommunityFeed.tsx` (feed-only) + `components/CommunityPublish.tsx` (crear post) + `components/CommunitySettings.tsx` + `components/types.ts` + `page.tsx` orquestador.
+- [x] Tab "Feed": posts con likes optimistas, comentarios expandibles, fijar/desfijar, eliminar propios.
+- [x] Tab "Publicar": formulario separado para crear publicaciones (título opcional + texto + imagen). En trainer siempre visible. En cliente solo si `mode=OPEN`.
+- [x] Tab "Ajustes": nombre, descripción, toggle "Permitir publicaciones de clientes" (OPEN/READ_ONLY_CLIENTS), toggle "Comunidad activa".
+- [x] Web cliente: `/app/client/community/` — tabs Feed + Publicar (condicional). Si mode=READ_ONLY_CLIENTS, tab Publicar oculto (sin barra de tabs). Si comunidad inactiva o inexistente, muestra estado vacío.
+- [x] Badge de verificado violeta (#7C3AED) para el coach en posts y comentarios + nombre en color violeta.
+- [x] TrainerSidebar: item "Comunidad" añadido (entre Citas y Chat).
+- [x] ClientSidebar: item "Comunidad" añadido (entre Citas y Chat).
+- [x] Realtime: nuevos posts de otros usuarios aparecen automáticamente en el feed.
+- [x] **Respuestas a comentarios (threading):** `parent_id` nullable en `community_comments` (FK self-referencial). Árbol de comentarios con indentación visual (max 2 niveles). Botón "Responder" inline.
+- [x] **Likes en comentarios:** tabla `community_comment_likes` con `is_coach` BOOLEAN para diferenciar likes del coach (violeta con badge "Coach") de los clientes (cyan estándar). Toggle optimista. RLS + Realtime.
+- [x] **Componente recursivo `CommentItem`/`ClientCommentItem`:** renderiza comentarios con replies anidados, likes, badge coach, botón responder/eliminar.
+- [x] **Título opcional en publicaciones:** columna `title TEXT` nullable en `community_posts` (migración 035). Input de título en formularios de publicación. Se muestra como `<h3>` bold en el feed si existe.
+- [x] **Badge de no leídos en sidebar:** tabla `community_read_status` (migración 035) con `last_seen_at` por `(community_id, user_id)`. Upsert al visitar la comunidad. Badge cyan en sidebar (mismo estilo que chat) mostrando posts nuevos desde última visita. Realtime: INSERT en `community_posts` incrementa contador. Trainer: solo cuenta posts de clientes. Cliente: cuenta todos los posts.
+
+**Archivos creados/modificados (29/03/2026):**
+- `supabase/migrations/034_community.sql` — **NUEVA** migración completa (4 tablas, RLS, Realtime, Storage)
+- `supabase/migrations/035_community_title_read_status.sql` — **NUEVA** title en posts + community_read_status
+- `apps/web/app/(dashboard)/app/trainer/community/page.tsx` — **NUEVO** orquestador (~120 líneas)
+- `apps/web/app/(dashboard)/app/trainer/community/useCommunityPage.ts` — **NUEVO** hook useReducer
+- `apps/web/app/(dashboard)/app/trainer/community/components/types.ts` — **NUEVO** tipos Community, Post, Comment, Like
+- `apps/web/app/(dashboard)/app/trainer/community/components/CommunityFeed.tsx` — **NUEVO** feed-only (PostCard + comments)
+- `apps/web/app/(dashboard)/app/trainer/community/components/CommunityPublish.tsx` — **NUEVO** formulario crear publicación
+- `apps/web/app/(dashboard)/app/trainer/community/components/CommunitySettings.tsx` — **NUEVO** ajustes de comunidad
+- `apps/web/app/(dashboard)/app/client/community/page.tsx` — **NUEVO** feed del cliente
+- `apps/web/components/layout/TrainerSidebar.tsx` — añadido item "Comunidad"
+- `apps/web/components/layout/ClientSidebar.tsx` — añadido item "Comunidad"
+
+**Pendiente (mobile):**
+- [ ] `CommunityScreen.tsx` en `apps/mobile/src/screens/` — feed + comments + likes con estilo brutalista
+- [ ] Tab "Comunidad" en `App.tsx` (9 tabs en bottom nav)
+
 ### Rediseño UI — "Brutalismo Elegante" y Dashboards Premium (Actualizado — 23/03/2026)
 - Rediseño integral de 7 pantallas mobile y páginas web públicas / auth (19/03/2026)
 - **Dashboards Premium (Entrenador y Cliente):** Implementación de *glassmorphism* intensivo, texturas `.dot-grid` globales, rediseño flotante en la `AppSidebar` y transparencias en tarjetas de contenido (`backdrop-blur-xl`). Se actualizaron masivamente todas las rutas internas y layouts base para unificar estética holográfica con la landing page (23/03/2026)
@@ -235,7 +274,9 @@ fitOS/
 │   │   ├── 030_appointments.sql              ← Tabla appointments (citas) + RLS + Realtime
 │   │   ├── 031_health_logs.sql              ← Tabla health_logs (lesiones/molestias) + RLS + Realtime
 │   │   ├── 032_routine_templates.sql        ← Tabla routine_templates (plantillas rutina) + RLS
-│   │   └── 033_saved_menu_templates.sql     ← Tabla saved_menu_templates (menús guardados trainer) + RLS
+│   │   ├── 033_saved_menu_templates.sql     ← Tabla saved_menu_templates (menús guardados trainer) + RLS
+│   │   ├── 034_community.sql               ← Tablas communities, community_posts, community_comments, community_likes + RLS + Realtime + Storage
+│   │   └── 035_community_title_read_status.sql ← title en posts + community_read_status + RLS
 │   └── functions/
 │       ├── analyze-food-image/       ← Claude Vision: análisis foto → macros
 │       ├── generate-meal-plan/       ← Claude: generar plan nutricional
@@ -290,6 +331,12 @@ fitOS/
 | `health_logs` | **NUEVA** — Lesiones/molestias musculares. `muscle_id` (texto: ej. 'quadriceps_left'), `pain_score` (1-10), `incident_type` ('puntual'/'diagnosticada'/'cronica'), `status` ('active'/'recovering'/'recovered'), `reported_by` ('coach'/'client'). RLS: trainer total, cliente SELECT+INSERT+UPDATE propios. Realtime activo. |
 | `routine_templates` | **NUEVA** — Plantillas de rutina reutilizables. `trainer_id`, `name`, `training_days` (TEXT[]), `day_labels` (JSONB), `exercises` (JSONB — sin weight/RIR), `total_weeks`, `goal`. RLS: trainer full CRUD sobre sus plantillas. Trigger `set_updated_at()`. |
 | `saved_menu_templates` | **NUEVA** — Menús guardados reutilizables. `trainer_id`, `name`, `config` (JSONB — serialización completa del estado del planificador: días, semanas, macros, meals con alimentos, suplementos y notas). RLS: trainer full CRUD. Trigger `set_updated_at()`. |
+| `communities` | **NUEVA** — Comunidad 1:1 con coach. `coach_id` (unique), `name`, `description`, `mode` ('OPEN'/'READ_ONLY_CLIENTS'), `is_active`. RLS: trainer full CRUD, cliente SELECT si `trainer_clients` activo. Trigger `set_updated_at()`. |
+| `community_posts` | **NUEVA** — Posts del feed. `community_id`, `author_id`, `content`, `image_url` (Supabase Storage), `is_pinned`. RLS: trainer full CRUD en su comunidad, cliente SELECT + INSERT (solo mode OPEN) + UPDATE/DELETE propios. Realtime activo. |
+| `community_comments` | **NUEVA** — Comentarios en posts. `post_id`, `author_id`, `content`. RLS: trainer full CRUD, cliente SELECT + INSERT + DELETE propios. Realtime activo. |
+| `community_likes` | **NUEVA** — Likes en posts (unique post_id+user_id). RLS: trainer full, cliente SELECT + INSERT/DELETE propios. Realtime activo. |
+| `community_comment_likes` | **NUEVA** — Likes en comentarios (unique comment_id+user_id). `is_coach` BOOLEAN diferencia likes del trainer. RLS: trainer full, cliente SELECT + INSERT/DELETE propios. Realtime activo. |
+| `community_read_status` | **NUEVA** — (migración 035) Tracking última visita por usuario a comunidad. `(community_id, user_id)` unique. `last_seen_at` TIMESTAMPTZ. Se usa para badge de no leídos en sidebar. RLS: cada usuario gestiona sus propios registros. |
 
 ### Funciones de base de datos
 - **`handle_new_user()`** — Trigger en `auth.users` → crea `profiles`
@@ -390,6 +437,14 @@ apps/web/app/
 │       │   #   └── ExerciseCard.tsx         ← Ejercicio actual: sets, pesos, reps, ANTERIOR, navegación
 │       │   ├── forms/page.tsx          ← Editor de formulario onboarding (drag & drop, 8 tipos)
 │       │   ├── appointments/page.tsx   ← ✅ Calendario de citas: crear, confirmar, completar, cancelar
+│       │   ├── community/             ← ✅ Comunidad Premium (Feed de Alto Rendimiento)
+│       │   │   ├── page.tsx           ← Orquestador: tabs Feed + Ajustes
+│       │   │   ├── useCommunityPage.ts ← Hook useReducer (30 acciones)
+│       │   │   └── components/
+│       │   │       ├── types.ts       ← Community, CommunityPost, CommunityComment, CommunityLike
+│       │   │       ├── CommunityFeed.tsx ← Feed-only: PostCard + comments
+│       │   │       ├── CommunityPublish.tsx ← Formulario crear publicación (tab Publicar)
+│       │   │       └── CommunitySettings.tsx ← Nombre, descripción, modo, activo
 │       │   └── settings/page.tsx       ← ✅ Código promo + perfil editable
 │       │
 │       └── client/
@@ -402,6 +457,7 @@ apps/web/app/
 │           ├── progress/page.tsx       ← ✅ Mediciones corporales + gráfico SVG + historial
 │           ├── appointments/page.tsx   ← ✅ Ver/solicitar/cancelar citas con el entrenador
 │           ├── health/page.tsx        ← ✅ Mi Salud — mapa anatómico + reportar molestias + timeline
+│           ├── community/page.tsx     ← ✅ Feed de comunidad del trainer (likes, comments, publicar si OPEN)
 │           └── chat/page.tsx           ← ✅ Chat con entrenador (Realtime, optimista, leído)
 │
 ├── api/
