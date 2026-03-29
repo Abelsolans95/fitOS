@@ -1,8 +1,9 @@
 "use client";
 
-import { type Dispatch } from "react";
-import { type ClientOption, DAYS_OF_WEEK } from "../types";
+import { type Dispatch, useState } from "react";
+import { type ClientOption, type RoutineTemplate, DAYS_OF_WEEK } from "../types";
 import { type RoutinesState, type RoutinesAction } from "../useRoutinesPage";
+import { DarkSelect } from "@/components/ui/DarkSelect";
 import DaySchedule from "./DaySchedule";
 import ExerciseSelector from "./ExerciseSelector";
 
@@ -16,6 +17,7 @@ interface RoutineEditorProps {
   weekDates: { day: string; date: string }[];
   totalSets: (dayKey: string) => number;
   handleSave: () => void;
+  handleSaveTemplate: (name: string) => Promise<void>;
 }
 
 export default function RoutineEditor({
@@ -24,6 +26,7 @@ export default function RoutineEditor({
   weekDates,
   totalSets,
   handleSave,
+  handleSaveTemplate,
 }: RoutineEditorProps) {
   const {
     step,
@@ -37,8 +40,12 @@ export default function RoutineEditor({
     crTrainingDays,
     crSearchModalDayKey,
     crSaving,
+    crSavingTemplate,
+    crShowTemplateModal,
+    crSelectedTemplateId,
     clients,
     exercises,
+    templates,
   } = state;
 
   return (
@@ -103,6 +110,8 @@ export default function RoutineEditor({
           goal={crGoal}
           mesocycleWeeks={crMesocycleWeeks}
           startDate={crStartDate}
+          templates={templates}
+          selectedTemplateId={crSelectedTemplateId}
           dispatch={dispatch}
         />
       )}
@@ -113,6 +122,8 @@ export default function RoutineEditor({
           selectedDays={crSelectedDays}
           dayLabels={crDayLabels}
           weekDates={weekDates}
+          selectedTemplateId={crSelectedTemplateId}
+          templates={templates}
           dispatch={dispatch}
         />
       )}
@@ -147,26 +158,40 @@ export default function RoutineEditor({
             >
               Atrás
             </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={crSaving}
-              className="flex items-center justify-center gap-2 bg-[#00E5FF] text-[#0A0A0F] font-bold rounded-xl px-5 py-2.5 text-[13px] hover:bg-[#2BEEFF] hover:shadow-[0_0_24px_rgba(0,229,255,0.35)] transition-all disabled:opacity-50"
-            >
-              {crSaving ? (
-                <>
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#0A0A0F] border-t-transparent" />
-                  Enviando...
-                </>
-              ) : (
-                <>
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
-                  </svg>
-                  Enviar al cliente
-                </>
-              )}
-            </button>
+            <div className="flex items-center gap-3">
+              {/* Save as template */}
+              <button
+                type="button"
+                onClick={() => dispatch({ type: "CR_SHOW_TEMPLATE_MODAL", show: true })}
+                className="flex items-center gap-2 border border-[#7C3AED]/30 bg-[#7C3AED]/5 text-[#7C3AED] font-semibold rounded-xl px-5 py-2.5 text-[13px] hover:bg-[#7C3AED]/10 hover:border-[#7C3AED]/50 transition-all"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" />
+                </svg>
+                Guardar plantilla
+              </button>
+              {/* Send to client */}
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={crSaving}
+                className="flex items-center justify-center gap-2 bg-[#00E5FF] text-[#0A0A0F] font-bold rounded-xl px-5 py-2.5 text-[13px] hover:bg-[#2BEEFF] hover:shadow-[0_0_24px_rgba(0,229,255,0.35)] transition-all disabled:opacity-50"
+              >
+                {crSaving ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#0A0A0F] border-t-transparent" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                    </svg>
+                    Enviar al cliente
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -179,6 +204,15 @@ export default function RoutineEditor({
             dispatch({ type: "CR_ADD_EXERCISE", dayKey: crSearchModalDayKey, exercise })
           }
           onClose={() => dispatch({ type: "CR_CLOSE_SEARCH_MODAL" })}
+        />
+      )}
+
+      {/* Save template modal */}
+      {crShowTemplateModal && (
+        <SaveTemplateModal
+          saving={crSavingTemplate}
+          onSave={handleSaveTemplate}
+          onClose={() => dispatch({ type: "CR_SHOW_TEMPLATE_MODAL", show: false })}
         />
       )}
     </div>
@@ -196,6 +230,8 @@ function Step1Config({
   goal,
   mesocycleWeeks,
   startDate,
+  templates,
+  selectedTemplateId,
   dispatch,
 }: {
   clients: ClientOption[];
@@ -204,6 +240,8 @@ function Step1Config({
   goal: string;
   mesocycleWeeks: number;
   startDate: string;
+  templates: RoutineTemplate[];
+  selectedTemplateId: string;
   dispatch: Dispatch<RoutinesAction>;
 }) {
   return (
@@ -211,23 +249,43 @@ function Step1Config({
       <h2 className="text-[22px] font-extrabold tracking-[-0.03em] text-white">Configurar mesociclo</h2>
 
       <div className="rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6 space-y-5">
+        {/* Template selector */}
+        {templates.length > 0 && (
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#7C3AED]">
+              Cargar plantilla
+            </label>
+            <DarkSelect
+              value={selectedTemplateId}
+              onChange={(val) => {
+                dispatch({ type: "CR_SELECT_TEMPLATE", templateId: val });
+                if (val) {
+                  const tpl = templates.find((t) => t.id === val);
+                  if (tpl) dispatch({ type: "CR_APPLY_TEMPLATE", template: tpl });
+                }
+              }}
+              placeholder="Sin plantilla — empezar de cero"
+              options={templates.map((t) => ({ value: t.id, label: `${t.name} (${t.training_days.length} días · ${t.total_weeks} sem)` }))}
+            />
+            {selectedTemplateId && (
+              <p className="text-[11px] text-[#7C3AED]/70">
+                Plantilla cargada — los días, labels y ejercicios se pre-configurarán automáticamente.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Client */}
         <div className="space-y-1.5">
           <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">
             Cliente
           </label>
-          <select
+          <DarkSelect
             value={selectedClientId}
-            onChange={(e) => dispatch({ type: "CR_SET_CLIENT", clientId: e.target.value })}
-            className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#12121A] px-4 text-[13px] text-white outline-none transition-colors focus:border-[#00E5FF]/40"
-          >
-            <option value="" className="bg-[#12121A] text-[#5A5A72]">Seleccionar cliente...</option>
-            {clients.map((c) => (
-              <option key={c.client_id} value={c.client_id} className="bg-[#12121A] text-white">
-                {c.full_name ?? c.email ?? "Sin nombre"}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => dispatch({ type: "CR_SET_CLIENT", clientId: val })}
+            placeholder="Seleccionar cliente..."
+            options={clients.map((c) => ({ value: c.client_id, label: c.full_name ?? c.email ?? "Sin nombre" }))}
+          />
         </div>
 
         {/* Title */}
@@ -264,17 +322,11 @@ function Step1Config({
             <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">
               Semanas del bloque
             </label>
-            <select
-              value={mesocycleWeeks}
-              onChange={(e) => dispatch({ type: "CR_SET_WEEKS", weeks: Number(e.target.value) })}
-              className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#12121A] px-4 text-[13px] text-white outline-none transition-colors focus:border-[#00E5FF]/40"
-            >
-              {Array.from({ length: 12 }, (_, i) => i + 1).map((w) => (
-                <option key={w} value={w} className="bg-[#12121A]">
-                  {w} semana{w > 1 ? "s" : ""}
-                </option>
-              ))}
-            </select>
+            <DarkSelect
+              value={String(mesocycleWeeks)}
+              onChange={(val) => dispatch({ type: "CR_SET_WEEKS", weeks: Number(val) })}
+              options={Array.from({ length: 12 }, (_, i) => i + 1).map((w) => ({ value: String(w), label: `${w} semana${w > 1 ? "s" : ""}` }))}
+            />
           </div>
           <div className="space-y-1.5">
             <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">
@@ -315,18 +367,32 @@ function Step2Days({
   selectedDays,
   dayLabels,
   weekDates,
+  selectedTemplateId,
+  templates,
   dispatch,
 }: {
   selectedDays: string[];
   dayLabels: Record<string, string>;
   weekDates: { day: string; date: string }[];
+  selectedTemplateId: string;
+  templates: RoutineTemplate[];
   dispatch: Dispatch<RoutinesAction>;
 }) {
+  // Collect unique labels from the selected template for dropdown options
+  const selectedTemplate = selectedTemplateId
+    ? templates.find((t) => t.id === selectedTemplateId)
+    : null;
+  const templateLabels = selectedTemplate
+    ? [...new Set(Object.values(selectedTemplate.day_labels).filter(Boolean))]
+    : [];
+
   return (
     <div className="space-y-6">
       <h2 className="text-[22px] font-extrabold tracking-[-0.03em] text-white">Días de entrenamiento</h2>
       <p className="text-[13px] text-[#8B8BA3]">
-        Selecciona los días y asigna un nombre a cada sesión (ej: PIERNA, TORSO, FULL BODY).
+        {selectedTemplate
+          ? "Los días de la plantilla están pre-seleccionados. Puedes cambiar los labels con el desplegable."
+          : "Selecciona los días y asigna un nombre a cada sesión (ej: PIERNA, TORSO, FULL BODY)."}
       </p>
 
       {/* Week preview with dates */}
@@ -396,7 +462,33 @@ function Step2Days({
                 </button>
               </div>
 
-              {isSelected && (
+              {isSelected && templateLabels.length > 0 ? (
+                /* Dropdown with template labels + custom option */
+                <div className="mt-3 space-y-1.5">
+                  <DarkSelect
+                    value={dayLabels[day.key] || ""}
+                    onChange={(val) =>
+                      dispatch({ type: "CR_SET_DAY_LABEL", key: day.key, label: val })
+                    }
+                    placeholder="Seleccionar label..."
+                    options={templateLabels.map((lbl) => ({ value: lbl, label: lbl }))}
+                  />
+                  {/* Also allow custom input */}
+                  <input
+                    type="text"
+                    placeholder="O escribe un nombre personalizado"
+                    value={templateLabels.includes(dayLabels[day.key] || "") ? "" : dayLabels[day.key] || ""}
+                    onChange={(e) =>
+                      dispatch({
+                        type: "CR_SET_DAY_LABEL",
+                        key: day.key,
+                        label: e.target.value.toUpperCase(),
+                      })
+                    }
+                    className="h-8 w-full rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#00E5FF] placeholder:text-[#5A5A72] placeholder:normal-case placeholder:tracking-normal outline-none transition-colors focus:border-[#00E5FF]/40"
+                  />
+                </div>
+              ) : isSelected ? (
                 <input
                   type="text"
                   placeholder="Nombre de sesión (ej: PIERNA)"
@@ -410,7 +502,7 @@ function Step2Days({
                   }
                   className="mt-3 h-9 w-full rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#00E5FF] placeholder:text-[#5A5A72] placeholder:normal-case placeholder:tracking-normal outline-none transition-colors focus:border-[#00E5FF]/40"
                 />
-              )}
+              ) : null}
             </div>
           );
         })}
@@ -438,6 +530,83 @@ function Step2Days({
             <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
           </svg>
         </button>
+      </div>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────
+   SaveTemplateModal — Name input for saving
+   ──────────────────────────────────────────── */
+
+function SaveTemplateModal({
+  saving,
+  onSave,
+  onClose,
+}: {
+  saving: boolean;
+  onSave: (name: string) => void;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState("");
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-md rounded-2xl border border-white/[0.08] bg-[#12121A] shadow-2xl">
+        <div className="border-b border-white/[0.06] px-6 py-4">
+          <h2 className="text-lg font-bold text-white">Guardar plantilla</h2>
+          <p className="text-[12px] text-[#8B8BA3] mt-0.5">
+            Guarda esta configuración para reutilizarla con otros clientes.
+          </p>
+        </div>
+        <div className="px-6 py-5 space-y-4">
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">
+              Nombre de la plantilla
+            </label>
+            <input
+              type="text"
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && name.trim()) onSave(name);
+              }}
+              placeholder="Ej: Hipertrofia Torso/Pierna 4 días"
+              className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#7C3AED]/40"
+            />
+          </div>
+        </div>
+        <div className="flex items-center justify-end gap-3 border-t border-white/[0.06] px-6 py-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl border border-white/[0.08] px-4 py-2 text-[12px] font-medium text-[#8B8BA3] transition-colors hover:text-white"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => onSave(name)}
+            disabled={saving || !name.trim()}
+            className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-5 py-2 text-[12px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {saving ? (
+              <>
+                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                Guardando...
+              </>
+            ) : (
+              <>
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" />
+                </svg>
+                Guardar plantilla
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

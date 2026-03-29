@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
 import { toast } from "sonner";
+import { DarkSelect } from "@/components/ui/DarkSelect";
 import type { InferredColumnType } from "@/lib/excel-parser";
 
 /* ────────────────────────────────────────────
@@ -350,17 +351,11 @@ export default function ImportPage() {
                 </p>
               </div>
               {sheets.length > 1 && (
-                <select
-                  className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-sm text-white"
-                  value={activeSheet}
-                  onChange={(e) => setActiveSheet(parseInt(e.target.value))}
-                >
-                  {sheets.map((s, i) => (
-                    <option key={i} value={i}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
+                <DarkSelect
+                  value={String(activeSheet)}
+                  onChange={(val) => setActiveSheet(parseInt(val))}
+                  options={sheets.map((s, i) => ({ value: String(i), label: s.name }))}
+                />
               )}
             </div>
 
@@ -392,23 +387,16 @@ export default function ImportPage() {
                         {col.header || `Col ${col.index + 1}`}
                       </td>
                       <td className="px-3 py-3">
-                        <select
-                          className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-1.5 text-sm text-white"
+                        <DarkSelect
                           value={columnMapping[col.index] || "unknown"}
-                          onChange={(e) =>
+                          onChange={(val) =>
                             setColumnMapping((prev) => ({
                               ...prev,
-                              [col.index]: e.target
-                                .value as InferredColumnType,
+                              [col.index]: val as InferredColumnType,
                             }))
                           }
-                        >
-                          {ALL_COLUMN_TYPES.map((type) => (
-                            <option key={type} value={type}>
-                              {COLUMN_TYPE_LABELS[type]}
-                            </option>
-                          ))}
-                        </select>
+                          options={ALL_COLUMN_TYPES.map((type) => ({ value: type, label: COLUMN_TYPE_LABELS[type] }))}
+                        />
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-2">

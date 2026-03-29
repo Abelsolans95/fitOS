@@ -76,6 +76,54 @@ export interface RoutineRow {
   client_name: string | null;
 }
 
+/** Saved routine template (exercises without weight/RIR) */
+export interface RoutineTemplate {
+  id: string;
+  name: string;
+  training_days: string[];
+  day_labels: Record<string, string>;
+  exercises: TemplateExercise[];
+  total_weeks: number;
+  goal: string | null;
+  created_at: string;
+}
+
+/** Set config stored in a template — no weight/RIR */
+export interface TemplateSetConfig {
+  reps_min: number;
+  reps_max: number;
+  rest_s: number;
+}
+
+/** Week config stored in a template — no weight/RIR */
+export interface TemplateWeekConfig {
+  sets: number;
+  reps_min: number;
+  reps_max: number;
+  rest_s: number;
+  sets_detail?: TemplateSetConfig[];
+  coach_notes?: string;
+}
+
+/** Exercise stored inside a template — no weight/RIR */
+export interface TemplateExercise {
+  exercise_id: string;
+  name: string;
+  day_of_week: string;
+  day_label: string;
+  sets: number;
+  reps_min: number;
+  reps_max: number;
+  rest_pause_sets: number;
+  rest_s: number;
+  progression_rule: string;
+  coach_notes: string;
+  order: number;
+  mode: "equal" | "different";
+  sets_config?: TemplateSetConfig[];
+  weekly_config?: Record<number, TemplateWeekConfig>;
+}
+
 /* ────────────────────────────────────────────
    Constants
    ──────────────────────────────────────────── */

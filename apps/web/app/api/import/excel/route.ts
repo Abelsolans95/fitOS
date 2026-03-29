@@ -197,6 +197,7 @@ IMPORTANTE:
         (col: DetectedColumn) => ({
           index: col.index,
           header: col.header,
+          type: col.type,
           inferred_type: col.type,
           confidence: col.confidence,
           series_number: col.series_number || null,

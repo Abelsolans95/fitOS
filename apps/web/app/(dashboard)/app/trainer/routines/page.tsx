@@ -9,7 +9,7 @@ import RoutineEditor from "./components/RoutineEditor";
    ──────────────────────────────────────────── */
 
 export default function TrainerRoutinesPage() {
-  const { state, dispatch, weekDates, totalSets, handleSave } = useRoutinesPage();
+  const { state, dispatch, weekDates, totalSets, handleSave, handleSaveTemplate } = useRoutinesPage();
 
   /* ── Loading ── */
   if (state.loading) {
@@ -40,6 +40,7 @@ export default function TrainerRoutinesPage() {
         weekDates={weekDates}
         totalSets={totalSets}
         handleSave={handleSave}
+        handleSaveTemplate={handleSaveTemplate}
       />
     );
   }
