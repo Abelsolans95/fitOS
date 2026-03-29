@@ -31,6 +31,7 @@ export function TabMenu({
   );
 
   useEffect(() => {
+    if (!clientId) return;
     const load = async () => {
       setLoadingLogs(true);
       const supabase = createClient();
@@ -47,7 +48,7 @@ export function TabMenu({
         .order("logged_at", { ascending: true });
       if (logsError) {
         toast.error("Error al cargar el registro de comidas");
-        console.error("[TabMenu] Error cargando food_log:", logsError);
+        console.error("[TabMenu] Error cargando food_log:", logsError.message, logsError.code, logsError.details, logsError.hint);
       }
       setFoodLogs((data ?? []) as FoodLogEntry[]);
       setLoadingLogs(false);

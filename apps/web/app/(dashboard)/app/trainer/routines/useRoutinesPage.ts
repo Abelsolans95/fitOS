@@ -33,6 +33,7 @@ export interface RoutinesState {
   exercises: ExerciseItem[];
   templates: RoutineTemplate[];
   showCreator: boolean;
+  activeTab: "rutinas" | "ejercicios";
   /* Creator */
   step: 1 | 2 | 3;
   crSelectedClientId: string;
@@ -84,6 +85,7 @@ const initialState: RoutinesState = {
   crSelectedTemplateId: "",
   crSavingTemplate: false,
   crShowTemplateModal: false,
+  activeTab: "rutinas" as const,
 };
 
 /* ────────────────────────────────────────────
@@ -147,7 +149,8 @@ export type RoutinesAction =
   | { type: "CR_SELECT_TEMPLATE"; templateId: string }
   | { type: "CR_APPLY_TEMPLATE"; template: RoutineTemplate }
   | { type: "CR_SHOW_TEMPLATE_MODAL"; show: boolean }
-  | { type: "CR_SET_SAVING_TEMPLATE"; saving: boolean };
+  | { type: "CR_SET_SAVING_TEMPLATE"; saving: boolean }
+  | { type: "SET_TAB"; tab: "rutinas" | "ejercicios" };
 
 /* ────────────────────────────────────────────
    Reducer
@@ -156,6 +159,8 @@ export type RoutinesAction =
 function routinesReducer(state: RoutinesState, action: RoutinesAction): RoutinesState {
   switch (action.type) {
     /* ── Page ── */
+    case "SET_TAB":
+      return { ...state, activeTab: action.tab };
     case "SET_LOADING":
       return { ...state, loading: action.loading };
     case "SET_ERROR":

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import {
   useNutritionPage,
   getMealTotals,
+  getWeekTarget,
   DAYS_OF_WEEK,
   getWeekDates,
   type FoodItem,
@@ -280,10 +281,17 @@ function MenuCreator({ n }: { n: NutritionHook }) {
     };
   }, [state.crDays]);
 
-  const targetKcal = Number(state.crTargetKcal) || 0;
-  const targetProteinG = Math.round((targetKcal * state.crTargetProteinPct) / 100 / 4);
-  const targetCarbsG = Math.round((targetKcal * state.crTargetCarbsPct) / 100 / 4);
-  const targetFatG = Math.round((targetKcal * state.crTargetFatPct) / 100 / 9);
+  // Per-week targets (fall back to global defaults)
+  const weekTarget = getWeekTarget(state.crCurrentWeek, state.crWeeklyTargets, {
+    kcal: state.crTargetKcal,
+    proteinPct: state.crTargetProteinPct,
+    carbsPct: state.crTargetCarbsPct,
+    fatPct: state.crTargetFatPct,
+  });
+  const targetKcal = Number(weekTarget.kcal) || 0;
+  const targetProteinG = Math.round((targetKcal * weekTarget.proteinPct) / 100 / 4);
+  const targetCarbsG = Math.round((targetKcal * weekTarget.carbsPct) / 100 / 4);
+  const targetFatG = Math.round((targetKcal * weekTarget.fatPct) / 100 / 9);
   const totalMacroG = dailyTotals.protein + dailyTotals.carbs + dailyTotals.fat;
   const actualProteinPct = totalMacroG > 0 ? Math.round((dailyTotals.protein / totalMacroG) * 100) : 0;
   const actualCarbsPct = totalMacroG > 0 ? Math.round((dailyTotals.carbs / totalMacroG) * 100) : 0;
@@ -293,7 +301,7 @@ function MenuCreator({ n }: { n: NutritionHook }) {
   const deltaCarbs = Math.round((targetCarbsG - dailyTotals.carbs) * 10) / 10;
   const deltaFat = Math.round((targetFatG - dailyTotals.fat) * 10) / 10;
 
-  const macroSumOk = state.crTargetProteinPct + state.crTargetCarbsPct + state.crTargetFatPct === 100;
+  const macroSumOk = weekTarget.proteinPct + weekTarget.carbsPct + weekTarget.fatPct === 100;
 
   return (
     <div className="space-y-6">
@@ -319,7 +327,7 @@ function MenuCreator({ n }: { n: NutritionHook }) {
           <div className="space-y-1.5">
             <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#7C3AED]">Cargar menu guardado</label>
             <DarkSelect
-              value=""
+              value={state.crLoadedMenuId}
               onChange={(val) => {
                 const menu = state.savedMenus.find((m) => m.id === val);
                 if (menu) {
@@ -330,6 +338,11 @@ function MenuCreator({ n }: { n: NutritionHook }) {
               placeholder="Seleccionar menu guardado..."
               options={state.savedMenus.map((m) => ({ value: m.id, label: m.name }))}
             />
+            {state.crLoadedMenuId && (
+              <p className="text-[11px] text-[#7C3AED]/70">
+                Menu cargado — los días, semanas, macros y comidas se han pre-configurado automáticamente.
+              </p>
+            )}
           </div>
         )}
 
@@ -461,13 +474,16 @@ function MenuCreator({ n }: { n: NutritionHook }) {
         <div className="space-y-1.5">
           <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">
             Distribucion de macros (%)
+            {state.crMesocycleWeeks > 1 && (
+              <span className="ml-2 text-[#7C3AED]">— Semana {state.crCurrentWeek}</span>
+            )}
           </label>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { key: "protein", label: "Proteína", color: "#00C853", value: state.crTargetProteinPct, action: "CR_SET_TARGET_PROTEIN_PCT" as const },
-              { key: "carbs", label: "Carbos", color: "#FF9100", value: state.crTargetCarbsPct, action: "CR_SET_TARGET_CARBS_PCT" as const },
-              { key: "fat", label: "Grasas", color: "#7C3AED", value: state.crTargetFatPct, action: "CR_SET_TARGET_FAT_PCT" as const },
-            ].map(({ key, label, color, value, action }) => (
+              { key: "protein", label: "Proteína", color: "#00C853", value: weekTarget.proteinPct, weekAction: "CR_SET_WEEK_TARGET_PROTEIN_PCT" as const, globalAction: "CR_SET_TARGET_PROTEIN_PCT" as const },
+              { key: "carbs", label: "Carbos", color: "#FF9100", value: weekTarget.carbsPct, weekAction: "CR_SET_WEEK_TARGET_CARBS_PCT" as const, globalAction: "CR_SET_TARGET_CARBS_PCT" as const },
+              { key: "fat", label: "Grasas", color: "#7C3AED", value: weekTarget.fatPct, weekAction: "CR_SET_WEEK_TARGET_FAT_PCT" as const, globalAction: "CR_SET_TARGET_FAT_PCT" as const },
+            ].map(({ key, label, color, value, weekAction, globalAction }) => (
               <div key={key} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-center">
                 <span className="block text-[10px] font-bold uppercase tracking-[0.2em] mb-1" style={{ color }}>{label}</span>
                 <input
@@ -475,7 +491,14 @@ function MenuCreator({ n }: { n: NutritionHook }) {
                   min={0}
                   max={100}
                   value={value}
-                  onChange={(e) => dispatch({ type: action, value: Number(e.target.value) || 0 })}
+                  onChange={(e) => {
+                    const v = Number(e.target.value) || 0;
+                    if (state.crMesocycleWeeks > 1) {
+                      dispatch({ type: weekAction, week: state.crCurrentWeek, value: v });
+                    } else {
+                      dispatch({ type: globalAction, value: v });
+                    }
+                  }}
                   className="h-8 w-full rounded-lg border border-white/[0.08] bg-[#0A0A0F] px-2 text-center text-[14px] font-bold text-white outline-none focus:border-[#00E5FF]/40"
                 />
               </div>
@@ -483,7 +506,7 @@ function MenuCreator({ n }: { n: NutritionHook }) {
           </div>
           {!macroSumOk && (
             <p className="text-[11px] text-[#FF1744]">
-              Los porcentajes deben sumar 100% (actual: {state.crTargetProteinPct + state.crTargetCarbsPct + state.crTargetFatPct}%)
+              Los porcentajes deben sumar 100% (actual: {weekTarget.proteinPct + weekTarget.carbsPct + weekTarget.fatPct}%)
             </p>
           )}
         </div>
@@ -492,14 +515,32 @@ function MenuCreator({ n }: { n: NutritionHook }) {
         <div className="space-y-1.5">
           <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">
             Calorias objetivo (kcal/dia)
+            {state.crMesocycleWeeks > 1 && (
+              <span className="ml-2 text-[#7C3AED]">— Semana {state.crCurrentWeek}</span>
+            )}
           </label>
           <input
             type="number"
-            value={state.crTargetKcal}
-            onChange={(e) => dispatch({ type: "CR_SET_TARGET_KCAL", value: e.target.value ? Number(e.target.value) : "" })}
+            value={weekTarget.kcal}
+            onChange={(e) => {
+              const v = e.target.value ? Number(e.target.value) : "";
+              if (state.crMesocycleWeeks > 1) {
+                dispatch({ type: "CR_SET_WEEK_TARGET_KCAL", week: state.crCurrentWeek, value: v });
+              } else {
+                dispatch({ type: "CR_SET_TARGET_KCAL", value: v });
+              }
+            }}
             placeholder="Ej: 2000"
             className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/40"
           />
+          {state.crMesocycleWeeks > 1 && (
+            <p className="flex items-center gap-1.5 text-[11px] text-[#5A5A72]">
+              <svg className="h-3 w-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+              </svg>
+              Las semanas sin valores propios heredan los de la semana&nbsp;1.
+            </p>
+          )}
         </div>
       </div>
 
@@ -936,7 +977,7 @@ function MenuCreator({ n }: { n: NutritionHook }) {
               unit="g"
               delta={deltaProtein}
               pctActual={actualProteinPct}
-              pctTarget={state.crTargetProteinPct}
+              pctTarget={weekTarget.proteinPct}
             />
 
             {/* Carbs */}
@@ -948,7 +989,7 @@ function MenuCreator({ n }: { n: NutritionHook }) {
               unit="g"
               delta={deltaCarbs}
               pctActual={actualCarbsPct}
-              pctTarget={state.crTargetCarbsPct}
+              pctTarget={weekTarget.carbsPct}
             />
 
             {/* Fat */}
@@ -960,7 +1001,7 @@ function MenuCreator({ n }: { n: NutritionHook }) {
               unit="g"
               delta={deltaFat}
               pctActual={actualFatPct}
-              pctTarget={state.crTargetFatPct}
+              pctTarget={weekTarget.fatPct}
             />
           </div>
         </div>
@@ -1248,30 +1289,27 @@ export default function TrainerNutritionPage() {
               </button>
             </div>
 
-            {state.mealPlans.length === 0 ? (
+            {state.savedMenus.length === 0 ? (
               <EmptyState
-                icon={<svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8.25v-1.5m0 1.5c-1.355 0-2.697.056-4.024.166C6.845 8.51 6 9.473 6 10.608v2.513m6-4.871c1.355 0 2.697.056 4.024.166C17.155 8.51 18 9.473 18 10.608v2.513M15 8.25v-1.5m-6 1.5v-1.5m12 9.75-1.5.75a3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0L3 16.5m15-3.379a48.474 48.474 0 0 0-6-.371c-2.032 0-4.034.126-6 .371m12 0c.39.049.777.102 1.163.16 1.07.16 1.837 1.094 1.837 2.175v5.169c0 .621-.504 1.125-1.125 1.125H4.125A1.125 1.125 0 0 1 3 20.625v-5.17c0-1.08.768-2.014 1.837-2.174A47.78 47.78 0 0 1 6 13.12M12.265 3.11a.375.375 0 1 1-.53 0L12 2.845l.265.265Z" /></svg>}
-                title="Aun no tienes menus creados"
-                description="Crea tu primer menu nutricional para tus clientes"
+                icon={<svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8.25v-1.5m0 1.5c-1.355 0-2.697.056-4.024.166C6.845 8.51 6 9.473 6 10.608v2.513m6-4.871c1.355 0 2.697.056 4.024.166C17.155 8.51 18 10.608v2.513M15 8.25v-1.5m-6 1.5v-1.5m12 9.75-1.5.75a3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0L3 16.5m15-3.379a48.474 48.474 0 0 0-6-.371c-2.032 0-4.034.126-6 .371m12 0c.39.049.777.102 1.163.16 1.07.16 1.837 1.094 1.837 2.175v5.169c0 .621-.504 1.125-1.125 1.125H4.125A1.125 1.125 0 0 1 3 20.625v-5.17c0-1.08.768-2.014 1.837-2.174A47.78 47.78 0 0 1 6 13.12M12.265 3.11a.375.375 0 1 1-.53 0L12 2.845l.265.265Z" /></svg>}
+                title="Aun no tienes menus guardados"
+                description="Crea un menu y guardalo con el botón 'Guardar menu'"
               />
             ) : (
               <div className="relative overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl">
                 <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(90deg, #00C853, transparent)" }} />
                 <div className="hidden border-b border-white/[0.06] px-6 py-3 sm:grid sm:grid-cols-12 sm:gap-4">
-                  {["Titulo", "Cliente", "Periodo", "Kcal", "Estado", "Enviado"].map((h, i) => (
-                    <div key={h} className={`${[3,2,2,1,1,2][i] ? `col-span-${[3,2,2,1,1,2][i]}` : ""} text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]`}>{h}</div>
+                  {["Nombre", "Dias", "Semanas", "Kcal obj.", "Creado"].map((h, i) => (
+                    <div key={h} className={`col-span-${[4,3,2,2,1][i]} text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]`}>{h}</div>
                   ))}
-                  <div className="col-span-1" />
                 </div>
-                {state.mealPlans.map((plan) => (
-                  <div key={plan.id} className="border-b border-white/[0.04] px-6 py-4 last:border-b-0 hover:bg-white/[0.025] transition-colors sm:grid sm:grid-cols-12 sm:items-center sm:gap-4">
-                    <div className="col-span-3"><p className="truncate text-[13px] font-medium text-white">{plan.title}</p></div>
-                    <div className="col-span-2 mt-1 sm:mt-0"><p className="truncate text-[13px] text-[#8B8BA3]">{plan.client_name ?? "Sin cliente"}</p></div>
-                    <div className="col-span-2 mt-1 sm:mt-0"><p className="text-[13px] text-[#8B8BA3]">{plan.period === "weekly" ? "Semanal" : plan.period === "monthly" ? "Mensual" : plan.period}</p></div>
-                    <div className="col-span-1 mt-1 sm:mt-0"><p className="text-[13px] text-[#8B8BA3]">{plan.target_kcal ?? "—"}</p></div>
-                    <div className="col-span-1 mt-1 sm:mt-0"><ActiveBadge active={plan.is_active} /></div>
-                    <div className="col-span-2 mt-1 sm:mt-0"><p className="text-[13px] text-[#5A5A72]">{plan.sent_at ? formatDate(plan.sent_at) : "No enviado"}</p></div>
-                    <div className="col-span-1" />
+                {state.savedMenus.map((menu) => (
+                  <div key={menu.id} className="border-b border-white/[0.04] px-6 py-4 last:border-b-0 hover:bg-white/[0.025] transition-colors sm:grid sm:grid-cols-12 sm:items-center sm:gap-4">
+                    <div className="col-span-4"><p className="truncate text-[13px] font-medium text-white">{menu.name}</p></div>
+                    <div className="col-span-3 mt-1 sm:mt-0"><p className="text-[13px] text-[#8B8BA3]">{(menu.config.selectedDays ?? []).length} días</p></div>
+                    <div className="col-span-2 mt-1 sm:mt-0"><p className="text-[13px] text-[#8B8BA3]">{menu.config.mesocycleWeeks ?? 1} sem.</p></div>
+                    <div className="col-span-2 mt-1 sm:mt-0"><p className="text-[13px] text-[#8B8BA3]">{menu.config.targetKcal ? `${menu.config.targetKcal} kcal` : "—"}</p></div>
+                    <div className="col-span-1 mt-1 sm:mt-0"><p className="text-[13px] text-[#5A5A72]">{formatDate(menu.created_at)}</p></div>
                   </div>
                 ))}
               </div>
