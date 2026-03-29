@@ -2,11 +2,8 @@
    Routines — Shared Types, Constants & Helpers
    ──────────────────────────────────────────── */
 
-export interface ClientOption {
-  client_id: string;
-  full_name: string | null;
-  email: string | null;
-}
+// Re-exported from shared trainer types — do not redefine here
+export type { ClientOption } from "@/app/(dashboard)/app/trainer/types";
 
 export interface ExerciseItem {
   id: string;
