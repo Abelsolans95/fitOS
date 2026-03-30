@@ -1,6 +1,6 @@
 # FitOS — Guía para Agentes
 
-**Lee `desarrollo.md` antes de cualquier tarea.** Contiene el estado completo del proyecto, estructura de archivos, tablas de base de datos, convenciones y próximos pasos. Está escrito para ser leído de arriba abajo.
+Este archivo contiene TODO lo necesario para continuar el desarrollo: reglas, credenciales, variables de entorno, árbol de archivos, estado y blockers, flujos de auth, gotchas documentados y cómo activar integraciones pendientes.
 
 ---
 
@@ -372,21 +372,344 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 
 ## Regla de mantenimiento — obligatoria
 
-**Al terminar cualquier desarrollo, bugfix o cambio significativo, actualiza `CLAUDE.md` y `desarrollo.md` antes de cerrar la sesión.**
+**Al terminar cualquier desarrollo, bugfix o cambio significativo, actualiza `CLAUDE.md` antes de cerrar la sesión.**
 
-Qué actualizar en cada archivo:
-- **`CLAUDE.md`**: añadir nuevas reglas críticas que hayan surgido, corregir las que ya no apliquen, actualizar el estado de fases completadas.
-- **`desarrollo.md`**: reflejar los archivos nuevos o modificados en la estructura de rutas, actualizar próximos pasos, y — **obligatorio** — documentar cualquier error que haya ocurrido en la sección "Errores conocidos y cómo evitarlos" con el formato: archivo afectado, qué pasó, solución aplicada, regla a seguir.
+Qué actualizar:
+- **Reglas críticas:** añadir nuevas que hayan surgido, corregir las que ya no apliquen, actualizar estado de fases completadas.
+- **Árbol de archivos:** reflejar archivos nuevos o modificados en la sección "Árbol de archivos clave".
+- **Estado y blockers:** actualizar la tabla de la sección "Estado y blockers".
+- **Gotchas:** documentar cualquier error nuevo en la tabla de la sección "Gotchas — errores documentados" con formato: `# | Área | Error cometido | Regla resultante`.
 
-**Documentar errores no es opcional.** Un error no documentado es un error que se repetirá. Cualquier crash, query incorrecta, incompatibilidad de librería o comportamiento inesperado de la DB debe quedar registrado para que no vuelva a ocurrir.
+**Documentar errores no es opcional.** Un error no documentado es un error que se repetirá.
 
-**Paridad web ↔ mobile es obligatoria.** Cualquier funcionalidad nueva o corrección de error debe aplicarse en web (`apps/web`) Y en mobile (`apps/mobile`). Al recibir un bug report o una petición de feature, revisar si aplica a ambas plataformas y actuar en consecuencia.
+**Paridad web ↔ mobile es obligatoria.** Cualquier funcionalidad nueva o corrección de error debe aplicarse en web (`apps/web`) Y en mobile (`apps/mobile`).
 
-El objetivo es que cualquier persona o agente que llegue al proyecto pueda continuar desde cero sin preguntar nada y sin repetir los mismos errores.
+**Especificaciones del producto:** `especificaciones.md` (especialmente Cap. 3 arquitectura y Cap. 4 base de datos).
 
 ---
 
-## Para más detalle
+## Credenciales Supabase
 
-- **Estado completo y notas:** `desarrollo.md`
-- **Especificaciones del producto:** `especificaciones.md` (especialmente Cap. 3 arquitectura y Cap. 4 base de datos)
+**Proyecto:** fitos-prod
+**Project ID:** rgrtxlciqmexdkxagomo
+**URL:** https://rgrtxlciqmexdkxagomo.supabase.co
+**Region:** eu-west-1
+
+---
+
+## Variables de entorno
+
+### Web — `apps/web/.env.local`
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://rgrtxlciqmexdkxagomo.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Google Calendar (configurar cuando esté listo)
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+NEXT_PUBLIC_GOOGLE_REDIRECT_URI=https://tu-dominio.com/api/auth/google/callback
+
+# Resend (configurar cuando dominio verificado)
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=citas@tu-dominio.com
+```
+
+### Mobile — `apps/mobile/.env`
+```env
+EXPO_PUBLIC_SUPABASE_URL=https://rgrtxlciqmexdkxagomo.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+---
+
+## Árbol de archivos clave
+
+```
+fitOS/
+├── package.json (root, npm workspaces, npm@11.8.0)
+├── turbo.json (tasks, no pipeline)
+├── packages/
+│   └── theme/
+│       ├── src/index.ts          ← fuente de verdad: colors, spacing, radius, fonts
+│       ├── scripts/sync-css.ts
+│       └── package.json          ← @fitos/theme
+├── apps/
+│   ├── web/
+│   │   ├── app/
+│   │   │   ├── layout.tsx                           ← dark mode hardcodeado
+│   │   │   ├── globals.css                          ← @theme con marcadores fitos-theme-*
+│   │   │   ├── page.tsx                             ← landing pública
+│   │   │   ├── (auth)/
+│   │   │   │   ├── login/page.tsx
+│   │   │   │   ├── register/page.tsx
+│   │   │   │   └── onboarding/
+│   │   │   │       ├── trainer/page.tsx             ← wizard 3 pasos
+│   │   │   │       └── client/page.tsx              ← wizard 2 pasos
+│   │   │   ├── (dashboard)/
+│   │   │   │   ├── layout.tsx                       ← Server Component async, auth check
+│   │   │   │   ├── loading.tsx
+│   │   │   │   └── app/
+│   │   │   │       ├── trainer/
+│   │   │   │       │   ├── layout.tsx               ← TrainerSidebar
+│   │   │   │       │   ├── loading.tsx
+│   │   │   │       │   ├── dashboard/page.tsx
+│   │   │   │       │   ├── clients/page.tsx
+│   │   │   │       │   ├── clients/[id]/page.tsx    ← 7 tabs
+│   │   │   │       │   ├── clients/[id]/components/ ← TabPerfil/Progreso/Rutina/Menu/Formulario/Chat/Salud
+│   │   │   │       │   ├── exercises/page.tsx
+│   │   │   │       │   ├── routines/page.tsx        ← orquestador
+│   │   │   │       │   ├── routines/useRoutinesPage.ts
+│   │   │   │       │   ├── routines/components/
+│   │   │   │       │   ├── nutrition/page.tsx       ← orquestador
+│   │   │   │       │   ├── nutrition/useNutritionPage.ts
+│   │   │   │       │   ├── import/page.tsx          ← wizard Excel 4 pasos
+│   │   │   │       │   ├── forms/page.tsx
+│   │   │   │       │   ├── appointments/page.tsx    ← orquestador
+│   │   │   │       │   ├── appointments/components/ ← types/shared/CreateModal/Calendar/List
+│   │   │   │       │   ├── community/page.tsx       ← orquestador
+│   │   │   │       │   ├── community/useCommunityPage.ts
+│   │   │   │       │   ├── community/components/
+│   │   │   │       │   └── settings/page.tsx
+│   │   │   │       ├── client/
+│   │   │   │       │   ├── layout.tsx               ← ClientSidebar con badges
+│   │   │   │       │   ├── loading.tsx
+│   │   │   │       │   ├── dashboard/page.tsx
+│   │   │   │       │   ├── calories/page.tsx        ← AI Vision tracker
+│   │   │   │       │   ├── routine/page.tsx
+│   │   │   │       │   ├── routine/active/page.tsx  ← Suspense wrapper
+│   │   │   │       │   ├── routine/active/useActiveTraining.ts
+│   │   │   │       │   ├── routine/active/components/
+│   │   │   │       │   ├── meals/page.tsx
+│   │   │   │       │   ├── calendar/page.tsx
+│   │   │   │       │   ├── progress/page.tsx
+│   │   │   │       │   ├── appointments/page.tsx
+│   │   │   │       │   ├── health/page.tsx          ← mapa anatómico + logs
+│   │   │   │       │   ├── community/page.tsx
+│   │   │   │       │   ├── community/useClientCommunityPage.ts
+│   │   │   │       │   └── chat/page.tsx            ← Realtime
+│   │   │   │       └── admin/
+│   │   │   │           └── dashboard/page.tsx       ← placeholder
+│   │   │   ├── api/
+│   │   │   │   ├── auth/google/route.ts
+│   │   │   │   ├── auth/google/callback/route.ts
+│   │   │   │   ├── import/excel/route.ts
+│   │   │   │   ├── import/create-exercises/route.ts
+│   │   │   │   ├── import/reconcile/route.ts
+│   │   │   │   └── complete-registration/route.ts
+│   │   │   └── components/
+│   │   │       ├── layout/TrainerSidebar.tsx + ClientSidebar.tsx
+│   │   │       ├── ui/DarkSelect.tsx
+│   │   │       └── health/AnatomyMap.tsx
+│   │   ├── lib/
+│   │   │   ├── supabase.ts + supabase-server.ts
+│   │   │   ├── exercise-resolver.ts + .test.ts
+│   │   │   ├── food-resolver.ts + .test.ts
+│   │   │   ├── excel-parser.ts + .test.ts
+│   │   │   ├── email-notifications.ts + .test.ts
+│   │   │   └── google-calendar.ts + .test.ts
+│   │   ├── hooks/useChat.ts
+│   │   ├── middleware.ts
+│   │   └── vitest.config.ts
+│   └── mobile/
+│       ├── App.tsx                              ← AuthProvider + NavigationContainer
+│       ├── index.ts                             ← registerWidgetTaskHandler
+│       ├── src/
+│       │   ├── theme.ts                         ← re-exporta @fitos/theme + shadows local
+│       │   ├── contexts/AuthContext.tsx
+│       │   ├── lib/supabase.ts + widget-data.ts + widget-sync.ts
+│       │   ├── screens/
+│       │   │   ├── LoginScreen.tsx + OnboardingScreen.tsx
+│       │   │   ├── DashboardScreen.tsx + CaloriesScreen.tsx
+│       │   │   ├── RoutineScreen.tsx + MealsScreen.tsx
+│       │   │   ├── ProgressScreen.tsx + ChatScreen.tsx
+│       │   │   ├── HealthScreen.tsx + AppointmentsScreen.tsx
+│       │   └── widgets/
+│       │       ├── TodayWorkoutWidget.tsx       ← Android JSX (sin hooks)
+│       │       └── widget-task-handler.tsx
+│       ├── metro.config.js                      ← watchFolders apunta a ../../packages
+│       └── tsconfig.json                        ← paths: @fitos/theme
+└── supabase/
+    └── migrations/
+        ├── 001–028 (schema base, auth, ejercicios, alimentos, Excel import)
+        ├── 029_chat_messages.sql
+        ├── 030_appointments.sql
+        ├── 031_health_logs.sql
+        ├── 032_routine_templates.sql
+        ├── 033_saved_menu_templates.sql
+        ├── 034_communities.sql
+        └── 035_community_read_status.sql
+```
+
+---
+
+## Estado y blockers
+
+| Feature | Estado | Notas |
+|---------|--------|-------|
+| Fase 0 — estructura base, auth, 19 tablas | ✅ Completo | |
+| Fase 1 — dashboards, IA base | ✅ Casi completo | Google Calendar pendiente OAuth |
+| Fase 2 — Chat + Citas | ✅ Web+mobile completo | Google Calendar + Resend pendiente config |
+| Fase 3 — Widgets iOS/Android | ✅ Completo | iOS requiere Xcode manual |
+| Fase 4 — Sistema lesiones | ✅ Completo | |
+| Fase 5 — Plantillas rutina | ✅ Completo | |
+| Fase 6 — Planificador menú | ✅ Completo | |
+| Fase 7 — Comunidad Premium | ✅ Completo | |
+| Code Quality + Permisos | ✅ Completo | Patrón C, fragmentación, RLS auditado |
+| `@fitos/theme` | ✅ Completo | paquete compartido, Metro watchFolders |
+| Gamificación | ❌ Sin UI | Tablas existen, falta interfaz |
+| Stripe + suscripciones | ❌ Sin implementar | |
+| Push notifications | ❌ Sin implementar | |
+
+### Configuración pendiente para desbloquear features
+
+| Config | Prioridad | Qué desbloquea |
+|--------|-----------|----------------|
+| Aplicar migración `030_appointments.sql` | 🔴 Alta | Tabla citas funcional |
+| Aplicar migración `031_health_logs.sql` | 🔴 Alta | Tabla lesiones funcional |
+| Aplicar migración `032_routine_templates.sql` | 🔴 Alta | Plantillas rutina |
+| Aplicar migración `033_saved_menu_templates.sql` | 🔴 Alta | Menús guardados |
+| `ANTHROPIC_API_KEY` en Supabase secrets | 🟠 Alta | Edge Functions IA (ahora mock) |
+| Verificar dominio en Resend + `RESEND_API_KEY` | 🟠 Alta | Emails confirmación citas |
+| OAuth 2.0 Google Calendar | 🟠 Alta | Sync citas → Google Calendar |
+| Seed ejercicios + alimentos globales | 🟡 Media | Biblioteca inicial |
+
+---
+
+## Flujos de autenticación
+
+### Registro Trainer (wizard 3 pasos)
+1. `/register` → seleccionar "Soy Entrenador"
+2. Nombre, email, password → `supabase.auth.signUp({ options: { data: { role: "trainer" } } })`
+3. Trigger DB crea `profiles` + `user_roles`
+4. Redirect → `/onboarding/trainer`:
+   - Step 1: nombre negocio, especialidad, bio → upsert `profiles`
+   - Step 2: crear formulario onboarding → `onboarding_forms`
+   - Step 3: generar código promo → `trainer_promo_codes`
+5. Set `user_metadata.onboarding_completed = true`
+
+### Registro Cliente (wizard 2 pasos + código promo)
+1. `/register` → seleccionar "Soy Cliente"
+2. Introducir código promo del trainer (validación en tiempo real)
+3. Registro → crea `profiles`, `user_roles`, `trainer_clients`
+4. Redirect → `/onboarding/client`:
+   - Step 1: rellenar formulario del trainer (`onboarding_responses`)
+   - Step 2: datos biométricos (weight, height, goal) → `body_metrics`
+5. Set `user_metadata.onboarding_completed = true`
+
+### Protección de rutas (middleware)
+- Sin sesión → `/login`
+- Sesión + onboarding incompleto → `/onboarding/[role]`
+- Sesión + rol incorrecto → dashboard del rol correcto
+- `onboarding_completed` se lee de `user_metadata` (sin query DB)
+
+---
+
+## Edge Functions
+
+4 funciones Deno en `supabase/functions/`. Todas requieren `ANTHROPIC_API_KEY` en Supabase secrets. Sin la key devuelven respuesta mock.
+
+| Función | Endpoint | Descripción |
+|---------|----------|-------------|
+| `analyze-food-image` | POST | Imagen base64 → Claude Vision → alimentos + macros estimados |
+| `generate-meal-plan` | POST | Datos cliente → Claude genera plan semanal JSON |
+| `generate-gym-routine` | POST | Objetivo/nivel/días → Claude genera rutina + progresión |
+| `analyze-onboarding-form` | POST | `response_id` → Claude analiza respuestas → informe |
+
+```bash
+supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
+supabase functions deploy analyze-food-image
+supabase functions deploy generate-meal-plan
+supabase functions deploy generate-gym-routine
+supabase functions deploy analyze-onboarding-form
+```
+
+---
+
+## Activar integraciones pendientes
+
+### Google Calendar OAuth
+
+1. Crear credenciales en Google Cloud Console (tipo: Web application)
+   - Authorized origins: `https://tu-dominio.com`, `http://localhost:3000`
+   - Redirect URIs: `https://tu-dominio.com/api/auth/google/callback`, `http://localhost:3000/api/auth/google/callback`
+2. Añadir a `.env.local`:
+   ```env
+   NEXT_PUBLIC_GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=GOCSPX-xxx
+   NEXT_PUBLIC_GOOGLE_REDIRECT_URI=https://tu-dominio.com/api/auth/google/callback
+   ```
+3. Todo el código está listo en `lib/google-calendar.ts` — funciones: `getGoogleAuthUrl`, `exchangeCodeForTokens`, `syncAppointmentToCalendar`, etc.
+4. Tokens se guardan en `profiles.google_calendar_tokens` (JSONB)
+
+### Resend Email
+
+1. Verificar dominio en resend.com (añadir registros DNS)
+2. `cd apps/web && npm install resend --legacy-peer-deps`
+3. Añadir a `.env.local` y Vercel: `RESEND_API_KEY=re_xxx` + `RESEND_FROM_EMAIL=citas@tu-dominio.com`
+4. Descomentar bloque `TODO` en `lib/email-notifications.ts` (función `sendAppointmentEmail`)
+
+---
+
+## Gotchas — errores documentados
+
+| # | Área | Error cometido | Regla resultante |
+|---|------|---------------|-----------------|
+| 1 | DB | Asumir FK entre trainer_clients y profiles | Dos queries separadas — ambas referencian auth.users independientemente |
+| 2 | DB | Query a tabla trainer_profiles inexistente | Verificar esquema en especificaciones.md antes de escribir |
+| 3 | Web | react-beautiful-dnd con React 19 | Usar @dnd-kit/core — react-beautiful-dnd usa APIs internas eliminadas |
+| 4 | DB | Asumir arrays DB nunca son null | Usar `?? []` al iterar, `?.length ?? 0` al comprobar longitud |
+| 5 | DB | Nombres inventados en body_metrics | Columnas reales: body_weight_kg, hips_cm, right_arm_cm, right_thigh_cm |
+| 6 | DB | Ordenar trainer_clients por created_at | Columna es `joined_at`, no `created_at` |
+| 7 | DB | Guardar altura/peso como height_cm/weight_kg | Columnas en profiles son `height` y `weight` (sin sufijo) |
+| 8 | DB | Upsert a profiles sin incluir role | `profiles.role` es NOT NULL — siempre incluir en upserts |
+| 9 | DB | Insert en onboarding_responses | Usar `upsert` con `onConflict: "form_id,client_id"` |
+| 10 | DB | Columna content de meal_plans | Los datos están en columna `days` (JSONB) |
+| 11 | Web | Renderizar JSONB directamente en React | Usar `JSON.stringify()` o acceder a propiedades específicas |
+| 12 | DB | Insert a meal_plans con user_id y name | Usar FK `client_id` y columna `title`; `target_kcal` es NOT NULL |
+| 13 | API | Insertar en trainer_clients desde frontend | RLS bloquea — usar API route con service_role |
+| 14 | DB | Múltiples nombres de columna incorrectos | Verificar especificaciones.md antes de escribir — nombres son específicos |
+| 15 | Web | Duplicar editor de formulario | Editor solo en `/trainer/forms` — Settings es read-only |
+| 16 | DB | Insert a body_metrics sin recorded_at | `recorded_at` es TIMESTAMPTZ NOT NULL — siempre `new Date().toISOString()` |
+| 17 | DB | Goal con espacios/mayúsculas | Solo acepta: hipertrofia, fuerza, perdida_peso, mantenimiento |
+| 18 | DB | Usar `.update()` en profiles en onboarding | Usar `upsert` con `onConflict: "user_id"` + incluir `role` |
+| 19 | Auth | Onboarding no dispara tras login | Usar `user_metadata.onboarding_completed` en middleware |
+| 20 | Mobile | Error cosmético de expo install | Error cosmético — verificar package.json directamente |
+| 21 | DB | Usar moddatetime() en triggers | No disponible — usar función custom `set_updated_at()` |
+| 22 | API | Registration view no crea workout_sessions | Crear sesión primero, pasar `session_id` a weight_log |
+| 23 | Web | Rest timer múltiples intervals | Depender de valores estables (phase/mode), no expresiones ternarias |
+| 24 | Mobile | Elapsed timer no limpia al desmontar | Añadir `clearInterval()` en return cleanup del useEffect |
+| 25 | DB | Columna days de user_routines | No existe — ejercicios están en columna `exercises` (JSONB) |
+| 26 | API | Import Excel no verifica rol trainer | Consultar `profiles.role`, no `user_roles` |
+| 27 | DB | Insertar ejercicios desde frontend | RLS bloquea silenciosamente — usar API route con service_role |
+| 28 | DB | CHECK constraint violation en category | `trainer_exercise_library.category` es TEXT libre (sin CHECK) |
+| 29 | DB | Update ejercicio global se pierde | Clone-on-edit: clonar como privado + ocultar original via `hidden = true` |
+| 30 | Web | Sets completados se pierden al salir | Llamar `savePartialProgress()` en cada check — no solo en estado local |
+| 31 | Web | Botones "Registrar" visibles tras completar | Consultar workout_sessions completadas — bloquear por (rutina + día + semana) |
+| 32 | API | Import Excel "link" oculta globales | Link con nombre diferente = privado; nombre igual = no hacer nada |
+| 33 | API | `supabaseKey is required` en Vercel | Cliente Supabase a nivel módulo — mover dentro del handler POST |
+| 34 | Web | Build crash con prerendering + useSearchParams | Envolver en `<Suspense>` — `export const dynamic = "force-dynamic"` no funciona |
+| 35 | Web | Mensajes chat no aparecen tras enviar | Optimistic updates para propios mensajes — no depender de Realtime |
+| 36 | Web | Optimistic desaparece si INSERT falla | Mantener con `id: err-{timestamp}` — nunca eliminar |
+| 37 | Web | Cliente recarga para ver propios mensajes | No encadenar `.insert().select().single()` — dos pasos separados |
+| 38 | Web | Tab bar rota con 6ª pestaña | Usar `flex-1 px-2` en tabs — no `shrink-0` |
+| 39 | API | Resolver no filtra hidden=true | Comprobar `override?.hidden` antes de incluir ejercicio |
+| 40 | API | Map<string, any> oculta campo hidden | Definir interface tipada — nunca `any` para datos DB |
+| 41 | API | Endpoints temporales activos | Eliminar endpoints temporales — SQL directo en Supabase |
+| 42 | API | complete-registration sin auth | Verificar auth con createClient de supabase-server (Patrón C) |
+| 43 | API | `\|\|` en lugar de `??` en override merges | Usar `??` — permite cadenas vacías y valores falsy |
+| 44 | API | food-resolver con any[] | Definir interfaces TrainerFoodOverride — nunca `any` |
+| 45 | API | import/reconcile accesible por clientes | Verificar rol trainer — no solo autenticación |
+| 46 | API | Cliente Anthropic a nivel módulo | Mover `new Anthropic(...)` dentro del handler POST |
+| 47 | Web | appointments/page.tsx con 1187 líneas | Fragmentar durante creación — nunca crear >300 líneas monolíticas |
+| 48 | Test | Tests no creados junto al código | Crear .test.ts en misma sesión — happy path + edge case + error |
+| 49 | Review | Code review lista issues ya corregidos | Leer el código primero — verificar antes de crear tickets |
+| 50 | API | handleSave no serializa weekly_config | Verificar que handleSave incluye mode/weekly_config/total_weeks |
+| 51 | Web | Peso pre-rellenado como valor | Mostrar como placeholder (gris) — inputs siempre vacíos |
+| 52 | API | detectedColumns pierde campo type | Incluir ambos: `type: col.type` e `inferred_type: col.type` |
+| 53 | Web | buildEmptyDays() crashea | Actualizar TODAS las llamadas en reducer — no solo definiciones |
+| 54 | Web | `<select>` nativo blanco en Chrome | Usar siempre el componente `DarkSelect` |
+| 55 | Build | active/utils.ts no existía al importar | Crear archivos destino en mismo commit que imports |
+| 56 | Build | trainer/types.ts no existía al re-exportar | Crear archivos centralizados ANTES de añadir re-exports |
+| 57 | Web | pnpm install falla en raíz | packageManager activo es npm — usar `npm install` |
+| 58 | Build | sync-css.ts genera doble indentación | No añadir espacios al prefijo — `before` ya incluye indentación |
