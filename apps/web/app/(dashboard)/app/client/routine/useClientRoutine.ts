@@ -259,7 +259,7 @@ export function useClientRoutine() {
             .maybeSingle(),
           supabase
             .from("user_routines")
-            .select("id,title,goal,duration_months,total_weeks,exercises,days,is_active,sent_at,created_at")
+            .select("id,title,goal,duration_months,total_weeks,exercises,is_active,sent_at,created_at")
             .eq("client_id", user.id)
             .eq("is_active", true)
             .order("created_at", { ascending: false })
@@ -274,31 +274,19 @@ export function useClientRoutine() {
           );
         }
 
-        const inProgressSession = pendingRes.data
-          ? (pendingRes.data as InProgressSession)
-          : null;
-
-        // Load active routine (try client_id first, then user_id for compat)
+        // Load active routine by client_id
         let routineData = null;
-        if (!routineRes.error && routineRes.data) {
+        if (routineRes.error) {
+          console.error("[ClientRoutine] Error al buscar rutina:", routineRes.error);
+        } else if (routineRes.data) {
           routineData = routineRes.data;
-        } else {
-          const { data: r2, error: e2 } = await supabase
-            .from("user_routines")
-            .select("id,title,goal,duration_months,total_weeks,exercises,days,is_active,sent_at,created_at")
-            .eq("user_id", user.id)
-            .eq("is_active", true)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          if (e2) {
-            console.error(
-              "[ClientRoutine] Error al buscar rutina (user_id):",
-              e2
-            );
-          }
-          if (r2) routineData = r2;
         }
+
+        // Only show in-progress session if it belongs to the current active routine
+        const inProgressSession =
+          pendingRes.data && routineData && pendingRes.data.routine_id === routineData.id
+            ? (pendingRes.data as InProgressSession)
+            : null;
 
         let previousLogs: PreviousLog[] = [];
         let completedSessions = new Set<string>();
