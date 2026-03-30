@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { Meal, MEAL_TYPE_LABELS } from "./types";
 
 interface MealCardProps {
@@ -10,7 +11,7 @@ interface MealCardProps {
   onToggle: (dayIdx: number, mealIdx: number) => void;
 }
 
-export function MealCard({
+export const MealCard = memo(function MealCard({
   meal,
   dayIdx,
   mealIdx,
@@ -105,4 +106,4 @@ export function MealCard({
       )}
     </div>
   );
-}
+});

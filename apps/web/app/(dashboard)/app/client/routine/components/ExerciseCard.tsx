@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { ExerciseData } from "../active/types";
 
 interface ExerciseCardProps {
@@ -7,7 +8,7 @@ interface ExerciseCardProps {
   formatPrevious: (name: string) => string;
 }
 
-export function ExerciseCard({ ex, idx, activeWeek, formatPrevious }: ExerciseCardProps) {
+export const ExerciseCard = memo(function ExerciseCard({ ex, idx, activeWeek, formatPrevious }: ExerciseCardProps) {
   const wk = ex.weekly_config?.[activeWeek];
   const effectiveMode = ex.mode ?? "equal";
   const effectiveSets = wk?.sets ?? ex.sets;
@@ -135,4 +136,4 @@ export function ExerciseCard({ ex, idx, activeWeek, formatPrevious }: ExerciseCa
       )}
     </div>
   );
-}
+});

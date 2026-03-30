@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import type { Post, Comment } from "./types";
 
 function getTimeAgo(dateStr: string): string {
@@ -127,7 +128,7 @@ interface CommunityFeedProps {
   onSetReplyText: (commentId: string, text: string) => void;
 }
 
-export function CommunityFeed({
+export const CommunityFeed = memo(function CommunityFeed({
   posts, userId, canPost, expandedPost, comments, loadingComments, newComment,
   replyingTo, replyText, onToggleLike, onToggleExpand, onLoadComments,
   onDeletePost, onDeleteComment, onToggleCommentLike, onSetNewComment, onAddComment,
@@ -234,4 +235,4 @@ export function CommunityFeed({
       })}
     </div>
   );
-}
+});

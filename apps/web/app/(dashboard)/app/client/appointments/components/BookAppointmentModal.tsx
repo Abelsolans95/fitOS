@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { DarkSelect } from "@/components/ui/DarkSelect";
 import { createClient } from "@/lib/supabase";
 
@@ -57,7 +58,12 @@ export function BookAppointmentModal({ trainerId, clientId, onClose, onCreated }
     });
 
     setSaving(false);
-    if (insertErr) { setError(insertErr.message); return; }
+    if (insertErr) {
+      toast.error("Error al solicitar la cita. Inténtalo de nuevo.");
+      console.error("[BookAppointmentModal] Error creando cita:", insertErr);
+      setError(insertErr.message);
+      return;
+    }
 
     onCreated();
     onClose();
