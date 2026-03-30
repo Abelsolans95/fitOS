@@ -52,13 +52,38 @@ export default function CalendarPage() {
 
         const calendarEvents: CalendarEvent[] = [];
 
-        // Load workout logs
-        const { data: workoutLogs } = await supabase
-          .from("workout_logs")
-          .select("id, logged_at, exercises")
-          .eq("user_id", user.id)
-          .gte("logged_at", startDate)
-          .lte("logged_at", endDate + "T23:59:59");
+        // Load all calendar data in parallel
+        const [workoutRes, foodRes, metricsRes] = await Promise.all([
+          supabase
+            .from("workout_logs")
+            .select("id, logged_at, exercises")
+            .eq("user_id", user.id)
+            .gte("logged_at", startDate)
+            .lte("logged_at", endDate + "T23:59:59")
+            .limit(200),
+          supabase
+            .from("food_log")
+            .select("id, logged_at, meal_type, total_kcal")
+            .eq("user_id", user.id)
+            .gte("logged_at", startDate)
+            .lte("logged_at", endDate + "T23:59:59")
+            .limit(200),
+          supabase
+            .from("body_metrics")
+            .select("id, recorded_at, weight_kg, body_fat_pct")
+            .eq("user_id", user.id)
+            .gte("recorded_at", startDate)
+            .lte("recorded_at", endDate + "T23:59:59")
+            .limit(100),
+        ]);
+
+        const workoutLogs = workoutRes.data;
+        const foodLogs = foodRes.data;
+        const metrics = metricsRes.data;
+
+        if (workoutRes.error) { console.error("[Calendar] Error cargando entrenamientos:", workoutRes.error); } // No bloqueante
+        if (foodRes.error) { console.error("[Calendar] Error cargando comidas:", foodRes.error); } // No bloqueante
+        if (metricsRes.error) { console.error("[Calendar] Error cargando métricas:", metricsRes.error); } // No bloqueante
 
         if (workoutLogs) {
           workoutLogs.forEach((log) => {
@@ -73,14 +98,6 @@ export default function CalendarPage() {
             });
           });
         }
-
-        // Load food logs
-        const { data: foodLogs } = await supabase
-          .from("food_log")
-          .select("id, logged_at, meal_type, total_kcal")
-          .eq("user_id", user.id)
-          .gte("logged_at", startDate)
-          .lte("logged_at", endDate + "T23:59:59");
 
         if (foodLogs) {
           // Group by date
@@ -103,14 +120,6 @@ export default function CalendarPage() {
             });
           });
         }
-
-        // Load body metrics
-        const { data: metrics } = await supabase
-          .from("body_metrics")
-          .select("id, recorded_at, weight_kg, body_fat_pct")
-          .eq("user_id", user.id)
-          .gte("recorded_at", startDate)
-          .lte("recorded_at", endDate + "T23:59:59");
 
         if (metrics) {
           metrics.forEach((m) => {

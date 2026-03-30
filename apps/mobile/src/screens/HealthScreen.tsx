@@ -402,7 +402,7 @@ export default function HealthScreen() {
     if (!user?.id) return;
     const { data, error } = await supabase
       .from("health_logs")
-      .select("*")
+      .select("id, muscle_id, pain_score, incident_type, status, notes, reported_by, created_at")
       .eq("client_id", user.id)
       .order("created_at", { ascending: false });
 

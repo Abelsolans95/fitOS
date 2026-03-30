@@ -55,7 +55,7 @@ export function useDashboardData(user: User | null): DashboardData {
         const [calendarRes, mealPlanRes, caloriesRes] = await Promise.all([
           supabase
             .from("user_calendar")
-            .select("*")
+            .select("date, activity_type, completed")
             .eq("user_id", user.id)
             .gte("date", startOfWeekStr)
             .lte("date", today),

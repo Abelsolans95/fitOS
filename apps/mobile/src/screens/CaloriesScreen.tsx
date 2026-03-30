@@ -49,7 +49,7 @@ export default function CaloriesScreen() {
     if (!user) return;
     const { data } = await supabase
       .from("food_log")
-      .select("*")
+      .select("id, logged_at, meal_type, total_kcal, total_protein, total_carbs, total_fat, source, photo_url")
       .eq("client_id", user.id)
       .gte("logged_at", today)
       .lte("logged_at", today + "T23:59:59")

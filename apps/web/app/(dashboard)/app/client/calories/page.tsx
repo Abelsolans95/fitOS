@@ -56,7 +56,7 @@ export default function CaloriesPage() {
 
     const { data, error: logError } = await supabase
       .from("food_log")
-      .select("*")
+      .select("id, logged_at, meal_type, foods, total_kcal, total_protein, total_carbs, total_fat, source")
       .eq("client_id", uid)
       .gte("logged_at", today + "T00:00:00")
       .lte("logged_at", today + "T23:59:59")

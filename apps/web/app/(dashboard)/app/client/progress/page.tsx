@@ -28,7 +28,7 @@ export default function ProgressPage() {
 
         const { data, error } = await supabase
           .from("body_metrics")
-          .select("*")
+          .select("id, recorded_at, body_weight_kg, body_fat_pct, muscle_mass_kg, chest_cm, waist_cm, hips_cm, right_arm_cm, right_thigh_cm, notes")
           .eq("client_id", user.id)
           .order("recorded_at", { ascending: true })
           .limit(100);
