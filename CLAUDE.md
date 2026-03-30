@@ -115,10 +115,10 @@
       - `apps/web/app/api/complete-registration/route.test.ts` — 7 tests: happy path, missing fields (400), DB errors (500), promo code resilience, invalid JSON.
       - `apps/web/app/api/client-trainer/route.test.ts` — 8 tests: happy path, unauthenticated (401), no trainer (404), DB errors, `business_name` vs `full_name` priority.
 
-53. **Error handling obligatorio en TODA query Supabase (Patrón C)** — Toda query a Supabase DEBE destructurar `error`, loguearlo y dar feedback al usuario. No hay excepciones. Los tres patrones están prohibidos excepto el C:
-    - ❌ **Patrón A (prohibido):** `const { data } = await supabase.from(...)` — sin destructurar error.
-    - ❌ **Patrón B (prohibido):** destructura error + solo `console.error` — el usuario no sabe qué pasó.
-    - ✅ **Patrón C (obligatorio) — Componentes cliente:**
+53. **Error handling obligatorio en TODA query Supabase (Patrón C)** — Toda query a Supabase DEBE destructurar `error`, loguearlo y dar feedback al usuario. No hay excepciones.
+    - ❌ **Patrón A (prohibido siempre):** `const { data } = await supabase.from(...)` — sin destructurar error. El error se pierde completamente.
+    - ❌ **Patrón B (prohibido en queries bloqueantes):** destructura error + solo `console.error` sin toast ni return — el usuario no sabe qué pasó. Solo válido en queries no bloqueantes (ver abajo).
+    - ✅ **Patrón C bloqueante (obligatorio en saves/mutations/loads críticos) — Componentes cliente:**
       ```ts
       const { data, error } = await supabase.from("tabla").select("...");
       if (error) {
@@ -127,7 +127,7 @@
         return; // o setSaving(false) + return según contexto
       }
       ```
-    - ✅ **Patrón C (obligatorio) — API routes:**
+    - ✅ **Patrón C bloqueante (obligatorio) — API routes:**
       ```ts
       const { data, error } = await supabase.from("tabla").select("...");
       if (error) {
@@ -135,7 +135,13 @@
         return NextResponse.json({ error: "Mensaje descriptivo" }, { status: 500 });
       }
       ```
-    - **Queries no bloqueantes** (ej: desactivar rutinas anteriores, cargar perfiles para display): si el error no debe detener el flujo, igualmente destructurar y loguear con `console.error`, pero no hacer `return` — añadir comentario `// No bloqueante`.
+    - ✅ **Patrón C no bloqueante** (queries secundarias de display que no deben parar el flujo — ej: cargar perfil para mostrar nombre, leer adherencia del calendario): destructurar + `console.error` + comentario `// No bloqueante`. Sin `toast` ni `return`.
+      ```ts
+      const { data: profile, error: profileErr } = await supabase.from("profiles")...;
+      if (profileErr) { console.error("[Context] Error cargando perfil:", profileErr); } // No bloqueante
+      ```
+    - **Cómo distinguir bloqueante vs no bloqueante:** si el error impide mostrar la funcionalidad principal de la página → bloqueante (toast + return). Si es un dato secundario de enriquecimiento → no bloqueante (solo log).
+    - **Auditoría completada el 30/03/2026:** Patrón C aplicado a todas las queries del proyecto. Archivos corregidos: `trainer/settings`, `trainer/chat`, `trainer/clients`, `client/dashboard`, `client/meals`, `client/chat`, `client/appointments`, `BookAppointmentModal`.
 
 54. **Usar `??` (no `||`) para merges de override** — `||` trata `""`, `0` y `false` como falsy, descartando overrides legítimos. Siempre usar nullish coalescing `??` al fusionar campos de override con valores originales. Ejemplo: `override?.custom_name ?? ex.name`.
 55. **Toda API route de importación debe verificar rol trainer** — No basta con verificar autenticación. Endpoints de Excel import, reconciliation, etc. deben consultar `profiles.role` y retornar 403 si no es `trainer`.

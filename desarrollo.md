@@ -907,10 +907,10 @@ supabase functions deploy [nombre]
 
 12. **Sonner (toast)**: Nutrición y rutinas usan `import { toast } from "sonner"`. El `<Toaster />` debe estar en el layout raíz o dashboard.
 
-13. **Error handling obligatorio en TODA query Supabase (Patrón C)**: Toda query DEBE destructurar `error`, loguearlo y dar feedback al usuario. Patrones prohibidos:
-    - ❌ **Patrón A:** `const { data } = await supabase.from(...)` — sin destructurar error.
-    - ❌ **Patrón B:** destructura error + solo `console.error` — el usuario no sabe qué pasó.
-    - ✅ **Patrón C (obligatorio) — Componentes cliente:**
+13. **Error handling obligatorio en TODA query Supabase (Patrón C)**: Toda query DEBE destructurar `error`. La diferencia clave es bloqueante vs no bloqueante:
+    - ❌ **Patrón A (prohibido siempre):** `const { data } = await supabase.from(...)` — sin destructurar error. El error se pierde.
+    - ❌ **Patrón B (prohibido en queries bloqueantes):** destructura error + solo `console.error` sin toast ni return. Solo válido en no bloqueantes (ver abajo).
+    - ✅ **Patrón C bloqueante** (saves, mutations, carga principal de página):
       ```ts
       const { data, error } = await supabase.from("tabla").select("...");
       if (error) {
@@ -919,7 +919,12 @@ supabase functions deploy [nombre]
         return; // o setSaving(false) + return
       }
       ```
-    - ✅ **Patrón C (obligatorio) — API routes:**
+    - ✅ **Patrón C no bloqueante** (datos secundarios de enriquecimiento que no bloquean el flujo):
+      ```ts
+      const { data: profile, error: profileErr } = await supabase.from("profiles")...;
+      if (profileErr) { console.error("[Context] Error:", profileErr); } // No bloqueante
+      ```
+    - ✅ **Patrón C — API routes:**
       ```ts
       const { data, error } = await supabase.from("tabla").select("...");
       if (error) {
@@ -927,8 +932,9 @@ supabase functions deploy [nombre]
         return NextResponse.json({ error: "Mensaje" }, { status: 500 });
       }
       ```
-    - **Queries no bloqueantes** (ej: desactivar rutinas anteriores, perfiles para display): destructurar y loguear, pero NO hacer `return` — añadir comentario `// No bloqueante`.
-    - **Auditoría completada el 24/03/2026:** Se aplicó Patrón C a 22 queries en `register/page.tsx`, `client-trainer/route.ts`, `useNutritionPage.ts`, `useRoutinesPage.ts` y `client/routine/page.tsx`.
+    - **Regla de decisión:** ¿Sin este dato la página no puede funcionar? → bloqueante (toast + return). ¿Es enriquecimiento/display secundario? → no bloqueante (solo log + `// No bloqueante`).
+    - **Auditoría 24/03/2026:** Patrón C a 22 queries (`register`, `client-trainer`, `useNutritionPage`, `useRoutinesPage`, `client/routine`).
+    - **Auditoría 30/03/2026:** Patrón C completado en resto del proyecto: `trainer/settings`, `trainer/chat`, `trainer/clients`, `client/dashboard`, `client/meals`, `client/chat`, `client/appointments`, `BookAppointmentModal`.
 
 ---
 
