@@ -65,6 +65,7 @@ interface ExerciseData {
   mode?: "equal" | "different";
   sets_config?: MobileSetConfig[];
   weekly_config?: Record<number, MobileWeekConfig>;
+  target_rpe?: number | null;
 }
 
 interface DayData {
@@ -261,6 +262,7 @@ export default function RoutineScreen() {
   const [allSets, setAllSets] = useState<Record<number, SetEntry[]>>({});
   const [clientNotes, setClientNotes] = useState<Record<string, string>>({});
   const [exerciseNotes, setExerciseNotes] = useState<Record<number, string>>({});
+  const [exerciseRpe, setExerciseRpe] = useState<Record<number, string>>({});
   const [rpeGlobal, setRpeGlobal] = useState(7);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -617,6 +619,7 @@ export default function RoutineScreen() {
       }));
       const totalVol = setsData.reduce((sum, s) => sum + s.weight_kg * s.reps_done, 0);
       const notes = exerciseNotes[exIdx]?.trim() || null;
+      const rpeVal = exerciseRpe[exIdx] ? Number(exerciseRpe[exIdx]) : null;
 
       // Check if entry already exists for this session + exercise
       const { data: existing } = await supabase
@@ -629,7 +632,7 @@ export default function RoutineScreen() {
       if (existing) {
         await supabase
           .from("weight_log")
-          .update({ sets_data: setsData, total_volume_kg: totalVol, client_notes: notes })
+          .update({ sets_data: setsData, total_volume_kg: totalVol, client_notes: notes, exercise_rpe: rpeVal })
           .eq("id", existing.id);
       } else {
         await supabase.from("weight_log").insert({
@@ -642,6 +645,7 @@ export default function RoutineScreen() {
           sets_data: setsData,
           total_volume_kg: totalVol,
           client_notes: notes,
+          exercise_rpe: rpeVal,
         });
       }
 
@@ -1376,6 +1380,25 @@ export default function RoutineScreen() {
           </View>
         )}
 
+        {/* RPE por ejercicio — solo si el trainer configuró target_rpe */}
+        {dayExercises[currentExIdx]?.target_rpe != null && (
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderWidth: 1, borderColor: "rgba(255,145,0,0.25)", backgroundColor: "rgba(255,145,0,0.05)", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, marginTop: 12 }}>
+            <View>
+              <Text style={{ fontSize: 10, fontWeight: "700", letterSpacing: 1.5, color: colors.orange, textTransform: "uppercase" }}>RPE del ejercicio</Text>
+              <Text style={{ fontSize: 10, color: colors.dimmed, marginTop: 1 }}>Objetivo: {dayExercises[currentExIdx].target_rpe} · Escala 1-10</Text>
+            </View>
+            <TextInput
+              style={{ width: 52, height: 44, borderWidth: 1, borderColor: "rgba(255,145,0,0.35)", backgroundColor: "rgba(255,145,0,0.1)", borderRadius: 12, textAlign: "center", fontSize: 18, fontWeight: "900", color: colors.orange }}
+              keyboardType="number-pad"
+              value={exerciseRpe[currentExIdx] || ""}
+              onChangeText={(val) => setExerciseRpe((prev) => ({ ...prev, [currentExIdx]: val }))}
+              placeholder={String(dayExercises[currentExIdx].target_rpe)}
+              placeholderTextColor="rgba(255,145,0,0.3)"
+              maxLength={2}
+            />
+          </View>
+        )}
+
         {/* Navigation buttons */}
         <View style={st.navRow}>
           <TouchableOpacity
@@ -1521,6 +1544,25 @@ export default function RoutineScreen() {
                   </View>
                 );
               })}
+
+              {/* RPE por ejercicio — solo si el trainer configuró target_rpe */}
+              {ex.target_rpe != null && (
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderWidth: 1, borderColor: "rgba(255,145,0,0.25)", backgroundColor: "rgba(255,145,0,0.05)", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, marginTop: 8 }}>
+                  <View>
+                    <Text style={{ fontSize: 10, fontWeight: "700", letterSpacing: 1.5, color: colors.orange, textTransform: "uppercase" }}>RPE del ejercicio</Text>
+                    <Text style={{ fontSize: 10, color: colors.dimmed, marginTop: 1 }}>Objetivo: {ex.target_rpe} · Escala 1-10</Text>
+                  </View>
+                  <TextInput
+                    style={{ width: 52, height: 44, borderWidth: 1, borderColor: "rgba(255,145,0,0.35)", backgroundColor: "rgba(255,145,0,0.1)", borderRadius: 12, textAlign: "center", fontSize: 18, fontWeight: "900", color: colors.orange }}
+                    keyboardType="number-pad"
+                    value={exerciseRpe[exIdx] || ""}
+                    onChangeText={(val) => setExerciseRpe((prev) => ({ ...prev, [exIdx]: val }))}
+                    placeholder={String(ex.target_rpe)}
+                    placeholderTextColor="rgba(255,145,0,0.3)"
+                    maxLength={2}
+                  />
+                </View>
+              )}
 
               {/* Client notes (web parity) */}
               <TextInput

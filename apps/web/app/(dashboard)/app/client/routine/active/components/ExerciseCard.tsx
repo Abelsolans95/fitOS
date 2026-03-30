@@ -13,12 +13,14 @@ interface ExerciseCardProps {
   isSaved: boolean;
   elapsed: number;
   week: number;
+  exerciseRpe: string;
   onCompleteSet: (setIdx: number) => void;
   onSetValueChange: (
     setIdx: number,
     field: "weight_kg" | "reps_done" | "rir",
     value: string
   ) => void;
+  onExerciseRpeChange: (value: string) => void;
   onNext: () => void;
   onPrev: () => void;
   onFinishRoutine: () => void;
@@ -36,8 +38,10 @@ export function ExerciseCard({
   isSaved,
   elapsed,
   week,
+  exerciseRpe,
   onCompleteSet,
   onSetValueChange,
+  onExerciseRpeChange,
   onNext,
   onPrev,
   onFinishRoutine,
@@ -324,6 +328,28 @@ export function ExerciseCard({
           );
         })}
       </div>
+
+      {/* RPE por ejercicio — solo si el trainer configuró target_rpe */}
+      {exercise.target_rpe != null && (
+        <div className="rounded-xl border border-[#FF9100]/20 bg-[#FF9100]/[0.04] px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.15em] text-[#FF9100]">RPE del ejercicio</p>
+              <p className="text-[10px] text-[#5A5A72]">Objetivo: {exercise.target_rpe} · Escala 1-10</p>
+            </div>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={10}
+              value={exerciseRpe}
+              onChange={(e) => onExerciseRpeChange(e.target.value)}
+              placeholder={String(exercise.target_rpe)}
+              className="h-11 w-16 rounded-xl border border-[#FF9100]/30 bg-[#FF9100]/[0.08] px-2 text-center text-lg font-black text-[#FF9100] placeholder:text-[#FF9100]/30 outline-none focus:border-[#FF9100]/60"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Navigation buttons */}
       <div className="flex gap-3">

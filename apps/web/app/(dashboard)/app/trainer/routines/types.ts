@@ -53,6 +53,8 @@ export interface RoutineExercise {
   sets_config: SetConfig[];
   /** Per-week overrides keyed by week number (1-based). If absent, uses base values. */
   weekly_config?: Record<number, WeekConfig>;
+  /** Optional target RPE (1-10) the trainer sets per exercise. If null/undefined, client won't see the RPE input. */
+  target_rpe?: number | null;
 }
 
 export interface TrainingDay {

@@ -44,6 +44,8 @@ export interface ExerciseData {
   mode?: "equal" | "different";
   sets_config?: SetConfig[];
   weekly_config?: Record<number, WeekConfig>;
+  /** RPE objetivo fijado por el entrenador. Si null/undefined no se muestra el input al cliente. */
+  target_rpe?: number | null;
 }
 
 export interface DayData {

@@ -25,6 +25,7 @@ export interface TrainingState {
   allSets: Record<number, SetEntry[]>;
   savedExercises: number[];
   exerciseNotes: Record<number, string>;
+  exerciseRpe: Record<number, string>;
   rpeGlobal: number;
   restTime: number;
   restTotal: number;
@@ -39,6 +40,7 @@ const initialState: TrainingState = {
   allSets: {},
   savedExercises: [],
   exerciseNotes: {},
+  exerciseRpe: {},
   rpeGlobal: 7,
   restTime: 0,
   restTotal: 0,
@@ -74,6 +76,7 @@ export type TrainingAction =
     }
   | { type: "MARK_SAVED"; exIdx: number }
   | { type: "SET_NOTES"; exIdx: number; notes: string }
+  | { type: "SET_EXERCISE_RPE"; exIdx: number; value: string }
   | { type: "SET_RPE"; value: number }
   | {
       type: "UPDATE_SET_VALUE";
@@ -156,6 +159,12 @@ function trainingReducer(
         savedExercises: [...state.savedExercises, action.exIdx],
       };
     }
+
+    case "SET_EXERCISE_RPE":
+      return {
+        ...state,
+        exerciseRpe: { ...state.exerciseRpe, [action.exIdx]: action.value },
+      };
 
     case "SET_NOTES":
       return {
@@ -347,6 +356,7 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
         0
       );
       const notes = state.exerciseNotes[exIdx]?.trim() || null;
+      const exerciseRpeVal = state.exerciseRpe[exIdx] ? Number(state.exerciseRpe[exIdx]) : null;
 
       const supabase = createClient();
 
@@ -362,6 +372,7 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
             sets_data: setsData,
             total_volume_kg: totalVolume,
             client_notes: notes,
+            exercise_rpe: exerciseRpeVal,
           },
           { onConflict: "session_id,exercise_name" }
         );

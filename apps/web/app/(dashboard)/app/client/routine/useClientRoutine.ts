@@ -50,6 +50,7 @@ export interface ClientRoutineState {
   isTracking: boolean;
   sessionInputs: Record<string, SetInput[]>;
   clientNotes: Record<string, string>;
+  exerciseRpe: Record<string, string>;
   rpeGlobal: number;
   saving: boolean;
   inProgressSession: InProgressSession | null;
@@ -67,6 +68,7 @@ const initialState: ClientRoutineState = {
   isTracking: false,
   sessionInputs: {},
   clientNotes: {},
+  exerciseRpe: {},
   rpeGlobal: 7,
   saving: false,
   inProgressSession: null,
@@ -100,6 +102,7 @@ export type ClientRoutineAction =
       value: string;
     }
   | { type: "SET_CLIENT_NOTE"; exerciseName: string; note: string }
+  | { type: "SET_EXERCISE_RPE"; exerciseName: string; value: string }
   | { type: "SET_RPE"; value: number }
   | { type: "SET_SAVING"; saving: boolean }
   | { type: "SESSION_SAVED"; previousLogs: PreviousLog[] }
@@ -158,6 +161,12 @@ function clientRoutineReducer(
       updated[action.exerciseName] = sets;
       return { ...state, sessionInputs: updated };
     }
+
+    case "SET_EXERCISE_RPE":
+      return {
+        ...state,
+        exerciseRpe: { ...state.exerciseRpe, [action.exerciseName]: action.value },
+      };
 
     case "SET_CLIENT_NOTE":
       return {
@@ -550,6 +559,8 @@ export function useClientRoutine() {
           0
         );
 
+        const rpeVal = state.exerciseRpe[ex.name] ? Number(state.exerciseRpe[ex.name]) : null;
+
         return {
           client_id: state.userId,
           exercise_id: ex.exercise_id,
@@ -558,6 +569,7 @@ export function useClientRoutine() {
           session_id: currentSessionId,
           sets_data: setsData,
           total_volume_kg: totalVolume,
+          exercise_rpe: rpeVal,
         };
       });
 

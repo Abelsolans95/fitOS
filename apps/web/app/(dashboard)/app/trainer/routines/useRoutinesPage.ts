@@ -695,6 +695,7 @@ export function useRoutinesPage() {
             weekly_config: ex.weekly_config && Object.keys(ex.weekly_config).length > 0
               ? ex.weekly_config
               : undefined,
+            target_rpe: ex.target_rpe ?? null,
           };
         })
       );

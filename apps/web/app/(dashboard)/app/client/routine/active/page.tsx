@@ -186,8 +186,10 @@ function ActiveTrainingPage() {
       isSaved={state.savedExercises.includes(state.currentExIdx)}
       elapsed={state.elapsed}
       week={week}
+      exerciseRpe={state.exerciseRpe[state.currentExIdx] ?? ""}
       onCompleteSet={t.completeSet}
       onSetValueChange={(si, f, v) => t.dispatch({ type: "UPDATE_SET_VALUE", exIdx: state.currentExIdx, setIdx: si, field: f, value: v })}
+      onExerciseRpeChange={(v) => t.dispatch({ type: "SET_EXERCISE_RPE", exIdx: state.currentExIdx, value: v })}
       onNext={t.goNextExercise} onPrev={t.goPrevExercise} onFinishRoutine={t.finishRoutine}
     />
   );

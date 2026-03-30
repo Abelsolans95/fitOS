@@ -221,7 +221,7 @@ function ExerciseRow({
 
       {/* EQUAL MODE */}
       {exercise.mode === "equal" && (
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-7">
           <NumField label="Series" value={exercise.sets} min={1} max={20}
             onChange={(v) => update({ sets: v || 1 })} />
           <NumField label="Reps mín" value={exercise.reps_min} min={1}
@@ -230,6 +230,9 @@ function ExerciseRow({
             onChange={(v) => update({ reps_max: v || 1 })} />
           <NumField label="RIR" value={exercise.rir} min={0} max={5}
             onChange={(v) => update({ rir: v || 0 })} />
+          <NumField label="RPE obj." value={exercise.target_rpe ?? ""} min={1} max={10}
+            placeholder="—"
+            onChange={(v) => update({ target_rpe: v === "" ? null : Number(v) })} />
           <NumField label="Carga (kg)" value={exercise.target_weight ?? ""} min={0} step={0.5}
             placeholder="—"
             onChange={(v) => update({ target_weight: v === "" ? null : Number(v) })} />

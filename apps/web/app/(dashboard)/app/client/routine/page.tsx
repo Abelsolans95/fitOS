@@ -34,6 +34,7 @@ export default function ClientRoutinePage() {
     isTracking,
     sessionInputs,
     clientNotes,
+    exerciseRpe,
     rpeGlobal,
     saving,
     inProgressSession,
@@ -222,6 +223,26 @@ export default function ClientRoutinePage() {
                     </div>
                   );
                 })}
+
+                {/* RPE por ejercicio — solo si el trainer configuró target_rpe */}
+                {ex.target_rpe != null && (
+                  <div className="mt-3 flex items-center justify-between rounded-xl border border-[#FF9100]/20 bg-[#FF9100]/[0.04] px-3 py-2">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#FF9100]">RPE del ejercicio</p>
+                      <p className="text-[10px] text-[#5A5A72]">Objetivo: {ex.target_rpe} · Escala 1-10</p>
+                    </div>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={10}
+                      value={exerciseRpe[ex.name] || ""}
+                      onChange={(e) => dispatch({ type: "SET_EXERCISE_RPE", exerciseName: ex.name, value: e.target.value })}
+                      placeholder={String(ex.target_rpe)}
+                      className="h-10 w-14 rounded-xl border border-[#FF9100]/30 bg-[#FF9100]/[0.08] px-1 text-center text-base font-black text-[#FF9100] placeholder:text-[#FF9100]/30 outline-none focus:border-[#FF9100]/60"
+                    />
+                  </div>
+                )}
 
                 {/* Client notes */}
                 <div className="mt-3">
