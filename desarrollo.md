@@ -1,6 +1,6 @@
 # FitOS — Estado del Desarrollo
 
-> Documento actualizado el 29/03/2026 (Comunidad Premium — Feed de Alto Rendimiento). Léelo de arriba abajo antes de tocar cualquier archivo.
+> Documento actualizado el 30/03/2026 (Code Quality Review completo — fragmentación de páginas, error handling, performance). Léelo de arriba abajo antes de tocar cualquier archivo.
 > Cualquier agente o desarrollador debe leer este archivo **primero** para entender el estado actual del proyecto.
 >
 > **IMPORTANTE:** Al terminar cualquier desarrollo, bugfix o cambio significativo, actualiza este archivo (`desarrollo.md`) **y** `CLAUDE.md` antes de cerrar la sesión. Refleja los archivos nuevos o modificados, añade notas para el siguiente agente/desarrollador y actualiza la sección de próximos pasos. El objetivo es que cualquier persona o agente pueda continuar el proyecto sin contexto previo.
@@ -228,6 +228,64 @@
 - [ ] `CommunityScreen.tsx` en `apps/mobile/src/screens/` — feed + comments + likes con estilo brutalista
 - [ ] Tab "Comunidad" en `App.tsx` (9 tabs en bottom nav)
 
+### Code Quality Review — Fragmentación y Performance (30/03/2026) — **COMPLETADO**
+
+Revisión exhaustiva y refactoring completo de la capa web. Branch: `claude/code-review-quality-GbAzE`.
+
+**Fixes críticos previos (build roto):**
+- Creados `active/utils.ts` y `trainer/types.ts` que faltaban y rompían el build de Vercel
+
+**Fragmentación de páginas grandes (Rule 50/51):**
+
+| Página | Antes | Después | Componentes creados |
+|---|---|---|---|
+| `trainer/nutrition/page.tsx` | 1318 líneas | 128 líneas | Importa de `components/` (ya existían) |
+| `trainer/exercises/page.tsx` | 1065 líneas | 487 líneas | types, Icons, Shared, ExerciseCard, ExerciseFormModal, DeleteConfirmModal |
+| `trainer/import/page.tsx` | 832 líneas | 339 líneas | types, UploadStep, MappingStep, ReconcileStep, ReviewStep |
+| `onboarding/client/page.tsx` | 1050 líneas | 404 líneas | types, Shared, DynamicField, StepProfile, StepDynamicForm |
+| `onboarding/trainer/page.tsx` | 856 líneas | 396 líneas | Shared, StepProfile, StepFormEditor, StepPreview, StepPromoCode |
+| `client/community/page.tsx` | ~700 líneas | ~300 líneas | useClientCommunityPage, CommunityFeed, PublishPost |
+| `client/calories/page.tsx` | — | 309 líneas | MacroSummary, FoodLogList, AddFoodModal |
+| `client/progress/page.tsx` | 500 líneas | 116 líneas | types, MetricChart, MetricForm, MetricHistoryList |
+| `client/meals/page.tsx` | 484 líneas | 281 líneas | types, MealCard, DailyTotals |
+| `client/routine/page.tsx` | 583 líneas | 440 líneas | ExerciseCard extraído a components/ |
+| `trainer/dashboard/page.tsx` | — | 265 líneas | KPICard, RecentActivity |
+
+**Performance (Rule 53, 103, 106):**
+- Reemplazados `.select("*")` con columnas específicas en: `exercise-resolver.ts`, `food-resolver.ts`, `useClientRoutine.ts`, `useNutritionPage.ts`, `useCommunityPage.ts`, `TabRutina.tsx`, `TabSalud.tsx`, `TabChat.tsx`, `ExerciseLibraryTab.tsx`
+- `.limit()` añadido en queries de `messages` (500) y `community_posts` (50)
+- `Promise.all` para queries independientes en community, client dashboard
+
+**Error handling completado (Rule 53 — Patrón C):**
+- `trainer/settings/page.tsx`: 3 queries sin error → error + `// No bloqueante`
+- `trainer/chat/page.tsx`: messages query → error bloqueante; profiles → No bloqueante
+- `trainer/clients/page.tsx`: profiles lookup → No bloqueante
+- `client/dashboard/page.tsx`: 5 queries sin error → todas con `// No bloqueante`
+- `client/meals/page.tsx`: calendar query + toggleMealCompleted upsert con revert
+- `client/chat/page.tsx`: refetch post-INSERT + `select(*)` → columnas específicas
+- `client/appointments/page.tsx`: trainer_clients + profile lookup → No bloqueante
+- `client/appointments/components/BookAppointmentModal.tsx`: toast.error añadido
+
+**React.memo en componentes hoja (Rule 101):**
+- `client/meals/components/MealCard.tsx` — wrapeado con memo()
+- `client/routine/components/ExerciseCard.tsx` — wrapeado con memo()
+- `client/community/components/CommunityFeed.tsx` — wrapeado con memo()
+
+**Archivos nuevos creados (30/03/2026):**
+- `apps/web/app/(dashboard)/app/client/routine/active/utils.ts` — getDateForDay, calculateProgressLabel, getProgressColor
+- `apps/web/app/(dashboard)/app/trainer/types.ts` — interfaz ClientOption centralizada
+- `apps/web/app/(dashboard)/app/client/progress/components/` — types, MetricChart, MetricForm, MetricHistoryList
+- `apps/web/app/(dashboard)/app/client/meals/components/` — types, MealCard, DailyTotals
+- `apps/web/app/(dashboard)/app/client/routine/components/ExerciseCard.tsx`
+- `apps/web/app/(dashboard)/app/client/community/components/` — types, CommunityFeed, PublishPost
+- `apps/web/app/(dashboard)/app/client/community/useClientCommunityPage.ts`
+- `apps/web/app/(dashboard)/app/client/calories/components/` — MacroSummary, FoodLogList, AddFoodModal
+- `apps/web/app/(dashboard)/app/trainer/dashboard/components/` — KPICard, RecentActivity
+- `apps/web/app/(dashboard)/app/trainer/exercises/components/` — types, Icons, Shared, ExerciseCard, ExerciseFormModal, DeleteConfirmModal
+- `apps/web/app/(dashboard)/app/trainer/import/components/` — types, UploadStep, MappingStep, ReconcileStep, ReviewStep
+- `apps/web/app/(auth)/onboarding/client/components/` — types, Shared, DynamicField, StepProfile, StepDynamicForm
+- `apps/web/app/(auth)/onboarding/trainer/components/` — Shared, StepProfile, StepFormEditor, StepPreview, StepPromoCode
+
 ### Rediseño UI — "Brutalismo Elegante" y Dashboards Premium (Actualizado — 23/03/2026)
 - Rediseño integral de 7 pantallas mobile y páginas web públicas / auth (19/03/2026)
 - **Dashboards Premium (Entrenador y Cliente):** Implementación de *glassmorphism* intensivo, texturas `.dot-grid` globales, rediseño flotante en la `AppSidebar` y transparencias en tarjetas de contenido (`backdrop-blur-xl`). Se actualizaron masivamente todas las rutas internas y layouts base para unificar estética holográfica con la landing page (23/03/2026)
@@ -450,14 +508,22 @@ apps/web/app/
 │       └── client/
 │           ├── layout.tsx              ← ✅ ClientSidebar (sidebar con badge de no leídos en Chat)
 │           ├── dashboard/page.tsx      ← ✅ Resumen diario + stats + acciones rápidas
+│           ├── dashboard/components/   ← KPICard.tsx, RecentActivity.tsx
 │           ├── calories/page.tsx       ← ✅ Vision Calorie Tracker (foto → IA → macros)
-│           ├── routine/page.tsx        ← ✅ Rutina actual con tracker de sets
+│           ├── calories/components/    ← MacroSummary.tsx, FoodLogList.tsx, AddFoodModal.tsx
+│           ├── routine/page.tsx        ← ✅ Rutina actual con tracker de sets (~440 líneas, usa useClientRoutine)
+│           ├── routine/components/     ← ExerciseCard.tsx (memo)
 │           ├── meals/page.tsx          ← ✅ Plan de comidas asignado (por día)
+│           ├── meals/components/       ← types.ts, MealCard.tsx (memo), DailyTotals.tsx
 │           ├── calendar/page.tsx       ← ✅ Calendario master (entrenos, comidas, métricas)
-│           ├── progress/page.tsx       ← ✅ Mediciones corporales + gráfico SVG + historial
+│           ├── progress/page.tsx       ← ✅ Mediciones corporales + gráfico + historial (~116 líneas)
+│           ├── progress/components/    ← types.ts, MetricChart.tsx, MetricForm.tsx, MetricHistoryList.tsx
 │           ├── appointments/page.tsx   ← ✅ Ver/solicitar/cancelar citas con el entrenador
+│           ├── appointments/components/← BookAppointmentModal.tsx, AppointmentList.tsx
 │           ├── health/page.tsx        ← ✅ Mi Salud — mapa anatómico + reportar molestias + timeline
 │           ├── community/page.tsx     ← ✅ Feed de comunidad del trainer (likes, comments, publicar si OPEN)
+│           ├── community/useClientCommunityPage.ts ← hook useReducer para estado de comunidad
+│           ├── community/components/  ← types.ts, CommunityFeed.tsx (memo), PublishPost.tsx
 │           └── chat/page.tsx           ← ✅ Chat con entrenador (Realtime, optimista, leído)
 │
 ├── api/
@@ -1564,3 +1630,30 @@ Segunda revisión enfocada en rendimiento de carga, seguridad adicional y calida
 - `CaloriesScreen.tsx`: error handling + useMemo para totales + stale date fix
 - `MealsScreen.tsx`: error handling con Alert
 - `ProgressScreen.tsx` + `AppointmentsScreen.tsx modal`: KeyboardAvoidingView añadido
+
+---
+
+**ERROR #39 — Archivos críticos de build faltantes (TS2307)**
+- **Fecha:** 30/03/2026
+- **Archivos afectados:** `apps/web/app/(dashboard)/app/client/routine/active/utils.ts`, `apps/web/app/(dashboard)/app/trainer/types.ts`
+- **Qué pasó:** `client/routine/page.tsx` importaba `./active/utils` (funciones de fecha y progreso) que no existía. `trainer/routines/types.ts` re-exportaba `ClientOption` desde `@/app/(dashboard)/app/trainer/types` que tampoco existía. Ambos archivos estaban referenciados pero nunca creados → build de Vercel fallaba con TS2307.
+- **Solución aplicada:** Creados ambos archivos con el contenido correcto.
+- **Regla:** Antes de importar desde un path relativo, verificar que el archivo destino existe. Al añadir `export type { X } from "ruta"` en un `types.ts`, verificar que la ruta destino está creada.
+
+---
+
+**ERROR #40 — Páginas grandes sin fragmentar mezclaban lógica de negocio con UI**
+- **Fecha:** 30/03/2026
+- **Archivos afectados:** Múltiples `page.tsx` en trainer y client (>500 líneas)
+- **Qué pasó:** Tras merge de conflictos durante desarrollo paralelo, varias páginas tenían todas sus funciones de componente definidas inline (ActiveBadge, EmptyState, MenuCreator, etc.) en el mismo `page.tsx`, pese a existir la carpeta `components/`. El `page.tsx` de nutrición tenía 1318 líneas con 8 componentes inline.
+- **Solución aplicada:** Fragmentación sistemática: cada página orquesta, los componentes viven en `components/`. `useReducer` para estado complejo. Ver tabla en sección "Code Quality Review 30/03/2026".
+- **Regla:** Nunca dejar componentes definidos inline en `page.tsx`. Si existe `components/` sin que `page.tsx` importe de ahí, el refactor está incompleto.
+
+---
+
+**ERROR #41 — Queries Supabase sin destructurar error en páginas de display**
+- **Fecha:** 30/03/2026
+- **Archivos afectados:** `trainer/settings/page.tsx`, `trainer/chat/page.tsx`, `trainer/clients/page.tsx`, `client/dashboard/page.tsx`, `client/meals/page.tsx`, `client/chat/page.tsx`, `client/appointments/page.tsx`
+- **Qué pasó:** Queries de carga de datos de display (perfiles, planes, calendarios) usaban `const { data } =` sin destructurar `error`. Errores de DB pasaban silenciosamente sin log ni feedback.
+- **Solución aplicada:** Añadido `, error: queryName` a todas las queries + `if (queryName) { console.error("[Context]...", queryName); } // No bloqueante`.
+- **Regla:** Toda query Supabase debe destructurar `error`. Si es no bloqueante, loguear con console.error y añadir comentario `// No bloqueante`. Nunca silenciar errores de DB.

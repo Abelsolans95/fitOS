@@ -18,6 +18,7 @@
 - **Fase 6 (parcial, 28/03/2026):** Rediseño planificador de menú ✅ — selección de días con fechas reales, semanas de mesociclo, % macros, panel flotante de info nutricional en tiempo real
 - **Fase 6 ampliada (29/03/2026):** Menús guardados ✅ — guardar/cargar configuraciones de menú reutilizables (tabla `saved_menu_templates`, migración 033). Navegación semanal mejorada ✅ — botones semana anterior/siguiente en la parte inferior del planificador. DarkSelect ✅ — todos los `<select>` nativos reemplazados por componente custom dark.
 - **Fase 7 (29/03/2026):** Comunidad Premium ✅ — Feed privado por trainer con posts (título+texto+imagen), comentarios, likes, posts fijados. Dos modos: OPEN (clientes publican) y READ_ONLY_CLIENTS (solo coach). Badge verificado violeta para el coach. Storage bucket para imágenes. Realtime. Badge de no leídos en sidebar. Web trainer + web cliente.
+- **Code Quality Review (30/03/2026):** Fragmentación completa ✅ — todas las páginas >300 líneas fragmentadas en `components/`. Error handling Patrón C aplicado ✅ — todas las queries con `error` destructurado. Performance ✅ — `select("*")` eliminados, `.limit()` en tablas crecientes, `Promise.all` para queries independientes. `React.memo` en componentes hoja.
 
 ---
 
@@ -273,6 +274,12 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 106. **`.limit()` en todas las queries paginables** — Tablas que crecen con el uso (`community_posts`, `appointments`, `messages`, `weight_log`, `body_metrics`, `food_log`) DEBEN tener `.limit()` explícito. Valores orientativos: posts=50, messages=100-500, metrics=100. Sin límite, una tabla con 1000+ filas degrada la carga inicial.
 
 107. **Batch insert en lugar de bucles** — En API routes, nunca hacer INSERT individual dentro de un `for..of`. Recopilar todos los objetos en un array y hacer un único `supabase.from(...).insert(array)`. Para operaciones de lookup antes del insert, pre-cargar con `.in("id", idsArray)` y procesar en memoria. Ver `api/import/create-exercises/route.ts` como referencia del patrón correcto.
+
+108. **Verificar que los archivos importados realmente existen** — Antes de referenciar un path en un import (`import { X } from "./utils"`, `export type { Y } from "@/app/trainer/types"`), verificar que el archivo destino existe físicamente. Un import a archivo inexistente compilará en local con errores de TS pero romperá el build de Vercel con TS2307. Si el archivo no existe: crearlo antes de hacer el import.
+
+109. **Componentes `components/` deben ser importados en `page.tsx`** — Cuando existe una carpeta `components/` junto a un `page.tsx`, verificar que el `page.tsx` realmente importa desde ella. Si `page.tsx` tiene funciones de componente definidas inline y `components/` existe pero no se usa, el refactor está incompleto. Ejecutar `grep "from \"./components"` en el `page.tsx` para verificar.
+
+110. **`React.memo` obligatorio en componentes que se renderizan en listas** — Cualquier componente que sea hijo directo de un `.map()` sobre un array de datos (ejercicios, comidas, posts, mensajes) DEBE estar wrapeado con `memo()`. Patrón: `export const Foo = memo(function Foo(props) { ... })`. Sin memo, el componente se re-renderiza en cada cambio de estado del padre aunque sus props no hayan cambiado.
 
 ---
 
