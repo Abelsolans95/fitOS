@@ -107,7 +107,7 @@ export default function ClientChatPage() {
         .eq("trainer_id", tid)
         .eq("client_id", user.id)
         .order("created_at", { ascending: true })
-        .limit(100);
+        .limit(500);
       if (msgsError) {
         toast.error("Error al cargar los mensajes");
         console.error("[ClientChat] Error cargando mensajes:", msgsError);

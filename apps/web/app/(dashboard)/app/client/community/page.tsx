@@ -97,7 +97,8 @@ function ClientCommunityInner() {
         .select("*")
         .eq("community_id", comm.id)
         .order("is_pinned", { ascending: false })
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(50);
 
       if (postsErr) {
         toast.error("Error al cargar el feed");

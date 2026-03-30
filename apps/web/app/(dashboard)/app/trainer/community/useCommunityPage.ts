@@ -321,7 +321,8 @@ export function useCommunityPage() {
       .select("*")
       .eq("community_id", communityId)
       .order("is_pinned", { ascending: false })
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(50);
 
     if (error) {
       toast.error("Error al cargar publicaciones");
@@ -335,21 +336,26 @@ export function useCommunityPage() {
     }
 
     const postIds = posts.map((p) => p.id);
-    const { data: likes } = await supabase
-      .from("community_likes")
-      .select("post_id, user_id")
-      .in("post_id", postIds);
-
-    const { data: comments } = await supabase
-      .from("community_comments")
-      .select("post_id")
-      .in("post_id", postIds);
-
     const authorIds = [...new Set(posts.map((p) => p.author_id))];
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("user_id, full_name, business_name, role")
-      .in("user_id", authorIds);
+
+    const [likesRes, commentsRes, profilesRes] = await Promise.all([
+      supabase
+        .from("community_likes")
+        .select("post_id, user_id")
+        .in("post_id", postIds),
+      supabase
+        .from("community_comments")
+        .select("post_id")
+        .in("post_id", postIds),
+      supabase
+        .from("profiles")
+        .select("user_id, full_name, business_name, role")
+        .in("user_id", authorIds),
+    ]);
+
+    const likes = likesRes.data;
+    const comments = commentsRes.data;
+    const profiles = profilesRes.data;
 
     const profileMap = new Map(profiles?.map((p) => [p.user_id, p]) ?? []);
 

@@ -31,7 +31,7 @@ export function TabChat({
         .eq("trainer_id", trainerId)
         .eq("client_id", clientId)
         .order("created_at", { ascending: true })
-        .limit(100);
+        .limit(500);
       if (msgsError) {
         toast.error("Error al cargar los mensajes");
         console.error("[TabChat] Error cargando mensajes:", msgsError);

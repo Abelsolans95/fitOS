@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { FormFieldEditor, type FormField } from "@/components/onboarding/FormFieldEditor";
 import { FormPreview } from "@/components/onboarding/FormPreview";
 import { createClient } from "@/lib/supabase";
+import { DarkSelect } from "@/components/ui/DarkSelect";
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -397,39 +398,12 @@ export default function TrainerOnboardingPage() {
                 <Label htmlFor="specialty" className="text-[#8B8BA3]">
                   Especialidad <span className="text-[#FF1744]">*</span>
                 </Label>
-                <div className="relative">
-                  <select
-                    id="specialty"
-                    value={specialty}
-                    onChange={(e) => setSpecialty(e.target.value as Specialty)}
-                    className="h-10 w-full appearance-none rounded-lg border border-white/[0.08] bg-[#0A0A0F] px-3 pr-10 text-sm text-white transition-colors outline-none focus:border-[#00E5FF] focus:ring-2 focus:ring-[#00E5FF]/20"
-                  >
-                    <option value="" disabled className="bg-[#12121A] text-[#8B8BA3]">
-                      Selecciona tu especialidad
-                    </option>
-                    {SPECIALTIES.map((s) => (
-                      <option key={s} value={s} className="bg-[#12121A] text-white">
-                        {s}
-                      </option>
-                    ))}
-                  </select>
-                  {/* Chevron icon */}
-                  <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
-                    <svg
-                      className="h-4 w-4 text-[#8B8BA3]"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </div>
-                </div>
+                <DarkSelect
+                  value={specialty}
+                  onChange={(v) => setSpecialty(v as Specialty)}
+                  options={SPECIALTIES.map((s) => ({ value: s, label: s }))}
+                  placeholder="Selecciona especialidad"
+                />
               </div>
 
               {/* Bio */}
