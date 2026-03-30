@@ -1389,6 +1389,24 @@ DELETE FROM trainer_exercise_overrides WHERE hidden = true;
 
 ---
 
+**ERROR #55 — `active/utils.ts` no existía pese a ser importado en `client/routine/page.tsx`**
+- **Fecha:** 30/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/client/routine/page.tsx` (imports) + `active/utils.ts` (faltaba)
+- **Qué pasó:** Al refactorizar `page.tsx` con el hook `useClientRoutine`, el agente generó imports de `getDateForDay`, `calculateProgressLabel` y `getProgressColor` desde `"./active/utils"`. El archivo nunca fue creado, causando "module not found" en Vercel build.
+- **Solución aplicada:** Creado `apps/web/app/(dashboard)/app/client/routine/active/utils.ts` con las tres funciones puras.
+- **Regla:** Al escribir imports en un archivo refactorizado, verificar que los módulos destino existen. Si se crean imports de archivos nuevos, crear esos archivos en el mismo commit.
+
+---
+
+**ERROR #56 — `trainer/types.ts` no existía pese a ser re-exportado en `routines/types.ts`**
+- **Fecha:** 30/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/trainer/routines/types.ts:6`
+- **Qué pasó:** Como parte de la revisión de código, se añadió la línea `export type { ClientOption } from "@/app/(dashboard)/app/trainer/types"` en `routines/types.ts` para centralizar la interfaz compartida. Pero el archivo `trainer/types.ts` nunca fue creado → TS2307 en tiempo de build → Vercel fallaba con exit code 1.
+- **Solución aplicada:** Creado `apps/web/app/(dashboard)/app/trainer/types.ts` con la interfaz `ClientOption` (superset de todas las definiciones existentes: `client_id`, `full_name`, `email`, `food_preferences`).
+- **Regla:** Nunca añadir un re-export desde un módulo que no existe todavía. Si se refactoriza un import a un archivo centralizado, crear ese archivo en el mismo commit o antes.
+
+---
+
 ### Arquitectura de componentes — Buenas prácticas (desde 24/03/2026)
 
 **Patrón obligatorio para páginas con múltiples secciones (tabs, paneles, vistas):**
@@ -1481,3 +1499,68 @@ npm run test:watch   # Modo watch (desarrollo)
 5. **Verificar paridad web ↔ mobile**: cualquier cambio en web debe reflejarse en mobile y viceversa. No dar una tarea por terminada si solo está implementada en una plataforma.
 
 El objetivo es que cualquier persona o agente que llegue al proyecto pueda continuar sin contexto previo y sin repetir los mismos errores.
+
+---
+
+### Revisión profunda de código #2 — Velocidad de carga + Calidad (29-30/03/2026)
+
+**Wave 3 completada (30/03/2026) — Refactors de calidad:**
+
+- `apps/web/app/(dashboard)/app/trainer/nutrition/page.tsx` → reducido de 1326 a **129 líneas** (orchestrator puro)
+- `apps/web/app/(dashboard)/app/trainer/nutrition/components/MenuCreator.tsx` → NUEVO, 810 líneas (wizard de creación de menú extraído del inline)
+- `apps/web/app/(dashboard)/app/client/routine/useClientRoutine.ts` → NUEVO, useReducer hook centraliza 10+ useState de client/routine/page.tsx
+- `apps/web/app/(dashboard)/app/client/routine/page.tsx` → ya es orchestrator puro (useReducer aplicado)
+- `apps/web/app/(dashboard)/app/client/community/useClientCommunityPage.ts` → NUEVO, 530 líneas, 18 acciones tipadas
+- `apps/web/app/(dashboard)/app/client/community/page.tsx` → reducido de 689 a 319 líneas
+
+**Nota sobre nutrition/page.tsx:** Los agentes (Opus y Sonnet) fallaron por timeout repetido al intentar escribir MenuCreator.tsx (~800 líneas) en una sola sesión. Solución: extraer el bloque con `sed` a un archivo temporal y crear el archivo con Write directamente. No intentar que un agente escriba archivos de >500 líneas de una vez.
+
+### Revisión profunda de código #2 — Velocidad de carga (29/03/2026)
+
+Segunda revisión enfocada en rendimiento de carga, seguridad adicional y calidad. 43 hallazgos aplicados:
+
+**Seguridad aplicada:**
+- `complete-registration`: validación `client_id === user.id` (evita que un usuario se vincule como otro)
+- Google OAuth: validación open redirect en `returnTo`/`state` params (solo rutas relativas con `/`)
+- `auth/google/callback`: manejo explícito de error en update de tokens + null check de user
+- `activate-client`: verificación de `role === "client"` antes de activar
+
+**Rendimiento — waterfalls eliminados:**
+- `client/dashboard/page.tsx`: 6 queries secuenciales → 2 grupos Promise.all + activate-client fire-and-forget
+- `trainer/settings/page.tsx`: 3 queries → Promise.all
+- `trainer/appointments/page.tsx`: 4 queries → Promise.all + filtro de rango de fechas (1 mes atrás / 3 adelante)
+- `client/routine/page.tsx`: 5 queries → 2 grupos Promise.all
+- `mobile/DashboardScreen.tsx`: 3 queries → Promise.all
+
+**Rendimiento — queries sin límite corregidas:**
+- `trainer/chat/page.tsx`: `.limit(500)` + Realtime incremental (sin refetch completo)
+- `community_posts`: `.limit(50)` en trainer y cliente
+- `body_metrics`: `.limit(100)`
+- `trainer_clients` en hook: `.limit(200)` safety net
+- `CHAT_MESSAGES_LIMIT = 100` como constante nombrada
+
+**Rendimiento — SELECT * eliminados:**
+- `exercise-resolver.ts`: columnas específicas en 4 queries
+- `food-resolver.ts`: columnas específicas en 2 queries
+
+**Rendimiento — N+1 eliminado:**
+- `api/import/create-exercises/route.ts`: batch insert para crear y vincular ejercicios (de N queries a 2-3 queries totales)
+
+**Infraestructura web:**
+- `loading.tsx` creados en `(dashboard)/`, `trainer/` y `client/` — skeletons inmediatos
+- `React.memo` en `CommunityFeed`, `AppointmentList`
+- `useCallback` para handlers en community trainer page
+- `next/image` para imágenes de posts de comunidad (con `remotePatterns` en next.config.ts)
+- Constantes nombradas en `api/import/excel/route.ts`: `MAX_FILE_SIZE_BYTES`, `MAX_PREVIEW_ROWS`
+
+**Calidad:**
+- `client/community/page.tsx`: 18 useState → `useReducer` con `useClientCommunityPage.ts` (689 → 319 líneas)
+- `useTrainerDashboard` duplicado consolidado en `lib/hooks/useTrainerDashboard.ts`
+- `trainer/dashboard/page.tsx`: hook local eliminado, usa `lib/hooks/` (-58 líneas)
+
+**Mobile:**
+- `AppointmentsScreen.tsx`: instancia duplicada de Supabase → usa instancia compartida
+- `DashboardScreen.tsx`: 3 queries → Promise.all, `CalorieRing` con React.memo, letterSpacing duplicado corregido
+- `CaloriesScreen.tsx`: error handling + useMemo para totales + stale date fix
+- `MealsScreen.tsx`: error handling con Alert
+- `ProgressScreen.tsx` + `AppointmentsScreen.tsx modal`: KeyboardAvoidingView añadido

@@ -235,6 +235,45 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 87. **Likes en comentarios + diferenciación coach** — Tabla `community_comment_likes` con `comment_id`, `user_id`, `is_coach` (BOOLEAN). El coach al dar like se marca `is_coach: true`. En el UI: like del coach muestra corazón violeta + badge "Coach" junto al contador. Likes de clientes son cyan estándar. RLS: mismas políticas que `community_likes` pero sobre comments. Realtime habilitado.
 88. **`community_comment_likes` tiene unique constraint** — `(comment_id, user_id)`. Misma lógica que `community_likes`: toggle optimista, insert si no existe, delete si ya existe.
 
+93. **Layout auth como Server Component async** — `apps/web/app/(dashboard)/layout.tsx` es un Server Component async. Usa `createClient()` de `@/lib/supabase-server`, llama a `supabase.auth.getUser()` y hace `redirect("/login")` si no hay sesión. NO usar middleware ni `getSession()` en layouts (no verifica JWT con el servidor). Las redirecciones basadas en rol usan `headers()` para obtener el pathname sin acceder a `window`.
+
+94. **`supabaseAdmin` (service_role) siempre DESPUÉS de auth+role check** — En API routes, la inicialización del cliente admin (`createClient(url, serviceKey)`) debe hacerse DENTRO del handler y únicamente después de haber verificado que el usuario tiene el rol correcto. Si el check de rol falla con error de DB → retornar 403 (fail-closed), nunca 500 que podría dar pistas.
+
+95. **Realtime cleanup en React Native — patrón obligatorio** — `useEffect` con suscripción Realtime DEBE retornar una función de cleanup síncrona (no async). Patrón correcto:
+    ```ts
+    useEffect(() => {
+      let channel: ReturnType<typeof supabase.channel> | null = null;
+      const setup = async () => { channel = supabase.channel("...").on(...).subscribe(); };
+      setup();
+      return () => { if (channel) supabase.removeChannel(channel); };
+    }, []);
+    ```
+    Nunca `return setup()` (retorna Promise, no cleanup). Aplica a `ChatScreen.tsx`, `AppointmentsScreen.tsx` y cualquier Screen con Realtime.
+
+96. **`useChat` hook compartido** — La lógica de chat (cargar mensajes, Realtime, marcar como leído, enviar) vive en `apps/web/hooks/useChat.ts`. Tanto `TabChat.tsx` (trainer) como `client/chat/page.tsx` (cliente) importan de ahí. No duplicar lógica de chat en componentes.
+
+97. **`ClientOption` centralizado en `trainer/types.ts`** — La interfaz `ClientOption` ({client_id, full_name, email, food_preferences?}) vive en `apps/web/app/(dashboard)/app/trainer/types.ts`. Todos los módulos trainer (routines, nutrition, appointments) re-exportan desde ahí: `export type { ClientOption } from "@/app/(dashboard)/app/trainer/types"`. Nunca redefinir la interfaz localmente.
+
+98. **Constantes nombradas en lugar de magic strings/numbers en `lib/`** — Archivos en `apps/web/lib/` deben declarar constantes exportadas para valores que se usan en múltiples lugares. Ejemplos: `INFERENCE_THRESHOLD_HIGH = 0.9` en `excel-parser.ts`, `CALENDAR_COLOR_*` en `google-calendar.ts`. Evitar literales repetidos que dificulten el mantenimiento.
+
+99. **Confirmación en dos pasos para acciones destructivas en UI** — Botones de "Cancelar cita", "Eliminar", etc. no deben ejecutar la acción directamente. Usar estado `confirmXxxId: string | null` — primer click setea el ID, segundo click ejecuta la acción, cualquier otro click (o blur) resetea a null. Mostrar "¿Confirmar?" como texto del botón en el estado intermedio. Esto aplica en `AppointmentList.tsx` (cancelar cita) y cualquier acción irreversible en el UI.
+
+100. **`loading.tsx` obligatorio en rutas de dashboard** — Toda ruta de Next.js App Router bajo `(dashboard)/` debe tener su `loading.tsx` correspondiente que muestre un spinner/skeleton inmediato. Archivos creados: `app/(dashboard)/loading.tsx`, `app/(dashboard)/app/trainer/loading.tsx`, `app/(dashboard)/app/client/loading.tsx`. Patrón: spinner cyan `animate-spin` + texto "Cargando..." en `#5A5A72`.
+
+101. **`React.memo` en componentes hoja reutilizables** — Componentes que se renderizan en listas o grids y reciben props estables deben estar envueltos en `memo()`. Ejemplos: `ExerciseCard`, `AppointmentList`, `CommunityFeed`. Patrón: `export const Foo = memo(function Foo(props) { ... })` (función nombrada dentro de memo para mejor stack traces).
+
+102. **`next/image` obligatorio para imágenes de contenido dinámico** — Las imágenes de posts de comunidad (`image_url` de Supabase Storage) deben usar `<Image fill sizes="..." />` de `next/image` en un contenedor `relative`. Configurar `remotePatterns` en `next.config.ts` para `**.supabase.co`. No usar `<img>` nativo para imágenes de contenido.
+
+103. **Promise.all para queries independientes en useEffect/loaders** — Cuando una función de carga hace múltiples `await supabase.from(...)` sobre tablas que no dependen entre sí, SIEMPRE usar `Promise.all`. Nunca encadenar `await` secuenciales para queries independientes. Ahorra el tiempo de la query más lenta × (N-1) queries.
+
+104. **`fetch("/api/...")` fire-and-forget para side effects no bloqueantes** — Llamadas a API routes que realizan efectos secundarios (activar cliente, marcar leído, etc.) y cuyo resultado no bloquea la UI deben hacerse sin `await`: `fetch("/api/activate-client", { method: "POST" }).catch(() => {})`. Añadir `.catch(() => {})` para silenciar errores no críticos.
+
+105. **Filtro de rango de fechas obligatorio en queries de appointments** — Las queries a la tabla `appointments` deben incluir siempre un filtro de fechas (`.gte("starts_at", ...).lte("starts_at", ...)`) para evitar traer el historial completo. Rango recomendado: 1 mes atrás + 3 meses adelante. Sin filtro, el payload crece indefinidamente con el uso.
+
+106. **`.limit()` en todas las queries paginables** — Tablas que crecen con el uso (`community_posts`, `appointments`, `messages`, `weight_log`, `body_metrics`, `food_log`) DEBEN tener `.limit()` explícito. Valores orientativos: posts=50, messages=100-500, metrics=100. Sin límite, una tabla con 1000+ filas degrada la carga inicial.
+
+107. **Batch insert en lugar de bucles** — En API routes, nunca hacer INSERT individual dentro de un `for..of`. Recopilar todos los objetos en un array y hacer un único `supabase.from(...).insert(array)`. Para operaciones de lookup antes del insert, pre-cargar con `.in("id", idsArray)` y procesar en memoria. Ver `api/import/create-exercises/route.ts` como referencia del patrón correcto.
+
 ---
 
 ## Regla de mantenimiento — obligatoria
