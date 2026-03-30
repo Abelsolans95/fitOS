@@ -216,7 +216,9 @@ function routinesReducer(state: RoutinesState, action: RoutinesAction): Routines
           let exercises: RoutineExercise[] = [];
           if (selectedTpl) {
             const tplExercises = (selectedTpl.exercises as TemplateExercise[])
-              .filter((te) => te.day_of_week === key || te.day_label === dayLabel)
+              .filter((te) =>
+                dayLabel ? te.day_label === dayLabel : te.day_of_week === key
+              )
               .sort((a, b) => a.order - b.order);
 
             exercises = tplExercises.map((te, idx) => ({
