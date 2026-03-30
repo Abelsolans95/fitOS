@@ -73,12 +73,13 @@ export default function MealsPage() {
           const startOfWeek = new Date(today);
           startOfWeek.setDate(today.getDate() - today.getDay() + 1);
 
-          const { data: calendarEntries } = await supabase
+          const { data: calendarEntries, error: calErr } = await supabase
             .from("user_calendar")
             .select("date, completed, activity_details")
             .eq("user_id", user.id)
             .eq("activity_type", "meal")
             .gte("date", startOfWeek.toISOString().split("T")[0]);
+          if (calErr) { console.error("[Meals] Error cargando adherencia:", calErr); } // No bloqueante
 
           if (calendarEntries) {
             const completed: Record<string, boolean> = {};
@@ -124,7 +125,7 @@ export default function MealsPage() {
       const supabase = createClient();
       const today = new Date().toISOString().split("T")[0];
 
-      const { data: existing } = await supabase
+      const { data: existing, error: lookupErr } = await supabase
         .from("user_calendar")
         .select("id")
         .eq("user_id", userId)
@@ -132,8 +133,13 @@ export default function MealsPage() {
         .eq("activity_type", "meal")
         .maybeSingle();
 
+      if (lookupErr) {
+        console.error("[Meals] Error buscando entrada de calendario:", lookupErr);
+        throw lookupErr;
+      }
+
       if (existing) {
-        await supabase
+        const { error: updateErr } = await supabase
           .from("user_calendar")
           .update({
             completed: newCompleted,
@@ -144,8 +150,9 @@ export default function MealsPage() {
             },
           })
           .eq("id", existing.id);
+        if (updateErr) { console.error("[Meals] Error actualizando comida:", updateErr); throw updateErr; }
       } else {
-        await supabase.from("user_calendar").insert({
+        const { error: insertErr } = await supabase.from("user_calendar").insert({
           user_id: userId,
           date: today,
           activity_type: "meal",
@@ -156,6 +163,7 @@ export default function MealsPage() {
             meal_plan_id: mealPlan.id,
           },
         });
+        if (insertErr) { console.error("[Meals] Error insertando comida:", insertErr); throw insertErr; }
       }
     } catch {
       // Revert on error

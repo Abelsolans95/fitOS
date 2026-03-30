@@ -42,18 +42,19 @@ export default function ClientDashboardPage() {
 
         await fetch("/api/activate-client", { method: "POST" });
 
-        const { data: profile } = await supabase
+        const { data: profile, error: profileErr } = await supabase
           .from("profiles")
           .select("full_name")
           .eq("user_id", user.id)
           .single();
+        if (profileErr) { console.error("[ClientDashboard] Error cargando perfil:", profileErr); } // No bloqueante
 
         const fullName = profile?.full_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "Cliente";
         setClientName(fullName);
 
         const todayStr = today.toISOString().split("T")[0];
 
-        const { data: activeMealPlan } = await supabase
+        const { data: activeMealPlan, error: mealPlanErr } = await supabase
           .from("meal_plans")
           .select("id, title")
           .eq("client_id", user.id)
@@ -61,12 +62,14 @@ export default function ClientDashboardPage() {
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
+        if (mealPlanErr) { console.error("[ClientDashboard] Error cargando plan de comidas:", mealPlanErr); } // No bloqueante
 
-        const { data: calendarEntries } = await supabase
+        const { data: calendarEntries, error: calErr } = await supabase
           .from("user_calendar")
-          .select("*")
+          .select("date, completed, activity_type, activity_details")
           .eq("user_id", user.id)
           .eq("date", todayStr);
+        if (calErr) { console.error("[ClientDashboard] Error cargando calendario hoy:", calErr); } // No bloqueante
 
         const workoutEntry = calendarEntries?.find((e: { activity_type: string }) => e.activity_type === "workout");
         const mealEntry = calendarEntries?.find((e: { activity_type: string }) => e.activity_type === "meal");
@@ -91,25 +94,27 @@ export default function ClientDashboardPage() {
         startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() + 1);
         const startOfWeekStr = startOfWeek.toISOString().split("T")[0];
 
-        const { data: weekEntries } = await supabase
+        const { data: weekEntries, error: weekErr } = await supabase
           .from("user_calendar")
           .select("date, completed, activity_type")
           .eq("user_id", user.id)
           .gte("date", startOfWeekStr)
           .lte("date", todayStr);
+        if (weekErr) { console.error("[ClientDashboard] Error cargando semana:", weekErr); } // No bloqueante
 
         if (weekEntries && weekEntries.length > 0) {
           const completedCount = weekEntries.filter((e: { completed: boolean }) => e.completed).length;
           setWeeklyStats((prev) => ({ ...prev, adherence: Math.round((completedCount / weekEntries.length) * 100) }));
         }
 
-        const { data: recentEntries } = await supabase
+        const { data: recentEntries, error: recentErr } = await supabase
           .from("user_calendar")
           .select("date, completed")
           .eq("user_id", user.id)
           .eq("activity_type", "workout")
           .order("date", { ascending: false })
           .limit(30);
+        if (recentErr) { console.error("[ClientDashboard] Error cargando entrenamientos recientes:", recentErr); } // No bloqueante
 
         if (recentEntries) {
           let streak = 0;
@@ -120,7 +125,7 @@ export default function ClientDashboardPage() {
           setWeeklyStats((prev) => ({ ...prev, streak }));
         }
 
-        const { data: nextWorkouts } = await supabase
+        const { data: nextWorkouts, error: nextErr } = await supabase
           .from("user_calendar")
           .select("date, activity_details")
           .eq("user_id", user.id)
@@ -129,6 +134,7 @@ export default function ClientDashboardPage() {
           .gt("date", todayStr)
           .order("date", { ascending: true })
           .limit(1);
+        if (nextErr) { console.error("[ClientDashboard] Error cargando próximo entreno:", nextErr); } // No bloqueante
 
         if (nextWorkouts && nextWorkouts.length > 0) {
           const nextDate = new Date(nextWorkouts[0].date + "T00:00:00");
