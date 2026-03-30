@@ -31,7 +31,7 @@ export function TabRutina({
       const [sessRes, logsRes] = await Promise.all([
         supabase
           .from("workout_sessions")
-          .select("id,client_id,routine_id,day_label,week_number,status,mode,completed_at,total_volume_kg,total_sets,rpe_global,rpe_session,session_notes,duration_seconds,total_exercises,created_at")
+          .select("id,client_id,routine_id,day_label,week_number,status,mode,completed_at,total_volume_kg,total_sets,rpe_session,notes,duration_seconds,total_exercises,created_at")
           .eq("client_id", clientId)
           .eq("status", "completed")
           .order("completed_at", { ascending: false })

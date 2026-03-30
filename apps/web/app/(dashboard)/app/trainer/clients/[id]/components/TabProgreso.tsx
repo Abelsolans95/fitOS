@@ -1,9 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { BodyMetric } from "./types";
 import { EmptyState, formatDate } from "./shared";
+import { MetricChart } from "@/app/(dashboard)/app/client/progress/components/MetricChart";
+import { MetricKey, TimeFilter } from "@/app/(dashboard)/app/client/progress/components/types";
 
 export function TabProgreso({ metrics }: { metrics: BodyMetric[] }) {
+  const [selectedChart, setSelectedChart] = useState<MetricKey>("body_weight_kg");
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
+
   if (metrics.length === 0) {
     return (
       <EmptyState
@@ -13,35 +19,60 @@ export function TabProgreso({ metrics }: { metrics: BodyMetric[] }) {
           </svg>
         }
         title="Sin datos de progreso"
-        description="Aún no hay métricas corporales registradas"
+        description="Este cliente aún no tiene métricas corporales registradas"
       />
     );
   }
 
   return (
-    <div className="space-y-2">
-      {metrics.map((m) => (
-        <div
-          key={m.id}
-          className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3"
-        >
-          <div className="flex items-center gap-4">
-            {m.body_weight_kg != null && (
-              <div>
-                <p className="text-xs text-[#8B8BA3]">Peso</p>
-                <p className="text-sm font-medium text-white">{m.body_weight_kg} kg</p>
-              </div>
-            )}
-            {m.body_fat_pct != null && (
-              <div>
-                <p className="text-xs text-[#8B8BA3]">Grasa corporal</p>
-                <p className="text-sm font-medium text-white">{m.body_fat_pct}%</p>
-              </div>
-            )}
+    <div className="space-y-6">
+      {/* Chart */}
+      <MetricChart
+        metrics={metrics}
+        selectedChart={selectedChart}
+        onSelectChart={setSelectedChart}
+        timeFilter={timeFilter}
+        onTimeFilterChange={setTimeFilter}
+      />
+
+      {/* History list — most recent first */}
+      <div className="space-y-2">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#8B8BA3]">Historial</p>
+        {[...metrics].reverse().map((m) => (
+          <div
+            key={m.id}
+            className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3"
+          >
+            <div className="flex flex-wrap items-center gap-4">
+              {m.body_weight_kg != null && (
+                <div>
+                  <p className="text-xs text-[#8B8BA3]">Peso</p>
+                  <p className="text-sm font-medium text-white">{m.body_weight_kg} kg</p>
+                </div>
+              )}
+              {m.body_fat_pct != null && (
+                <div>
+                  <p className="text-xs text-[#8B8BA3]">Grasa</p>
+                  <p className="text-sm font-medium text-white">{m.body_fat_pct}%</p>
+                </div>
+              )}
+              {m.muscle_mass_kg != null && (
+                <div>
+                  <p className="text-xs text-[#8B8BA3]">Músculo</p>
+                  <p className="text-sm font-medium text-white">{m.muscle_mass_kg} kg</p>
+                </div>
+              )}
+              {m.waist_cm != null && (
+                <div>
+                  <p className="text-xs text-[#8B8BA3]">Cintura</p>
+                  <p className="text-sm font-medium text-white">{m.waist_cm} cm</p>
+                </div>
+              )}
+            </div>
+            <p className="shrink-0 text-xs text-[#8B8BA3]">{formatDate(m.recorded_at)}</p>
           </div>
-          <p className="text-xs text-[#8B8BA3]">{formatDate(m.recorded_at)}</p>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }

@@ -53,9 +53,16 @@ export interface TrainerClientRow {
 
 export interface BodyMetric {
   id: string;
+  recorded_at: string;
   body_weight_kg: number | null;
   body_fat_pct: number | null;
-  recorded_at: string;
+  muscle_mass_kg: number | null;
+  chest_cm: number | null;
+  waist_cm: number | null;
+  hips_cm: number | null;
+  right_arm_cm: number | null;
+  right_thigh_cm: number | null;
+  notes: string | null;
 }
 
 export interface UserRoutine {

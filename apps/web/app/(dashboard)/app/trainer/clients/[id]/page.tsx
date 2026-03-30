@@ -62,10 +62,10 @@ function ClientDetailPageInner() {
               .single(),
             supabase
               .from("body_metrics")
-              .select("id, body_weight_kg, body_fat_pct, recorded_at")
+              .select("id, recorded_at, body_weight_kg, body_fat_pct, muscle_mass_kg, chest_cm, waist_cm, hips_cm, right_arm_cm, right_thigh_cm, notes")
               .eq("client_id", clientId)
-              .order("recorded_at", { ascending: false })
-              .limit(20),
+              .order("recorded_at", { ascending: true })
+              .limit(100),
             supabase
               .from("user_routines")
               .select("id, title, is_active, created_at")
