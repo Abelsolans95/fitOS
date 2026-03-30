@@ -20,6 +20,7 @@
 - **Fase 7 (29/03/2026):** Comunidad Premium ✅ — Feed privado por trainer con posts (título+texto+imagen), comentarios, likes, posts fijados. Dos modos: OPEN (clientes publican) y READ_ONLY_CLIENTS (solo coach). Badge verificado violeta para el coach. Storage bucket para imágenes. Realtime. Badge de no leídos en sidebar. Web trainer + web cliente.
 - **Code Quality Review (30/03/2026):** Fragmentación completa ✅ — todas las páginas >300 líneas fragmentadas en `components/`. Error handling Patrón C aplicado ✅ — todas las queries con `error` destructurado. Performance ✅ — `select("*")` eliminados, `.limit()` en tablas crecientes, `Promise.all` para queries independientes. `React.memo` en componentes hoja.
 - **Auditoría de Permisos (30/03/2026):** Arquitectura de permisos verificada y corregida ✅ — middleware sólido, RLS correcto en 19 tablas, 3 fixes de seguridad aplicados, `AuthContext` mobile preparado para rol Admin.
+- **`@fitos/theme` (30/03/2026):** Paquete compartido creado ✅ — `packages/theme/src/index.ts` es la única fuente de verdad para colores, spacing y radius. Mobile re-exporta desde ahí. Script `pnpm sync-theme` regenera el bloque `@theme` de `globals.css`. Metro `watchFolders` configurado.
 
 ---
 
@@ -343,6 +344,28 @@ Cuando se añada el rol `admin`, seguir estos pasos:
 6. **Mobile** — El `AuthContext` ya acepta `role: "admin"`. La navegación en `App.tsx` debe añadir un tercer navigator `AppNavigatorAdmin` con las pantallas de administración.
 
 7. **Regla de decisión**: ¿Una nueva API route es para admin? → verificar `role === "admin"`. ¿Puede admin acceder a datos de trainer y cliente? → usar service_role en la route, no modificar RLS existente.
+
+---
+
+## `@fitos/theme` — Paquete compartido de tokens de diseño
+
+**Fuente de verdad única:** `packages/theme/src/index.ts` — contiene todos los colores, spacing, radius y fonts del proyecto.
+
+### Reglas de uso
+
+110. **`@fitos/theme` para todo código NUEVO** — Al escribir componentes nuevos (mobile o web), importar siempre los colores desde `@fitos/theme` en lugar de usar valores hardcoded. En mobile: `import { colors } from "@fitos/theme"`. En web JS/TSX (inline styles, charts): `import { colors } from "@fitos/theme"`. En web Tailwind: usar clases con nombre (`bg-neon-cyan`, `text-neon-violet`) en lugar de `bg-[#00E5FF]`.
+
+111. **NO migrar los valores hardcodeados existentes** — Hay 1021+ instancias de `bg-[#00E5FF]` y similares en el web. No tocarlos. La política es "new code only": solo el código nuevo usa `@fitos/theme` o clases Tailwind con nombre.
+
+112. **Cambio de marca en 1 comando** — Para actualizar un color de marca: (1) editar `packages/theme/src/index.ts`, (2) ejecutar `npm run sync-theme` desde la raíz. Esto regenera automáticamente el bloque CSS de Tailwind v4 en `globals.css` entre los marcadores `[fitos-theme-start]` y `[fitos-theme-end]`. Mobile recoge el cambio sin acción adicional (import JS directo).
+
+113. **Tailwind v4 no usa `tailwind.config.js`** — Este proyecto usa Tailwind v4 CSS-first. Los tokens de color para Tailwind se definen en el bloque `@theme inline {}` de `apps/web/app/globals.css`, generado por `pnpm sync-theme`. No crear `tailwind.config.js` — rompería el setup actual.
+
+114. **`shadows` permanece en `apps/mobile/src/theme.ts`** — Las sombras (shadowColor, elevation) usan APIs de React Native y no se pueden compartir con web. `theme.ts` importa y re-exporta desde `@fitos/theme` pero define `shadows` localmente.
+
+115. **Metro Bundler necesita `watchFolders`** — Expo/Metro no ve archivos fuera de `apps/mobile/` por defecto. `metro.config.js` ya tiene `watchFolders` configurado apuntando a `../../packages`. Si se añaden más paquetes compartidos, añadir al array.
+
+116. **`rgba` strings en `@fitos/theme` son solo para web/CSS** — Valores como `border: "rgba(255,255,255,0.06)"` son correctos para web. En React Native, si se necesita opacidad dinámica sobre un color, usar `borderHex` (el hex puro `#FFFFFF`) junto con `StyleSheet opacity` o una librería como `tinycolor2`. Nunca manipular strings rgba dinámicamente en RN.
 
 ---
 

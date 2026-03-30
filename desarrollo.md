@@ -308,6 +308,10 @@ fitOS/
 │   ├── admin/                  ← Placeholder vacío
 │   └── landing/                ← Placeholder vacío
 ├── packages/
+│   ├── theme/                  ← ✅ @fitos/theme — Tokens de diseño compartidos (colores, spacing, radius)
+│   │   ├── src/index.ts        ←   Fuente de verdad: colors, spacing, radius, fonts
+│   │   ├── scripts/sync-css.ts ←   Genera bloque @theme en globals.css (ejecutar: npm run sync-theme)
+│   │   └── package.json        ←   Nombre: @fitos/theme, main: ./src/index.ts
 │   ├── ui/                     ← Placeholder (componentes compartidos futuros)
 │   ├── types/                  ← Placeholder (tipos TypeScript compartidos)
 │   ├── validations/            ← Placeholder (esquemas zod compartidos)
@@ -755,11 +759,23 @@ Protege rutas por autenticación Y por rol. Trainers no acceden a rutas de clien
 - **Gradient accents:** Blobs difusos con blur-2xl en cards, LinearGradient en botones mobile
 - **Tipografía:** Inter (400, 500, 600, 700, 800, 900)
 
+### `@fitos/theme` — Paquete de tokens compartido (30/03/2026)
+
+**`packages/theme/src/index.ts`** es la única fuente de verdad para la paleta. Mobile y web leen del mismo sitio.
+
+```ts
+import { colors, spacing, radius, fonts } from "@fitos/theme";
+// colors.cyan = "#00E5FF", colors.violet = "#7C3AED", etc.
+```
+
+Para cambiar un color: editar `packages/theme/src/index.ts` → ejecutar `npm run sync-theme` → globals.css se regenera automáticamente.
+
 ### Mobile theme tokens (`apps/mobile/src/theme.ts`)
-- `colors`: 20+ tokens incluyendo `dimmed`, `cyanDim`, `cyanGlow`, `violetDim`, `orangeDim`, `greenDim`, `borderSubtle`, `borderActive`, `surfaceHover`
-- `spacing`: `{ xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28 }`
-- `radius`: `{ sm: 8, md: 12, lg: 16, xl: 20, pill: 100 }`
-- `shadows`: `card`, `subtle`, `glow(color)` — usar `shadows.glow(colors.cyan)` para glow effects
+- Re-exporta `colors`, `spacing`, `radius`, `fonts` desde `@fitos/theme`
+- Define `shadows` localmente (usa APIs de React Native: shadowColor, elevation)
+- `shadows.glow(color)` — presets `glowCyan`, `glowViolet` también disponibles
+- `spacing`: `{ xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, xxxl: 32, section: 40 }`
+- `radius`: `{ sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, pill: 100 }`
 
 ---
 
@@ -883,7 +899,9 @@ supabase functions deploy [nombre]
 
 ### Convenciones del proyecto
 
-1. **pnpm vs npm**: Raíz usa `pnpm`. Dentro de `apps/web` se usa `npm` (shadcn CLI lo requiere). No mezclar.
+0. **Package manager raíz**: El `package.json` raíz tiene `"packageManager": "npm@11.8.0"` y usa npm workspaces. `pnpm-workspace.yaml` también existe pero el gestor activo es **npm**. Para instalar dependencias y crear symlinks de workspace, ejecutar `npm install` desde la raíz (no `pnpm install`). Dentro de `apps/web` seguir usando `npm --legacy-peer-deps`.
+
+1. **pnpm vs npm**: El `packageManager` del root es npm (ver nota 0). Dentro de `apps/web` se usa `npm` siempre con `--legacy-peer-deps`.
 
 2. **legacy-peer-deps**: Al instalar en `apps/web`, siempre usar `--legacy-peer-deps`.
 
@@ -1702,3 +1720,49 @@ Segunda revisión enfocada en rendimiento de carga, seguridad adicional y calida
 - `AuthContext.role` (mobile) → leído de `profiles.role` al iniciar sesión
 
 **Preparación para Admin:** `profiles.role` es TEXT sin CHECK constraint — acepta "admin" sin migración. `AuthContext` ya tiene `UserRole = "client" | "trainer" | "admin" | null`. Middleware necesitará nuevo bloque. Ver sección en `CLAUDE.md`.
+
+
+---
+
+**ERROR #57 — `pnpm install` falla en la raíz pese a que `pnpm-workspace.yaml` existe**
+- **Fecha:** 30/03/2026
+- **Archivo afectado:** `package.json` raíz
+- **Qué pasó:** Al intentar `pnpm install` para crear el symlink de `@fitos/theme`, pnpm rechazó con "This project is configured to use npm" porque `package.json` tiene `"packageManager": "npm@11.8.0"`. Aunque `pnpm-workspace.yaml` existe, el campo `packageManager` tiene precedencia.
+- **Solución aplicada:** Usar `npm install` desde la raíz (no pnpm). npm workspaces detecta los paquetes via el campo `"workspaces": ["packages/*"]` en `package.json`.
+- **Regla:** El gestor de paquetes activo en la raíz es **npm** (no pnpm), a pesar de lo que dice CLAUDE.md. Para instalar dependencias raíz y crear symlinks de workspace, usar `npm install`. El `pnpm-workspace.yaml` existe pero no está activo.
+
+---
+
+**ERROR #58 — `sync-css.ts` generaba el marcador con indentación doble (4 espacios)**
+- **Fecha:** 30/03/2026
+- **Archivo afectado:** `packages/theme/scripts/sync-css.ts`
+- **Qué pasó:** La función `generateBlock()` añadía `"  /* [fitos-theme-start]..."` (2 espacios) como prefijo del marcador. Pero `before` (el slice del CSS hasta el marcador) ya termina con `\n  ` (newline + 2 espacios de indentación del bloque `@theme`). Resultado: el marcador quedaba con 4 espacios de indentación.
+- **Solución aplicada:** Eliminar los 2 espacios del prefijo en la línea del marcador dentro de `generateBlock()`. Los espacios de indentación ya vienen de `before`.
+- **Regla:** Al hacer replace de texto en un archivo CSS, el string `before` del slice ya incluye los espacios de indentación que preceden al marcador. No añadir espacios adicionales en el bloque generado para la primera línea.
+
+---
+
+### `@fitos/theme` — Paquete de tokens compartido (30/03/2026)
+
+**Objetivo:** Un cambio de color de marca es 1 archivo + 1 comando. No 1 hora buscando `#00E5FF` por todo el proyecto.
+
+**Flujo para cambiar la paleta:**
+1. Editar `packages/theme/src/index.ts`
+2. Ejecutar `npm run sync-theme` desde la raíz
+3. `apps/web/app/globals.css` se regenera automáticamente (bloque entre marcadores)
+4. Mobile recoge el cambio via import JS directo — sin acción adicional
+
+**Archivos creados:**
+- `packages/theme/src/index.ts` — colors, spacing, radius, fonts (source of truth)
+- `packages/theme/scripts/sync-css.ts` — genera CSS desde JS (ejecutado por `npm run sync-theme`)
+- `packages/theme/package.json` — `name: "@fitos/theme"`, `main: ./src/index.ts`
+- `packages/theme/tsconfig.json`
+
+**Archivos modificados:**
+- `apps/mobile/src/theme.ts` — re-exporta desde `@fitos/theme`; `shadows` permanece local (APIs RN)
+- `apps/mobile/metro.config.js` — `watchFolders` añadido para ver `packages/`
+- `apps/mobile/tsconfig.json` — path alias `@fitos/theme`
+- `apps/web/tsconfig.json` — path alias `@fitos/theme`
+- `apps/web/app/globals.css` — marcadores `[fitos-theme-start/end]` en bloque `@theme`
+- `apps/mobile/package.json` + `apps/web/package.json` — dependencia `"@fitos/theme": "*"`
+- `package.json` raíz — script `sync-theme` + devDependency `tsx`
