@@ -1,190 +1,18 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { createClient } from "@/lib/supabase";
-import { toast } from "sonner";
+import { useCaloriesPage } from "./useCaloriesPage";
 import { MacroSummary } from "./components/MacroSummary";
 import { FoodLogList } from "./components/FoodLogList";
 import { AddFoodModal } from "./components/AddFoodModal";
 
-interface FoodItem {
-  name: string;
-  portion_g: number;
-  kcal: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-}
-
-interface FoodLogEntry {
-  id: string;
-  logged_at: string;
-  meal_type: string;
-  foods: FoodItem[];
-  total_kcal: number;
-  total_protein: number;
-  total_carbs: number;
-  total_fat: number;
-  source: string;
-}
-
 export default function CaloriesPage() {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-
-  // Upload state
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Analysis result state
-  const [analyzedFoods, setAnalyzedFoods] = useState<FoodItem[]>([]);
-  const [selectedMealType, setSelectedMealType] = useState("comida");
-  const [saving, setSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-
-  // Today's log
-  const [todayLog, setTodayLog] = useState<FoodLogEntry[]>([]);
-  const [dailyTotals, setDailyTotals] = useState({ kcal: 0, protein: 0, carbs: 0, fat: 0 });
-
-  const loadTodayLog = useCallback(async (uid: string) => {
-    const supabase = createClient();
-    const today = new Date().toISOString().split("T")[0];
-
-    const { data, error: logError } = await supabase
-      .from("food_log")
-      .select("id, logged_at, meal_type, foods, total_kcal, total_protein, total_carbs, total_fat, source")
-      .eq("client_id", uid)
-      .gte("logged_at", today + "T00:00:00")
-      .lte("logged_at", today + "T23:59:59")
-      .order("logged_at", { ascending: false });
-
-    if (logError) {
-      toast.error("Error al cargar el registro de comidas de hoy");
-      console.error("[CaloriesPage] Error cargando food_log:", logError);
-      return;
-    }
-
-    if (data) {
-      const entries = data as FoodLogEntry[];
-      setTodayLog(entries);
-      const totals = entries.reduce(
-        (acc, entry) => ({
-          kcal: acc.kcal + Number(entry.total_kcal),
-          protein: acc.protein + Number(entry.total_protein),
-          carbs: acc.carbs + Number(entry.total_carbs),
-          fat: acc.fat + Number(entry.total_fat),
-        }),
-        { kcal: 0, protein: 0, carbs: 0, fat: 0 }
-      );
-      setDailyTotals(totals);
-    }
-  }, []);
-
-  useEffect(() => {
-    const init = async () => {
-      try {
-        const supabase = createClient();
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError || !user) { setError("No se pudo obtener la sesion del usuario."); setLoading(false); return; }
-        setUserId(user.id);
-        await loadTodayLog(user.id);
-      } catch {
-        setError("Error al cargar los datos.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    init();
-  }, [loadTodayLog]);
-
-  const handleFileSelect = (file: File) => {
-    if (!file.type.startsWith("image/")) return;
-    setSelectedImage(file);
-    setImagePreview(URL.createObjectURL(file));
-    setAnalyzedFoods([]);
-    setSaveSuccess(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFileSelect(file);
-  };
-
-  const handleAnalyze = async () => {
-    if (!selectedImage) return;
-    setAnalyzing(true);
-
-    // Mock AI analysis result - in production this calls the analyze-food-image Edge Function
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    const mockFoods: FoodItem[] = [
-      { name: "Pechuga de pollo a la plancha", portion_g: 150, kcal: 248, protein: 46.5, carbs: 0, fat: 5.4 },
-      { name: "Arroz integral", portion_g: 200, kcal: 232, protein: 4.8, carbs: 48.6, fat: 1.8 },
-      { name: "Ensalada mixta", portion_g: 120, kcal: 24, protein: 1.4, carbs: 4.2, fat: 0.3 },
-    ];
-
-    setAnalyzedFoods(mockFoods);
-    setAnalyzing(false);
-  };
-
-  const handlePortionChange = (index: number, newPortion: number) => {
-    setAnalyzedFoods((prev) =>
-      prev.map((food, i) => {
-        if (i !== index) return food;
-        const ratio = newPortion / food.portion_g;
-        return {
-          ...food,
-          portion_g: newPortion,
-          kcal: Math.round(food.kcal * ratio),
-          protein: Math.round(food.protein * ratio * 10) / 10,
-          carbs: Math.round(food.carbs * ratio * 10) / 10,
-          fat: Math.round(food.fat * ratio * 10) / 10,
-        };
-      })
-    );
-  };
-
-  const handleSave = async () => {
-    if (!userId || analyzedFoods.length === 0) return;
-    setSaving(true);
-
-    try {
-      const supabase = createClient();
-      const totalKcal = analyzedFoods.reduce((sum, f) => sum + f.kcal, 0);
-      const totalProtein = analyzedFoods.reduce((sum, f) => sum + f.protein, 0);
-      const totalCarbs = analyzedFoods.reduce((sum, f) => sum + f.carbs, 0);
-      const totalFat = analyzedFoods.reduce((sum, f) => sum + f.fat, 0);
-
-      const { error: insertError } = await supabase.from("food_log").insert({
-        client_id: userId,
-        meal_type: selectedMealType,
-        foods: analyzedFoods,
-        total_kcal: totalKcal,
-        total_protein: totalProtein,
-        total_carbs: totalCarbs,
-        total_fat: totalFat,
-        source: "ai_vision",
-      });
-
-      if (insertError) { setError("Error al guardar el registro."); setSaving(false); return; }
-
-      setSaveSuccess(true);
-      setAnalyzedFoods([]);
-      setSelectedImage(null);
-      setImagePreview(null);
-      await loadTodayLog(userId);
-    } catch {
-      setError("Error inesperado al guardar.");
-    } finally {
-      setSaving(false);
-    }
-  };
+  const {
+    loading, error, setError,
+    selectedImage, imagePreview, analyzing, dragOver, setDragOver, fileInputRef,
+    analyzedFoods, selectedMealType, setSelectedMealType, saving, saveSuccess,
+    todayLog, dailyTotals,
+    handleFileSelect, handleDrop, handleAnalyze, handlePortionChange, handleSave, clearImage,
+  } = useCaloriesPage();
 
   if (loading) {
     return (
@@ -209,7 +37,6 @@ export default function CaloriesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-white">Calorias</h1>
         <p className="mt-1 text-sm text-[#8B8BA3]">Escanea tu comida para registrar las calorias</p>
@@ -226,8 +53,7 @@ export default function CaloriesPage() {
           <div className="relative">
             <img src={imagePreview} alt="Foto de comida" className="h-56 w-full object-cover" />
             <button
-              type="button"
-              onClick={() => { setSelectedImage(null); setImagePreview(null); setAnalyzedFoods([]); }}
+              type="button" onClick={clearImage}
               className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -250,10 +76,7 @@ export default function CaloriesPage() {
           </button>
         )}
         <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
+          ref={fileInputRef} type="file" accept="image/*" className="hidden"
           onChange={(e) => { const file = e.target.files?.[0]; if (file) handleFileSelect(file); }}
         />
       </div>
@@ -261,16 +84,11 @@ export default function CaloriesPage() {
       {/* Analyze button */}
       {selectedImage && analyzedFoods.length === 0 && (
         <button
-          type="button"
-          onClick={handleAnalyze}
-          disabled={analyzing}
+          type="button" onClick={handleAnalyze} disabled={analyzing}
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#00E5FF] to-[#7C3AED] py-3.5 text-sm font-semibold text-white transition-all hover:shadow-[0_0_24px_rgba(0,229,255,0.3)] disabled:opacity-60"
         >
           {analyzing ? (
-            <>
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              Analizando con IA...
-            </>
+            <><div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />Analizando con IA...</>
           ) : (
             <>
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -282,27 +100,19 @@ export default function CaloriesPage() {
         </button>
       )}
 
-      {/* Analysis results + save */}
       <AddFoodModal
-        analyzedFoods={analyzedFoods}
-        selectedMealType={selectedMealType}
-        saving={saving}
-        onMealTypeChange={setSelectedMealType}
-        onPortionChange={handlePortionChange}
-        onSave={handleSave}
+        analyzedFoods={analyzedFoods} selectedMealType={selectedMealType}
+        saving={saving} onMealTypeChange={setSelectedMealType}
+        onPortionChange={handlePortionChange} onSave={handleSave}
       />
 
-      {/* Save success */}
       {saveSuccess && (
         <div className="rounded-xl border border-[#00C853]/20 bg-[#00C853]/5 px-4 py-3">
           <p className="text-center text-sm text-[#00C853]">Registro guardado correctamente</p>
         </div>
       )}
 
-      {/* Daily totals */}
       {todayLog.length > 0 && <MacroSummary totals={dailyTotals} />}
-
-      {/* Today's log entries */}
       <FoodLogList entries={todayLog} />
     </div>
   );
