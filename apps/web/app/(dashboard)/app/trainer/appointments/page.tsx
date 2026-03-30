@@ -29,7 +29,7 @@ export default function TrainerAppointmentsPage() {
 
     const { data, error: apptError } = await supabase
       .from("appointments")
-      .select("*")
+      .select("id, trainer_id, client_id, title, session_type, starts_at, ends_at, status, notes, location, meeting_url, google_event_id, cancellation_reason, created_at")
       .eq("trainer_id", user.id)
       .gte("starts_at", monthAgo.toISOString())
       .lte("starts_at", threeMonthsAhead.toISOString())

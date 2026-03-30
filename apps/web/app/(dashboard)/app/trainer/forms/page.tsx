@@ -26,7 +26,7 @@ export default function TrainerFormsPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const { data, error: formError } = await supabase
-        .from("onboarding_forms").select("*").eq("trainer_id", user.id)
+        .from("onboarding_forms").select("id, title, description, fields").eq("trainer_id", user.id)
         .eq("is_active", true).order("created_at", { ascending: false }).limit(1).single();
       if (formError && formError.code !== "PGRST116") {
         toast.error("Error al cargar el formulario de onboarding");

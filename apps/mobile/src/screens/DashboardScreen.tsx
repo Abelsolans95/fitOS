@@ -80,23 +80,25 @@ export default function DashboardScreen() {
   const loadData = async () => {
     if (!user) return;
 
-    const { data: profile } = await supabase
+    const { data: profile, error: profileErr } = await supabase
       .from("profiles")
       .select("full_name")
       .eq("user_id", user.id)
       .single();
+    if (profileErr) { console.error("[Dashboard] Error cargando perfil:", profileErr); } // No bloqueante
 
     if (profile) setName(profile.full_name || "");
 
     const today = new Date().toISOString().split("T")[0];
 
     // Today's food
-    const { data: foodLogs } = await supabase
+    const { data: foodLogs, error: foodErr } = await supabase
       .from("food_log")
       .select("total_kcal")
       .eq("client_id", user.id)
       .gte("logged_at", today)
       .lte("logged_at", today + "T23:59:59");
+    if (foodErr) { console.error("[Dashboard] Error cargando food_log:", foodErr); } // No bloqueante
 
     const kcalConsumed = foodLogs?.reduce((sum, log) => sum + (log.total_kcal || 0), 0) || 0;
 

@@ -201,7 +201,7 @@ export function useClientCommunityPage() {
 
       const { data: comm, error: commErr } = await sb
         .from("communities")
-        .select("*")
+        .select("id, coach_id, name, description, mode, is_active")
         .eq("coach_id", tc.trainer_id)
         .eq("is_active", true)
         .single();
@@ -211,7 +211,7 @@ export function useClientCommunityPage() {
 
       const { data: rawPosts, error: postsErr } = await sb
         .from("community_posts")
-        .select("*")
+        .select("id, community_id, author_id, title, content, image_url, is_pinned, created_at")
         .eq("community_id", comm.id)
         .order("is_pinned", { ascending: false })
         .order("created_at", { ascending: false })
@@ -350,7 +350,7 @@ export function useClientCommunityPage() {
 
     const { data, error } = await sb
       .from("community_comments")
-      .select("*")
+      .select("id, post_id, parent_id, author_id, content, created_at")
       .eq("post_id", postId)
       .order("created_at", { ascending: true });
 

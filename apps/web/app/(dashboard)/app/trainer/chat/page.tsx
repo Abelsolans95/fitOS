@@ -44,7 +44,8 @@ export default function TrainerChatPage() {
       .from("messages")
       .select("client_id, sender_id, content, read_at, created_at")
       .eq("trainer_id", user.id)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(500);
 
     if (msgErr) { console.error("[TrainerChat] Error cargando mensajes:", msgErr); setLoading(false); return; }
     if (!messages?.length) { setLoading(false); return; }

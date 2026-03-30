@@ -1,5 +1,7 @@
 "use client";
 
+import { memo } from "react";
+
 const SESSION_TYPES = [
   { value: "presencial", label: "Presencial" },
   { value: "online", label: "Online" },
@@ -126,7 +128,7 @@ interface AppointmentListProps {
   onRequestAppointment: () => void;
 }
 
-export function AppointmentList({ upcoming, past, trainerName, trainerId, cancelling, onCancel, onRequestAppointment }: AppointmentListProps) {
+export const AppointmentList = memo(function AppointmentList({ upcoming, past, trainerName, trainerId, cancelling, onCancel, onRequestAppointment }: AppointmentListProps) {
   return (
     <>
       {/* No trainer */}
@@ -180,4 +182,4 @@ export function AppointmentList({ upcoming, past, trainerName, trainerId, cancel
       )}
     </>
   );
-}
+});

@@ -64,6 +64,7 @@ export default function ChatScreen() {
 
   useEffect(() => {
     if (!user) return;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
 
     const init = async () => {
       // Find trainer
@@ -100,7 +101,7 @@ export default function ChatScreen() {
       // Load messages
       const { data: msgs, error: msgsError } = await supabase
         .from("messages")
-        .select("*")
+        .select("id, trainer_id, client_id, sender_id, content, read_at, created_at")
         .eq("trainer_id", tid)
         .eq("client_id", user.id)
         .order("created_at", { ascending: true })
@@ -122,7 +123,7 @@ export default function ChatScreen() {
         .is("read_at", null);
 
       // Realtime subscription
-      const channel = supabase
+      channel = supabase
         .channel(`chat:${tid}:${user.id}`)
         .on(
           "postgres_changes",
@@ -148,12 +149,10 @@ export default function ChatScreen() {
           }
         )
         .subscribe();
-
-      return () => { supabase.removeChannel(channel); };
     };
 
-    const cleanup = init();
-    return () => { cleanup.then((fn) => fn?.()).catch(() => {}); };
+    init();
+    return () => { if (channel) supabase.removeChannel(channel); };
   }, [user]);
 
   const scrollToBottom = useCallback(() => {
