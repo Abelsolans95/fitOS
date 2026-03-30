@@ -103,7 +103,7 @@ export default function ClientChatPage() {
       // 4. Load messages
       const { data: msgs, error: msgsError } = await supabase
         .from("messages")
-        .select("*")
+        .select("id, trainer_id, client_id, sender_id, content, read_at, created_at")
         .eq("trainer_id", tid)
         .eq("client_id", user.id)
         .order("created_at", { ascending: true })

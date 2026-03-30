@@ -58,7 +58,7 @@ export default function MealsScreen() {
   useEffect(() => {
     const load = async () => {
       if (!user) return;
-      const { data } = await supabase
+      const { data, error: planErr } = await supabase
         .from("meal_plans")
         .select("id, title, target_kcal, period, days")
         .eq("client_id", user.id)
@@ -66,6 +66,9 @@ export default function MealsScreen() {
         .order("created_at", { ascending: false })
         .limit(1)
         .single();
+      if (planErr && planErr.code !== "PGRST116") {
+        console.error("[MealsScreen] Error cargando plan nutricional:", planErr);
+      } // No bloqueante — PGRST116 = sin plan activo (esperado)
       if (data) setPlan(data as MealPlan);
       setLoading(false);
     };

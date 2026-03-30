@@ -55,7 +55,7 @@ function ClientHealthInner() {
     const supabase = createClient();
     const { data, error } = await supabase
       .from("health_logs")
-      .select("*")
+      .select("id, client_id, trainer_id, reported_by, muscle_id, pain_score, incident_type, status, notes, created_at, updated_at")
       .eq("client_id", clientId)
       .order("created_at", { ascending: false });
 
@@ -98,7 +98,7 @@ function ClientHealthInner() {
       // Fetch logs
       const { data: logsData, error: logsError } = await supabase
         .from("health_logs")
-        .select("*")
+        .select("id, client_id, trainer_id, reported_by, muscle_id, pain_score, incident_type, status, notes, created_at, updated_at")
         .eq("client_id", user.id)
         .order("created_at", { ascending: false });
 

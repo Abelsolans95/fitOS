@@ -11,12 +11,8 @@ import {
   Alert,
   Platform,
 } from "react-native";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "../lib/supabase";
 import { colors, spacing, radius, shadows , fonts} from "../theme";
-
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 interface Appointment {
   id: string;
@@ -266,12 +262,26 @@ export default function AppointmentsScreen() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data } = await supabase
-      .from("appointments")
-      .select("*")
-      .eq("client_id", user.id)
-      .order("starts_at", { ascending: true });
+    const now = new Date();
+    const pastDate = new Date(now);
+    pastDate.setMonth(pastDate.getMonth() - 1);
+    const futureDate = new Date(now);
+    futureDate.setMonth(futureDate.getMonth() + 3);
 
+    const { data, error: apptErr } = await supabase
+      .from("appointments")
+      .select("id, trainer_id, client_id, title, session_type, starts_at, ends_at, status, notes, location")
+      .eq("client_id", user.id)
+      .gte("starts_at", pastDate.toISOString())
+      .lte("starts_at", futureDate.toISOString())
+      .order("starts_at", { ascending: true })
+      .limit(200);
+
+    if (apptErr) {
+      console.error("[AppointmentsScreen] Error cargando citas:", apptErr);
+      Alert.alert("Error", "No se pudieron cargar las citas");
+      return;
+    }
     setAppointments((data as Appointment[]) ?? []);
   }, []);
 

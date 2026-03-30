@@ -22,6 +22,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    // Security: client_id in body must match the authenticated user
+    if (client_id !== user.id) {
+      console.error("[complete-registration] client_id mismatch:", { body_client_id: client_id, auth_user_id: user.id });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     // Use service_role key to bypass RLS
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

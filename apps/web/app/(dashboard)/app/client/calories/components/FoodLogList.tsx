@@ -1,5 +1,7 @@
 "use client";
 
+import { memo } from "react";
+
 interface FoodItem {
   name: string;
   portion_g: number;
@@ -34,7 +36,7 @@ interface FoodLogListProps {
   entries: FoodLogEntry[];
 }
 
-export function FoodLogList({ entries }: FoodLogListProps) {
+export const FoodLogList = memo(function FoodLogList({ entries }: FoodLogListProps) {
   return (
     <div className="space-y-3">
       <h2 className="text-base font-semibold text-white">Registro de hoy</h2>
@@ -81,4 +83,4 @@ export function FoodLogList({ entries }: FoodLogListProps) {
       )}
     </div>
   );
-}
+});

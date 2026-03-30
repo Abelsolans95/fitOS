@@ -55,7 +55,9 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     const role = user.user_metadata?.role;
     const onboardingCompleted = user.user_metadata?.onboarding_completed;
-    if (role === "client" && !onboardingCompleted) {
+    if (role === "admin") {
+      url.pathname = "/app/admin/dashboard";
+    } else if (role === "client" && !onboardingCompleted) {
       url.pathname = "/onboarding/client";
     } else if (role === "trainer" && !onboardingCompleted) {
       url.pathname = "/onboarding/trainer";
@@ -65,26 +67,35 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // If authenticated client accesses /app/* without completing onboarding, redirect
+  // If authenticated client/trainer accesses /app/* without completing onboarding, redirect
   if (user && pathname.startsWith("/app/")) {
     const role = user.user_metadata?.role;
     const onboardingCompleted = user.user_metadata?.onboarding_completed;
-    if (!onboardingCompleted) {
+    // Admin skips onboarding
+    if (role !== "admin" && !onboardingCompleted) {
       const url = request.nextUrl.clone();
       url.pathname = role === "client" ? "/onboarding/client" : "/onboarding/trainer";
       return NextResponse.redirect(url);
     }
   }
 
-  // Prevent trainers from accessing client routes and vice versa
+  // Prevent cross-role access
   if (user && pathname.startsWith("/app/")) {
     const role = user.user_metadata?.role;
+    // Admin: can't access trainer or client routes directly
+    if (role === "admin" && !pathname.startsWith("/app/admin/")) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/app/admin/dashboard";
+      return NextResponse.redirect(url);
+    }
+    // Trainer: can't access client routes
     if (role === "trainer" && pathname.startsWith("/app/client/")) {
       const url = request.nextUrl.clone();
       url.pathname = "/app/trainer/dashboard";
       return NextResponse.redirect(url);
     }
-    if (role === "client" && pathname.startsWith("/app/trainer/")) {
+    // Client: can't access trainer or admin routes
+    if (role === "client" && (pathname.startsWith("/app/trainer/") || pathname.startsWith("/app/admin/"))) {
       const url = request.nextUrl.clone();
       url.pathname = "/app/client/dashboard";
       return NextResponse.redirect(url);

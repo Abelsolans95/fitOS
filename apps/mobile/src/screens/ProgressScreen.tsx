@@ -42,12 +42,16 @@ export default function ProgressScreen() {
 
   const loadMetrics = async () => {
     if (!user) return;
-    const { data } = await supabase
+    const { data, error: metricsErr } = await supabase
       .from("body_metrics")
       .select("id, recorded_at, weight_kg, body_fat_pct, muscle_mass_kg, notes")
       .eq("user_id", user.id)
       .order("recorded_at", { ascending: false })
       .limit(30);
+    if (metricsErr) {
+      console.error("[ProgressScreen] Error cargando métricas:", metricsErr);
+      Alert.alert("Error", "No se pudieron cargar las métricas");
+    }
     if (data) setMetrics(data);
     setLoading(false);
   };

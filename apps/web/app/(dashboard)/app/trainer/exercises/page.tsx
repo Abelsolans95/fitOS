@@ -60,7 +60,7 @@ export default function TrainerExercisesPage() {
       const [exResult, ovResult] = await Promise.all([
         supabase
           .from("trainer_exercise_library")
-          .select("*")
+          .select("id, trainer_id, name, description, muscle_groups, secondary_muscles, category, video_url, is_global, created_at")
           .or(`is_global.eq.true,trainer_id.eq.${user.id}`)
           .order("name", { ascending: true }),
         supabase

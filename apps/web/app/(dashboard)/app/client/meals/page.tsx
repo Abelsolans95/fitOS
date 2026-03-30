@@ -52,7 +52,7 @@ export default function MealsPage() {
 
         const { data, error: queryError } = await supabase
           .from("meal_plans")
-          .select("*")
+          .select("id, title, period, meals_per_day, days, target_kcal, is_active, created_at")
           .eq("client_id", user.id)
           .eq("is_active", true)
           .order("created_at", { ascending: false })

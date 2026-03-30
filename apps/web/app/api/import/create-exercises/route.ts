@@ -3,12 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createAuthClient } from "@/lib/supabase-server";
 
 export async function POST(request: NextRequest) {
-  const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
-  // Verify auth
+  // Verify auth first
   const authClient = await createAuthClient();
   const {
     data: { user },
@@ -18,16 +13,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
 
-  // Verify trainer role
-  const { data: profile } = await supabaseAdmin
+  // Verify trainer role (use auth client — no need for admin yet)
+  const { data: profile, error: profileErr } = await authClient
     .from("profiles")
     .select("role")
     .eq("user_id", user.id)
     .single();
 
-  if (profile?.role !== "trainer") {
+  if (profileErr || profile?.role !== "trainer") {
     return NextResponse.json({ error: "Solo entrenadores" }, { status: 403 });
   }
+
+  // Admin client initialized after auth+role check (Rule 94)
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
 
   const { exercises, linked, import_id, decisions } = await request.json();
 

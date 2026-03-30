@@ -19,6 +19,7 @@
 - **Fase 6 ampliada (29/03/2026):** Menús guardados ✅ — guardar/cargar configuraciones de menú reutilizables (tabla `saved_menu_templates`, migración 033). Navegación semanal mejorada ✅ — botones semana anterior/siguiente en la parte inferior del planificador. DarkSelect ✅ — todos los `<select>` nativos reemplazados por componente custom dark.
 - **Fase 7 (29/03/2026):** Comunidad Premium ✅ — Feed privado por trainer con posts (título+texto+imagen), comentarios, likes, posts fijados. Dos modos: OPEN (clientes publican) y READ_ONLY_CLIENTS (solo coach). Badge verificado violeta para el coach. Storage bucket para imágenes. Realtime. Badge de no leídos en sidebar. Web trainer + web cliente.
 - **Code Quality Review (30/03/2026):** Fragmentación completa ✅ — todas las páginas >300 líneas fragmentadas en `components/`. Error handling Patrón C aplicado ✅ — todas las queries con `error` destructurado. Performance ✅ — `select("*")` eliminados, `.limit()` en tablas crecientes, `Promise.all` para queries independientes. `React.memo` en componentes hoja.
+- **Auditoría de Permisos (30/03/2026):** Arquitectura de permisos verificada y corregida ✅ — middleware sólido, RLS correcto en 19 tablas, 3 fixes de seguridad aplicados, `AuthContext` mobile preparado para rol Admin.
 
 ---
 
@@ -286,6 +287,62 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 109. **Componentes `components/` deben ser importados en `page.tsx`** — Cuando existe una carpeta `components/` junto a un `page.tsx`, verificar que el `page.tsx` realmente importa desde ella. Si `page.tsx` tiene funciones de componente definidas inline y `components/` existe pero no se usa, el refactor está incompleto. Ejecutar `grep "from \"./components"` en el `page.tsx` para verificar.
 
 110. **`React.memo` obligatorio en componentes que se renderizan en listas** — Cualquier componente que sea hijo directo de un `.map()` sobre un array de datos (ejercicios, comidas, posts, mensajes) DEBE estar wrapeado con `memo()`. Patrón: `export const Foo = memo(function Foo(props) { ... })`. Sin memo, el componente se re-renderiza en cada cambio de estado del padre aunque sus props no hayan cambiado.
+
+---
+
+## Arquitectura de permisos — estado auditado (30/03/2026)
+
+### Capas de protección (web)
+
+**Capa 1 — Middleware (`apps/web/middleware.ts`):**
+- Redirige usuarios no autenticados desde `/app/*` y `/onboarding/*` → `/login`
+- Redirige usuarios autenticados desde `/login`/`/register` → dashboard según rol + onboarding
+- Bloquea cross-role: trainer → `/app/client/*` redirige a `/app/trainer/dashboard`; client → `/app/trainer/*` redirige a `/app/client/dashboard`
+- Usa `user.user_metadata?.role` (JWT, verificado por Supabase)
+
+**Capa 2 — RLS (Supabase, todas las tablas):**
+- Todas las tablas tienen RLS habilitado. Las políticas usan `auth.uid()` para scope por usuario.
+- Tablas con políticas diferenciadas trainer/client: `appointments`, `messages`, `health_logs`, `community_posts`, `workout_sessions`, `weight_log`, `trainer_exercise_overrides`, `trainer_food_overrides`, `excel_imports`, `routine_templates`, `saved_menu_templates`.
+- Tablas solo-trainer: `user_routines` (INSERT/UPDATE), `meal_plans` (INSERT/UPDATE), `trainer_exercise_library`, `trainer_food_library`.
+- Tablas solo-cliente: `food_log`, `body_metrics` (propias).
+
+**Capa 3 — API Routes (verificación explícita):**
+- Rutas de importación (`/api/import/excel`, `/api/import/reconcile`, `/api/import/create-exercises`): verifican `profiles.role === "trainer"` y retornan 403 si no.
+- `/api/activate-client`: verifica `role === "client"` (solo clientes pueden activarse).
+- `/api/client-trainer`: verifica `role === "client"`.
+- `/api/complete-registration`: verifica auth + `client_id === user.id` (el body no puede suplantar otro usuario).
+
+**Mobile:** La app mobile es SOLO para clientes. Los trainers usan la web. El `AuthContext` expone `role: UserRole` cargado desde `profiles.role` en DB. Tipo: `"client" | "trainer" | "admin" | null`.
+
+### Dónde vive el rol
+
+| Ubicación | Uso | Fuente de verdad |
+|---|---|---|
+| `auth.users.raw_user_meta_data.role` | Middleware web, redirects | Escrito en `signUp({ options: { data: { role } } })` |
+| `profiles.role` (DB) | Verificación en API routes | Escrito en onboarding via upsert |
+| `AuthContext.role` (mobile) | Navegación y lógica en mobile | Leído de `profiles.role` al iniciar sesión |
+
+### Preparación para rol Admin (instrucciones futuras)
+
+Cuando se añada el rol `admin`, seguir estos pasos:
+
+1. **Sin migración necesaria en `profiles`** — La columna `role` es TEXT sin CHECK constraint, acepta cualquier valor.
+
+2. **Middleware** (`middleware.ts`) — Añadir caso admin:
+   ```ts
+   if (role === "admin" && pathname.startsWith("/app/client/")) { redirect → /app/admin/dashboard }
+   if (role === "admin" && pathname.startsWith("/app/trainer/")) { redirect → /app/admin/dashboard }
+   ```
+
+3. **Registro de admin** — Crear flujo separado (no expuesto en `/register` público). Al hacer `signUp`, pasar `{ data: { role: "admin" } }`. Luego upsert en `profiles` con `role: "admin"`.
+
+4. **API routes nuevas de admin** — Verificar `profiles.role === "admin"` igual que trainer. Pueden usar `supabaseAdmin` (service_role) para bypass total de RLS.
+
+5. **RLS para admin** — Opción A: añadir policy `FOR ALL USING (EXISTS (SELECT 1 FROM profiles WHERE user_id = auth.uid() AND role = 'admin'))` en tablas donde admin necesite acceso. Opción B: usar service_role en API routes (más sencillo y seguro).
+
+6. **Mobile** — El `AuthContext` ya acepta `role: "admin"`. La navegación en `App.tsx` debe añadir un tercer navigator `AppNavigatorAdmin` con las pantallas de administración.
+
+7. **Regla de decisión**: ¿Una nueva API route es para admin? → verificar `role === "admin"`. ¿Puede admin acceder a datos de trainer y cliente? → usar service_role en la route, no modificar RLS existente.
 
 ---
 

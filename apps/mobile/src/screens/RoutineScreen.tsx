@@ -286,7 +286,7 @@ export default function RoutineScreen() {
 
       const { data: r } = await supabase
         .from("user_routines")
-        .select("*")
+        .select("id, title, goal, trainer_id, duration_months, exercises, days, total_weeks, current_week, training_days, sent_at")
         .eq("client_id", user.id)
         .eq("is_active", true)
         .order("created_at", { ascending: false })
