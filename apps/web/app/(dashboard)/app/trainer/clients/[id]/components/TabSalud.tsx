@@ -38,7 +38,7 @@ export function TabSalud({
     const supabase = createClient();
     const { data, error } = await supabase
       .from("health_logs")
-      .select("*")
+      .select("id,client_id,trainer_id,reported_by,muscle_id,pain_score,incident_type,status,notes,created_at")
       .eq("client_id", clientId)
       .eq("trainer_id", trainerId)
       .order("created_at", { ascending: false });

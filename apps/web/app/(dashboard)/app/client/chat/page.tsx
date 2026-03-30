@@ -107,7 +107,7 @@ export default function ClientChatPage() {
         .eq("trainer_id", tid)
         .eq("client_id", user.id)
         .order("created_at", { ascending: true })
-        .limit(100);
+        .limit(500);
       if (msgsError) {
         toast.error("Error al cargar los mensajes");
         console.error("[ClientChat] Error cargando mensajes:", msgsError);
@@ -196,13 +196,14 @@ export default function ClientChatPage() {
     }
 
     // Refetch to get confirmed state from DB (replaces optimistic)
-    const { data: fresh } = await supabase
+    const { data: fresh, error: freshErr } = await supabase
       .from("messages")
-      .select("*")
+      .select("id,trainer_id,client_id,sender_id,content,read_at,created_at")
       .eq("trainer_id", trainerIdRef.current)
       .eq("client_id", clientIdRef.current)
       .order("created_at", { ascending: true })
       .limit(100);
+    if (freshErr) { console.error("[Chat] Error refrescando mensajes:", freshErr); } // No bloqueante
 
     if (fresh) {
       setMessages(fresh as Message[]);

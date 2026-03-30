@@ -80,12 +80,12 @@ export async function getResolvedExercises(
   const [exercisesRes, overridesRes] = await Promise.all([
     supabase
       .from("trainer_exercise_library")
-      .select("*")
+      .select("id,name,description,video_url,video_thumbnail_url,muscle_groups,secondary_muscles,equipment_needed,category,difficulty,is_global,trainer_id,aliases")
       .or(`is_global.eq.true,trainer_id.eq.${trainerId}`)
       .order("name"),
     supabase
       .from("trainer_exercise_overrides")
-      .select("*")
+      .select("id,trainer_id,exercise_id,custom_name,custom_description,custom_notes,custom_video_url,hidden")
       .eq("trainer_id", trainerId),
   ]);
 
@@ -136,12 +136,12 @@ export async function resolveExercise(
   const [exerciseRes, overrideRes] = await Promise.all([
     supabase
       .from("trainer_exercise_library")
-      .select("*")
+      .select("id,name,description,video_url,video_thumbnail_url,muscle_groups,secondary_muscles,equipment_needed,category,difficulty,is_global,trainer_id,aliases")
       .eq("id", exerciseId)
       .single(),
     supabase
       .from("trainer_exercise_overrides")
-      .select("*")
+      .select("id,trainer_id,exercise_id,custom_name,custom_description,custom_notes,custom_video_url,hidden")
       .eq("exercise_id", exerciseId)
       .eq("trainer_id", trainerId)
       .maybeSingle(),

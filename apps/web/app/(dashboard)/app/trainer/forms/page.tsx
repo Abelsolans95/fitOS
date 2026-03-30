@@ -6,6 +6,7 @@ import { FormPreview } from "@/components/onboarding/FormPreview";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase";
+import { toast } from "sonner";
 
 type Tab = "editor" | "preview";
 
@@ -24,9 +25,13 @@ export default function TrainerFormsPage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase
+      const { data, error: formError } = await supabase
         .from("onboarding_forms").select("*").eq("trainer_id", user.id)
         .eq("is_active", true).order("created_at", { ascending: false }).limit(1).single();
+      if (formError && formError.code !== "PGRST116") {
+        toast.error("Error al cargar el formulario de onboarding");
+        console.error("[TrainerForms] Error cargando formulario:", formError);
+      }
       if (data) { setFormId(data.id); setTitle(data.title); setDescription(data.description || ""); setFields(data.fields as FormField[]); }
       setLoading(false);
     };
@@ -43,7 +48,13 @@ export default function TrainerFormsPage() {
       await supabase.from("onboarding_forms").update({ ...formData, updated_at: new Date().toISOString() }).eq("id", formId);
     } else {
       await supabase.from("onboarding_forms").update({ is_active: false }).eq("trainer_id", user.id).eq("is_active", true);
-      const { data } = await supabase.from("onboarding_forms").insert(formData).select("id").single();
+      const { data, error: insertError } = await supabase.from("onboarding_forms").insert(formData).select("id").single();
+      if (insertError) {
+        toast.error("Error al guardar el formulario");
+        console.error("[TrainerForms] Error insertando formulario:", insertError);
+        setSaving(false);
+        return;
+      }
       if (data) setFormId(data.id);
     }
     setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 2000);

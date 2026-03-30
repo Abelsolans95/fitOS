@@ -24,11 +24,17 @@ export default function TrainerAppointmentsPage() {
     if (!user) return;
     setTrainerId(user.id);
 
+    const monthAgo = new Date(); monthAgo.setMonth(monthAgo.getMonth() - 1);
+    const threeMonthsAhead = new Date(); threeMonthsAhead.setMonth(threeMonthsAhead.getMonth() + 3);
+
     const { data, error: apptError } = await supabase
       .from("appointments")
       .select("*")
       .eq("trainer_id", user.id)
-      .order("starts_at", { ascending: true });
+      .gte("starts_at", monthAgo.toISOString())
+      .lte("starts_at", threeMonthsAhead.toISOString())
+      .order("starts_at", { ascending: true })
+      .limit(200);
 
     if (apptError) {
       toast.error("Error al cargar las citas");

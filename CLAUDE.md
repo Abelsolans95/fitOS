@@ -18,6 +18,7 @@
 - **Fase 6 (parcial, 28/03/2026):** Rediseño planificador de menú ✅ — selección de días con fechas reales, semanas de mesociclo, % macros, panel flotante de info nutricional en tiempo real
 - **Fase 6 ampliada (29/03/2026):** Menús guardados ✅ — guardar/cargar configuraciones de menú reutilizables (tabla `saved_menu_templates`, migración 033). Navegación semanal mejorada ✅ — botones semana anterior/siguiente en la parte inferior del planificador. DarkSelect ✅ — todos los `<select>` nativos reemplazados por componente custom dark.
 - **Fase 7 (29/03/2026):** Comunidad Premium ✅ — Feed privado por trainer con posts (título+texto+imagen), comentarios, likes, posts fijados. Dos modos: OPEN (clientes publican) y READ_ONLY_CLIENTS (solo coach). Badge verificado violeta para el coach. Storage bucket para imágenes. Realtime. Badge de no leídos en sidebar. Web trainer + web cliente.
+- **Code Quality Review (30/03/2026):** Fragmentación completa ✅ — todas las páginas >300 líneas fragmentadas en `components/`. Error handling Patrón C aplicado ✅ — todas las queries con `error` destructurado. Performance ✅ — `select("*")` eliminados, `.limit()` en tablas crecientes, `Promise.all` para queries independientes. `React.memo` en componentes hoja.
 
 ---
 
@@ -114,10 +115,10 @@
       - `apps/web/app/api/complete-registration/route.test.ts` — 7 tests: happy path, missing fields (400), DB errors (500), promo code resilience, invalid JSON.
       - `apps/web/app/api/client-trainer/route.test.ts` — 8 tests: happy path, unauthenticated (401), no trainer (404), DB errors, `business_name` vs `full_name` priority.
 
-53. **Error handling obligatorio en TODA query Supabase (Patrón C)** — Toda query a Supabase DEBE destructurar `error`, loguearlo y dar feedback al usuario. No hay excepciones. Los tres patrones están prohibidos excepto el C:
-    - ❌ **Patrón A (prohibido):** `const { data } = await supabase.from(...)` — sin destructurar error.
-    - ❌ **Patrón B (prohibido):** destructura error + solo `console.error` — el usuario no sabe qué pasó.
-    - ✅ **Patrón C (obligatorio) — Componentes cliente:**
+53. **Error handling obligatorio en TODA query Supabase (Patrón C)** — Toda query a Supabase DEBE destructurar `error`, loguearlo y dar feedback al usuario. No hay excepciones.
+    - ❌ **Patrón A (prohibido siempre):** `const { data } = await supabase.from(...)` — sin destructurar error. El error se pierde completamente.
+    - ❌ **Patrón B (prohibido en queries bloqueantes):** destructura error + solo `console.error` sin toast ni return — el usuario no sabe qué pasó. Solo válido en queries no bloqueantes (ver abajo).
+    - ✅ **Patrón C bloqueante (obligatorio en saves/mutations/loads críticos) — Componentes cliente:**
       ```ts
       const { data, error } = await supabase.from("tabla").select("...");
       if (error) {
@@ -126,7 +127,7 @@
         return; // o setSaving(false) + return según contexto
       }
       ```
-    - ✅ **Patrón C (obligatorio) — API routes:**
+    - ✅ **Patrón C bloqueante (obligatorio) — API routes:**
       ```ts
       const { data, error } = await supabase.from("tabla").select("...");
       if (error) {
@@ -134,7 +135,13 @@
         return NextResponse.json({ error: "Mensaje descriptivo" }, { status: 500 });
       }
       ```
-    - **Queries no bloqueantes** (ej: desactivar rutinas anteriores, cargar perfiles para display): si el error no debe detener el flujo, igualmente destructurar y loguear con `console.error`, pero no hacer `return` — añadir comentario `// No bloqueante`.
+    - ✅ **Patrón C no bloqueante** (queries secundarias de display que no deben parar el flujo — ej: cargar perfil para mostrar nombre, leer adherencia del calendario): destructurar + `console.error` + comentario `// No bloqueante`. Sin `toast` ni `return`.
+      ```ts
+      const { data: profile, error: profileErr } = await supabase.from("profiles")...;
+      if (profileErr) { console.error("[Context] Error cargando perfil:", profileErr); } // No bloqueante
+      ```
+    - **Cómo distinguir bloqueante vs no bloqueante:** si el error impide mostrar la funcionalidad principal de la página → bloqueante (toast + return). Si es un dato secundario de enriquecimiento → no bloqueante (solo log).
+    - **Auditoría completada el 30/03/2026:** Patrón C aplicado a todas las queries del proyecto. Archivos corregidos: `trainer/settings`, `trainer/chat`, `trainer/clients`, `client/dashboard`, `client/meals`, `client/chat`, `client/appointments`, `BookAppointmentModal`.
 
 54. **Usar `??` (no `||`) para merges de override** — `||` trata `""`, `0` y `false` como falsy, descartando overrides legítimos. Siempre usar nullish coalescing `??` al fusionar campos de override con valores originales. Ejemplo: `override?.custom_name ?? ex.name`.
 55. **Toda API route de importación debe verificar rol trainer** — No basta con verificar autenticación. Endpoints de Excel import, reconciliation, etc. deben consultar `profiles.role` y retornar 403 si no es `trainer`.
@@ -234,6 +241,51 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 86. **Respuestas a comentarios (threading)** — `community_comments.parent_id` (FK self-referencial, nullable). Comentarios se renderizan como árbol con indentación (`ml-6 border-l`). Profundidad máxima: 2 niveles. Botón "Responder" abre input inline debajo del comentario. Enter envía la respuesta. El tree se construye en `handleLoadComments` agrupando por `parent_id`.
 87. **Likes en comentarios + diferenciación coach** — Tabla `community_comment_likes` con `comment_id`, `user_id`, `is_coach` (BOOLEAN). El coach al dar like se marca `is_coach: true`. En el UI: like del coach muestra corazón violeta + badge "Coach" junto al contador. Likes de clientes son cyan estándar. RLS: mismas políticas que `community_likes` pero sobre comments. Realtime habilitado.
 88. **`community_comment_likes` tiene unique constraint** — `(comment_id, user_id)`. Misma lógica que `community_likes`: toggle optimista, insert si no existe, delete si ya existe.
+
+93. **Layout auth como Server Component async** — `apps/web/app/(dashboard)/layout.tsx` es un Server Component async. Usa `createClient()` de `@/lib/supabase-server`, llama a `supabase.auth.getUser()` y hace `redirect("/login")` si no hay sesión. NO usar middleware ni `getSession()` en layouts (no verifica JWT con el servidor). Las redirecciones basadas en rol usan `headers()` para obtener el pathname sin acceder a `window`.
+
+94. **`supabaseAdmin` (service_role) siempre DESPUÉS de auth+role check** — En API routes, la inicialización del cliente admin (`createClient(url, serviceKey)`) debe hacerse DENTRO del handler y únicamente después de haber verificado que el usuario tiene el rol correcto. Si el check de rol falla con error de DB → retornar 403 (fail-closed), nunca 500 que podría dar pistas.
+
+95. **Realtime cleanup en React Native — patrón obligatorio** — `useEffect` con suscripción Realtime DEBE retornar una función de cleanup síncrona (no async). Patrón correcto:
+    ```ts
+    useEffect(() => {
+      let channel: ReturnType<typeof supabase.channel> | null = null;
+      const setup = async () => { channel = supabase.channel("...").on(...).subscribe(); };
+      setup();
+      return () => { if (channel) supabase.removeChannel(channel); };
+    }, []);
+    ```
+    Nunca `return setup()` (retorna Promise, no cleanup). Aplica a `ChatScreen.tsx`, `AppointmentsScreen.tsx` y cualquier Screen con Realtime.
+
+96. **`useChat` hook compartido** — La lógica de chat (cargar mensajes, Realtime, marcar como leído, enviar) vive en `apps/web/hooks/useChat.ts`. Tanto `TabChat.tsx` (trainer) como `client/chat/page.tsx` (cliente) importan de ahí. No duplicar lógica de chat en componentes.
+
+97. **`ClientOption` centralizado en `trainer/types.ts`** — La interfaz `ClientOption` ({client_id, full_name, email, food_preferences?}) vive en `apps/web/app/(dashboard)/app/trainer/types.ts`. Todos los módulos trainer (routines, nutrition, appointments) re-exportan desde ahí: `export type { ClientOption } from "@/app/(dashboard)/app/trainer/types"`. Nunca redefinir la interfaz localmente.
+
+98. **Constantes nombradas en lugar de magic strings/numbers en `lib/`** — Archivos en `apps/web/lib/` deben declarar constantes exportadas para valores que se usan en múltiples lugares. Ejemplos: `INFERENCE_THRESHOLD_HIGH = 0.9` en `excel-parser.ts`, `CALENDAR_COLOR_*` en `google-calendar.ts`. Evitar literales repetidos que dificulten el mantenimiento.
+
+99. **Confirmación en dos pasos para acciones destructivas en UI** — Botones de "Cancelar cita", "Eliminar", etc. no deben ejecutar la acción directamente. Usar estado `confirmXxxId: string | null` — primer click setea el ID, segundo click ejecuta la acción, cualquier otro click (o blur) resetea a null. Mostrar "¿Confirmar?" como texto del botón en el estado intermedio. Esto aplica en `AppointmentList.tsx` (cancelar cita) y cualquier acción irreversible en el UI.
+
+100. **`loading.tsx` obligatorio en rutas de dashboard** — Toda ruta de Next.js App Router bajo `(dashboard)/` debe tener su `loading.tsx` correspondiente que muestre un spinner/skeleton inmediato. Archivos creados: `app/(dashboard)/loading.tsx`, `app/(dashboard)/app/trainer/loading.tsx`, `app/(dashboard)/app/client/loading.tsx`. Patrón: spinner cyan `animate-spin` + texto "Cargando..." en `#5A5A72`.
+
+101. **`React.memo` en componentes hoja reutilizables** — Componentes que se renderizan en listas o grids y reciben props estables deben estar envueltos en `memo()`. Ejemplos: `ExerciseCard`, `AppointmentList`, `CommunityFeed`. Patrón: `export const Foo = memo(function Foo(props) { ... })` (función nombrada dentro de memo para mejor stack traces).
+
+102. **`next/image` obligatorio para imágenes de contenido dinámico** — Las imágenes de posts de comunidad (`image_url` de Supabase Storage) deben usar `<Image fill sizes="..." />` de `next/image` en un contenedor `relative`. Configurar `remotePatterns` en `next.config.ts` para `**.supabase.co`. No usar `<img>` nativo para imágenes de contenido.
+
+103. **Promise.all para queries independientes en useEffect/loaders** — Cuando una función de carga hace múltiples `await supabase.from(...)` sobre tablas que no dependen entre sí, SIEMPRE usar `Promise.all`. Nunca encadenar `await` secuenciales para queries independientes. Ahorra el tiempo de la query más lenta × (N-1) queries.
+
+104. **`fetch("/api/...")` fire-and-forget para side effects no bloqueantes** — Llamadas a API routes que realizan efectos secundarios (activar cliente, marcar leído, etc.) y cuyo resultado no bloquea la UI deben hacerse sin `await`: `fetch("/api/activate-client", { method: "POST" }).catch(() => {})`. Añadir `.catch(() => {})` para silenciar errores no críticos.
+
+105. **Filtro de rango de fechas obligatorio en queries de appointments** — Las queries a la tabla `appointments` deben incluir siempre un filtro de fechas (`.gte("starts_at", ...).lte("starts_at", ...)`) para evitar traer el historial completo. Rango recomendado: 1 mes atrás + 3 meses adelante. Sin filtro, el payload crece indefinidamente con el uso.
+
+106. **`.limit()` en todas las queries paginables** — Tablas que crecen con el uso (`community_posts`, `appointments`, `messages`, `weight_log`, `body_metrics`, `food_log`) DEBEN tener `.limit()` explícito. Valores orientativos: posts=50, messages=100-500, metrics=100. Sin límite, una tabla con 1000+ filas degrada la carga inicial.
+
+107. **Batch insert en lugar de bucles** — En API routes, nunca hacer INSERT individual dentro de un `for..of`. Recopilar todos los objetos en un array y hacer un único `supabase.from(...).insert(array)`. Para operaciones de lookup antes del insert, pre-cargar con `.in("id", idsArray)` y procesar en memoria. Ver `api/import/create-exercises/route.ts` como referencia del patrón correcto.
+
+108. **Verificar que los archivos importados realmente existen** — Antes de referenciar un path en un import (`import { X } from "./utils"`, `export type { Y } from "@/app/trainer/types"`), verificar que el archivo destino existe físicamente. Un import a archivo inexistente compilará en local con errores de TS pero romperá el build de Vercel con TS2307. Si el archivo no existe: crearlo antes de hacer el import.
+
+109. **Componentes `components/` deben ser importados en `page.tsx`** — Cuando existe una carpeta `components/` junto a un `page.tsx`, verificar que el `page.tsx` realmente importa desde ella. Si `page.tsx` tiene funciones de componente definidas inline y `components/` existe pero no se usa, el refactor está incompleto. Ejecutar `grep "from \"./components"` en el `page.tsx` para verificar.
+
+110. **`React.memo` obligatorio en componentes que se renderizan en listas** — Cualquier componente que sea hijo directo de un `.map()` sobre un array de datos (ejercicios, comidas, posts, mensajes) DEBE estar wrapeado con `memo()`. Patrón: `export const Foo = memo(function Foo(props) { ... })`. Sin memo, el componente se re-renderiza en cada cambio de estado del padre aunque sus props no hayan cambiado.
 
 ---
 

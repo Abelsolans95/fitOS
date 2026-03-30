@@ -258,7 +258,7 @@ export function useCommunityPage() {
       // Get or create community
       let { data: community, error } = await supabase
         .from("communities")
-        .select("*")
+        .select("id,coach_id,name,description,mode,is_active,created_at")
         .eq("coach_id", user.id)
         .single();
 
@@ -318,10 +318,11 @@ export function useCommunityPage() {
 
     const { data: posts, error } = await supabase
       .from("community_posts")
-      .select("*")
+      .select("id,community_id,author_id,title,content,image_url,is_pinned,created_at,updated_at")
       .eq("community_id", communityId)
       .order("is_pinned", { ascending: false })
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(50);
 
     if (error) {
       toast.error("Error al cargar publicaciones");
@@ -335,21 +336,26 @@ export function useCommunityPage() {
     }
 
     const postIds = posts.map((p) => p.id);
-    const { data: likes } = await supabase
-      .from("community_likes")
-      .select("post_id, user_id")
-      .in("post_id", postIds);
-
-    const { data: comments } = await supabase
-      .from("community_comments")
-      .select("post_id")
-      .in("post_id", postIds);
-
     const authorIds = [...new Set(posts.map((p) => p.author_id))];
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("user_id, full_name, business_name, role")
-      .in("user_id", authorIds);
+
+    const [likesRes, commentsRes, profilesRes] = await Promise.all([
+      supabase
+        .from("community_likes")
+        .select("post_id, user_id")
+        .in("post_id", postIds),
+      supabase
+        .from("community_comments")
+        .select("post_id")
+        .in("post_id", postIds),
+      supabase
+        .from("profiles")
+        .select("user_id, full_name, business_name, role")
+        .in("user_id", authorIds),
+    ]);
+
+    const likes = likesRes.data;
+    const comments = commentsRes.data;
+    const profiles = profilesRes.data;
 
     const profileMap = new Map(profiles?.map((p) => [p.user_id, p]) ?? []);
 
@@ -456,7 +462,7 @@ export function useCommunityPage() {
 
     const { data, error } = await supabase
       .from("community_comments")
-      .select("*")
+      .select("id,post_id,parent_id,author_id,content,created_at")
       .eq("post_id", postId)
       .order("created_at", { ascending: true });
 

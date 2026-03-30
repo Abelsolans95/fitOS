@@ -443,6 +443,16 @@ function routinesReducer(state: RoutinesState, action: RoutinesAction): Routines
     case "LOAD_TEMPLATES":
       return { ...state, templates: action.templates };
     case "CR_SELECT_TEMPLATE":
+      if (!action.templateId) {
+        return {
+          ...state,
+          crSelectedTemplateId: "",
+          crGoal: "",
+          crMesocycleWeeks: 4,
+          crSelectedDays: [],
+          crDayLabels: {},
+        };
+      }
       return { ...state, crSelectedTemplateId: action.templateId };
     case "CR_APPLY_TEMPLATE": {
       const tpl = action.template;

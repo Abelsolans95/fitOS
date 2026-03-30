@@ -57,8 +57,9 @@ export default function TrainerClientsPage() {
         if (!tcRows || tcRows.length === 0) { setClients([]); setLoading(false); return; }
 
         const clientIds = tcRows.map(r => r.client_id);
-        const { data: profileRows } = await supabase
+        const { data: profileRows, error: profilesErr } = await supabase
           .from("profiles").select("user_id, full_name, email, goal, avatar_url").in("user_id", clientIds);
+        if (profilesErr) { console.error("[Clients] Error cargando perfiles:", profilesErr); } // No bloqueante
 
         const profileMap = new Map((profileRows ?? []).map(p => [p.user_id, p]));
         setClients(tcRows.map(row => {

@@ -1,6 +1,6 @@
 # FitOS — Estado del Desarrollo
 
-> Documento actualizado el 29/03/2026 (Comunidad Premium — Feed de Alto Rendimiento). Léelo de arriba abajo antes de tocar cualquier archivo.
+> Documento actualizado el 30/03/2026 (Code Quality Review completo — fragmentación de páginas, error handling, performance). Léelo de arriba abajo antes de tocar cualquier archivo.
 > Cualquier agente o desarrollador debe leer este archivo **primero** para entender el estado actual del proyecto.
 >
 > **IMPORTANTE:** Al terminar cualquier desarrollo, bugfix o cambio significativo, actualiza este archivo (`desarrollo.md`) **y** `CLAUDE.md` antes de cerrar la sesión. Refleja los archivos nuevos o modificados, añade notas para el siguiente agente/desarrollador y actualiza la sección de próximos pasos. El objetivo es que cualquier persona o agente pueda continuar el proyecto sin contexto previo.
@@ -228,6 +228,64 @@
 - [ ] `CommunityScreen.tsx` en `apps/mobile/src/screens/` — feed + comments + likes con estilo brutalista
 - [ ] Tab "Comunidad" en `App.tsx` (9 tabs en bottom nav)
 
+### Code Quality Review — Fragmentación y Performance (30/03/2026) — **COMPLETADO**
+
+Revisión exhaustiva y refactoring completo de la capa web. Branch: `claude/code-review-quality-GbAzE`.
+
+**Fixes críticos previos (build roto):**
+- Creados `active/utils.ts` y `trainer/types.ts` que faltaban y rompían el build de Vercel
+
+**Fragmentación de páginas grandes (Rule 50/51):**
+
+| Página | Antes | Después | Componentes creados |
+|---|---|---|---|
+| `trainer/nutrition/page.tsx` | 1318 líneas | 128 líneas | Importa de `components/` (ya existían) |
+| `trainer/exercises/page.tsx` | 1065 líneas | 487 líneas | types, Icons, Shared, ExerciseCard, ExerciseFormModal, DeleteConfirmModal |
+| `trainer/import/page.tsx` | 832 líneas | 339 líneas | types, UploadStep, MappingStep, ReconcileStep, ReviewStep |
+| `onboarding/client/page.tsx` | 1050 líneas | 404 líneas | types, Shared, DynamicField, StepProfile, StepDynamicForm |
+| `onboarding/trainer/page.tsx` | 856 líneas | 396 líneas | Shared, StepProfile, StepFormEditor, StepPreview, StepPromoCode |
+| `client/community/page.tsx` | ~700 líneas | ~300 líneas | useClientCommunityPage, CommunityFeed, PublishPost |
+| `client/calories/page.tsx` | — | 309 líneas | MacroSummary, FoodLogList, AddFoodModal |
+| `client/progress/page.tsx` | 500 líneas | 116 líneas | types, MetricChart, MetricForm, MetricHistoryList |
+| `client/meals/page.tsx` | 484 líneas | 281 líneas | types, MealCard, DailyTotals |
+| `client/routine/page.tsx` | 583 líneas | 440 líneas | ExerciseCard extraído a components/ |
+| `trainer/dashboard/page.tsx` | — | 265 líneas | KPICard, RecentActivity |
+
+**Performance (Rule 53, 103, 106):**
+- Reemplazados `.select("*")` con columnas específicas en: `exercise-resolver.ts`, `food-resolver.ts`, `useClientRoutine.ts`, `useNutritionPage.ts`, `useCommunityPage.ts`, `TabRutina.tsx`, `TabSalud.tsx`, `TabChat.tsx`, `ExerciseLibraryTab.tsx`
+- `.limit()` añadido en queries de `messages` (500) y `community_posts` (50)
+- `Promise.all` para queries independientes en community, client dashboard
+
+**Error handling completado (Rule 53 — Patrón C):**
+- `trainer/settings/page.tsx`: 3 queries sin error → error + `// No bloqueante`
+- `trainer/chat/page.tsx`: messages query → error bloqueante; profiles → No bloqueante
+- `trainer/clients/page.tsx`: profiles lookup → No bloqueante
+- `client/dashboard/page.tsx`: 5 queries sin error → todas con `// No bloqueante`
+- `client/meals/page.tsx`: calendar query + toggleMealCompleted upsert con revert
+- `client/chat/page.tsx`: refetch post-INSERT + `select(*)` → columnas específicas
+- `client/appointments/page.tsx`: trainer_clients + profile lookup → No bloqueante
+- `client/appointments/components/BookAppointmentModal.tsx`: toast.error añadido
+
+**React.memo en componentes hoja (Rule 101):**
+- `client/meals/components/MealCard.tsx` — wrapeado con memo()
+- `client/routine/components/ExerciseCard.tsx` — wrapeado con memo()
+- `client/community/components/CommunityFeed.tsx` — wrapeado con memo()
+
+**Archivos nuevos creados (30/03/2026):**
+- `apps/web/app/(dashboard)/app/client/routine/active/utils.ts` — getDateForDay, calculateProgressLabel, getProgressColor
+- `apps/web/app/(dashboard)/app/trainer/types.ts` — interfaz ClientOption centralizada
+- `apps/web/app/(dashboard)/app/client/progress/components/` — types, MetricChart, MetricForm, MetricHistoryList
+- `apps/web/app/(dashboard)/app/client/meals/components/` — types, MealCard, DailyTotals
+- `apps/web/app/(dashboard)/app/client/routine/components/ExerciseCard.tsx`
+- `apps/web/app/(dashboard)/app/client/community/components/` — types, CommunityFeed, PublishPost
+- `apps/web/app/(dashboard)/app/client/community/useClientCommunityPage.ts`
+- `apps/web/app/(dashboard)/app/client/calories/components/` — MacroSummary, FoodLogList, AddFoodModal
+- `apps/web/app/(dashboard)/app/trainer/dashboard/components/` — KPICard, RecentActivity
+- `apps/web/app/(dashboard)/app/trainer/exercises/components/` — types, Icons, Shared, ExerciseCard, ExerciseFormModal, DeleteConfirmModal
+- `apps/web/app/(dashboard)/app/trainer/import/components/` — types, UploadStep, MappingStep, ReconcileStep, ReviewStep
+- `apps/web/app/(auth)/onboarding/client/components/` — types, Shared, DynamicField, StepProfile, StepDynamicForm
+- `apps/web/app/(auth)/onboarding/trainer/components/` — Shared, StepProfile, StepFormEditor, StepPreview, StepPromoCode
+
 ### Rediseño UI — "Brutalismo Elegante" y Dashboards Premium (Actualizado — 23/03/2026)
 - Rediseño integral de 7 pantallas mobile y páginas web públicas / auth (19/03/2026)
 - **Dashboards Premium (Entrenador y Cliente):** Implementación de *glassmorphism* intensivo, texturas `.dot-grid` globales, rediseño flotante en la `AppSidebar` y transparencias en tarjetas de contenido (`backdrop-blur-xl`). Se actualizaron masivamente todas las rutas internas y layouts base para unificar estética holográfica con la landing page (23/03/2026)
@@ -450,14 +508,22 @@ apps/web/app/
 │       └── client/
 │           ├── layout.tsx              ← ✅ ClientSidebar (sidebar con badge de no leídos en Chat)
 │           ├── dashboard/page.tsx      ← ✅ Resumen diario + stats + acciones rápidas
+│           ├── dashboard/components/   ← KPICard.tsx, RecentActivity.tsx
 │           ├── calories/page.tsx       ← ✅ Vision Calorie Tracker (foto → IA → macros)
-│           ├── routine/page.tsx        ← ✅ Rutina actual con tracker de sets
+│           ├── calories/components/    ← MacroSummary.tsx, FoodLogList.tsx, AddFoodModal.tsx
+│           ├── routine/page.tsx        ← ✅ Rutina actual con tracker de sets (~440 líneas, usa useClientRoutine)
+│           ├── routine/components/     ← ExerciseCard.tsx (memo)
 │           ├── meals/page.tsx          ← ✅ Plan de comidas asignado (por día)
+│           ├── meals/components/       ← types.ts, MealCard.tsx (memo), DailyTotals.tsx
 │           ├── calendar/page.tsx       ← ✅ Calendario master (entrenos, comidas, métricas)
-│           ├── progress/page.tsx       ← ✅ Mediciones corporales + gráfico SVG + historial
+│           ├── progress/page.tsx       ← ✅ Mediciones corporales + gráfico + historial (~116 líneas)
+│           ├── progress/components/    ← types.ts, MetricChart.tsx, MetricForm.tsx, MetricHistoryList.tsx
 │           ├── appointments/page.tsx   ← ✅ Ver/solicitar/cancelar citas con el entrenador
+│           ├── appointments/components/← BookAppointmentModal.tsx, AppointmentList.tsx
 │           ├── health/page.tsx        ← ✅ Mi Salud — mapa anatómico + reportar molestias + timeline
 │           ├── community/page.tsx     ← ✅ Feed de comunidad del trainer (likes, comments, publicar si OPEN)
+│           ├── community/useClientCommunityPage.ts ← hook useReducer para estado de comunidad
+│           ├── community/components/  ← types.ts, CommunityFeed.tsx (memo), PublishPost.tsx
 │           └── chat/page.tsx           ← ✅ Chat con entrenador (Realtime, optimista, leído)
 │
 ├── api/
@@ -841,10 +907,10 @@ supabase functions deploy [nombre]
 
 12. **Sonner (toast)**: Nutrición y rutinas usan `import { toast } from "sonner"`. El `<Toaster />` debe estar en el layout raíz o dashboard.
 
-13. **Error handling obligatorio en TODA query Supabase (Patrón C)**: Toda query DEBE destructurar `error`, loguearlo y dar feedback al usuario. Patrones prohibidos:
-    - ❌ **Patrón A:** `const { data } = await supabase.from(...)` — sin destructurar error.
-    - ❌ **Patrón B:** destructura error + solo `console.error` — el usuario no sabe qué pasó.
-    - ✅ **Patrón C (obligatorio) — Componentes cliente:**
+13. **Error handling obligatorio en TODA query Supabase (Patrón C)**: Toda query DEBE destructurar `error`. La diferencia clave es bloqueante vs no bloqueante:
+    - ❌ **Patrón A (prohibido siempre):** `const { data } = await supabase.from(...)` — sin destructurar error. El error se pierde.
+    - ❌ **Patrón B (prohibido en queries bloqueantes):** destructura error + solo `console.error` sin toast ni return. Solo válido en no bloqueantes (ver abajo).
+    - ✅ **Patrón C bloqueante** (saves, mutations, carga principal de página):
       ```ts
       const { data, error } = await supabase.from("tabla").select("...");
       if (error) {
@@ -853,7 +919,12 @@ supabase functions deploy [nombre]
         return; // o setSaving(false) + return
       }
       ```
-    - ✅ **Patrón C (obligatorio) — API routes:**
+    - ✅ **Patrón C no bloqueante** (datos secundarios de enriquecimiento que no bloquean el flujo):
+      ```ts
+      const { data: profile, error: profileErr } = await supabase.from("profiles")...;
+      if (profileErr) { console.error("[Context] Error:", profileErr); } // No bloqueante
+      ```
+    - ✅ **Patrón C — API routes:**
       ```ts
       const { data, error } = await supabase.from("tabla").select("...");
       if (error) {
@@ -861,8 +932,9 @@ supabase functions deploy [nombre]
         return NextResponse.json({ error: "Mensaje" }, { status: 500 });
       }
       ```
-    - **Queries no bloqueantes** (ej: desactivar rutinas anteriores, perfiles para display): destructurar y loguear, pero NO hacer `return` — añadir comentario `// No bloqueante`.
-    - **Auditoría completada el 24/03/2026:** Se aplicó Patrón C a 22 queries en `register/page.tsx`, `client-trainer/route.ts`, `useNutritionPage.ts`, `useRoutinesPage.ts` y `client/routine/page.tsx`.
+    - **Regla de decisión:** ¿Sin este dato la página no puede funcionar? → bloqueante (toast + return). ¿Es enriquecimiento/display secundario? → no bloqueante (solo log + `// No bloqueante`).
+    - **Auditoría 24/03/2026:** Patrón C a 22 queries (`register`, `client-trainer`, `useNutritionPage`, `useRoutinesPage`, `client/routine`).
+    - **Auditoría 30/03/2026:** Patrón C completado en resto del proyecto: `trainer/settings`, `trainer/chat`, `trainer/clients`, `client/dashboard`, `client/meals`, `client/chat`, `client/appointments`, `BookAppointmentModal`.
 
 ---
 
@@ -1389,6 +1461,24 @@ DELETE FROM trainer_exercise_overrides WHERE hidden = true;
 
 ---
 
+**ERROR #55 — `active/utils.ts` no existía pese a ser importado en `client/routine/page.tsx`**
+- **Fecha:** 30/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/client/routine/page.tsx` (imports) + `active/utils.ts` (faltaba)
+- **Qué pasó:** Al refactorizar `page.tsx` con el hook `useClientRoutine`, el agente generó imports de `getDateForDay`, `calculateProgressLabel` y `getProgressColor` desde `"./active/utils"`. El archivo nunca fue creado, causando "module not found" en Vercel build.
+- **Solución aplicada:** Creado `apps/web/app/(dashboard)/app/client/routine/active/utils.ts` con las tres funciones puras.
+- **Regla:** Al escribir imports en un archivo refactorizado, verificar que los módulos destino existen. Si se crean imports de archivos nuevos, crear esos archivos en el mismo commit.
+
+---
+
+**ERROR #56 — `trainer/types.ts` no existía pese a ser re-exportado en `routines/types.ts`**
+- **Fecha:** 30/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/trainer/routines/types.ts:6`
+- **Qué pasó:** Como parte de la revisión de código, se añadió la línea `export type { ClientOption } from "@/app/(dashboard)/app/trainer/types"` en `routines/types.ts` para centralizar la interfaz compartida. Pero el archivo `trainer/types.ts` nunca fue creado → TS2307 en tiempo de build → Vercel fallaba con exit code 1.
+- **Solución aplicada:** Creado `apps/web/app/(dashboard)/app/trainer/types.ts` con la interfaz `ClientOption` (superset de todas las definiciones existentes: `client_id`, `full_name`, `email`, `food_preferences`).
+- **Regla:** Nunca añadir un re-export desde un módulo que no existe todavía. Si se refactoriza un import a un archivo centralizado, crear ese archivo en el mismo commit o antes.
+
+---
+
 ### Arquitectura de componentes — Buenas prácticas (desde 24/03/2026)
 
 **Patrón obligatorio para páginas con múltiples secciones (tabs, paneles, vistas):**
@@ -1481,3 +1571,95 @@ npm run test:watch   # Modo watch (desarrollo)
 5. **Verificar paridad web ↔ mobile**: cualquier cambio en web debe reflejarse en mobile y viceversa. No dar una tarea por terminada si solo está implementada en una plataforma.
 
 El objetivo es que cualquier persona o agente que llegue al proyecto pueda continuar sin contexto previo y sin repetir los mismos errores.
+
+---
+
+### Revisión profunda de código #2 — Velocidad de carga + Calidad (29-30/03/2026)
+
+**Wave 3 completada (30/03/2026) — Refactors de calidad:**
+
+- `apps/web/app/(dashboard)/app/trainer/nutrition/page.tsx` → reducido de 1326 a **129 líneas** (orchestrator puro)
+- `apps/web/app/(dashboard)/app/trainer/nutrition/components/MenuCreator.tsx` → NUEVO, 810 líneas (wizard de creación de menú extraído del inline)
+- `apps/web/app/(dashboard)/app/client/routine/useClientRoutine.ts` → NUEVO, useReducer hook centraliza 10+ useState de client/routine/page.tsx
+- `apps/web/app/(dashboard)/app/client/routine/page.tsx` → ya es orchestrator puro (useReducer aplicado)
+- `apps/web/app/(dashboard)/app/client/community/useClientCommunityPage.ts` → NUEVO, 530 líneas, 18 acciones tipadas
+- `apps/web/app/(dashboard)/app/client/community/page.tsx` → reducido de 689 a 319 líneas
+
+**Nota sobre nutrition/page.tsx:** Los agentes (Opus y Sonnet) fallaron por timeout repetido al intentar escribir MenuCreator.tsx (~800 líneas) en una sola sesión. Solución: extraer el bloque con `sed` a un archivo temporal y crear el archivo con Write directamente. No intentar que un agente escriba archivos de >500 líneas de una vez.
+
+### Revisión profunda de código #2 — Velocidad de carga (29/03/2026)
+
+Segunda revisión enfocada en rendimiento de carga, seguridad adicional y calidad. 43 hallazgos aplicados:
+
+**Seguridad aplicada:**
+- `complete-registration`: validación `client_id === user.id` (evita que un usuario se vincule como otro)
+- Google OAuth: validación open redirect en `returnTo`/`state` params (solo rutas relativas con `/`)
+- `auth/google/callback`: manejo explícito de error en update de tokens + null check de user
+- `activate-client`: verificación de `role === "client"` antes de activar
+
+**Rendimiento — waterfalls eliminados:**
+- `client/dashboard/page.tsx`: 6 queries secuenciales → 2 grupos Promise.all + activate-client fire-and-forget
+- `trainer/settings/page.tsx`: 3 queries → Promise.all
+- `trainer/appointments/page.tsx`: 4 queries → Promise.all + filtro de rango de fechas (1 mes atrás / 3 adelante)
+- `client/routine/page.tsx`: 5 queries → 2 grupos Promise.all
+- `mobile/DashboardScreen.tsx`: 3 queries → Promise.all
+
+**Rendimiento — queries sin límite corregidas:**
+- `trainer/chat/page.tsx`: `.limit(500)` + Realtime incremental (sin refetch completo)
+- `community_posts`: `.limit(50)` en trainer y cliente
+- `body_metrics`: `.limit(100)`
+- `trainer_clients` en hook: `.limit(200)` safety net
+- `CHAT_MESSAGES_LIMIT = 100` como constante nombrada
+
+**Rendimiento — SELECT * eliminados:**
+- `exercise-resolver.ts`: columnas específicas en 4 queries
+- `food-resolver.ts`: columnas específicas en 2 queries
+
+**Rendimiento — N+1 eliminado:**
+- `api/import/create-exercises/route.ts`: batch insert para crear y vincular ejercicios (de N queries a 2-3 queries totales)
+
+**Infraestructura web:**
+- `loading.tsx` creados en `(dashboard)/`, `trainer/` y `client/` — skeletons inmediatos
+- `React.memo` en `CommunityFeed`, `AppointmentList`
+- `useCallback` para handlers en community trainer page
+- `next/image` para imágenes de posts de comunidad (con `remotePatterns` en next.config.ts)
+- Constantes nombradas en `api/import/excel/route.ts`: `MAX_FILE_SIZE_BYTES`, `MAX_PREVIEW_ROWS`
+
+**Calidad:**
+- `client/community/page.tsx`: 18 useState → `useReducer` con `useClientCommunityPage.ts` (689 → 319 líneas)
+- `useTrainerDashboard` duplicado consolidado en `lib/hooks/useTrainerDashboard.ts`
+- `trainer/dashboard/page.tsx`: hook local eliminado, usa `lib/hooks/` (-58 líneas)
+
+**Mobile:**
+- `AppointmentsScreen.tsx`: instancia duplicada de Supabase → usa instancia compartida
+- `DashboardScreen.tsx`: 3 queries → Promise.all, `CalorieRing` con React.memo, letterSpacing duplicado corregido
+- `CaloriesScreen.tsx`: error handling + useMemo para totales + stale date fix
+- `MealsScreen.tsx`: error handling con Alert
+- `ProgressScreen.tsx` + `AppointmentsScreen.tsx modal`: KeyboardAvoidingView añadido
+
+---
+
+**ERROR #39 — Archivos críticos de build faltantes (TS2307)**
+- **Fecha:** 30/03/2026
+- **Archivos afectados:** `apps/web/app/(dashboard)/app/client/routine/active/utils.ts`, `apps/web/app/(dashboard)/app/trainer/types.ts`
+- **Qué pasó:** `client/routine/page.tsx` importaba `./active/utils` (funciones de fecha y progreso) que no existía. `trainer/routines/types.ts` re-exportaba `ClientOption` desde `@/app/(dashboard)/app/trainer/types` que tampoco existía. Ambos archivos estaban referenciados pero nunca creados → build de Vercel fallaba con TS2307.
+- **Solución aplicada:** Creados ambos archivos con el contenido correcto.
+- **Regla:** Antes de importar desde un path relativo, verificar que el archivo destino existe. Al añadir `export type { X } from "ruta"` en un `types.ts`, verificar que la ruta destino está creada.
+
+---
+
+**ERROR #40 — Páginas grandes sin fragmentar mezclaban lógica de negocio con UI**
+- **Fecha:** 30/03/2026
+- **Archivos afectados:** Múltiples `page.tsx` en trainer y client (>500 líneas)
+- **Qué pasó:** Tras merge de conflictos durante desarrollo paralelo, varias páginas tenían todas sus funciones de componente definidas inline (ActiveBadge, EmptyState, MenuCreator, etc.) en el mismo `page.tsx`, pese a existir la carpeta `components/`. El `page.tsx` de nutrición tenía 1318 líneas con 8 componentes inline.
+- **Solución aplicada:** Fragmentación sistemática: cada página orquesta, los componentes viven en `components/`. `useReducer` para estado complejo. Ver tabla en sección "Code Quality Review 30/03/2026".
+- **Regla:** Nunca dejar componentes definidos inline en `page.tsx`. Si existe `components/` sin que `page.tsx` importe de ahí, el refactor está incompleto.
+
+---
+
+**ERROR #41 — Queries Supabase sin destructurar error en páginas de display**
+- **Fecha:** 30/03/2026
+- **Archivos afectados:** `trainer/settings/page.tsx`, `trainer/chat/page.tsx`, `trainer/clients/page.tsx`, `client/dashboard/page.tsx`, `client/meals/page.tsx`, `client/chat/page.tsx`, `client/appointments/page.tsx`
+- **Qué pasó:** Queries de carga de datos de display (perfiles, planes, calendarios) usaban `const { data } =` sin destructurar `error`. Errores de DB pasaban silenciosamente sin log ni feedback.
+- **Solución aplicada:** Añadido `, error: queryName` a todas las queries + `if (queryName) { console.error("[Context]...", queryName); } // No bloqueante`.
+- **Regla:** Toda query Supabase debe destructurar `error`. Si es no bloqueante, loguear con console.error y añadir comentario `// No bloqueante`. Nunca silenciar errores de DB.

@@ -40,12 +40,13 @@ export default function TrainerChatPage() {
     if (!user) { setLoading(false); return; }
     setTrainerId(user.id);
 
-    const { data: messages } = await supabase
+    const { data: messages, error: msgErr } = await supabase
       .from("messages")
       .select("client_id, sender_id, content, read_at, created_at")
       .eq("trainer_id", user.id)
       .order("created_at", { ascending: false });
 
+    if (msgErr) { console.error("[TrainerChat] Error cargando mensajes:", msgErr); setLoading(false); return; }
     if (!messages?.length) { setLoading(false); return; }
 
     // Group by client — first message per client = most recent
@@ -66,10 +67,11 @@ export default function TrainerChatPage() {
 
     // Fetch profiles
     const clientIds = Array.from(clientMap.keys());
-    const { data: profiles } = await supabase
+    const { data: profiles, error: profilesErr } = await supabase
       .from("profiles")
       .select("user_id, full_name")
       .in("user_id", clientIds);
+    if (profilesErr) { console.error("[TrainerChat] Error cargando perfiles:", profilesErr); } // No bloqueante
 
     const profileMap = new Map(profiles?.map((p) => [p.user_id, p.full_name]) ?? []);
 

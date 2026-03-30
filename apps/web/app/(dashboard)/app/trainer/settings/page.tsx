@@ -27,13 +27,16 @@ export default function TrainerSettingsPage() {
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         if (authError || !user) { setError("No se pudo obtener la sesión del usuario."); setLoading(false); return; }
 
-        const { data: profile } = await supabase.from("profiles").select("business_name, specialty, bio").eq("user_id", user.id).single();
+        const { data: profile, error: profileErr } = await supabase.from("profiles").select("business_name, specialty, bio").eq("user_id", user.id).single();
+        if (profileErr) { console.error("[Settings] Error cargando perfil:", profileErr); } // No bloqueante
         if (profile) { setBusinessName(profile.business_name || ""); setSpecialty(profile.specialty || ""); setBio(profile.bio || ""); }
 
-        const { data: promoData } = await supabase.from("trainer_promo_codes").select("id, code").eq("trainer_id", user.id).eq("is_active", true).order("created_at", { ascending: false }).limit(1).single();
+        const { data: promoData, error: promoErr } = await supabase.from("trainer_promo_codes").select("id, code").eq("trainer_id", user.id).eq("is_active", true).order("created_at", { ascending: false }).limit(1).single();
+        if (promoErr && promoErr.code !== "PGRST116") { console.error("[Settings] Error cargando código promo:", promoErr); } // No bloqueante (PGRST116 = not found)
         if (promoData) { setPromoCode(promoData.code); setPromoCodeId(promoData.id); }
 
-        const { data: formData } = await supabase.from("onboarding_forms").select("fields").eq("trainer_id", user.id).eq("is_active", true).order("created_at", { ascending: false }).limit(1).maybeSingle();
+        const { data: formData, error: formErr } = await supabase.from("onboarding_forms").select("fields").eq("trainer_id", user.id).eq("is_active", true).order("created_at", { ascending: false }).limit(1).maybeSingle();
+        if (formErr) { console.error("[Settings] Error cargando formulario:", formErr); } // No bloqueante
         if (formData?.fields) setFormFieldCount((formData.fields as unknown[]).length);
       } catch { setError("Error inesperado al cargar la configuración."); }
       finally { setLoading(false); }

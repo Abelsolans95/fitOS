@@ -26,7 +26,7 @@ export interface FoodItem {
   carbs: number;
   fat: number;
   fiber: number;
-  category: string;
+  category: string[];
   is_global: boolean;
   created_at: string;
 }
@@ -777,7 +777,7 @@ function nutritionReducer(state: NutritionState, action: NutritionAction): Nutri
         libFormCarbs: action.food.carbs,
         libFormFat: action.food.fat,
         libFormFiber: action.food.fiber,
-        libFormCategory: action.food.category,
+        libFormCategory: Array.isArray(action.food.category) ? (action.food.category[0] ?? "Comida") : (action.food.category ?? "Comida"),
         libShowForm: true,
       };
     case "LIB_SET_SAVING":
@@ -853,7 +853,7 @@ export function useNutritionPage() {
           .eq("status", "active"),
         supabase
           .from("trainer_food_library")
-          .select("*")
+          .select("id,name,kcal,protein,carbs,fat,fiber,is_global,trainer_id,category")
           .or(`trainer_id.eq.${user.id},is_global.eq.true`)
           .order("name"),
         supabase
@@ -951,9 +951,10 @@ export function useNutritionPage() {
   const filteredFoods = useMemo(() => {
     let result = state.foods;
     if (state.libActiveCategory !== "Todos") {
-      result = result.filter(
-        (f) => f.category.toLowerCase() === state.libActiveCategory.toLowerCase()
-      );
+      result = result.filter((f) => {
+        const cats = Array.isArray(f.category) ? f.category : [f.category];
+        return cats.some((c) => c?.toLowerCase() === state.libActiveCategory.toLowerCase());
+      });
     }
     if (state.libSearch.trim()) {
       const q = state.libSearch.toLowerCase();
