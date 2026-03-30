@@ -1,642 +1,45 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { createClient } from "@/lib/supabase";
-import { toast } from "sonner";
+import { useClientRoutine, DAY_LABELS, DAY_SHORT } from "./useClientRoutine";
+import type { ExerciseData } from "./active/types";
+import { getDateForDay, calculateProgressLabel, getProgressColor } from "./active/utils";
 
 /* ────────────────────────────────────────────
-   Types
-   ──────────────────────────────────────────── */
-
-interface SetConfig {
-  reps_min: number;
-  reps_max: number;
-  rir: number;
-  target_weight: number | null;
-  rest_s: number;
-}
-
-interface WeekConfig {
-  sets: number;
-  reps_min: number;
-  reps_max: number;
-  rir: number;
-  target_weight: number | null;
-  rest_s: number;
-  sets_detail?: SetConfig[];
-  coach_notes?: string;
-}
-
-interface ExerciseData {
-  exercise_id: string;
-  name: string;
-  day_of_week: string;
-  day_label?: string;
-  scheme?: string;
-  sets: number;
-  reps_min: number;
-  reps_max: number;
-  rest_pause_sets?: number;
-  rir: number;
-  weight_kg?: number;
-  target_weight?: number | null;
-  rest_s: number;
-  progression_rule?: string;
-  coach_notes?: string;
-  trainer_notes?: string;
-  technique_notes?: string;
-  video_url?: string;
-  order?: number;
-  week_of_month?: number;
-  mode?: "equal" | "different";
-  sets_config?: SetConfig[];
-  weekly_config?: Record<number, WeekConfig>;
-}
-
-interface DayData {
-  day: string;
-  label?: string;
-  exercises: ExerciseData[];
-}
-
-interface RoutineRaw {
-  id: string;
-  title: string;
-  duration_months: number;
-  total_weeks?: number;
-  goal: string;
-  exercises?: ExerciseData[];
-  days?: DayData[];
-  is_active: boolean;
-  sent_at: string | null;
-  created_at: string;
-}
-
-interface SetInput {
-  weight_kg: string;
-  reps_done: string;
-  type: "main" | "rest_pause";
-}
-
-interface PreviousSet {
-  weight_kg: number;
-  reps_done: number;
-  type?: string;
-}
-
-interface PreviousLog {
-  exercise_name: string;
-  session_date: string;
-  sets_data: PreviousSet[];
-}
-
-/* ────────────────────────────────────────────
-   Constants & Helpers
-   ──────────────────────────────────────────── */
-
-const DAY_ORDER = [
-  "lunes",
-  "martes",
-  "miercoles",
-  "jueves",
-  "viernes",
-  "sabado",
-  "domingo",
-];
-
-const DAY_LABELS: Record<string, string> = {
-  lunes: "Lunes",
-  martes: "Martes",
-  miercoles: "Miércoles",
-  jueves: "Jueves",
-  viernes: "Viernes",
-  sabado: "Sábado",
-  domingo: "Domingo",
-};
-
-const DAY_SHORT: Record<string, string> = {
-  lunes: "L",
-  martes: "M",
-  miercoles: "X",
-  jueves: "J",
-  viernes: "V",
-  sabado: "S",
-  domingo: "D",
-};
-
-function getDateForDay(startDate: string | null, weekNum: number, dayKey: string): string {
-  if (!startDate) return "";
-  const dayMap: Record<string, number> = {
-    lunes: 1,
-    martes: 2,
-    miercoles: 3,
-    jueves: 4,
-    viernes: 5,
-    sabado: 6,
-    domingo: 0,
-  };
-  const start = new Date(startDate);
-  const weekStart = new Date(start);
-  weekStart.setDate(weekStart.getDate() + (weekNum - 1) * 7);
-  const targetDow = dayMap[dayKey];
-  const currentDow = weekStart.getDay();
-  let diff = targetDow - currentDow;
-  if (diff < 0) diff += 7;
-  const date = new Date(weekStart);
-  date.setDate(date.getDate() + diff);
-  const dd = String(date.getDate()).padStart(2, "0");
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  return `${dd}/${mm}`;
-}
-
-function calculateProgress(
-  current: { weight: number; reps: number }[],
-  previous: { weight: number; reps: number }[]
-): string {
-  if (previous.length === 0) return "PRIMERA SESIÓN";
-
-  const currentMainSets = current.filter((_, i) => i < previous.length);
-  if (currentMainSets.length === 0) return "";
-
-  let weightUp = false;
-  let weightDown = false;
-  let repsUp = false;
-  let repsDown = false;
-  let weightSame = true;
-  let repsSame = true;
-
-  for (let i = 0; i < Math.min(currentMainSets.length, previous.length); i++) {
-    const cw = currentMainSets[i].weight;
-    const pw = previous[i].weight;
-    const cr = currentMainSets[i].reps;
-    const pr = previous[i].reps;
-
-    if (cw > pw) { weightUp = true; weightSame = false; }
-    if (cw < pw) { weightDown = true; weightSame = false; }
-    if (cr > pr) { repsUp = true; repsSame = false; }
-    if (cr < pr) { repsDown = true; repsSame = false; }
-  }
-
-  if (weightUp && !weightDown && (repsSame || repsUp))
-    return "PROGRESIÓN CARGA" + (repsSame ? " REPES IGUALADAS" : " Y REPES");
-  if (repsUp && !repsDown && weightSame)
-    return "PROGRESIÓN REPES";
-  if (weightUp && repsDown)
-    return "PROGRESIÓN CARGA REGRESIÓN REPES";
-  if (weightDown && repsUp)
-    return "CARGA IGUALADA PROGRESIÓN REPES";
-  if (weightSame && repsSame) return "MANTENIDO";
-  if (weightDown || repsDown) return "REGRESIÓN";
-
-  return "PROGRESIÓN";
-}
-
-function getProgressColor(progress: string): string {
-  if (progress.includes("PROGRESIÓN") && !progress.includes("REGRESIÓN"))
-    return "text-[#00C853]";
-  if (progress.includes("REGRESIÓN")) return "text-[#FF9100]";
-  if (progress === "MANTENIDO") return "text-[#8B8BA3]";
-  if (progress === "PRIMERA SESIÓN") return "text-[#00E5FF]";
-  return "text-[#8B8BA3]";
-}
-
-/* ────────────────────────────────────────────
-   Main Page
+   Main Page (orchestrator)
    ──────────────────────────────────────────── */
 
 export default function ClientRoutinePage() {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [routine, setRoutine] = useState<RoutineRaw | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [previousLogs, setPreviousLogs] = useState<PreviousLog[]>([]);
+  const {
+    state,
+    dispatch,
+    parsedExercises,
+    trainingDays,
+    dayExercises,
+    dayLabel,
+    isSessionCompleted,
+    weekCount,
+    getPreviousLog,
+    formatPrevious,
+    startTracking,
+    updateSet,
+    handleSaveSession,
+  } = useClientRoutine();
 
-  // UI state
-  const [activeWeek, setActiveWeek] = useState(1);
-  const [activeDay, setActiveDay] = useState<string | null>(null);
-  const [isTracking, setIsTracking] = useState(false);
+  const {
+    loading,
+    error,
+    routine,
+    activeWeek,
+    activeDay,
+    isTracking,
+    sessionInputs,
+    clientNotes,
+    rpeGlobal,
+    saving,
+    inProgressSession,
+  } = state;
 
-  // Tracking state
-  const [sessionInputs, setSessionInputs] = useState<Record<string, SetInput[]>>({});
-  const [clientNotes, setClientNotes] = useState<Record<string, string>>({});
-  const [rpeGlobal, setRpeGlobal] = useState(7);
-  const [saving, setSaving] = useState(false);
-  const [inProgressSession, setInProgressSession] = useState<{ id: string; routine_id: string; day_label: string; week_number: number } | null>(null);
-  // Set of "day_label::week_number" keys for completed sessions in this routine
-  const [completedSessions, setCompletedSessions] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const supabase = createClient();
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-        if (authError || !user) {
-          setError("No se pudo obtener la sesión.");
-          setLoading(false);
-          return;
-        }
-
-        setUserId(user.id);
-
-        // Check for in_progress session
-        const { data: pendingSession, error: pendingErr } = await supabase
-          .from("workout_sessions")
-          .select("id, routine_id, day_label, week_number")
-          .eq("client_id", user.id)
-          .eq("status", "in_progress")
-          .eq("mode", "active")
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (pendingErr) {
-          console.error("[ClientRoutine] Error al buscar sesión pendiente:", pendingErr);
-        }
-
-        if (pendingSession) {
-          setInProgressSession(pendingSession as { id: string; routine_id: string; day_label: string; week_number: number });
-        }
-
-        // Load active routine (try client_id first, then user_id for compat)
-        let routineData = null;
-        const { data: r1, error: e1 } = await supabase
-          .from("user_routines")
-          .select("*")
-          .eq("client_id", user.id)
-          .eq("is_active", true)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (!e1 && r1) {
-          routineData = r1;
-        } else {
-          const { data: r2, error: e2 } = await supabase
-            .from("user_routines")
-            .select("*")
-            .eq("user_id", user.id)
-            .eq("is_active", true)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          if (e2) {
-            console.error("[ClientRoutine] Error al buscar rutina (user_id):", e2);
-          }
-          if (r2) routineData = r2;
-        }
-
-        if (routineData) {
-          setRoutine(routineData as RoutineRaw);
-
-          // Load completed sessions for this routine (to block re-doing same day+week)
-          const { data: doneSessions, error: doneErr } = await supabase
-            .from("workout_sessions")
-            .select("day_label, week_number")
-            .eq("client_id", user.id)
-            .eq("routine_id", routineData.id)
-            .eq("status", "completed");
-
-          if (doneErr) {
-            console.error("[ClientRoutine] Error al cargar sesiones completadas:", doneErr);
-          }
-
-          if (doneSessions) {
-            const keys = new Set(doneSessions.map((s: any) => `${s.day_label}::${s.week_number}`));
-            setCompletedSessions(keys);
-          }
-
-          // Load previous weight logs for comparison
-          const { data: logs, error: logsErr } = await supabase
-            .from("weight_log")
-            .select("exercise_name, session_date, sets_data")
-            .eq("client_id", user.id)
-            .order("session_date", { ascending: false })
-            .limit(200);
-
-          if (logsErr) {
-            console.error("[ClientRoutine] Error al cargar historial de pesos:", logsErr);
-          }
-
-          if (logs) {
-            setPreviousLogs(logs as PreviousLog[]);
-          }
-        }
-      } catch {
-        setError("Error inesperado.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
-
-  // Parse exercises from routine (handle both formats)
-  const parsedExercises = useMemo((): ExerciseData[] => {
-    if (!routine) return [];
-
-    // Format 1: flat exercises array with day_of_week
-    if (routine.exercises && Array.isArray(routine.exercises) && routine.exercises.length > 0) {
-      return routine.exercises;
-    }
-
-    // Format 2: days array with nested exercises
-    if (routine.days && Array.isArray(routine.days)) {
-      return routine.days.flatMap((day: DayData) =>
-        (day.exercises || []).map((ex: ExerciseData) => ({
-          ...ex,
-          day_of_week: ex.day_of_week || day.day,
-          day_label: ex.day_label || day.label,
-        }))
-      );
-    }
-
-    return [];
-  }, [routine]);
-
-  // Get unique training days
-  const trainingDays = useMemo(() => {
-    const days = [...new Set(parsedExercises.map((ex) => ex.day_of_week))];
-    return days.sort(
-      (a, b) => DAY_ORDER.indexOf(a) - DAY_ORDER.indexOf(b)
-    );
-  }, [parsedExercises]);
-
-  // Set initial active day
-  useEffect(() => {
-    if (trainingDays.length > 0 && !activeDay) {
-      setActiveDay(trainingDays[0]);
-    }
-  }, [trainingDays, activeDay]);
-
-  // Get exercises for current day
-  const dayExercises = useMemo(() => {
-    if (!activeDay) return [];
-    return parsedExercises
-      .filter((ex) => ex.day_of_week === activeDay)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  }, [parsedExercises, activeDay]);
-
-  // Get day label
-  const dayLabel = useMemo(() => {
-    if (!activeDay) return "";
-    const ex = parsedExercises.find((e) => e.day_of_week === activeDay);
-    return ex?.day_label || DAY_LABELS[activeDay] || activeDay;
-  }, [parsedExercises, activeDay]);
-
-  // Check if this specific day+week session is already completed
-  const isSessionCompleted = useMemo(() => {
-    if (!dayLabel || !activeWeek) return false;
-    return completedSessions.has(`${dayLabel}::${activeWeek}`);
-  }, [completedSessions, dayLabel, activeWeek]);
-
-  // Get previous log for an exercise
-  const getPreviousLog = (exerciseName: string): PreviousSet[] => {
-    const log = previousLogs.find(
-      (l) => l.exercise_name === exerciseName
-    );
-    if (!log || !log.sets_data) return [];
-    return (log.sets_data as PreviousSet[]) || [];
-  };
-
-  // Format previous as "C×R" string
-  const formatPrevious = (exerciseName: string): string => {
-    const prev = getPreviousLog(exerciseName);
-    if (prev.length === 0) return "";
-    const mainSets = prev.filter((s) => s.type !== "rest_pause");
-    const firstWeight = mainSets[0]?.weight_kg ?? 0;
-    const firstReps = mainSets[0]?.reps_done ?? 0;
-    return `${firstWeight}x${firstReps}`;
-  };
-
-  // Start tracking session
-  const startTracking = () => {
-    const inputs: Record<string, SetInput[]> = {};
-
-    dayExercises.forEach((ex) => {
-      const mainSets = ex.sets || 3;
-      const rpSets = ex.rest_pause_sets || 0;
-      const prevLog = getPreviousLog(ex.name);
-      const weight = ex.target_weight ?? ex.weight_kg ?? 0;
-
-      const sets: SetInput[] = [];
-      for (let i = 0; i < mainSets; i++) {
-        sets.push({
-          weight_kg: prevLog[i]?.weight_kg
-            ? String(prevLog[i].weight_kg)
-            : weight
-            ? String(weight)
-            : "",
-          reps_done: "",
-          type: "main",
-        });
-      }
-      for (let i = 0; i < rpSets; i++) {
-        const rpIdx = mainSets + i;
-        sets.push({
-          weight_kg: prevLog[rpIdx]?.weight_kg
-            ? String(prevLog[rpIdx].weight_kg)
-            : weight
-            ? String(weight)
-            : "",
-          reps_done: "",
-          type: "rest_pause",
-        });
-      }
-
-      inputs[ex.name] = sets;
-    });
-
-    setSessionInputs(inputs);
-    setClientNotes({});
-    setIsTracking(true);
-  };
-
-  const updateSet = (
-    exerciseName: string,
-    setIndex: number,
-    field: "weight_kg" | "reps_done",
-    value: string
-  ) => {
-    setSessionInputs((prev) => {
-      const updated = { ...prev };
-      const sets = [...(updated[exerciseName] || [])];
-      sets[setIndex] = { ...sets[setIndex], [field]: value };
-      updated[exerciseName] = sets;
-      return updated;
-    });
-  };
-
-  const handleSaveSession = async () => {
-    if (!userId || !activeDay) return;
-    setSaving(true);
-
-    try {
-      const supabase = createClient();
-      const today = new Date().toISOString().split("T")[0];
-
-      // Create workout_session first
-      const { data: session, error: sessionError } = await supabase
-        .from("workout_sessions")
-        .insert({
-          client_id: userId,
-          routine_id: routine?.id,
-          trainer_id: routine ? (routine as any).trainer_id : null,
-          session_date: today,
-          day_label: dayLabel,
-          week_number: activeWeek,
-          mode: "registration",
-          status: "completed",
-          completed_at: new Date().toISOString(),
-        })
-        .select("id")
-        .single();
-
-      if (sessionError) {
-        console.error("[ClientRoutine] Error al crear sesión:", sessionError);
-        toast.error("Error al crear la sesión de entrenamiento");
-        setSaving(false);
-        return;
-      }
-
-      const currentSessionId = session?.id || null;
-
-      const weightLogInserts = dayExercises.map((ex) => {
-        const sets = sessionInputs[ex.name] || [];
-        const setsData = sets.map((s, i) => ({
-          set_number: i + 1,
-          weight_kg: Number(s.weight_kg) || 0,
-          reps_done: Number(s.reps_done) || 0,
-          type: s.type,
-        }));
-
-        const totalVolume = setsData.reduce(
-          (sum, s) => sum + s.weight_kg * s.reps_done,
-          0
-        );
-
-        return {
-          client_id: userId,
-          exercise_id: ex.exercise_id,
-          exercise_name: ex.name,
-          session_date: today,
-          session_id: currentSessionId,
-          sets_data: setsData,
-          total_volume_kg: totalVolume,
-        };
-      });
-
-      const { error: weightError } = await supabase
-        .from("weight_log")
-        .insert(weightLogInserts);
-
-      if (weightError) {
-        toast.error("Error al guardar la sesión");
-        setSaving(false);
-        return;
-      }
-
-      // Update session aggregates
-      if (currentSessionId) {
-        const totalVol = weightLogInserts.reduce((s, w) => s + w.total_volume_kg, 0);
-        const totalSets = weightLogInserts.reduce((s, w) => s + (w.sets_data?.length || 0), 0);
-        const { error: updateErr } = await supabase.from("workout_sessions").update({
-          total_volume_kg: totalVol,
-          total_sets: totalSets,
-          total_exercises: dayExercises.length,
-          rpe_session: rpeGlobal,
-        }).eq("id", currentSessionId);
-        if (updateErr) {
-          console.error("[ClientRoutine] Error al actualizar agregados de sesión:", updateErr);
-        }
-      }
-
-      // Calendar entry
-      const { data: existingCal } = await supabase
-        .from("user_calendar")
-        .select("id")
-        .eq("user_id", userId)
-        .eq("date", today)
-        .eq("activity_type", "workout")
-        .maybeSingle();
-
-      if (existingCal) {
-        const { error: calUpErr } = await supabase
-          .from("user_calendar")
-          .update({ completed: true, rpe: rpeGlobal })
-          .eq("id", existingCal.id);
-        if (calUpErr) {
-          console.error("[ClientRoutine] Error al actualizar calendario:", calUpErr);
-        }
-      } else {
-        const { error: calInsErr } = await supabase.from("user_calendar").insert({
-          user_id: userId,
-          date: today,
-          activity_type: "workout",
-          activity_details: {
-            nombre: routine?.title || "Entrenamiento",
-            dia: activeDay,
-            day_label: dayLabel,
-          },
-          completed: true,
-          rpe: rpeGlobal,
-        });
-        if (calInsErr) {
-          console.error("[ClientRoutine] Error al crear entrada de calendario:", calInsErr);
-        }
-      }
-
-      // RPE history
-      const totalVol = weightLogInserts.reduce(
-        (sum, w) => sum + w.total_volume_kg,
-        0
-      );
-      const { data: calEntry } = await supabase
-        .from("user_calendar")
-        .select("id")
-        .eq("user_id", userId)
-        .eq("date", today)
-        .eq("activity_type", "workout")
-        .single();
-
-      if (calEntry) {
-        const { error: rpeErr } = await supabase.from("rpe_history").insert({
-          client_id: userId,
-          calendar_id: calEntry.id,
-          rpe_global: rpeGlobal,
-          total_volume_kg: totalVol,
-        });
-        if (rpeErr) {
-          console.error("[ClientRoutine] Error al guardar historial RPE:", rpeErr);
-        }
-      }
-
-      toast.success("Sesión guardada correctamente");
-      setIsTracking(false);
-
-      // Reload previous logs
-      const { data: newLogs, error: reloadErr } = await supabase
-        .from("weight_log")
-        .select("exercise_name, session_date, sets_data")
-        .eq("client_id", userId)
-        .order("session_date", { ascending: false })
-        .limit(200);
-      if (reloadErr) {
-        console.error("[ClientRoutine] Error al recargar historial:", reloadErr);
-      }
-      if (newLogs) setPreviousLogs(newLogs as PreviousLog[]);
-    } catch {
-      toast.error("Error inesperado");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Week count
-  const weekCount = routine
-    ? (routine.total_weeks ?? Math.max(1, (routine.duration_months || 1) * 4))
-    : 0;
-
+  /* ── Loading ── */
   if (loading) {
     return (
       <div className="flex items-center justify-center py-32">
@@ -645,6 +48,7 @@ export default function ClientRoutinePage() {
     );
   }
 
+  /* ── Error ── */
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-32">
@@ -655,6 +59,7 @@ export default function ClientRoutinePage() {
     );
   }
 
+  /* ── No routine ── */
   if (!routine) {
     return (
       <div className="space-y-6">
@@ -682,7 +87,7 @@ export default function ClientRoutinePage() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => setIsTracking(false)}
+            onClick={() => dispatch({ type: "STOP_TRACKING" })}
             className="flex h-9 w-9 items-center justify-center rounded-xl text-[#8B8BA3] transition-colors hover:bg-white/[0.04] hover:text-white"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -690,9 +95,7 @@ export default function ClientRoutinePage() {
             </svg>
           </button>
           <div>
-            <h1 className="text-lg font-bold text-white">
-              {dayLabel}
-            </h1>
+            <h1 className="text-lg font-bold text-white">{dayLabel}</h1>
             <p className="text-xs text-[#5A5A72]">
               Sem {activeWeek} · {getDateForDay(routine.sent_at, activeWeek, activeDay)}
             </p>
@@ -707,7 +110,6 @@ export default function ClientRoutinePage() {
           const notes = ex.coach_notes || ex.trainer_notes || ex.technique_notes || "";
           const progressionRule = ex.progression_rule || "";
 
-          // Calculate progress for this exercise
           const currentData = sets
             .filter((s) => s.reps_done)
             .map((s) => ({
@@ -720,7 +122,7 @@ export default function ClientRoutinePage() {
           }));
           const progress =
             currentData.length > 0
-              ? calculateProgress(currentData, prevData)
+              ? calculateProgressLabel(currentData, prevData)
               : "";
 
           return (
@@ -744,21 +146,15 @@ export default function ClientRoutinePage() {
                   </span>
                 </div>
 
-                {/* Ref info row */}
                 <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
                   {progressionRule && (
-                    <span className="text-[10px] text-[#FF9100]">
-                      {progressionRule}
-                    </span>
+                    <span className="text-[10px] text-[#FF9100]">{progressionRule}</span>
                   )}
                   {notes && (
-                    <span className="text-[10px] text-[#7C3AED]">
-                      {notes}
-                    </span>
+                    <span className="text-[10px] text-[#7C3AED]">{notes}</span>
                   )}
                 </div>
 
-                {/* Previous & Progress */}
                 <div className="mt-2 flex items-center gap-3">
                   {formatPrevious(ex.name) && (
                     <span className="text-[10px] text-[#5A5A72]">
@@ -766,11 +162,7 @@ export default function ClientRoutinePage() {
                     </span>
                   )}
                   {progress && (
-                    <span
-                      className={`text-[10px] font-bold ${getProgressColor(
-                        progress
-                      )}`}
-                    >
+                    <span className={`text-[10px] font-bold ${getProgressColor(progress)}`}>
                       {progress}
                     </span>
                   )}
@@ -779,32 +171,20 @@ export default function ClientRoutinePage() {
 
               {/* Sets table */}
               <div className="px-4 py-3">
-                {/* Table header */}
                 <div className="mb-2 grid grid-cols-[2.5rem_1fr_1fr] gap-2">
-                  <span className="text-center text-[10px] font-medium uppercase tracking-wider text-[#5A5A72]">
-                    Serie
-                  </span>
-                  <span className="text-center text-[10px] font-medium uppercase tracking-wider text-[#5A5A72]">
-                    C (kg)
-                  </span>
-                  <span className="text-center text-[10px] font-medium uppercase tracking-wider text-[#5A5A72]">
-                    R (reps)
-                  </span>
+                  <span className="text-center text-[10px] font-medium uppercase tracking-wider text-[#5A5A72]">Serie</span>
+                  <span className="text-center text-[10px] font-medium uppercase tracking-wider text-[#5A5A72]">C (kg)</span>
+                  <span className="text-center text-[10px] font-medium uppercase tracking-wider text-[#5A5A72]">R (reps)</span>
                 </div>
 
-                {/* Set rows */}
                 {sets.map((set, setIdx) => {
                   const prevSet = prevSets[setIdx];
                   const isRP = set.type === "rest_pause";
-
                   return (
                     <div
                       key={setIdx}
-                      className={`mb-1.5 grid grid-cols-[2.5rem_1fr_1fr] gap-2 ${
-                        isRP ? "opacity-90" : ""
-                      }`}
+                      className={`mb-1.5 grid grid-cols-[2.5rem_1fr_1fr] gap-2 ${isRP ? "opacity-90" : ""}`}
                     >
-                      {/* Set number */}
                       <div
                         className={`flex h-9 items-center justify-center rounded-lg text-xs font-bold ${
                           isRP
@@ -814,33 +194,23 @@ export default function ClientRoutinePage() {
                       >
                         {isRP ? "RP" : setIdx + 1}
                       </div>
-
-                      {/* Weight input with ghost */}
                       <div className="relative">
                         <input
                           type="number"
                           inputMode="decimal"
                           step="0.5"
                           value={set.weight_kg}
-                          onChange={(e) =>
-                            updateSet(ex.name, setIdx, "weight_kg", e.target.value)
-                          }
-                          placeholder={
-                            prevSet ? String(prevSet.weight_kg) : "0"
-                          }
+                          onChange={(e) => updateSet(ex.name, setIdx, "weight_kg", e.target.value)}
+                          placeholder={prevSet ? String(prevSet.weight_kg) : "0"}
                           className="h-9 w-full rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 text-center text-sm text-white placeholder:text-[#5A5A72]/50 outline-none transition-colors focus:border-[#00E5FF]/50"
                         />
                       </div>
-
-                      {/* Reps input with ghost */}
                       <div className="relative">
                         <input
                           type="number"
                           inputMode="numeric"
                           value={set.reps_done}
-                          onChange={(e) =>
-                            updateSet(ex.name, setIdx, "reps_done", e.target.value)
-                          }
+                          onChange={(e) => updateSet(ex.name, setIdx, "reps_done", e.target.value)}
                           placeholder={
                             prevSet
                               ? String(prevSet.reps_done)
@@ -860,10 +230,11 @@ export default function ClientRoutinePage() {
                     placeholder="Notas / sensaciones..."
                     value={clientNotes[ex.name] || ""}
                     onChange={(e) =>
-                      setClientNotes((prev) => ({
-                        ...prev,
-                        [ex.name]: e.target.value,
-                      }))
+                      dispatch({
+                        type: "SET_CLIENT_NOTE",
+                        exerciseName: ex.name,
+                        note: e.target.value,
+                      })
                     }
                     className="h-8 w-full rounded-lg border border-white/[0.06] bg-transparent px-3 text-xs text-[#8B8BA3] placeholder:text-[#5A5A72]/50 outline-none transition-colors focus:border-[#00E5FF]/30"
                   />
@@ -876,9 +247,7 @@ export default function ClientRoutinePage() {
         {/* RPE */}
         <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-4">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-medium uppercase tracking-wider text-[#5A5A72]">
-              RPE Global
-            </p>
+            <p className="text-xs font-medium uppercase tracking-wider text-[#5A5A72]">RPE Global</p>
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#00E5FF]/10 text-sm font-bold text-[#00E5FF]">
               {rpeGlobal}
             </span>
@@ -888,7 +257,7 @@ export default function ClientRoutinePage() {
             min={1}
             max={10}
             value={rpeGlobal}
-            onChange={(e) => setRpeGlobal(Number(e.target.value))}
+            onChange={(e) => dispatch({ type: "SET_RPE", value: Number(e.target.value) })}
             className="w-full accent-[#00E5FF]"
           />
           <div className="mt-1 flex justify-between text-[9px] text-[#5A5A72]">
@@ -928,7 +297,10 @@ export default function ClientRoutinePage() {
           <span className="rounded-md bg-[#00E5FF]/10 px-2 py-0.5 font-medium text-[#00E5FF]">
             {routine.goal === "fuerza" ? "Fuerza" : "Hipertrofia"}
           </span>
-          <span>{routine.duration_months} mes{(routine.duration_months || 1) > 1 ? "es" : ""}</span>
+          <span>
+            {routine.duration_months} mes
+            {(routine.duration_months || 1) > 1 ? "es" : ""}
+          </span>
         </div>
       </div>
 
@@ -940,7 +312,7 @@ export default function ClientRoutinePage() {
               <button
                 key={week}
                 type="button"
-                onClick={() => setActiveWeek(week)}
+                onClick={() => dispatch({ type: "SET_ACTIVE_WEEK", week })}
                 className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
                   activeWeek === week
                     ? "bg-[#00E5FF] text-[#0A0A0F]"
@@ -966,7 +338,7 @@ export default function ClientRoutinePage() {
             <button
               key={day}
               type="button"
-              onClick={() => setActiveDay(day)}
+              onClick={() => dispatch({ type: "SET_ACTIVE_DAY", day })}
               className={`flex flex-col items-center rounded-xl px-4 py-2 transition-all ${
                 activeDay === day
                   ? "bg-[#00E5FF]/10 ring-1 ring-[#00E5FF]/30"
@@ -981,9 +353,7 @@ export default function ClientRoutinePage() {
                 {DAY_SHORT[day] || day.slice(0, 1).toUpperCase()}
               </span>
               {dateStr && (
-                <span className="mt-0.5 text-[9px] text-[#5A5A72]">
-                  {dateStr}
-                </span>
+                <span className="mt-0.5 text-[9px] text-[#5A5A72]">{dateStr}</span>
               )}
               {label && (
                 <span
@@ -1007,143 +377,15 @@ export default function ClientRoutinePage() {
       ) : (
         <>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {dayExercises.map((ex, idx) => {
-              // Resolve effective config for the active week
-              const wk = ex.weekly_config?.[activeWeek];
-              const effectiveMode = ex.mode ?? "equal";
-              const effectiveSets = wk?.sets ?? ex.sets;
-              const prevStr = formatPrevious(ex.name);
-              const weekNotes = wk?.coach_notes || "";
-              const baseNotes =
-                ex.coach_notes || ex.trainer_notes || ex.technique_notes || "";
-              const notes = weekNotes || baseNotes;
-              const progressionRule = ex.progression_rule || "";
-
-              // Build per-set rows
-              let setRows: { idx: number; repsMin: number; repsMax: number; rir: number; weight: number | null; rest: number }[] = [];
-
-              if (effectiveMode === "different") {
-                // Different mode: use sets_detail from weekly_config or base sets_config
-                const detail = wk?.sets_detail ?? ex.sets_config ?? [];
-                setRows = detail.map((s, i) => ({
-                  idx: i + 1,
-                  repsMin: s.reps_min,
-                  repsMax: s.reps_max,
-                  rir: s.rir,
-                  weight: s.target_weight,
-                  rest: s.rest_s,
-                }));
-              } else {
-                // Equal mode: all sets share the same values
-                const rMin = wk?.reps_min ?? ex.reps_min;
-                const rMax = wk?.reps_max ?? ex.reps_max;
-                const rir = wk?.rir ?? ex.rir;
-                const weight = wk?.target_weight ?? ex.target_weight ?? ex.weight_kg ?? null;
-                const rest = wk?.rest_s ?? ex.rest_s;
-                setRows = Array.from({ length: effectiveSets }, (_, i) => ({
-                  idx: i + 1,
-                  repsMin: rMin,
-                  repsMax: rMax,
-                  rir,
-                  weight,
-                  rest,
-                }));
-              }
-
-              // Scheme label
-              const scheme = setRows.length > 0
-                ? (() => {
-                    const allReps = setRows.flatMap(s => [s.repsMin, s.repsMax]);
-                    const minR = Math.min(...allReps);
-                    const maxR = Math.max(...allReps);
-                    return minR === maxR
-                      ? `${setRows.length}x${minR}`
-                      : `${setRows.length}x${minR}-${maxR}`;
-                  })()
-                : (ex.scheme || `${ex.sets}x${ex.reps_min}-${ex.reps_max}`);
-
-              return (
-                <div
-                  key={`${ex.exercise_id}-${idx}`}
-                  className="rounded-xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-3 py-2.5"
-                >
-                  <div className="flex items-center justify-between gap-1">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-[#00E5FF]/10 text-[9px] font-bold text-[#00E5FF]">
-                        {idx + 1}
-                      </span>
-                      <p className="truncate text-xs font-semibold text-white">
-                        {ex.name}
-                      </p>
-                    </div>
-                    <span className="shrink-0 rounded bg-white/[0.06] px-1.5 py-0.5 text-[9px] font-bold text-[#8B8BA3]">
-                      {scheme}
-                    </span>
-                  </div>
-
-                  {/* Per-set breakdown */}
-                  <div className="mt-1.5 space-y-0.5">
-                    {setRows.map((s) => (
-                      <div
-                        key={s.idx}
-                        className="flex items-center gap-x-2 text-[10px] text-[#5A5A72]"
-                      >
-                        <span className="w-[26px] shrink-0 text-[9px] font-bold text-[#8B8BA3]">
-                          S{s.idx}
-                        </span>
-                        <span>
-                          {s.repsMin === s.repsMax
-                            ? `${s.repsMin} reps`
-                            : `${s.repsMin}-${s.repsMax} reps`}
-                        </span>
-                        <span>RIR {s.rir}</span>
-                        {s.weight != null && s.weight > 0 && (
-                          <span>{s.weight}kg</span>
-                        )}
-                        <span>{s.rest}s</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Previous session */}
-                  {prevStr && (
-                    <div className="mt-1 text-[10px] text-[#8B8BA3]">
-                      Ant: {prevStr}
-                    </div>
-                  )}
-
-                  {/* Notes */}
-                  {(notes || progressionRule) && (
-                    <div className="mt-1 space-y-0.5">
-                      {progressionRule && (
-                        <p className="truncate text-[9px] text-[#FF9100]">
-                          {progressionRule}
-                        </p>
-                      )}
-                      {notes && (
-                        <p className="truncate text-[9px] text-[#7C3AED]">
-                          {notes}
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  {ex.video_url && (
-                    <a
-                      href={ex.video_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-1 inline-flex items-center gap-1 text-[9px] font-medium text-[#00E5FF] transition-colors hover:text-[#00E5FF]/80"
-                    >
-                      <svg className="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                      Vídeo
-                    </a>
-                  )}
-                </div>
-              );
-            })}
+            {dayExercises.map((ex, idx) => (
+              <ExerciseCard
+                key={`${ex.exercise_id}-${idx}`}
+                ex={ex}
+                idx={idx}
+                activeWeek={activeWeek}
+                formatPrevious={formatPrevious}
+              />
+            ))}
           </div>
 
           {/* Resume in-progress session */}
@@ -1174,18 +416,8 @@ export default function ClientRoutinePage() {
                 onClick={startTracking}
                 className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl py-3.5 text-sm font-semibold text-white transition-all hover:bg-white/[0.04]"
               >
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 4.5v15m7.5-7.5h-15"
-                  />
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
                 Registrar sesión
               </button>
@@ -1201,6 +433,150 @@ export default function ClientRoutinePage() {
             </div>
           )}
         </>
+      )}
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────
+   Exercise Card (overview mode)
+   ──────────────────────────────────────────── */
+
+function ExerciseCard({
+  ex,
+  idx,
+  activeWeek,
+  formatPrevious,
+}: {
+  ex: ExerciseData;
+  idx: number;
+  activeWeek: number;
+  formatPrevious: (name: string) => string;
+}) {
+  const wk = ex.weekly_config?.[activeWeek];
+  const effectiveMode = ex.mode ?? "equal";
+  const effectiveSets = wk?.sets ?? ex.sets;
+  const prevStr = formatPrevious(ex.name);
+  const weekNotes = wk?.coach_notes || "";
+  const baseNotes =
+    ex.coach_notes || ex.trainer_notes || ex.technique_notes || "";
+  const notes = weekNotes || baseNotes;
+  const progressionRule = ex.progression_rule || "";
+
+  // Build per-set rows
+  let setRows: {
+    idx: number;
+    repsMin: number;
+    repsMax: number;
+    rir: number;
+    weight: number | null;
+    rest: number;
+  }[] = [];
+
+  if (effectiveMode === "different") {
+    const detail = wk?.sets_detail ?? ex.sets_config ?? [];
+    setRows = detail.map((s, i) => ({
+      idx: i + 1,
+      repsMin: s.reps_min,
+      repsMax: s.reps_max,
+      rir: s.rir,
+      weight: s.target_weight,
+      rest: s.rest_s,
+    }));
+  } else {
+    const rMin = wk?.reps_min ?? ex.reps_min;
+    const rMax = wk?.reps_max ?? ex.reps_max;
+    const rir = wk?.rir ?? ex.rir;
+    const weight = wk?.target_weight ?? ex.target_weight ?? ex.weight_kg ?? null;
+    const rest = wk?.rest_s ?? ex.rest_s;
+    setRows = Array.from({ length: effectiveSets }, (_, i) => ({
+      idx: i + 1,
+      repsMin: rMin,
+      repsMax: rMax,
+      rir,
+      weight,
+      rest,
+    }));
+  }
+
+  // Scheme label
+  const scheme =
+    setRows.length > 0
+      ? (() => {
+          const allReps = setRows.flatMap((s) => [s.repsMin, s.repsMax]);
+          const minR = Math.min(...allReps);
+          const maxR = Math.max(...allReps);
+          return minR === maxR
+            ? `${setRows.length}x${minR}`
+            : `${setRows.length}x${minR}-${maxR}`;
+        })()
+      : ex.scheme || `${ex.sets}x${ex.reps_min}-${ex.reps_max}`;
+
+  return (
+    <div className="rounded-xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-3 py-2.5">
+      <div className="flex items-center justify-between gap-1">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-[#00E5FF]/10 text-[9px] font-bold text-[#00E5FF]">
+            {idx + 1}
+          </span>
+          <p className="truncate text-xs font-semibold text-white">{ex.name}</p>
+        </div>
+        <span className="shrink-0 rounded bg-white/[0.06] px-1.5 py-0.5 text-[9px] font-bold text-[#8B8BA3]">
+          {scheme}
+        </span>
+      </div>
+
+      {/* Per-set breakdown */}
+      <div className="mt-1.5 space-y-0.5">
+        {setRows.map((s) => (
+          <div
+            key={s.idx}
+            className="flex items-center gap-x-2 text-[10px] text-[#5A5A72]"
+          >
+            <span className="w-[26px] shrink-0 text-[9px] font-bold text-[#8B8BA3]">
+              S{s.idx}
+            </span>
+            <span>
+              {s.repsMin === s.repsMax
+                ? `${s.repsMin} reps`
+                : `${s.repsMin}-${s.repsMax} reps`}
+            </span>
+            <span>RIR {s.rir}</span>
+            {s.weight != null && s.weight > 0 && <span>{s.weight}kg</span>}
+            <span>{s.rest}s</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Previous session */}
+      {prevStr && (
+        <div className="mt-1 text-[10px] text-[#8B8BA3]">Ant: {prevStr}</div>
+      )}
+
+      {/* Notes */}
+      {(notes || progressionRule) && (
+        <div className="mt-1 space-y-0.5">
+          {progressionRule && (
+            <p className="truncate text-[9px] text-[#FF9100]">{progressionRule}</p>
+          )}
+          {notes && (
+            <p className="truncate text-[9px] text-[#7C3AED]">{notes}</p>
+          )}
+        </div>
+      )}
+
+      {ex.video_url && (
+        <a
+          href={ex.video_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-1 inline-flex items-center gap-1 text-[9px] font-medium text-[#00E5FF] transition-colors hover:text-[#00E5FF]/80"
+        >
+          <svg className="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+          Vídeo
+        </a>
       )}
     </div>
   );
