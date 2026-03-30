@@ -13,6 +13,7 @@ import {
   type Supplement,
 } from "./useNutritionPage";
 import { DarkSelect } from "@/components/ui/DarkSelect";
+import { DarkMultiSelect } from "@/components/ui/DarkMultiSelect";
 
 /* ────────────────────────────────────────────
    Constants
@@ -1109,10 +1110,9 @@ function FoodLibraryTab({ n }: { n: NutritionHook }) {
         ))}
       </div>
 
-      {/* Add/Edit form */}
       {state.libShowForm && (
-        <div className="relative overflow-hidden rounded-[18px] border border-[#00C853]/20 bg-[#00C853]/5 p-6 space-y-4">
-          <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(90deg, #00C853, transparent)" }} />
+        <div className="relative rounded-[18px] border border-[#00C853]/20 bg-[#00C853]/5 p-6 space-y-4">
+          <div className="absolute top-0 left-0 right-0 h-[2px] overflow-hidden rounded-t-[18px]" style={{ background: "linear-gradient(90deg, #00C853, transparent)" }} />
           <div className="flex items-center justify-between">
             <h3 className="text-[13px] font-semibold text-white">{state.libEditingFood ? "Editar alimento" : "Nuevo alimento"}</h3>
             <button type="button" onClick={() => dispatch({ type: "LIB_RESET_FORM" })} className="text-[#8B8BA3] hover:text-white">
@@ -1138,12 +1138,13 @@ function FoodLibraryTab({ n }: { n: NutritionHook }) {
                 <input type="number" value={val} onChange={(e) => dispatch({ type: act as never, value: e.target.value ? Number(e.target.value) : "" })} className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 text-[13px] text-white outline-none focus:border-[#00E5FF]/40 transition-colors" />
               </div>
             ))}
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 flex flex-col justify-end">
               <label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">Categoria</label>
-              <DarkSelect
+              <DarkMultiSelect
                 value={state.libFormCategory}
-                onChange={(val) => dispatch({ type: "LIB_SET_FORM_CATEGORY", value: val })}
+                onChange={(val: string[]) => dispatch({ type: "LIB_SET_FORM_CATEGORY", value: val })}
                 options={CATEGORIES.filter((c) => c !== "Todos").map((cat) => ({ value: cat, label: cat }))}
+                placeholder="Seleccionar..."
               />
             </div>
           </div>
@@ -1181,7 +1182,7 @@ function FoodLibraryTab({ n }: { n: NutritionHook }) {
                 <div className="col-span-1"><p className="text-[13px] text-[#E8E8ED]">{food.carbs}g</p></div>
                 <div className="col-span-1"><p className="text-[13px] text-[#E8E8ED]">{food.fat}g</p></div>
                 <div className="col-span-1"><p className="text-[13px] text-[#E8E8ED]">{food.fiber}g</p></div>
-                <div className="col-span-1"><p className="text-[11px] text-[#8B8BA3]">{food.category}</p></div>
+                <div className="col-span-1"><p className="text-[11px] text-[#8B8BA3]">{Array.isArray(food.category) ? food.category.join(", ") : food.category}</p></div>
                 <div className="col-span-1">
                   {isOwn
                     ? <span className="inline-flex rounded-full border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2.5 py-1 text-[10px] font-bold text-[#7C3AED]">Propio</span>

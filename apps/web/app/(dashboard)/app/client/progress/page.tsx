@@ -63,7 +63,17 @@ export default function ProgressPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [newMetric, setNewMetric] = useState<NewMetric>({ ...EMPTY_METRIC });
   const [selectedChart, setSelectedChart] = useState<MetricKey>("body_weight_kg");
+  const [timeFilter, setTimeFilter] = useState<"all" | "1y" | "6m" | "3m" | "1m" | "1w">("all");
   const [userId, setUserId] = useState<string | null>(null);
+
+  const TIME_FILTERS: { value: "all" | "1y" | "6m" | "3m" | "1m" | "1w"; label: string }[] = [
+    { value: "all", label: "Histórico" },
+    { value: "1y", label: "1 año" },
+    { value: "6m", label: "6 meses" },
+    { value: "3m", label: "3 meses" },
+    { value: "1m", label: "1 mes" },
+    { value: "1w", label: "1 sem" },
+  ];
 
   useEffect(() => {
     const load = async () => {
@@ -134,13 +144,24 @@ export default function ProgressPage() {
 
   // Chart data for selected metric
   const chartData = useMemo(() => {
-    return metrics
-      .filter((m) => m[selectedChart] !== null && m[selectedChart] !== undefined)
-      .map((m) => ({
-        date: new Date(m.recorded_at).toLocaleDateString("es-ES", { day: "2-digit", month: "short" }),
-        value: m[selectedChart] as number,
-      }));
-  }, [metrics, selectedChart]);
+    let filteredMetrics = metrics.filter((m) => m[selectedChart] !== null && m[selectedChart] !== undefined);
+
+    if (timeFilter !== "all") {
+      const limitDate = new Date();
+      if (timeFilter === "1y") limitDate.setFullYear(limitDate.getFullYear() - 1);
+      else if (timeFilter === "6m") limitDate.setMonth(limitDate.getMonth() - 6);
+      else if (timeFilter === "3m") limitDate.setMonth(limitDate.getMonth() - 3);
+      else if (timeFilter === "1m") limitDate.setMonth(limitDate.getMonth() - 1);
+      else if (timeFilter === "1w") limitDate.setDate(limitDate.getDate() - 7);
+
+      filteredMetrics = filteredMetrics.filter((m) => new Date(m.recorded_at) >= limitDate);
+    }
+
+    return filteredMetrics.map((m) => ({
+      date: new Date(m.recorded_at).toLocaleDateString("es-ES", { day: "2-digit", month: "short" }),
+      value: m[selectedChart] as number,
+    }));
+  }, [metrics, selectedChart, timeFilter]);
 
   // Calculate chart bounds
   const chartMin = chartData.length > 0 ? Math.min(...chartData.map((d) => d.value)) : 0;
@@ -268,25 +289,43 @@ export default function ProgressPage() {
 
       {/* Chart */}
       <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-medium text-white">
-            {selectedConfig.label}
-            <span className="ml-1 text-[#8B8BA3]">({selectedConfig.unit})</span>
-          </h3>
-          {trend && (
-            <div
-              className={`flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium ${
-                trend.direction === "down"
-                  ? "bg-[#00C853]/10 text-[#00C853]"
-                  : trend.direction === "up"
-                  ? "bg-[#FF9100]/10 text-[#FF9100]"
-                  : "bg-white/[0.05] text-[#8B8BA3]"
-              }`}
-            >
-              {trend.direction === "down" ? "↓" : trend.direction === "up" ? "↑" : "→"}{" "}
-              {trend.diff} {selectedConfig.unit} ({trend.pct}%)
-            </div>
-          )}
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-3">
+            <h3 className="text-sm font-medium text-white flex items-center">
+              {selectedConfig.label}
+              <span className="ml-1 text-[#8B8BA3]">({selectedConfig.unit})</span>
+            </h3>
+            {trend && (
+              <div
+                className={`flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium ${
+                  trend.direction === "down"
+                    ? "bg-[#00C853]/10 text-[#00C853]"
+                    : trend.direction === "up"
+                    ? "bg-[#FF9100]/10 text-[#FF9100]"
+                    : "bg-white/[0.05] text-[#8B8BA3]"
+                }`}
+              >
+                {trend.direction === "down" ? "↓" : trend.direction === "up" ? "↑" : "→"}{" "}
+                {trend.diff} {selectedConfig.unit} ({trend.pct}%)
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1 rounded-xl border border-white/[0.06] bg-[#0A0A0F]/50 p-1 overflow-x-auto overflow-y-hidden no-scrollbar">
+            {TIME_FILTERS.map((tf) => (
+              <button
+                key={tf.value}
+                onClick={() => setTimeFilter(tf.value)}
+                className={`flex-shrink-0 rounded-lg px-3 py-1.5 text-[11px] font-medium transition-all ${
+                  timeFilter === tf.value
+                    ? "bg-white/[0.1] text-white shadow-sm"
+                    : "text-[#8B8BA3] hover:text-white hover:bg-white/[0.05]"
+                }`}
+              >
+                {tf.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {chartData.length < 2 ? (

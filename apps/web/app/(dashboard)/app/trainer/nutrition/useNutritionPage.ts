@@ -26,7 +26,7 @@ export interface FoodItem {
   carbs: number;
   fat: number;
   fiber: number;
-  category: string;
+  category: string[];
   is_global: boolean;
   created_at: string;
 }
@@ -282,7 +282,7 @@ export interface NutritionState {
   libFormCarbs: number | "";
   libFormFat: number | "";
   libFormFiber: number | "";
-  libFormCategory: string;
+  libFormCategory: string[];
 }
 
 const initialState: NutritionState = {
@@ -327,7 +327,7 @@ const initialState: NutritionState = {
   libFormCarbs: 0,
   libFormFat: 0,
   libFormFiber: 0,
-  libFormCategory: "Comida",
+  libFormCategory: ["Comida"],
 };
 
 /* ────────────────────────────────────────────
@@ -403,7 +403,7 @@ export type NutritionAction =
   | { type: "LIB_SET_FORM_CARBS"; value: number | "" }
   | { type: "LIB_SET_FORM_FAT"; value: number | "" }
   | { type: "LIB_SET_FORM_FIBER"; value: number | "" }
-  | { type: "LIB_SET_FORM_CATEGORY"; value: string }
+  | { type: "LIB_SET_FORM_CATEGORY"; value: string[] }
   | { type: "LIB_RESET_FORM" };
 
 /* ────────────────────────────────────────────
@@ -777,7 +777,7 @@ function nutritionReducer(state: NutritionState, action: NutritionAction): Nutri
         libFormCarbs: action.food.carbs,
         libFormFat: action.food.fat,
         libFormFiber: action.food.fiber,
-        libFormCategory: action.food.category,
+        libFormCategory: Array.isArray(action.food.category) ? action.food.category : [action.food.category],
         libShowForm: true,
       };
     case "LIB_SET_SAVING":
@@ -807,7 +807,7 @@ function nutritionReducer(state: NutritionState, action: NutritionAction): Nutri
         libFormCarbs: 0,
         libFormFat: 0,
         libFormFiber: 0,
-        libFormCategory: "Comida",
+        libFormCategory: ["Comida"],
         libEditingFood: null,
         libShowForm: false,
       };
@@ -951,9 +951,10 @@ export function useNutritionPage() {
   const filteredFoods = useMemo(() => {
     let result = state.foods;
     if (state.libActiveCategory !== "Todos") {
-      result = result.filter(
-        (f) => f.category.toLowerCase() === state.libActiveCategory.toLowerCase()
-      );
+      result = result.filter((f) => {
+        const cats = Array.isArray(f.category) ? f.category : [f.category];
+        return cats.some((c) => c?.toLowerCase() === state.libActiveCategory.toLowerCase());
+      });
     }
     if (state.libSearch.trim()) {
       const q = state.libSearch.toLowerCase();
