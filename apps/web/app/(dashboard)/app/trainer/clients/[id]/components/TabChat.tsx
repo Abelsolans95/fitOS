@@ -27,7 +27,7 @@ export function TabChat({
     const load = async () => {
       const { data, error: msgsError } = await supabase
         .from("messages")
-        .select("*")
+        .select("id,trainer_id,client_id,sender_id,content,created_at,read_at")
         .eq("trainer_id", trainerId)
         .eq("client_id", clientId)
         .order("created_at", { ascending: true })

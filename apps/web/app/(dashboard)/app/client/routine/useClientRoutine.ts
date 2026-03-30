@@ -259,7 +259,7 @@ export function useClientRoutine() {
             .maybeSingle(),
           supabase
             .from("user_routines")
-            .select("*")
+            .select("id,title,goal,duration_months,total_weeks,exercises,days,is_active,sent_at,created_at")
             .eq("client_id", user.id)
             .eq("is_active", true)
             .order("created_at", { ascending: false })
@@ -285,7 +285,7 @@ export function useClientRoutine() {
         } else {
           const { data: r2, error: e2 } = await supabase
             .from("user_routines")
-            .select("*")
+            .select("id,title,goal,duration_months,total_weeks,exercises,days,is_active,sent_at,created_at")
             .eq("user_id", user.id)
             .eq("is_active", true)
             .order("created_at", { ascending: false })

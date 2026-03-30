@@ -853,7 +853,7 @@ export function useNutritionPage() {
           .eq("status", "active"),
         supabase
           .from("trainer_food_library")
-          .select("*")
+          .select("id,name,kcal,protein,carbs,fat,fiber,is_global,trainer_id,category")
           .or(`trainer_id.eq.${user.id},is_global.eq.true`)
           .order("name"),
         supabase

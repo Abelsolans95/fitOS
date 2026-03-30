@@ -58,12 +58,12 @@ export async function getResolvedFoods(
   const [foodsRes, overridesRes] = await Promise.all([
     supabase
       .from("trainer_food_library")
-      .select("*")
+      .select("id,name,kcal,protein,carbs,fat,fiber,is_global,trainer_id")
       .or(`is_global.eq.true,trainer_id.eq.${trainerId}`)
       .order("name"),
     supabase
       .from("trainer_food_overrides")
-      .select("*")
+      .select("id,trainer_id,food_id,custom_name,custom_kcal,custom_protein,custom_carbs,custom_fat,custom_fiber,custom_notes,hidden")
       .eq("trainer_id", trainerId),
   ]);
 

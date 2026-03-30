@@ -258,7 +258,7 @@ export function useCommunityPage() {
       // Get or create community
       let { data: community, error } = await supabase
         .from("communities")
-        .select("*")
+        .select("id,coach_id,name,description,mode,is_active,created_at")
         .eq("coach_id", user.id)
         .single();
 
@@ -318,7 +318,7 @@ export function useCommunityPage() {
 
     const { data: posts, error } = await supabase
       .from("community_posts")
-      .select("*")
+      .select("id,community_id,author_id,title,content,image_url,is_pinned,created_at")
       .eq("community_id", communityId)
       .order("is_pinned", { ascending: false })
       .order("created_at", { ascending: false })
@@ -462,7 +462,7 @@ export function useCommunityPage() {
 
     const { data, error } = await supabase
       .from("community_comments")
-      .select("*")
+      .select("id,post_id,parent_id,author_id,content,created_at")
       .eq("post_id", postId)
       .order("created_at", { ascending: true });
 
