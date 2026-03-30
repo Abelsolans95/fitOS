@@ -1389,6 +1389,24 @@ DELETE FROM trainer_exercise_overrides WHERE hidden = true;
 
 ---
 
+**ERROR #55 — `active/utils.ts` no existía pese a ser importado en `client/routine/page.tsx`**
+- **Fecha:** 30/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/client/routine/page.tsx` (imports) + `active/utils.ts` (faltaba)
+- **Qué pasó:** Al refactorizar `page.tsx` con el hook `useClientRoutine`, el agente generó imports de `getDateForDay`, `calculateProgressLabel` y `getProgressColor` desde `"./active/utils"`. El archivo nunca fue creado, causando "module not found" en Vercel build.
+- **Solución aplicada:** Creado `apps/web/app/(dashboard)/app/client/routine/active/utils.ts` con las tres funciones puras.
+- **Regla:** Al escribir imports en un archivo refactorizado, verificar que los módulos destino existen. Si se crean imports de archivos nuevos, crear esos archivos en el mismo commit.
+
+---
+
+**ERROR #56 — `trainer/types.ts` no existía pese a ser re-exportado en `routines/types.ts`**
+- **Fecha:** 30/03/2026
+- **Archivo afectado:** `apps/web/app/(dashboard)/app/trainer/routines/types.ts:6`
+- **Qué pasó:** Como parte de la revisión de código, se añadió la línea `export type { ClientOption } from "@/app/(dashboard)/app/trainer/types"` en `routines/types.ts` para centralizar la interfaz compartida. Pero el archivo `trainer/types.ts` nunca fue creado → TS2307 en tiempo de build → Vercel fallaba con exit code 1.
+- **Solución aplicada:** Creado `apps/web/app/(dashboard)/app/trainer/types.ts` con la interfaz `ClientOption` (superset de todas las definiciones existentes: `client_id`, `full_name`, `email`, `food_preferences`).
+- **Regla:** Nunca añadir un re-export desde un módulo que no existe todavía. Si se refactoriza un import a un archivo centralizado, crear ese archivo en el mismo commit o antes.
+
+---
+
 ### Arquitectura de componentes — Buenas prácticas (desde 24/03/2026)
 
 **Patrón obligatorio para páginas con múltiples secciones (tabs, paneles, vistas):**
