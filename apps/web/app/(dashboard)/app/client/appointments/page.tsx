@@ -69,20 +69,22 @@ export default function ClientAppointmentsPage() {
       if (!user) { setLoading(false); return; }
       setClientId(user.id);
 
-      const { data: rel } = await supabase
+      const { data: rel, error: relErr } = await supabase
         .from("trainer_clients")
         .select("trainer_id")
         .eq("client_id", user.id)
         .eq("status", "active")
         .single();
+      if (relErr) { console.error("[ClientAppointments] Error cargando relación trainer:", relErr); } // No bloqueante
 
       if (rel) {
         setTrainerId(rel.trainer_id as string);
-        const { data: profile } = await supabase
+        const { data: profile, error: profileErr } = await supabase
           .from("profiles")
           .select("user_id, full_name")
           .eq("user_id", rel.trainer_id)
           .single();
+        if (profileErr) { console.error("[ClientAppointments] Error cargando perfil trainer:", profileErr); } // No bloqueante
         setTrainer(profile as TrainerInfo | null);
       }
 
