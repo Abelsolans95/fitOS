@@ -1484,6 +1484,19 @@ El objetivo es que cualquier persona o agente que llegue al proyecto pueda conti
 
 ---
 
+### Revisión profunda de código #2 — Velocidad de carga + Calidad (29-30/03/2026)
+
+**Wave 3 completada (30/03/2026) — Refactors de calidad:**
+
+- `apps/web/app/(dashboard)/app/trainer/nutrition/page.tsx` → reducido de 1326 a **129 líneas** (orchestrator puro)
+- `apps/web/app/(dashboard)/app/trainer/nutrition/components/MenuCreator.tsx` → NUEVO, 810 líneas (wizard de creación de menú extraído del inline)
+- `apps/web/app/(dashboard)/app/client/routine/useClientRoutine.ts` → NUEVO, useReducer hook centraliza 10+ useState de client/routine/page.tsx
+- `apps/web/app/(dashboard)/app/client/routine/page.tsx` → ya es orchestrator puro (useReducer aplicado)
+- `apps/web/app/(dashboard)/app/client/community/useClientCommunityPage.ts` → NUEVO, 530 líneas, 18 acciones tipadas
+- `apps/web/app/(dashboard)/app/client/community/page.tsx` → reducido de 689 a 319 líneas
+
+**Nota sobre nutrition/page.tsx:** Los agentes (Opus y Sonnet) fallaron por timeout repetido al intentar escribir MenuCreator.tsx (~800 líneas) en una sola sesión. Solución: extraer el bloque con `sed` a un archivo temporal y crear el archivo con Write directamente. No intentar que un agente escriba archivos de >500 líneas de una vez.
+
 ### Revisión profunda de código #2 — Velocidad de carga (29/03/2026)
 
 Segunda revisión enfocada en rendimiento de carga, seguridad adicional y calidad. 43 hallazgos aplicados:
