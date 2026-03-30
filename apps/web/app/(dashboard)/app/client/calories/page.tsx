@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
+import { toast } from "sonner";
 
 interface FoodItem {
   name: string;
@@ -73,13 +74,19 @@ export default function CaloriesPage() {
     const supabase = createClient();
     const today = new Date().toISOString().split("T")[0];
 
-    const { data } = await supabase
+    const { data, error: logError } = await supabase
       .from("food_log")
       .select("*")
       .eq("client_id", uid)
       .gte("logged_at", today + "T00:00:00")
       .lte("logged_at", today + "T23:59:59")
       .order("logged_at", { ascending: false });
+
+    if (logError) {
+      toast.error("Error al cargar el registro de comidas de hoy");
+      console.error("[CaloriesPage] Error cargando food_log:", logError);
+      return;
+    }
 
     if (data) {
       const entries = data as FoodLogEntry[];

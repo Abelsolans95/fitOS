@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { createClient } from "@/lib/supabase";
+import { toast } from "sonner";
 
 interface BodyMetric {
   id: string;
@@ -83,12 +84,17 @@ export default function ProgressPage() {
         if (!user) return;
         setUserId(user.id);
 
-        const { data } = await supabase
+        const { data, error: metricsError } = await supabase
           .from("body_metrics")
           .select("*")
           .eq("client_id", user.id)
-          .order("recorded_at", { ascending: true });
+          .order("recorded_at", { ascending: true })
+          .limit(100);
 
+        if (metricsError) {
+          toast.error("Error al cargar las métricas de progreso");
+          console.error("[ProgressPage] Error cargando métricas:", metricsError);
+        }
         if (data) setMetrics(data);
       } catch {
         // silently fail

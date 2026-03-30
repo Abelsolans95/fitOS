@@ -318,7 +318,7 @@ export function useCommunityPage() {
 
     const { data: posts, error } = await supabase
       .from("community_posts")
-      .select("id,community_id,author_id,title,content,image_url,is_pinned,created_at")
+      .select("id,community_id,author_id,title,content,image_url,is_pinned,created_at,updated_at")
       .eq("community_id", communityId)
       .order("is_pinned", { ascending: false })
       .order("created_at", { ascending: false })
