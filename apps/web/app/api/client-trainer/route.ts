@@ -21,6 +21,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
 
+    // Only clients can query their linked trainer
+    if (user.user_metadata?.role !== "client") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     // 2. Use service_role to query trainer_clients (bypasses RLS)
     const adminSupabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

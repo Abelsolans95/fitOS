@@ -1663,3 +1663,42 @@ Segunda revisión enfocada en rendimiento de carga, seguridad adicional y calida
 - **Qué pasó:** Queries de carga de datos de display (perfiles, planes, calendarios) usaban `const { data } =` sin destructurar `error`. Errores de DB pasaban silenciosamente sin log ni feedback.
 - **Solución aplicada:** Añadido `, error: queryName` a todas las queries + `if (queryName) { console.error("[Context]...", queryName); } // No bloqueante`.
 - **Regla:** Toda query Supabase debe destructurar `error`. Si es no bloqueante, loguear con console.error y añadir comentario `// No bloqueante`. Nunca silenciar errores de DB.
+
+---
+
+**ERROR #42 — `complete-registration` aceptaba `client_id` arbitrario en el body**
+- **Fecha:** 30/03/2026
+- **Archivo afectado:** `apps/web/app/api/complete-registration/route.ts`
+- **Qué pasó:** La route tomaba `client_id` del body JSON sin verificar que coincidiera con el usuario autenticado. Un usuario autenticado malintencionado podía llamar al endpoint pasando el `client_id` de otra persona y crear una relación trainer_clients en su nombre.
+- **Solución aplicada:** Añadido check `if (client_id !== user.id) return 403`.
+- **Regla:** En cualquier API route que reciba IDs de usuario en el body, verificar que coinciden con `user.id` obtenido del JWT. Nunca confiar en IDs del body para operaciones de escritura.
+
+---
+
+**ERROR #43 — `AuthContext` mobile no exponía el rol del usuario**
+- **Fecha:** 30/03/2026
+- **Archivo afectado:** `apps/mobile/src/contexts/AuthContext.tsx`
+- **Qué pasó:** El contexto solo exponía `user`, `session`, `loading`, `signOut`. Sin acceso al rol, los screens no podían hacer lógica condicional por rol ni prepararse para el futuro rol Admin.
+- **Solución aplicada:** Añadido `role: UserRole` (`"client" | "trainer" | "admin" | null`) con carga desde `profiles.role` al iniciar sesión y al cambiar auth state.
+- **Regla:** El `AuthContext` siempre debe exponer `role`. Cuando se añada el rol Admin, el tipo `UserRole` ya lo incluye.
+
+---
+
+### Arquitectura de permisos (auditada 30/03/2026)
+
+**Capas de protección (web):**
+
+1. **Middleware** (`apps/web/middleware.ts`) — Primera capa. Autentica con JWT de Supabase, redirige según rol y onboarding. Bloquea cross-role: trainer no accede a `/app/client/*`, cliente no accede a `/app/trainer/*`. Usa `user.user_metadata.role`.
+
+2. **RLS en Supabase** — Segunda capa. Todas las tablas tienen RLS habilitado. Las políticas usan `auth.uid()` para scope por usuario, no por rol (excepto community que usa JOIN con trainer_clients). Esto hace el sistema extensible para Admin (añadir policy por role si necesario).
+
+3. **API Routes** — Tercera capa para operaciones privilegiadas. Las rutas de import verifican `profiles.role === "trainer"`. Las rutas client-only verifican `user_metadata.role === "client"`. `complete-registration` verifica `client_id === user.id`.
+
+**Mobile:** App exclusivamente para clientes. `AuthContext` expone `role` cargado de `profiles.role`. La navegación actual es client-only por diseño.
+
+**Dónde vive el rol:**
+- `auth.users.raw_user_meta_data.role` → escrito en `signUp`, usado en middleware
+- `profiles.role` NOT NULL → escrito en onboarding, usado en API routes y mobile AuthContext
+- `AuthContext.role` (mobile) → leído de `profiles.role` al iniciar sesión
+
+**Preparación para Admin:** `profiles.role` es TEXT sin CHECK constraint — acepta "admin" sin migración. `AuthContext` ya tiene `UserRole = "client" | "trainer" | "admin" | null`. Middleware necesitará nuevo bloque. Ver sección en `CLAUDE.md`.

@@ -12,6 +12,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Only clients can activate themselves
+    if (user.user_metadata?.role !== "client") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     // Use service_role to bypass RLS
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
