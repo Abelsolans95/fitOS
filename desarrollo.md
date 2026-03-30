@@ -19,7 +19,7 @@
 
 | Capa | Tecnología |
 |---|---|
-| Monorepo | Turborepo 2.x + pnpm workspaces |
+| Monorepo | Turborepo 2.x + npm workspaces (npm@11.8.0) |
 | Web app | Next.js 15 (App Router), React 19, TypeScript |
 | Estilos | Tailwind CSS 4, shadcn/ui, CSS custom properties |
 | Componentes UI | shadcn/ui + componentes propios estilo Aceternity |
@@ -27,7 +27,7 @@
 | Auth | Supabase Auth (email/password + OAuth preparado) |
 | Mobile | Expo 55 (React Native) + React Navigation + Supabase |
 | Edge Functions | Supabase Edge Functions (Deno) — 4 funciones IA |
-| Gestor de paquetes | **pnpm** (raíz) / **npm** dentro de `apps/web` |
+| Gestor de paquetes | **npm@11.8.0** (raíz + `apps/web`). `pnpm-workspace.yaml` existe pero no está activo |
 
 ---
 
@@ -530,6 +530,9 @@ apps/web/app/
 │           ├── community/components/  ← types.ts, CommunityFeed.tsx (memo), PublishPost.tsx
 │           └── chat/page.tsx           ← ✅ Chat con entrenador (Realtime, optimista, leído)
 │
+│       └── admin/
+│           └── dashboard/page.tsx      ← ✅ Placeholder — Panel de Administración (30/03/2026)
+│
 ├── api/
 │   ├── auth/google/
 │   │   ├── route.ts                    ← ✅ Inicia OAuth de Google Calendar
@@ -573,14 +576,15 @@ apps/web/app/
 ```
 
 ### Middleware — Routing por roles
-El middleware protege rutas y separa los accesos:
+El middleware protege rutas y separa los accesos (3 roles: trainer, client, admin):
 - `/app/*` sin sesión → redirige a `/login`
 - `/onboarding/*` sin sesión → redirige a `/login`
-- `/login` o `/register` con sesión + onboarding completado → redirige al dashboard según rol
-- `/login` o `/register` con sesión + onboarding NO completado → redirige a `/onboarding/[rol]`
+- `/login` o `/register` con sesión → redirige al dashboard según rol (`/app/trainer/dashboard`, `/app/client/dashboard` o `/app/admin/dashboard`)
+- `/login` o `/register` con sesión pero onboarding NO completado → redirige a `/onboarding/[rol]` (no aplica a admin)
 - `/app/*` con sesión pero onboarding NO completado → redirige a `/onboarding/[rol]`
 - `/app/client/*` para trainers → redirige a `/app/trainer/dashboard`
 - `/app/trainer/*` para clients → redirige a `/app/client/dashboard`
+- `/app/client/*` o `/app/trainer/*` para admin → redirige a `/app/admin/dashboard`
 - El flag `onboarding_completed` se lee de `user.user_metadata` (sin query a DB)
 
 ---
@@ -901,9 +905,7 @@ supabase functions deploy [nombre]
 
 0. **Package manager raíz**: El `package.json` raíz tiene `"packageManager": "npm@11.8.0"` y usa npm workspaces. `pnpm-workspace.yaml` también existe pero el gestor activo es **npm**. Para instalar dependencias y crear symlinks de workspace, ejecutar `npm install` desde la raíz (no `pnpm install`). Dentro de `apps/web` seguir usando `npm --legacy-peer-deps`.
 
-1. **pnpm vs npm**: El `packageManager` del root es npm (ver nota 0). Dentro de `apps/web` se usa `npm` siempre con `--legacy-peer-deps`.
-
-2. **legacy-peer-deps**: Al instalar en `apps/web`, siempre usar `--legacy-peer-deps`.
+1. **legacy-peer-deps**: Al instalar en `apps/web`, siempre usar `--legacy-peer-deps`.
 
 3. **Turbo 2.x**: El campo en `turbo.json` es `"tasks"` (no `"pipeline"`).
 

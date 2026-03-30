@@ -20,7 +20,7 @@
 - **Fase 7 (29/03/2026):** Comunidad Premium ✅ — Feed privado por trainer con posts (título+texto+imagen), comentarios, likes, posts fijados. Dos modos: OPEN (clientes publican) y READ_ONLY_CLIENTS (solo coach). Badge verificado violeta para el coach. Storage bucket para imágenes. Realtime. Badge de no leídos en sidebar. Web trainer + web cliente.
 - **Code Quality Review (30/03/2026):** Fragmentación completa ✅ — todas las páginas >300 líneas fragmentadas en `components/`. Error handling Patrón C aplicado ✅ — todas las queries con `error` destructurado. Performance ✅ — `select("*")` eliminados, `.limit()` en tablas crecientes, `Promise.all` para queries independientes. `React.memo` en componentes hoja.
 - **Auditoría de Permisos (30/03/2026):** Arquitectura de permisos verificada y corregida ✅ — middleware sólido, RLS correcto en 19 tablas, 3 fixes de seguridad aplicados, `AuthContext` mobile preparado para rol Admin.
-- **`@fitos/theme` (30/03/2026):** Paquete compartido creado ✅ — `packages/theme/src/index.ts` es la única fuente de verdad para colores, spacing y radius. Mobile re-exporta desde ahí. Script `pnpm sync-theme` regenera el bloque `@theme` de `globals.css`. Metro `watchFolders` configurado.
+- **`@fitos/theme` (30/03/2026):** Paquete compartido creado ✅ — `packages/theme/src/index.ts` es la única fuente de verdad para colores, spacing y radius. Mobile re-exporta desde ahí. Script `npm run sync-theme` regenera el bloque `@theme` de `globals.css`. Metro `watchFolders` configurado.
 
 ---
 
@@ -33,13 +33,13 @@
 | DB | Supabase PostgreSQL — proyecto `fitos-prod` |
 | Mobile | Expo SDK 55 + React Navigation (Bottom Tabs) + expo-linear-gradient + react-native-svg |
 | Edge Functions | Supabase Deno — 4 funciones IA (Claude API) |
-| Monorepo | Turborepo 2.x + pnpm (raíz) / npm (apps/web) |
+| Monorepo | Turborepo 2.x + npm workspaces (npm@11.8.0) |
 
 ---
 
 ## Reglas críticas — leer siempre
 
-1. **pnpm en raíz, npm en `apps/web`** — no mezclar. En `apps/web` siempre `--legacy-peer-deps`.
+1. **npm en raíz y en `apps/web`** — el root usa `npm@11.8.0` con npm workspaces. En `apps/web` siempre `--legacy-peer-deps`. El fichero `pnpm-workspace.yaml` existe pero NO está activo — `package.json` tiene `"packageManager": "npm@11.8.0"` que tiene precedencia. Nunca usar `pnpm install` en la raíz.
 2. **`turbo.json` usa `"tasks"`** (no `"pipeline"`) — es Turbo 2.x.
 3. **Dark mode permanente** — clase `dark` hardcodeada en `<html>`, no hay toggle.
 4. **RLS activo en todas las tablas** — si una query no devuelve datos, revisar las políticas de la tabla.
@@ -56,7 +56,7 @@
 15. **`onboarding_responses` tiene unique constraint** — `(form_id, client_id)`. Usar siempre `upsert` con `onConflict: "form_id,client_id"`, nunca `insert`.
 16. **`SUPABASE_SERVICE_ROLE_KEY` en API routes** — necesaria en `apps/web/.env.local` para operaciones que bypaseen RLS (e.g. `/api/complete-registration`). Nunca exponer en frontend.
 17. **Landing page en `page.tsx` raíz** — `apps/web/app/page.tsx` es ahora la landing page pública (hero, features, pricing). Ya no redirige a `/login`. Los links de CTA llevan a `/login` y `/register`.
-18. **Theme mobile extendido** — `apps/mobile/src/theme.ts` exporta `colors`, `spacing`, `radius` y `shadows`. Usar estos tokens en vez de valores hardcoded. `shadows.glow(color)` genera un glow effect.
+18. **Theme mobile extendido** — `apps/mobile/src/theme.ts` re-exporta `colors`, `spacing`, `radius` y `fonts` desde `@fitos/theme` (fuente de verdad compartida). Define `shadows` localmente (usa APIs de React Native). Usar estos tokens en vez de valores hardcoded. `shadows.glow(color)` genera un glow effect. Para cambiar colores de marca: editar `packages/theme/src/index.ts` y ejecutar `npm run sync-theme`.
 19. **SVG icons en mobile** — Usar `react-native-svg` (Svg, Path, Circle) para iconos. No usar emojis ni Text como iconos en la app mobile.
 20. **expo-linear-gradient para gradientes** — En mobile usar `LinearGradient` de `expo-linear-gradient` para botones y fondos con gradiente. Ya está instalado.
 21. **Three-layer exercise/food resolution** — Layer A: globales (`is_global=true`), Layer B: privados del trainer (`is_global=false`), Layer C: overrides (`trainer_exercise_overrides` / `trainer_food_overrides`). Usar resolvers en `lib/exercise-resolver.ts` y `lib/food-resolver.ts`.
@@ -73,13 +73,13 @@
 32. **Trainer ve datos del cliente** — Tab Rutina muestra historial de `workout_sessions` con `weight_log` expandible (series, pesos, reps, RPE, notas). Tab Menú muestra `food_log` del cliente por día con selector de fecha y totales macro.
 33. **Excel import usa Claude Haiku** — `POST /api/import/excel` envía las primeras 40 filas de cada hoja a Haiku para detectar estructura (headers, columnas, secciones). Reemplaza el parser basado en reglas.
 34. **Clone-on-edit para ejercicios globales** — Cuando un entrenador edita un ejercicio global, se clona como privado (`is_global: false`) y el original se oculta via `trainer_exercise_overrides.hidden = true`. En import Excel, "enlazar" (link) crea un ejercicio privado con el nombre del trainer SI el nombre es diferente al global. Si el nombre es idéntico (match 100%), no se clona porque el global ya es visible.
+35. **Ejercicios sin category/difficulty obligatorios** — `category` es TEXT nullable (sin CHECK constraint). No hay columna `difficulty` ni `equipment` en `trainer_exercise_library`.
+36. **`weight_log` se guarda en cada check (set)** — Cada vez que el cliente marca una serie como completada en entrenamiento activo, se hace upsert inmediato a `weight_log` con `savePartialProgress()`. El campo `sets_data` incluye `completed: boolean` por set. Esto permite que al resumir una sesión se restauren incluso ejercicios parcialmente completados.
+37. **No repetir sesión ya completada** — La página de rutina (web y mobile) carga todas las `workout_sessions` con `status: "completed"` para la rutina actual. Compara por `day_label::week_number` (no por fecha). Si la combinación día+semana ya fue completada, muestra badge "Sesión completada" en lugar de los botones de entrenamiento. Esto permite hacer dos sesiones distintas el mismo día (ej. Pierna + Espalda) pero impide repetir la misma.
 38. **Import Excel: 100% match = auto-link sin opciones** — Si `confidence === 1`, el ejercicio se enlaza automáticamente sin mostrar botones "Crear nuevo" / "Omitir" ni matches alternativos. Solo muestra badge "Match 100%" y el nombre enlazado.
 39. **No crear endpoints temporales** — Nunca crear API routes "temporales" para fixes de DB. El usuario ejecuta los SQLs directamente en Supabase.
 40. **Clientes Supabase en API routes siempre dentro del handler** — Nunca inicializar `createClient()` a nivel de módulo en API routes (`const x = createClient(...)` fuera de funciones). Vercel evalúa los módulos durante el build y las env vars no están disponibles → crash `supabaseKey is required`. Siempre inicializar dentro de la función `POST`/`GET`/etc.
 41. **`useSearchParams` en "use client" requiere `<Suspense>`** — En Next.js 15, cualquier componente que use `useSearchParams()` debe estar envuelto en `<Suspense>` en el `export default`. Patrón obligatorio: función interna con la lógica + export default wrapper con `<Suspense fallback={...}>`. `export const dynamic = "force-dynamic"` NO soluciona el error de prerender en client components.
-35. **Ejercicios sin category/difficulty obligatorios** — `category` es TEXT nullable (sin CHECK constraint). No hay columna `difficulty` ni `equipment` en `trainer_exercise_library`.
-36. **`weight_log` se guarda en cada check (set)** — Cada vez que el cliente marca una serie como completada en entrenamiento activo, se hace upsert inmediato a `weight_log` con `savePartialProgress()`. El campo `sets_data` incluye `completed: boolean` por set. Esto permite que al resumir una sesión se restauren incluso ejercicios parcialmente completados.
-37. **No repetir sesión ya completada** — La página de rutina (web y mobile) carga todas las `workout_sessions` con `status: "completed"` para la rutina actual. Compara por `day_label::week_number` (no por fecha). Si la combinación día+semana ya fue completada, muestra badge "Sesión completada" en lugar de los botones de entrenamiento. Esto permite hacer dos sesiones distintas el mismo día (ej. Pierna + Espalda) pero impide repetir la misma.
 42. **Tabla `messages` para chat** — `trainer_id` + `client_id` identifican la conversación (par único). `sender_id` indica quién envió. RLS doble: el trainer accede por `trainer_id`, el cliente por `client_id`. Realtime habilitado (`supabase_realtime`). Web trainer: tab "Chat" en `/app/trainer/clients/[id]`. Web cliente: `/app/client/chat`. Mobile: `ChatScreen.tsx` en tab "Chat". Marcar como leído actualizando `read_at` al entrar a la conversación.
 43. **Tabla `appointments` para citas** — Migración 030. Campos clave: `trainer_id`, `client_id`, `session_type` (presencial/online/telefonica/evaluacion/seguimiento), `starts_at`, `ends_at`, `status` (pending/confirmed/cancelled/completed), `google_event_id` (NULL hasta OAuth), `email_sent_at` (NULL hasta Resend). RLS: trainer acceso total; cliente puede SELECT, INSERT (solo status='pending'), UPDATE (solo a 'cancelled'). Web trainer: `/app/trainer/appointments`. Web cliente: `/app/client/appointments`. Mobile: `AppointmentsScreen.tsx` en tab "Citas".
 44. **Calendario de citas — PENDIENTE DE DESARROLLO** — `lib/google-calendar.ts` tiene la función `syncAppointmentToCalendar()` lista pero requiere OAuth 2.0 configurado (NEXT_PUBLIC_GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET). `lib/email-notifications.ts` tiene `sendAppointmentEmail()` con template HTML lista pero requiere dominio verificado en Resend + RESEND_API_KEY. Cuando ambos estén configurados: (1) instalar `resend` en apps/web, (2) descomentar el bloque TODO en `sendAppointmentEmail()`, (3) añadir RESEND_API_KEY y RESEND_FROM_EMAIL a .env.local y Vercel, (4) configurar OAuth en Google Cloud Console, (5) guardar tokens en Supabase Vault.
@@ -299,6 +299,7 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 - Redirige usuarios no autenticados desde `/app/*` y `/onboarding/*` → `/login`
 - Redirige usuarios autenticados desde `/login`/`/register` → dashboard según rol + onboarding
 - Bloquea cross-role: trainer → `/app/client/*` redirige a `/app/trainer/dashboard`; client → `/app/trainer/*` redirige a `/app/client/dashboard`
+- Admin routing implementado: admin desde `/login`/`/register` → `/app/admin/dashboard`; admin en `/app/client/*` o `/app/trainer/*` → `/app/admin/dashboard`
 - Usa `user.user_metadata?.role` (JWT, verificado por Supabase)
 
 **Capa 2 — RLS (Supabase, todas las tablas):**
@@ -323,27 +324,27 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 | `profiles.role` (DB) | Verificación en API routes | Escrito en onboarding via upsert |
 | `AuthContext.role` (mobile) | Navegación y lógica en mobile | Leído de `profiles.role` al iniciar sesión |
 
-### Preparación para rol Admin (instrucciones futuras)
+### Rol Admin — Implementado parcialmente (30/03/2026)
 
-Cuando se añada el rol `admin`, seguir estos pasos:
+**Estado actual:** Middleware y página placeholder ya implementados. Falta el contenido real del panel.
 
-1. **Sin migración necesaria en `profiles`** — La columna `role` es TEXT sin CHECK constraint, acepta cualquier valor.
+**Ya implementado:**
+- ✅ Middleware: routing completo para admin (login/register → `/app/admin/dashboard`, bloquea `/app/client/*` y `/app/trainer/*`)
+- ✅ `apps/web/app/(dashboard)/app/admin/dashboard/page.tsx` — placeholder "Panel de Administración"
+- ✅ `AuthContext` mobile acepta `role: "admin"` (`UserRole = "client" | "trainer" | "admin" | null`)
+- ✅ `profiles.role` es TEXT sin CHECK constraint — acepta "admin" sin migración
 
-2. **Middleware** (`middleware.ts`) — Añadir caso admin:
-   ```ts
-   if (role === "admin" && pathname.startsWith("/app/client/")) { redirect → /app/admin/dashboard }
-   if (role === "admin" && pathname.startsWith("/app/trainer/")) { redirect → /app/admin/dashboard }
-   ```
+**Para añadir contenido real al panel admin:**
 
-3. **Registro de admin** — Crear flujo separado (no expuesto en `/register` público). Al hacer `signUp`, pasar `{ data: { role: "admin" } }`. Luego upsert en `profiles` con `role: "admin"`.
+1. **Registro de admin** — Crear flujo separado (no expuesto en `/register` público). SQL en Supabase: INSERT en `auth.users` con `role: "admin"` en `user_metadata` + upsert en `profiles` con `role: "admin"`.
 
-4. **API routes nuevas de admin** — Verificar `profiles.role === "admin"` igual que trainer. Pueden usar `supabaseAdmin` (service_role) para bypass total de RLS.
+2. **API routes de admin** — Verificar `profiles.role === "admin"` igual que trainer. Pueden usar `supabaseAdmin` (service_role) para bypass total de RLS.
 
-5. **RLS para admin** — Opción A: añadir policy `FOR ALL USING (EXISTS (SELECT 1 FROM profiles WHERE user_id = auth.uid() AND role = 'admin'))` en tablas donde admin necesite acceso. Opción B: usar service_role en API routes (más sencillo y seguro).
+3. **RLS para admin** — Opción A: añadir policy `FOR ALL USING (EXISTS (SELECT 1 FROM profiles WHERE user_id = auth.uid() AND role = 'admin'))` en tablas donde admin necesite acceso. Opción B: usar service_role en API routes (más sencillo y seguro).
 
-6. **Mobile** — El `AuthContext` ya acepta `role: "admin"`. La navegación en `App.tsx` debe añadir un tercer navigator `AppNavigatorAdmin` con las pantallas de administración.
+4. **Mobile** — El `AuthContext` ya acepta `role: "admin"`. La navegación en `App.tsx` debe añadir un tercer navigator `AppNavigatorAdmin` con las pantallas de administración.
 
-7. **Regla de decisión**: ¿Una nueva API route es para admin? → verificar `role === "admin"`. ¿Puede admin acceder a datos de trainer y cliente? → usar service_role en la route, no modificar RLS existente.
+5. **Regla de decisión**: ¿Una nueva API route es para admin? → verificar `role === "admin"`. ¿Puede admin acceder a datos de trainer y cliente? → usar service_role en la route, no modificar RLS existente.
 
 ---
 
@@ -353,19 +354,19 @@ Cuando se añada el rol `admin`, seguir estos pasos:
 
 ### Reglas de uso
 
-110. **`@fitos/theme` para todo código NUEVO** — Al escribir componentes nuevos (mobile o web), importar siempre los colores desde `@fitos/theme` en lugar de usar valores hardcoded. En mobile: `import { colors } from "@fitos/theme"`. En web JS/TSX (inline styles, charts): `import { colors } from "@fitos/theme"`. En web Tailwind: usar clases con nombre (`bg-neon-cyan`, `text-neon-violet`) en lugar de `bg-[#00E5FF]`.
+111. **`@fitos/theme` para todo código NUEVO** — Al escribir componentes nuevos (mobile o web), importar siempre los colores desde `@fitos/theme` en lugar de usar valores hardcoded. En mobile: `import { colors } from "@fitos/theme"`. En web JS/TSX (inline styles, charts): `import { colors } from "@fitos/theme"`. En web Tailwind: usar clases con nombre (`bg-neon-cyan`, `text-neon-violet`) en lugar de `bg-[#00E5FF]`.
 
-111. **NO migrar los valores hardcodeados existentes** — Hay 1021+ instancias de `bg-[#00E5FF]` y similares en el web. No tocarlos. La política es "new code only": solo el código nuevo usa `@fitos/theme` o clases Tailwind con nombre.
+112. **NO migrar los valores hardcodeados existentes** — Hay 1021+ instancias de `bg-[#00E5FF]` y similares en el web. No tocarlos. La política es "new code only": solo el código nuevo usa `@fitos/theme` o clases Tailwind con nombre.
 
-112. **Cambio de marca en 1 comando** — Para actualizar un color de marca: (1) editar `packages/theme/src/index.ts`, (2) ejecutar `npm run sync-theme` desde la raíz. Esto regenera automáticamente el bloque CSS de Tailwind v4 en `globals.css` entre los marcadores `[fitos-theme-start]` y `[fitos-theme-end]`. Mobile recoge el cambio sin acción adicional (import JS directo).
+113. **Cambio de marca en 1 comando** — Para actualizar un color de marca: (1) editar `packages/theme/src/index.ts`, (2) ejecutar `npm run sync-theme` desde la raíz. Esto regenera automáticamente el bloque CSS de Tailwind v4 en `globals.css` entre los marcadores `[fitos-theme-start]` y `[fitos-theme-end]`. Mobile recoge el cambio sin acción adicional (import JS directo).
 
-113. **Tailwind v4 no usa `tailwind.config.js`** — Este proyecto usa Tailwind v4 CSS-first. Los tokens de color para Tailwind se definen en el bloque `@theme inline {}` de `apps/web/app/globals.css`, generado por `pnpm sync-theme`. No crear `tailwind.config.js` — rompería el setup actual.
+114. **Tailwind v4 no usa `tailwind.config.js`** — Este proyecto usa Tailwind v4 CSS-first. Los tokens de color para Tailwind se definen en el bloque `@theme inline {}` de `apps/web/app/globals.css`, generado por `npm run sync-theme`. No crear `tailwind.config.js` — rompería el setup actual.
 
-114. **`shadows` permanece en `apps/mobile/src/theme.ts`** — Las sombras (shadowColor, elevation) usan APIs de React Native y no se pueden compartir con web. `theme.ts` importa y re-exporta desde `@fitos/theme` pero define `shadows` localmente.
+115. **`shadows` permanece en `apps/mobile/src/theme.ts`** — Las sombras (shadowColor, elevation) usan APIs de React Native y no se pueden compartir con web. `theme.ts` importa y re-exporta desde `@fitos/theme` pero define `shadows` localmente.
 
-115. **Metro Bundler necesita `watchFolders`** — Expo/Metro no ve archivos fuera de `apps/mobile/` por defecto. `metro.config.js` ya tiene `watchFolders` configurado apuntando a `../../packages`. Si se añaden más paquetes compartidos, añadir al array.
+116. **Metro Bundler necesita `watchFolders`** — Expo/Metro no ve archivos fuera de `apps/mobile/` por defecto. `metro.config.js` ya tiene `watchFolders` configurado apuntando a `../../packages`. Si se añaden más paquetes compartidos, añadir al array.
 
-116. **`rgba` strings en `@fitos/theme` son solo para web/CSS** — Valores como `border: "rgba(255,255,255,0.06)"` son correctos para web. En React Native, si se necesita opacidad dinámica sobre un color, usar `borderHex` (el hex puro `#FFFFFF`) junto con `StyleSheet opacity` o una librería como `tinycolor2`. Nunca manipular strings rgba dinámicamente en RN.
+117. **`rgba` strings en `@fitos/theme` son solo para web/CSS** — Valores como `border: "rgba(255,255,255,0.06)"` son correctos para web. En React Native, si se necesita opacidad dinámica sobre un color, usar `borderHex` (el hex puro `#FFFFFF`) junto con `StyleSheet opacity` o una librería como `tinycolor2`. Nunca manipular strings rgba dinámicamente en RN.
 
 ---
 
