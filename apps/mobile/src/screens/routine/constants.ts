@@ -1,22 +1,6 @@
 import { colors } from "../../theme";
 
-export const DAY_KEYS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
-
-export const DAY_SHORT: Record<string, string> = {
-  lunes: "L", martes: "M", "miércoles": "X", jueves: "J",
-  viernes: "V", "sábado": "S", domingo: "D",
-};
-
-export const DAY_LABELS: Record<string, string> = {
-  lunes: "Lunes", martes: "Martes", "miércoles": "Miércoles", jueves: "Jueves",
-  viernes: "Viernes", "sábado": "Sábado", domingo: "Domingo",
-};
-
-export function formatTime(sec: number): string {
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
+export { DAY_KEYS, DAY_LABELS, DAY_SHORT, formatTime } from "@fitos/shared";
 
 export function calculateProgress(
   current: { weight: number; reps: number }[],

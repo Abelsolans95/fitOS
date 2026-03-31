@@ -4,14 +4,7 @@ import Svg, { Path } from "react-native-svg";
 import { supabase } from "../../lib/supabase";
 import { colors, spacing, radius, fonts } from "../../theme";
 import { MUSCLE_LABELS } from "./muscleData";
-
-interface HealthLog {
-  id: string;
-  pain_score: number;
-  incident_type: "puntual" | "diagnosticada" | "cronica";
-  status: "active" | "recovering" | "recovered";
-  notes: string | null;
-}
+import type { HealthLog } from "@fitos/shared";
 
 interface Props {
   visible: boolean;

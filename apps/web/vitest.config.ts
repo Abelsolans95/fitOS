@@ -8,6 +8,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "."),
+      "@fitos/shared": path.resolve(__dirname, "../../packages/shared/src/index.ts"),
+      "@fitos/theme": path.resolve(__dirname, "../../packages/theme/src/index.ts"),
     },
   },
 });

@@ -3,16 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase";
+import type { Message } from "@fitos/shared";
 
-export interface Message {
-  id: string;
-  trainer_id: string;
-  client_id: string;
-  sender_id: string;
-  content: string;
-  read_at: string | null;
-  created_at: string;
-}
+export type { Message };
 
 export interface TrainerInfo {
   user_id: string;

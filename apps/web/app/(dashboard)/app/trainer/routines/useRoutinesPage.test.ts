@@ -8,15 +8,8 @@ function makeExercise(id = "ex-1", name = "Sentadilla"): ExerciseItem {
   return {
     id,
     name,
-    description: null,
-    video_url: null,
-    video_thumbnail_url: null,
-    muscle_groups: ["quadriceps"],
-    secondary_muscles: [],
+    muscle_group: "quadriceps",
     category: "piernas",
-    is_global: true,
-    trainer_id: null,
-    aliases: [],
   };
 }
 
@@ -121,7 +114,7 @@ describe("routinesReducer — creator step 3 (exercises)", () => {
   it("CR_ADD_EXERCISE adds an exercise to a day", () => {
     const state: RoutinesState = {
       ...initialRoutinesState,
-      crTrainingDays: [{ key: "lunes", label: "Pierna", exercises: [] }],
+      crTrainingDays: [{ key: "lunes", label: "Pierna", dayLabel: "Pierna", exercises: [] }],
     };
     const next = routinesReducer(state, {
       type: "CR_ADD_EXERCISE",
@@ -138,6 +131,7 @@ describe("routinesReducer — creator step 3 (exercises)", () => {
       crTrainingDays: [{
         key: "lunes",
         label: "Pierna",
+        dayLabel: "Pierna",
         exercises: [
           { exercise_id: "ex-1", name: "Sentadilla", sets: 4, reps_min: 8, reps_max: 12, rir: 2, target_weight: null, rest_s: 90, scheme: "", rest_pause_sets: 0, progression_rule: "", coach_notes: "", order: 0, mode: "equal", sets_config: [], weekly_config: {} },
           { exercise_id: "ex-2", name: "Prensa", sets: 3, reps_min: 10, reps_max: 15, rir: 2, target_weight: null, rest_s: 60, scheme: "", rest_pause_sets: 0, progression_rule: "", coach_notes: "", order: 1, mode: "equal", sets_config: [], weekly_config: {} },
@@ -159,7 +153,7 @@ describe("routinesReducer — creator step 3 (exercises)", () => {
 
 describe("routinesReducer — templates", () => {
   it("LOAD_TEMPLATES stores templates", () => {
-    const templates = [{ id: "t1", name: "Fuerza Básica", trainer_id: "t", training_days: [], day_labels: {}, exercises: [], total_weeks: 4, goal: "fuerza" }];
+    const templates = [{ id: "t1", name: "Fuerza Básica", trainer_id: "t", training_days: [], day_labels: {}, exercises: [], total_weeks: 4, goal: "fuerza", created_at: new Date().toISOString() }];
     const next = routinesReducer(initialRoutinesState, { type: "LOAD_TEMPLATES", templates });
     expect(next.templates).toHaveLength(1);
   });

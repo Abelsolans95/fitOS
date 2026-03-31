@@ -15,21 +15,9 @@ import { useAuth } from "../contexts/AuthContext";
 import { colors, spacing, radius, shadows, fonts } from "../theme";
 import { FRONT_MUSCLES, BACK_MUSCLES, MUSCLE_LABELS, HEAD_OUTLINE, FRONT_BODY_OUTLINE, BACK_BODY_OUTLINE } from "./health/muscleData";
 import { ReportModal } from "./health/ReportModal";
+import type { HealthLog } from "@fitos/shared";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-
-interface HealthLog {
-  id: string;
-  client_id: string;
-  trainer_id: string;
-  reported_by: "coach" | "client";
-  muscle_id: string;
-  pain_score: number;
-  incident_type: "puntual" | "diagnosticada" | "cronica";
-  status: "active" | "recovering" | "recovered";
-  notes: string | null;
-  created_at: string;
-}
 
 const INCIDENT_LABELS: Record<string, string> = {
   puntual: "Molestia puntual",
