@@ -46,7 +46,7 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
-  /* FitOS Custom Colors */
+  /* [fitos-theme-start] — AUTO-GENERATED: edit packages/theme/src/index.ts + run pnpm sync-theme */
   --color-neon-cyan: #00E5FF;
   --color-neon-violet: #7C3AED;
   --color-neon-green: #00C853;
@@ -54,6 +54,7 @@
   --color-neon-red: #FF1744;
   --color-surface: #12121A;
   --color-surface-hover: #1A1A2E;
+  /* [fitos-theme-end] */
 }
 
 /* ===== FitOS Dark-Only Theme ===== */

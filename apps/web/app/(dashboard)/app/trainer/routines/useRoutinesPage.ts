@@ -60,7 +60,7 @@ function getDefaultStartDate(): string {
   return d.toISOString().split("T")[0];
 }
 
-const initialState: RoutinesState = {
+export const initialRoutinesState: RoutinesState = {
   loading: true,
   error: null,
   trainerId: "",
@@ -156,7 +156,7 @@ export type RoutinesAction =
    Reducer
    ──────────────────────────────────────────── */
 
-function routinesReducer(state: RoutinesState, action: RoutinesAction): RoutinesState {
+export function routinesReducer(state: RoutinesState, action: RoutinesAction): RoutinesState {
   switch (action.type) {
     /* ── Page ── */
     case "SET_TAB":
@@ -482,7 +482,7 @@ function routinesReducer(state: RoutinesState, action: RoutinesAction): Routines
    ──────────────────────────────────────────── */
 
 export function useRoutinesPage() {
-  const [state, dispatch] = useReducer(routinesReducer, initialState);
+  const [state, dispatch] = useReducer(routinesReducer, initialRoutinesState);
 
   /* ── Load data ── */
 

@@ -34,7 +34,7 @@ export interface TrainingState {
   sessionId: string | null;
 }
 
-const initialState: TrainingState = {
+export const initialState: TrainingState = {
   phase: "loading",
   currentExIdx: 0,
   allSets: {},
@@ -95,7 +95,7 @@ export type TrainingAction =
    Reducer
    ──────────────────────────────────────────── */
 
-function trainingReducer(
+export function trainingReducer(
   state: TrainingState,
   action: TrainingAction
 ): TrainingState {

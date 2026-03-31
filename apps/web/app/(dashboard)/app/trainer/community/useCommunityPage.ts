@@ -34,7 +34,7 @@ interface State {
   settingsActive: boolean;
 }
 
-const initialState: State = {
+export const communityInitialState: State = {
   loading: true,
   userId: null,
   community: null,
@@ -125,7 +125,7 @@ function addReplyToComment(comments: CommunityComment[], parentId: string, reply
   });
 }
 
-function reducer(state: State, action: Action): State {
+export function communityReducer(state: State, action: Action): State {
   switch (action.type) {
     case "SET_LOADING":
       return { ...state, loading: action.payload };
@@ -244,7 +244,7 @@ function reducer(state: State, action: Action): State {
 }
 
 export function useCommunityPage() {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(communityReducer, communityInitialState);
   const supabaseRef = useRef(createClient());
 
   // ── Init: load or create community + posts ──
