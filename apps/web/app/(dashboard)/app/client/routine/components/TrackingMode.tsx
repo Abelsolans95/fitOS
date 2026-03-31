@@ -1,26 +1,20 @@
 import { memo } from "react";
-import type { Dispatch } from "react";
 import { getDateForDay, calculateProgressLabel, getProgressColor } from "../active/utils";
+import type { ClientRoutineAction } from "../useClientRoutine";
+import type { ExerciseData } from "../active/types";
+import type { Dispatch } from "react";
 
 // Types mirrored from useClientRoutine to avoid circular deps
 interface SetInput { weight_kg: string; reps_done: string; type?: string; }
 interface PrevSet { weight_kg: number; reps_done: number; }
-interface Exercise {
-  name: string; exercise_id: string; sets: number;
-  reps_min: number; reps_max: number; scheme?: string;
-  coach_notes?: string; trainer_notes?: string; technique_notes?: string;
-  progression_rule?: string; target_rpe?: number;
-  [key: string]: unknown;
-}
-interface Routine { sent_at: string; id: string; title: string; goal: string; duration_months: number; }
-type Action = { type: string; [key: string]: unknown };
+interface Routine { sent_at: string | null; id: string; title: string; goal: string; duration_months: number; }
 
 interface Props {
   activeWeek: number;
   activeDay: string;
   routine: Routine;
   dayLabel: string;
-  dayExercises: Exercise[];
+  dayExercises: ExerciseData[];
   sessionInputs: Record<string, SetInput[]>;
   clientNotes: Record<string, string>;
   exerciseRpe: Record<string, string>;
@@ -30,7 +24,7 @@ interface Props {
   formatPrevious: (name: string) => string;
   updateSet: (name: string, idx: number, field: "weight_kg" | "reps_done", val: string) => void;
   handleSaveSession: () => void;
-  dispatch: Dispatch<Action>;
+  dispatch: Dispatch<ClientRoutineAction>;
 }
 
 export const TrackingMode = memo(function TrackingMode({
