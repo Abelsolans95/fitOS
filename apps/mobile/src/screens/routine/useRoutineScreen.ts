@@ -8,6 +8,7 @@ import type {
   RoutineRaw, ExerciseData, DayData, PreviousLog, PreviousSet,
   SetEntry, SavedLogEntry, InProgressSession, ScreenMode,
 } from "./types";
+import { calculateStressIndex } from "@fitos/shared";
 
 export function useRoutineScreen() {
   const { user } = useAuth();
@@ -334,15 +335,7 @@ export function useRoutineScreen() {
     setMode("active");
   }, [inProgressSession, user, dayExercises, previousLogs]);
 
-  const calcStressIndex = useCallback((setsData: { weight_kg: number; reps_done: number; rir: number; completed: boolean }[]): number => {
-    const rirFactor = (rir: number) => rir <= 0 ? 1.0 : rir === 1 ? 0.95 : rir === 2 ? 0.90 : rir === 3 ? 0.85 : rir === 4 ? 0.80 : 0.75;
-    let stress = 0;
-    for (const s of setsData) {
-      if (!s.completed) continue;
-      stress += s.weight_kg * s.reps_done * rirFactor(s.rir);
-    }
-    return Math.round(stress * 100) / 100;
-  }, []);
+  // calculateStressIndex imported from @fitos/shared
 
   const savePartialProgress = useCallback(async (exIdx: number, updatedSets: SetEntry[]) => {
     if (!user || !sessionId) return;
@@ -363,7 +356,7 @@ export function useRoutineScreen() {
     const rpeVal = rpeVals.length > 0 ? Math.round((rpeVals.reduce((a, b) => a + b, 0) / rpeVals.length) * 10) / 10 : null;
     const stimulusVal = exerciseStimulus[exIdx] ?? null;
     const fatigueVal = exerciseFatigue[exIdx] ?? null;
-    const stressIndex = calcStressIndex(setsData);
+    const stressIndex = calculateStressIndex(setsData);
 
     const { data: existing } = await supabase.from("weight_log").select("id")
       .eq("session_id", sessionId).eq("exercise_name", ex.name).maybeSingle();
@@ -384,7 +377,7 @@ export function useRoutineScreen() {
     if (updatedSets.every((s) => s.completed)) {
       setSavedExercises((prev) => new Set(prev).add(exIdx));
     }
-  }, [user, sessionId, dayExercises, exerciseNotes, exerciseStimulus, exerciseFatigue, routine, calcStressIndex]);
+  }, [user, sessionId, dayExercises, exerciseNotes, exerciseStimulus, exerciseFatigue, routine]);
 
   const saveExerciseLog = useCallback(async (exIdx: number) => {
     if (!user || !sessionId) return;
