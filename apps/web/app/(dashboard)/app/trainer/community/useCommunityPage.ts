@@ -4,6 +4,7 @@ import { useReducer, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase";
 import { QUERY_LIMITS } from "@/lib/constants";
 import { toast } from "sonner";
+import { updateCommentInTree, removeCommentFromTree, addReplyToTree, buildCommentTree, resolveAuthorName } from "@/lib/community-utils";
 import type { Community, CommunityPost, CommunityComment, CommunityTab } from "./components/types";
 
 // ── State ──
@@ -90,42 +91,6 @@ type Action =
   | { type: "SET_SETTINGS_ACTIVE"; payload: boolean }
   | { type: "TOGGLE_PIN"; payload: string };
 
-// Helper: update comment in nested tree
-function updateCommentInList(comments: CommunityComment[], commentId: string, updater: (c: CommunityComment) => CommunityComment): CommunityComment[] {
-  return comments.map((c) => {
-    if (c.id === commentId) return updater(c);
-    if (c.replies && c.replies.length > 0) {
-      return { ...c, replies: updateCommentInList(c.replies, commentId, updater) };
-    }
-    return c;
-  });
-}
-
-// Helper: remove comment from nested tree
-function removeCommentFromList(comments: CommunityComment[], commentId: string): CommunityComment[] {
-  return comments
-    .filter((c) => c.id !== commentId)
-    .map((c) => {
-      if (c.replies && c.replies.length > 0) {
-        return { ...c, replies: removeCommentFromList(c.replies, commentId) };
-      }
-      return c;
-    });
-}
-
-// Helper: add reply to parent in nested tree
-function addReplyToComment(comments: CommunityComment[], parentId: string, reply: CommunityComment): CommunityComment[] {
-  return comments.map((c) => {
-    if (c.id === parentId) {
-      return { ...c, replies: [...(c.replies ?? []), reply] };
-    }
-    if (c.replies && c.replies.length > 0) {
-      return { ...c, replies: addReplyToComment(c.replies, parentId, reply) };
-    }
-    return c;
-  });
-}
-
 export function communityReducer(state: State, action: Action): State {
   switch (action.type) {
     case "SET_LOADING":
@@ -171,7 +136,7 @@ export function communityReducer(state: State, action: Action): State {
       const existing = state.comments[action.payload.postId] ?? [];
       let updated: CommunityComment[];
       if (action.payload.parentId) {
-        updated = addReplyToComment(existing, action.payload.parentId, action.payload.comment);
+        updated = addReplyToTree(existing, action.payload.parentId, action.payload.comment);
       } else {
         updated = [...existing, action.payload.comment];
       }
@@ -190,7 +155,7 @@ export function communityReducer(state: State, action: Action): State {
       const existing2 = state.comments[action.payload.postId] ?? [];
       return {
         ...state,
-        comments: { ...state.comments, [action.payload.postId]: removeCommentFromList(existing2, action.payload.commentId) },
+        comments: { ...state.comments, [action.payload.postId]: removeCommentFromTree(existing2, action.payload.commentId) },
         posts: state.posts.map((p) =>
           p.id === action.payload.postId ? { ...p, comments_count: Math.max(0, (p.comments_count ?? 0) - 1) } : p
         ),
@@ -205,7 +170,7 @@ export function communityReducer(state: State, action: Action): State {
       const newComments = { ...state.comments };
       const postId = action.payload.postId;
       if (newComments[postId]) {
-        newComments[postId] = updateCommentInList(newComments[postId], action.payload.commentId, (c) => ({
+        newComments[postId] = updateCommentInTree(newComments[postId], action.payload.commentId, (c) => ({
           ...c,
           user_has_liked: action.payload.liked,
           likes_count: (c.likes_count ?? 0) + (action.payload.liked ? 1 : -1),
@@ -525,18 +490,7 @@ export function useCommunityPage() {
     });
 
     // Build tree: group replies under parents
-    const commentMap = new Map<string, CommunityComment>();
-    enrichedFlat.forEach((c) => commentMap.set(c.id, c));
-
-    const rootComments: CommunityComment[] = [];
-    enrichedFlat.forEach((c) => {
-      if (c.parent_id && commentMap.has(c.parent_id)) {
-        const parent = commentMap.get(c.parent_id)!;
-        parent.replies = [...(parent.replies ?? []), c];
-      } else {
-        rootComments.push(c);
-      }
-    });
+    const rootComments = buildCommentTree(enrichedFlat);
 
     dispatch({ type: "SET_COMMENTS", payload: { postId, comments: rootComments } });
     dispatch({ type: "SET_LOADING_COMMENTS", payload: { postId, loading: false } });

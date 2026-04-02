@@ -3,6 +3,7 @@
 import { useReducer, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase";
 import { QUERY_LIMITS } from "@/lib/constants";
+import { updateCommentInTree, removeCommentFromTree, addReplyToTree, buildCommentTree, resolveAuthorName } from "@/lib/community-utils";
 import { toast } from "sonner";
 import type { Community, Post, Comment, CommunityTab } from "./components/types";
 
@@ -75,29 +76,6 @@ const initialState: State = {
   replyingTo: {},
   replyText: {},
 };
-
-function updateCommentInTree(comments: Comment[], id: string, updater: (c: Comment) => Comment): Comment[] {
-  return comments.map((c) => {
-    if (c.id === id) return updater(c);
-    if (c.replies?.length) return { ...c, replies: updateCommentInTree(c.replies, id, updater) };
-    return c;
-  });
-}
-
-function removeCommentFromTree(comments: Comment[], id: string): Comment[] {
-  return comments.filter((c) => c.id !== id).map((c) => {
-    if (c.replies?.length) return { ...c, replies: removeCommentFromTree(c.replies, id) };
-    return c;
-  });
-}
-
-function addReplyToTree(comments: Comment[], parentId: string, reply: Comment): Comment[] {
-  return comments.map((c) => {
-    if (c.id === parentId) return { ...c, replies: [...(c.replies ?? []), reply] };
-    if (c.replies?.length) return { ...c, replies: addReplyToTree(c.replies, parentId, reply) };
-    return c;
-  });
-}
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -406,17 +384,7 @@ export function useClientCommunityPage() {
     });
 
     // Build tree
-    const commentMap = new Map<string, Comment>();
-    enrichedFlat.forEach((c) => commentMap.set(c.id, c));
-    const rootComments: Comment[] = [];
-    enrichedFlat.forEach((c) => {
-      if (c.parent_id && commentMap.has(c.parent_id)) {
-        const parent = commentMap.get(c.parent_id)!;
-        parent.replies = [...(parent.replies ?? []), c];
-      } else {
-        rootComments.push(c);
-      }
-    });
+    const rootComments = buildCommentTree(enrichedFlat);
 
     dispatch({ type: "SET_COMMENTS", payload: { postId, comments: rootComments } });
     dispatch({ type: "SET_LOADING_COMMENTS", payload: { postId, loading: false } });
