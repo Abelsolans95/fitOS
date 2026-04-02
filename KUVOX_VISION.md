@@ -386,51 +386,291 @@ Regla simple: la sesion en curso del cliente SIEMPRE gana.
 
 ## 13. Flywheel del negocio
 
+### Flywheel 1: Marketplace
 ```
-                    ┌─────────────────────────────┐
-                    │  Trainer sube rutinas al     │
-                    │  marketplace (gratis)        │
-                    └──────────────┬──────────────┘
-                                   │
-                                   ▼
-                    ┌─────────────────────────────┐
-                    │  Usuario compra rutina       │
-                    │  (PDF/Excel) → Kuvox cobra   │
-                    │  comision 15-20%             │
-                    └──────────────┬──────────────┘
-                                   │
-                                   ▼
-                    ┌─────────────────────────────┐
-                    │  Email post-compra:          │
-                    │  "Descarga kuvox.app para    │
-                    │  seguimiento interactivo"    │
-                    └──────────────┬──────────────┘
-                                   │
-                                   ▼
-                    ┌─────────────────────────────┐
-                    │  Usuario prueba la app       │
-                    │  gratis 14 dias              │
-                    └──────────────┬──────────────┘
-                                   │
-                                   ▼
-                    ┌─────────────────────────────┐
-                    │  En la app: "¿Quieres un     │
-                    │  trainer personalizado?"     │
-                    └──────────────┬──────────────┘
-                                   │
-                                   ▼
-                    ┌─────────────────────────────┐
-                    │  Usuario contrata trainer    │
-                    │  → trainer paga suscripcion  │
-                    │  Kuvox Pro                   │
-                    └──────────────┬──────────────┘
-                                   │
-                                   └──────► Repeat
+Trainer sube rutina al marketplace (gratis)
+  → Usuario compra rutina (PDF) → Kuvox cobra comision 15-20%
+    → Email post-compra: "Descarga kuvox.app"
+      → Usuario prueba la app gratis 14 dias
+        → "¿Quieres trainer personalizado?"
+          → Contrata trainer → trainer paga suscripcion
+            → Repeat
+```
+
+### Flywheel 2: Contenido + SEO (NUEVO)
+```
+Trainer escribe post en su comunidad
+  → Activa toggle "publicar al mundo"
+    → Se genera pagina publica SEO-optimizada
+      → Google indexa → alguien busca "rutina hipertrofia"
+        → Encuentra el post en kuvox.io/t/carlosfit/...
+          → Ve CTA "Entrenar con Carlos" → rellena formulario
+            → Lead en CRM → trainer lo convierte en cliente
+              → Trainer paga por cliente → Kuvox crece
+                → Mas trainers publican → mas SEO → Repeat
+```
+
+### Flywheel 3: CRM + RRSS (NUEVO)
+```
+Trainer comparte link de su post/landing en Instagram/TikTok
+  → Seguidor hace click → llega a kuvox.io/t/trainer
+    → Rellena formulario → lead en CRM automaticamente
+      → Follow-up email automatico a las 24h/3d/7d
+        → Lead se convierte en cliente
+          → Trainer publica caso de exito → mas seguidores → Repeat
+```
+
+### Los 3 flywheels se alimentan entre si
+```
+Marketplace genera compradores → algunos quieren trainer
+Blog genera trafico SEO → CRM captura leads → se convierten en clientes
+Clientes satisfechos → trainer publica resultados → mas leads
 ```
 
 ---
 
-## 14. Orden de ejecucion
+## 14. Perfil publico del trainer (landing auto-generada)
+
+### Concepto
+Cada trainer que se registra en Kuvox tiene automaticamente una landing publica. No la diseña nadie — se genera sola con los datos del onboarding.
+
+### URL
+```
+kuvox.io/t/carlosfit       ← slug auto-generado, editable una vez
+kuvox.io/t/saracoach
+kuvox.io/t/javientrenador
+```
+
+### Contenido auto-generado
+| Campo | De donde sale |
+|-------|--------------|
+| Nombre y foto | Perfil del trainer (onboarding) |
+| Bio/descripcion | Campo editable en Settings |
+| Especialidad | Seleccionada en el onboarding |
+| Ubicacion | Perfil |
+| Slug | Auto-generado del nombre, editable una vez |
+| Color de acento (opcional) | Selector en Settings |
+
+### Que incluye la landing
+- Foto y datos del trainer
+- Bio y especialidad
+- Lista de servicios ("Rutina personalizada, Plan nutricional, Chat directo...")
+- Formulario de contacto (nombre, email, objetivo) → lead cae en CRM
+- Listado de articulos publicos (si tiene)
+- Link a rutinas en el marketplace (si tiene)
+- Badge "Powered by Kuvox"
+
+### Fases de evolucion
+```
+Fase 1 (beta):      Landing auto-generada con datos del perfil. Sin personalizacion.
+                     Todos tienen el mismo diseno, solo cambian los datos.
+                     Incluye formulario → lead cae en CRM.
+
+Fase 2 (post-beta):  El trainer puede editar textos, subir fotos extra,
+                      elegir entre 3-4 plantillas de diseno.
+
+Fase 3 (premium):    Landing Page Builder completo (drag & drop, bloques,
+                      dominio propio carloscoach.com → proxy a kuvox.io/t/carlos).
+```
+
+### Ventaja SEO
+Cada landing es una pagina indexada por Google. Con 100 trainers = 100 paginas posicionando por diferentes ciudades y especialidades. Los trainers generan SEO para Kuvox sin saberlo.
+
+---
+
+## 15. Blog publico del trainer (posts de comunidad al mundo)
+
+### Concepto
+El trainer ya escribe posts para su Comunidad privada. Con un toggle, puede publicar cualquier post al mundo. Se genera una pagina publica SEO-optimizada automaticamente.
+
+### Flujo
+```
+1. Trainer escribe post en su Comunidad (lo que ya hace hoy)
+   "5 errores que cometes en press banca"
+
+2. Ve un toggle: "Publicar tambien en mi perfil publico"
+   [  ] Solo mi comunidad (privado, solo mis clientes)
+   [✓] Tambien en mi perfil publico (visible para todos)
+
+3. Al activarlo, se genera automaticamente:
+   kuvox.io/t/carlosfit/5-errores-press-banca
+```
+
+### La pagina publica incluye
+- Titulo y contenido del post (con imagen si tiene)
+- Nombre, foto y badge del trainer
+- Fecha de publicacion
+- Listado "Mas articulos de [Trainer]"
+- CTA: "¿Quieres entrenar con [Trainer]?" → formulario de contacto
+- Meta tags SEO auto-generados (title, description, og:image)
+- Schema markup (Article, Person)
+
+### Estructura de URLs
+```
+kuvox.io/t/carlosfit                          ← landing del trainer
+kuvox.io/t/carlosfit/5-errores-press-banca    ← articulo
+kuvox.io/t/carlosfit/protocolo-nutricion      ← articulo
+kuvox.io/t/carlosfit/mi-rutina-ppl-favorita   ← articulo (puede linkear al marketplace)
+```
+
+### Implementacion tecnica
+```
+Tabla: community_posts (ya existe)
+  + campo: is_public (BOOLEAN, default false)
+  + campo: slug (TEXT, auto-generado del titulo)
+  + campo: meta_description (TEXT, primeros 160 chars del contenido)
+
+Ruta nueva: /t/[trainer_slug]/[post_slug]
+  → Server component (sin auth, pagina publica)
+  → Lee community_posts WHERE is_public = true AND slug = post_slug
+  → Renderiza con meta tags SEO
+
+Sitemap: /sitemap.xml
+  → Genera automaticamente con todos los posts publicos
+  → Se actualiza diariamente
+```
+
+### Vinculacion con marketplace
+Un post publico puede linkear a una rutina del marketplace:
+```
+Post: "Mi rutina PPL favorita para hipertrofia"
+      → Al final: boton "Comprar esta rutina — 19€"
+      → Link a la rutina en el marketplace
+```
+El contenido vende el producto. Funnel: articulo → confianza → compra.
+
+### Impacto SEO
+```
+50 trainers × 2 posts/mes = 100 paginas nuevas/mes
+En 1 año: 1200 paginas indexadas en Google
+Cada pagina posiciona por keywords de fitness en espanol
+Todo el trafico llega a Kuvox organicamente
+```
+
+### Fases
+```
+Fase 1:  Toggle "publicar al mundo" + pagina publica basica + SEO auto
+Fase 2:  Listado de articulos en landing del trainer
+Fase 3:  Vincular posts con rutinas del marketplace
+Fase 4:  Analytics por post (visitas, clicks en CTA, leads generados)
+```
+
+---
+
+## 16. CRM con captacion automatica desde RRSS
+
+### Concepto
+El trainer gestiona potenciales clientes en un pipeline visual (Kanban). Los leads entran automaticamente desde redes sociales, formularios, y la landing publica. No hay que crear leads manualmente.
+
+### Pipeline Kanban
+```
+NUEVO LEAD          CONTACTADO       INTERESADO       PRUEBA        CLIENTE
+─────────────────────────────────────────────────────────────────────────────
+Maria G.            Carlos R.        Ana P.           Javi M.       Lucia F.
+📸 Instagram        📱 TikTok        💬 WhatsApp      🔗 Link bio
+hace 2h             hace 1d          hace 3d          hace 5d
+```
+
+### Fuentes de leads (de mas facil a mas compleja)
+
+**1. Link en bio + formulario (gratis, sin API externa)**
+```
+Instagram bio: "¿Quieres empezar? → kuvox.io/t/carlosfit"
+  → Usuario rellena formulario
+  → Lead en CRM, origen: "Landing"
+```
+
+**2. Post publico con CTA (gratis, sin API externa)**
+```
+Trainer comparte en Instagram: "Nuevo articulo → kuvox.io/t/carlosfit/mi-rutina-ppl"
+  → Lector llega al post, ve CTA "Entrenar con Carlos"
+  → Rellena formulario
+  → Lead en CRM, origen: "Blog"
+```
+
+**3. Instagram DM Automation (Meta API, gratis)**
+```
+Alguien comenta "INFO" en un reel del trainer
+  → Instagram envia DM automatico con link al formulario
+  → Lead en CRM, origen: "Instagram DM"
+```
+El trainer configura: palabra clave trigger + mensaje automatico.
+
+**4. Meta Lead Ads (Meta Ads API, gratis — trainer paga sus ads)**
+```
+Trainer pone anuncio en Instagram con formulario nativo
+  → Meta pre-rellena nombre/email del usuario (alta conversion)
+  → Webhook de Meta → API de Kuvox → lead en CRM
+  → Origen: "Instagram Ads"
+```
+
+**5. TikTok Lead Generation (TikTok Marketing API)**
+```
+Mismo concepto que Meta Lead Ads pero en TikTok.
+  → Origen: "TikTok Ads"
+```
+
+**6. WhatsApp Business API (futuro, ~0.05€/conversacion)**
+```
+Cliente potencial escribe al WhatsApp del trainer
+  → Auto-respuesta con link al formulario
+  → Lead en CRM, origen: "WhatsApp"
+```
+
+### Follow-up automatico
+- Email automatico a las 24h: "Hola [nombre], gracias por tu interes..."
+- Email a los 3 dias si no responde: "¿Tienes alguna duda?"
+- Email a los 7 dias: "Ultima oportunidad para tu sesion de prueba gratis"
+- El trainer puede personalizar los textos de cada email
+
+### Metricas del CRM
+- Tasa de conversion por etapa
+- Origen de los leads (cual red social convierte mejor)
+- Tiempo medio de conversion (lead → cliente)
+- Revenue estimado por lead
+
+### Fases de implementacion
+```
+Fase 1 (CRM basico):    Pipeline Kanban + formulario en landing + leads manuales
+Fase 2 (Automacion):    Instagram DM automation (Meta API) + Meta Lead Ads
+Fase 3 (Expansion):     TikTok Lead Gen + follow-up email automatico
+Fase 4 (Avanzado):      WhatsApp Business + analytics por fuente
+```
+
+---
+
+## 17. Ligas y gamificacion
+
+### Concepto
+El trainer crea competiciones entre sus clientes para motivarlos. Rankings en tiempo real, badges de logros, y wall de actividad.
+
+### Tipos de ligas
+| Liga | Metrica | Ejemplo |
+|------|---------|---------|
+| Consistencia | % sesiones completadas | "Quien mas entrena en enero" |
+| Volumen | Tonelaje total (peso × reps) | "Quien mas kilos mueve en 4 semanas" |
+| Pasos | Pasos diarios (de wearables) | "Reto 10.000 pasos" |
+| Sesiones | Numero total de sesiones | "Quien mas veces va al gym" |
+| Personalizada | Cualquier metrica numerica | "Mejor marca en sentadilla" |
+
+### Elementos
+- **Ranking en tiempo real** — leaderboard visible para todos los participantes
+- **Badges/logros** — "Racha de 7 dias", "Primera liga ganada", "Top 3 tres veces"
+- **Wall de actividad** — feed con "Maria completo sesion de pierna", "Carlos nuevo PR"
+- **Premios opcionales** — el trainer define el premio (sesion gratis, descuento, etc.)
+
+### Por que funciona
+- Competicion sana: los clientes se motivan entre ellos sin que el trainer persiga
+- Retencion: un cliente en una liga tiene motivo para no dejar el gym esta semana
+- Comunidad: los clientes sienten que forman parte de algo
+- Contenido: "El ganador de la liga de enero es..." es un post para RRSS
+
+### Estado actual
+Las tablas de gamificacion ya existen en la DB. Falta la interfaz.
+
+---
+
+## 18. Orden de ejecucion
 
 | Fase | Que | Prioridad | Complejidad |
 |------|-----|-----------|-------------|
@@ -442,13 +682,18 @@ Regla simple: la sesion en curso del cliente SIEMPRE gana.
 | 6 | Wearables (HealthKit + Health Connect) | Media | Media |
 | 7 | IA comida avanzada (foto nevera + video buffet) | Media | Media |
 | 8 | Gestion de contratos | Media | Media-alta |
-| 9 | Marketplace de rutinas + formato .kuvox | Media | Alta |
-| 10 | Outlook Calendar + Apple Calendar | Baja | Media-alta |
-| 11 | Rebrand FitOS → Kuvox | Cuando dominios listos | Media |
+| 9 | Perfil publico del trainer (landing auto-generada) | Media | Media |
+| 10 | Blog publico (toggle en posts de comunidad) | Media | Media |
+| 11 | CRM basico (pipeline + formulario en landing) | Media | Media-alta |
+| 12 | Marketplace de rutinas + formato .kuvox | Media | Alta |
+| 13 | Ligas y gamificacion (UI sobre tablas existentes) | Baja | Media |
+| 14 | CRM avanzado (Meta API, TikTok, WhatsApp) | Baja | Alta |
+| 15 | Outlook Calendar + Apple Calendar | Baja | Media-alta |
+| 16 | Rebrand FitOS → Kuvox | Cuando dominios listos | Media |
 
 ---
 
-## 15. Decisiones de negocio clave
+## 19. Decisiones de negocio clave
 
 | Decision | Resolucion |
 |----------|-----------|
@@ -463,10 +708,14 @@ Regla simple: la sesion en curso del cliente SIEMPRE gana.
 | Pricing | Por cliente activo, todo incluido. 4,90€ (3-25), 3,90€ (26-75), 2,90€ (76-150). 2 gratis |
 | Add-ons | NO. Todo incluido en el precio. Unica excepcion: comision marketplace 15-20% |
 | Offline | Imprescindible. WatermelonDB (SQLite) local-first. Sync automatica |
+| Landing del trainer | Auto-generada con datos del onboarding. Sin trabajo manual |
+| Blog publico | Toggle en posts de comunidad. SEO automatico. No es un blog separado |
+| CRM | Pipeline Kanban + captacion automatica desde RRSS. Leads no se crean manualmente |
+| Ligas | Competiciones entre clientes del mismo trainer. Tablas existen, falta UI |
 
 ---
 
-## 16. Competencia y diferenciacion
+## 20. Competencia y diferenciacion
 
 | Competidor | Que hace | Que NO hace (y Kuvox si) |
 |------------|----------|--------------------------|
@@ -483,6 +732,9 @@ Regla simple: la sesion en curso del cliente SIEMPRE gana.
 5. **Formato .kuvox** — rutinas portables e importables con 1 click
 6. **Modo offline** — entrena sin internet, sincroniza despues. Ningun competidor en español lo tiene bien resuelto
 7. **Precio por cliente** — sin tiers confusos, paga por lo que usa, todo incluido
+8. **Landing + blog auto-generado** — cada trainer tiene web propia sin saber codigo. SEO gratis para Kuvox
+9. **CRM con captacion desde RRSS** — leads entran solos desde Instagram, TikTok, WhatsApp
+10. **Ligas de gamificacion** — motivacion y retencion de clientes sin esfuerzo del trainer
 
 ---
 
