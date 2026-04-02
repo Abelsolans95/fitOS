@@ -13,7 +13,7 @@ Este archivo contiene TODO lo necesario para continuar el desarrollo: reglas, cr
 - **Rediseño UI:** Completado — estética premium en app completa (landing, paneles trainer/cliente con *glassmorphism*, app mobile brutalista)
 - **Fase 2 (parcial, 23/03/2026):** Chat interno trainer↔cliente ✅ | Calendario de citas ✅ (migración 030 pendiente aplicar) | Google Calendar sync ⏳ (pendiente OAuth) | Emails Resend ⏳ (pendiente dominio)
 - **Fase 3 (parcial, 23/03/2026):** Widget iOS y Android ✅ (ver entrenamiento del día sin abrir la app)
-- **Fase 4 (parcial, 26/03/2026):** Sistema de lesiones/molestias ✅ — mapa anatómico SVG interactivo, reportes coach/client, Realtime sync
+- **Fase 4 (parcial, 26/03/2026):** Sistema de lesiones/molestias ✅ — mapa anatómico con imágenes reales + overlay SVG, reportes coach/client, Realtime sync
 - **Fase 5 (parcial, 26/03/2026):** Plantillas de rutina ✅ — guardar/cargar configuraciones de ejercicios reutilizables por trainer
 - **Fase 6 (parcial, 28/03/2026):** Rediseño planificador de menú ✅ — selección de días con fechas reales, semanas de mesociclo, % macros, panel flotante de info nutricional en tiempo real
 - **Fase 6 ampliada (29/03/2026):** Menús guardados ✅ — guardar/cargar configuraciones de menú reutilizables (tabla `saved_menu_templates`, migración 033). Navegación semanal mejorada ✅ — botones semana anterior/siguiente en la parte inferior del planificador. DarkSelect ✅ — todos los `<select>` nativos reemplazados por componente custom dark.
@@ -491,6 +491,7 @@ fitOS/
 │   │   │   ├── (auth)/
 │   │   │   │   ├── login/page.tsx
 │   │   │   │   ├── register/page.tsx
+│   │   │   │   ├── forgot-password/page.tsx
 │   │   │   │   └── onboarding/
 │   │   │   │       ├── trainer/page.tsx             ← wizard 3 pasos
 │   │   │   │       └── client/page.tsx              ← wizard 2 pasos
@@ -556,7 +557,10 @@ fitOS/
 │   │   │   │   ├── import/excel/route.ts
 │   │   │   │   ├── import/create-exercises/route.ts
 │   │   │   │   ├── import/reconcile/route.ts
-│   │   │   │   └── complete-registration/route.ts
+│   │   │   │   ├── complete-registration/route.ts
+│   │   │   │   ├── activate-client/route.ts
+│   │   │   │   ├── client-trainer/route.ts
+│   │   │   │   └── validate-promo/route.ts
 │   │   │   └── components/
 │   │   │       ├── layout/TrainerSidebar.tsx + ClientSidebar.tsx
 │   │   │       ├── ui/DarkSelect.tsx
@@ -571,6 +575,7 @@ fitOS/
 │   │   │   ├── google-calendar.ts + .test.ts
 │   │   │   └── onboarding-templates.ts  ← plantilla 5 secciones onboarding
 │   │   ├── hooks/useChat.ts
+│   │   ├── .env.example                        ← variables de entorno documentadas
 │   │   ├── middleware.ts
 │   │   └── vitest.config.ts
 │   └── mobile/
@@ -604,7 +609,8 @@ fitOS/
         ├── 036_add_gender_to_profiles.sql
         ├── 037_exercise_metrics.sql
         ├── 038_support_tickets.sql
-        └── 039_knowledge_articles.sql
+        ├── 039_knowledge_articles.sql
+        └── 040_atomic_promo_increment.sql
 ```
 
 ---
@@ -637,6 +643,7 @@ fitOS/
 | Config | Prioridad | Qué desbloquea |
 |--------|-----------|----------------|
 | Ejecutar migración 039_knowledge_articles.sql | 🔴 Alta | Base de Conocimiento / FAQ (tabla + funciones + RLS + storage) |
+| Ejecutar migración 040_atomic_promo_increment.sql | 🔴 Alta | Race condition fix en promo codes (RPC atómico) |
 | Ejecutar política RLS `trainer_replies_update_read` | 🔴 Alta | Trainer pueda marcar replies de clientes como leídas |
 | `ANTHROPIC_API_KEY` en Supabase secrets | 🟠 Alta | Edge Functions IA (ahora mock) |
 | Verificar dominio en Resend + `RESEND_API_KEY` | 🟠 Alta | Emails confirmación citas |
