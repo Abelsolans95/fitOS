@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
 import { toast } from "sonner";
 import type { HealthLog, HealthLogFormData } from "@fitos/shared";
+import type { Gender } from "@/components/health/AnatomyMap";
 
 export type { HealthLog, HealthLogFormData };
 
@@ -15,6 +16,7 @@ export function useClientHealth() {
   const [saving, setSaving] = useState(false);
   const [trainerId, setTrainerId] = useState<string | null>(null);
   const [clientId, setClientId] = useState<string | null>(null);
+  const [gender, setGender] = useState<Gender>("male");
 
   const fetchLogs = useCallback(async (cid: string) => {
     const supabase = createClient();
@@ -35,11 +37,16 @@ export function useClientHealth() {
 
       setClientId(user.id);
 
-      const { data: rel, error: relError } = await supabase
-        .from("trainer_clients").select("trainer_id")
-        .eq("client_id", user.id).eq("status", "active").single();
-      if (relError || !rel) { console.error("[useClientHealth] No trainer rel:", relError); } // No bloqueante
-      else { setTrainerId(rel.trainer_id as string); }
+      // Fetch gender + trainer in parallel
+      const [relResult, profileResult] = await Promise.all([
+        supabase.from("trainer_clients").select("trainer_id").eq("client_id", user.id).eq("status", "active").single(),
+        supabase.from("profiles").select("gender").eq("user_id", user.id).single(),
+      ]);
+
+      if (relResult.error || !relResult.data) { console.error("[useClientHealth] No trainer rel:", relResult.error); } // No bloqueante
+      else { setTrainerId(relResult.data.trainer_id as string); }
+
+      if (profileResult.data?.gender) { setGender(profileResult.data.gender as Gender); } // No bloqueante
 
       await fetchLogs(user.id);
       setLoading(false);
@@ -58,6 +65,14 @@ export function useClientHealth() {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [clientId, fetchLogs]);
+
+  const handleGenderChange = async (newGender: Gender) => {
+    setGender(newGender);
+    if (!clientId) return;
+    const supabase = createClient();
+    const { error } = await supabase.from("profiles").update({ gender: newGender }).eq("user_id", clientId);
+    if (error) { console.error("[useClientHealth] gender update:", error); } // No bloqueante — ya se refleja en UI
+  };
 
   const handleMuscleClick = (muscleId: string) => {
     setSelectedMuscle(muscleId);
@@ -100,8 +115,8 @@ export function useClientHealth() {
   const existingForMuscle = selectedMuscle ? logs.find((l) => l.muscle_id === selectedMuscle && l.status !== "recovered") ?? null : null;
 
   return {
-    logs, loading, selectedMuscle, showForm, saving,
+    logs, loading, selectedMuscle, showForm, saving, gender,
     activeLogs, recoveredLogs, existingForMuscle,
-    handleMuscleClick, handleSubmit, handleCancel,
+    handleMuscleClick, handleSubmit, handleCancel, handleGenderChange,
   };
 }

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { colors, spacing } from "../../theme";
@@ -18,10 +18,8 @@ interface Props {
   currentSetIdx: number;
   allCurrentDone: boolean;
   savedExercises: Set<number>;
-  exerciseRpe: Record<number, string>;
-  onSetChange: (setIdx: number, field: "weight_kg" | "reps_done" | "rir", val: string) => void;
+  onSetChange: (setIdx: number, field: "weight_kg" | "reps_done" | "rir" | "rpe", val: string) => void;
   onCompleteSet: (setIdx: number) => void;
-  onSetRpe: (val: string) => void;
   onPrev: () => void;
   onNext: () => void;
   onFinish: () => void;
@@ -31,11 +29,40 @@ interface Props {
 export function ActiveTraining({
   currentEx, currentExIdx, totalExercises, elapsed,
   sets, prevSets, activeWeek, currentSetIdx, allCurrentDone, savedExercises,
-  exerciseRpe, onSetChange, onCompleteSet, onSetRpe, onPrev, onNext, onFinish, onAbort,
+  onSetChange, onCompleteSet, onPrev, onNext, onFinish, onAbort,
 }: Props) {
   const isLast = currentExIdx >= totalExercises - 1;
   const notes = currentEx.coach_notes || currentEx.trainer_notes || currentEx.technique_notes || "";
   const progressionRule = currentEx.progression_rule || "";
+
+  // Determine which optional columns to show based on trainer configuration
+  const showRir = useMemo(() => {
+    if (currentEx.rir > 0) return true;
+    const sc = currentEx.sets_config ?? [];
+    if (sc.some((c) => c.rir > 0)) return true;
+    const wc = currentEx.weekly_config;
+    if (wc) {
+      for (const w of Object.values(wc)) {
+        if (w.rir > 0) return true;
+        if (w.sets_detail?.some((d) => d.rir > 0)) return true;
+      }
+    }
+    return false;
+  }, [currentEx]);
+
+  const showRpe = useMemo(() => {
+    if (currentEx.target_rpe != null && currentEx.target_rpe > 0) return true;
+    const sc = currentEx.sets_config ?? [];
+    if (sc.some((c: any) => (c.target_rpe ?? 0) > 0)) return true;
+    const wc = currentEx.weekly_config;
+    if (wc) {
+      for (const w of Object.values(wc)) {
+        if ((w as any).target_rpe > 0) return true;
+        if (w.sets_detail?.some((d: any) => (d.target_rpe ?? 0) > 0)) return true;
+      }
+    }
+    return false;
+  }, [currentEx]);
 
   return (
     <ScrollView style={st.container} contentContainerStyle={st.content}>
@@ -97,12 +124,13 @@ export function ActiveTraining({
         </View>
       )}
 
-      {/* Set inputs */}
+      {/* Set header — dynamic columns */}
       <View style={st.setHeader}>
         <Text style={[st.setHeaderText, { width: 40 }]}>Serie</Text>
         <Text style={[st.setHeaderText, { flex: 1 }]}>Peso (kg)</Text>
         <Text style={[st.setHeaderText, { flex: 1 }]}>Reps</Text>
-        <Text style={[st.setHeaderText, { width: 48 }]}>RIR</Text>
+        {showRir && <Text style={[st.setHeaderText, { width: 48 }]}>RIR</Text>}
+        {showRpe && <Text style={[st.setHeaderText, { width: 48 }]}>RPE</Text>}
         <View style={{ width: 44 }} />
       </View>
 
@@ -110,10 +138,13 @@ export function ActiveTraining({
         const isCurrent = setIdx === currentSetIdx;
         const prevSet = prevSets[setIdx];
         const isRP = set.type === "rest_pause";
+        const isDS = set.type === "drop_set";
+        const isDeriv = isRP || isDS;
         const wk = currentEx.weekly_config?.[activeWeek];
         const isDiff = currentEx.mode === "different";
-        const cfgDetail = isDiff ? (wk?.sets_detail ?? currentEx.sets_config ?? []) : [];
-        const cfg = isDiff && cfgDetail[setIdx]
+        const hasSetsDetail = (wk?.sets_detail?.length ?? 0) > 0;
+        const cfgDetail = (isDiff || hasSetsDetail) ? (wk?.sets_detail ?? currentEx.sets_config ?? []) : [];
+        const cfg = cfgDetail.length > 0 && cfgDetail[setIdx]
           ? cfgDetail[setIdx]
           : {
               reps_min: wk?.reps_min ?? currentEx.reps_min,
@@ -122,13 +153,20 @@ export function ActiveTraining({
               target_weight: wk?.target_weight ?? currentEx.target_weight ?? null,
               rest_s: wk?.rest_s ?? currentEx.rest_s,
             };
+        // Count normal sets for display numbering
+        let normalNum = 0;
+        if (!isDeriv) {
+          for (let k = 0; k <= setIdx; k++) {
+            if (sets[k].type === "main") normalNum++;
+          }
+        }
 
         return (
-          <View key={setIdx} style={[st.setRow, set.completed && st.setRowDone, isCurrent && st.setRowCurrent]}>
-            <View style={[st.setNum, isRP && { backgroundColor: colors.orangeDim }]}>
+          <View key={setIdx} style={[st.setRow, set.completed && st.setRowDone, isCurrent && st.setRowCurrent, isDeriv && { marginLeft: 24, borderLeftWidth: 2, borderLeftColor: isRP ? "rgba(255,145,0,0.4)" : "rgba(124,58,237,0.4)" }]}>
+            <View style={[st.setNum, isRP && { backgroundColor: colors.orangeDim }, isDS && { backgroundColor: "rgba(124,58,237,0.08)" }]}>
               {set.completed
                 ? <CheckIcon size={14} color={colors.green} />
-                : <Text style={[st.setNumText, isRP && { color: colors.orange }]}>{isRP ? "RP" : setIdx + 1}</Text>}
+                : <Text style={[st.setNumText, isRP && { color: colors.orange }, isDS && { color: colors.violet }]}>{isRP ? "RP" : isDS ? "DS" : normalNum}</Text>}
             </View>
 
             <TextInput
@@ -147,14 +185,27 @@ export function ActiveTraining({
               placeholder={prevSet ? String(prevSet.reps_done) : cfg.reps_min === cfg.reps_max ? String(cfg.reps_min) : `${cfg.reps_min}-${cfg.reps_max}`}
               placeholderTextColor="rgba(90,90,114,0.4)"
             />
-            <TextInput
-              style={[st.setInput, isCurrent && st.setInputActive, { width: 48, flex: 0 }]}
-              keyboardType="number-pad" value={set.rir}
-              onChangeText={(val) => onSetChange(setIdx, "rir", val)}
-              editable={!set.completed}
-              placeholder={String(cfg.rir)}
-              placeholderTextColor="rgba(90,90,114,0.4)"
-            />
+            {showRir && (
+              <TextInput
+                style={[st.setInput, isCurrent && st.setInputActive, { width: 48, flex: 0 }]}
+                keyboardType="number-pad" value={set.rir}
+                onChangeText={(val) => onSetChange(setIdx, "rir", val)}
+                editable={!set.completed}
+                placeholder={String(cfg.rir)}
+                placeholderTextColor="rgba(90,90,114,0.4)"
+              />
+            )}
+            {showRpe && (
+              <TextInput
+                style={[st.setInput, isCurrent && st.setInputActive, { width: 48, flex: 0, borderColor: set.rpe ? "rgba(255,145,0,0.35)" : undefined }]}
+                keyboardType="number-pad" value={set.rpe}
+                onChangeText={(val) => onSetChange(setIdx, "rpe", val)}
+                editable={!set.completed}
+                placeholder={String(currentEx.target_rpe)}
+                placeholderTextColor="rgba(255,145,0,0.3)"
+                maxLength={2}
+              />
+            )}
             <TouchableOpacity
               style={[st.checkBtn, set.completed && st.checkBtnDone, isCurrent && st.checkBtnActive]}
               activeOpacity={0.7}
@@ -171,24 +222,6 @@ export function ActiveTraining({
         <View style={st.savedBadge}>
           <CheckIcon size={14} color={colors.green} />
           <Text style={st.savedBadgeText}>Ejercicio guardado</Text>
-        </View>
-      )}
-
-      {currentEx.target_rpe != null && (
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderWidth: 1, borderColor: "rgba(255,145,0,0.25)", backgroundColor: "rgba(255,145,0,0.05)", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, marginTop: 12 }}>
-          <View>
-            <Text style={{ fontSize: 10, fontWeight: "700", letterSpacing: 1.5, color: colors.orange, textTransform: "uppercase" }}>RPE del ejercicio</Text>
-            <Text style={{ fontSize: 10, color: colors.dimmed, marginTop: 1 }}>Objetivo: {currentEx.target_rpe} · Escala 1-10</Text>
-          </View>
-          <TextInput
-            style={{ width: 52, height: 44, borderWidth: 1, borderColor: "rgba(255,145,0,0.35)", backgroundColor: "rgba(255,145,0,0.1)", borderRadius: 12, textAlign: "center", fontSize: 18, fontWeight: "900", color: colors.orange }}
-            keyboardType="number-pad"
-            value={exerciseRpe[currentExIdx] || ""}
-            onChangeText={onSetRpe}
-            placeholder={String(currentEx.target_rpe)}
-            placeholderTextColor="rgba(255,145,0,0.3)"
-            maxLength={2}
-          />
         </View>
       )}
 

@@ -8,14 +8,18 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Image,
 } from "react-native";
-import Svg, { Path, Text as SvgText, Line } from "react-native-svg";
+import Svg, { Path, Defs, Filter, FeGaussianBlur, FeColorMatrix, FeMerge, FeMergeNode } from "react-native-svg";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
 import { colors, spacing, radius, shadows, fonts } from "../theme";
-import { FRONT_MUSCLES, BACK_MUSCLES, MUSCLE_LABELS, HEAD_OUTLINE, FRONT_BODY_OUTLINE, BACK_BODY_OUTLINE } from "./health/muscleData";
+import { getZonesByView, ZONE_LABELS, ANATOMY_VIEWBOX } from "@fitos/shared";
+import type { MuscleZone } from "@fitos/shared";
 import { ReportModal } from "./health/ReportModal";
 import type { HealthLog } from "@fitos/shared";
+
+type Gender = "male" | "female";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -31,27 +35,54 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; label: string }
   recovered: { color: colors.green, bg: colors.greenDim, label: "Recuperada" },
 };
 
+/* ── Image map ───────────────────────────────────────────── */
+
+const ANATOMY_IMAGES: Record<string, ReturnType<typeof require>> = {
+  "male-front": require("../../assets/anatomy/front_male.png"),
+  "male-back": require("../../assets/anatomy/back_male.jpg"),
+  "female-front": require("../../assets/anatomy/front_female.jpg"),
+  "female-back": require("../../assets/anatomy/back_female.jpg"),
+};
+
+function getAnatomyImage(gender: Gender, view: "front" | "back") {
+  return ANATOMY_IMAGES[`${gender}-${view}`];
+}
+
+/* ── Helpers ──────────────────────────────────────────────── */
+
 function getActiveLog(logs: HealthLog[], muscleId: string) {
   return logs.find((l) => l.muscle_id === muscleId && l.status !== "recovered");
 }
 
-function getMuscleColor(logs: HealthLog[], muscleId: string, isSelected: boolean): string {
+function getZoneFill(logs: HealthLog[], muscleId: string, isSelected: boolean): string {
   const active = getActiveLog(logs, muscleId);
-  if (!active) return isSelected ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.035)";
-  if (active.pain_score >= 6) return isSelected ? "rgba(255,23,68,0.55)" : "rgba(255,23,68,0.38)";
-  return isSelected ? "rgba(255,145,0,0.5)" : "rgba(255,145,0,0.32)";
+  if (isSelected) {
+    if (!active) return "rgba(0,229,255,0.30)";
+    if (active.pain_score >= 6) return "rgba(255,23,68,0.45)";
+    return "rgba(255,145,0,0.40)";
+  }
+  if (!active) return "transparent";
+  if (active.pain_score >= 6) return "rgba(255,23,68,0.35)";
+  return "rgba(255,145,0,0.30)";
 }
 
-function getMuscleStroke(logs: HealthLog[], muscleId: string, isSelected: boolean): string {
+function getZoneStroke(logs: HealthLog[], muscleId: string, isSelected: boolean): string {
   const active = getActiveLog(logs, muscleId);
-  if (!active) return isSelected ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.06)";
-  if (active.pain_score >= 6) return isSelected ? "rgba(255,23,68,0.7)" : "rgba(255,23,68,0.5)";
-  return isSelected ? "rgba(255,145,0,0.6)" : "rgba(255,145,0,0.4)";
+  if (isSelected) {
+    if (!active) return "rgba(0,229,255,0.6)";
+    if (active.pain_score >= 6) return "rgba(255,23,68,0.7)";
+    return "rgba(255,145,0,0.65)";
+  }
+  if (!active) return "transparent";
+  if (active.pain_score >= 6) return "rgba(255,23,68,0.5)";
+  return "rgba(255,145,0,0.45)";
 }
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("es-ES", { day: "numeric", month: "short" });
 }
+
+/* ── Main Screen ─────────────────────────────────────────── */
 
 export default function HealthScreen() {
   const { user } = useAuth();
@@ -61,6 +92,7 @@ export default function HealthScreen() {
   const [view, setView] = useState<"front" | "back">("front");
   const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [gender, setGender] = useState<Gender>("male");
 
   const fetchLogs = useCallback(async () => {
     if (!user?.id) return;
@@ -81,14 +113,15 @@ export default function HealthScreen() {
   useEffect(() => {
     const init = async () => {
       if (!user?.id) return;
-      const { data: rel } = await supabase
-        .from("trainer_clients")
-        .select("trainer_id")
-        .eq("client_id", user.id)
-        .eq("status", "active")
-        .single();
 
-      if (rel) setTrainerId(rel.trainer_id as string);
+      const [relResult, profileResult] = await Promise.all([
+        supabase.from("trainer_clients").select("trainer_id").eq("client_id", user.id).eq("status", "active").single(),
+        supabase.from("profiles").select("gender").eq("user_id", user.id).single(),
+      ]);
+
+      if (relResult.data) setTrainerId(relResult.data.trainer_id as string);
+      if (profileResult.data?.gender) setGender(profileResult.data.gender as Gender);
+
       await fetchLogs();
       setLoading(false);
     };
@@ -108,7 +141,14 @@ export default function HealthScreen() {
     return () => { if (channel) supabase.removeChannel(channel); };
   }, [user?.id, fetchLogs]);
 
-  const muscles = view === "front" ? FRONT_MUSCLES : BACK_MUSCLES;
+  const handleGenderChange = async (newGender: Gender) => {
+    setGender(newGender);
+    if (!user?.id) return;
+    const { error } = await supabase.from("profiles").update({ gender: newGender }).eq("user_id", user.id);
+    if (error) console.error("[HealthScreen] gender update:", error); // No bloqueante
+  };
+
+  const zones = getZonesByView(view);
   const activeLogs = logs.filter((l) => l.status !== "recovered");
   const existingForMuscle = selectedMuscle
     ? logs.find((l) => l.muscle_id === selectedMuscle && l.status !== "recovered") ?? null
@@ -127,14 +167,29 @@ export default function HealthScreen() {
     );
   }
 
-  const svgWidth = Math.min(SCREEN_WIDTH - spacing.xxxl * 2, 300);
-  const svgHeight = svgWidth * (330 / 208);
+  const mapWidth = Math.min(SCREEN_WIDTH - spacing.xxxl * 2, 320);
+  const mapHeight = mapWidth * (720 / 400); // matches ANATOMY_VIEWBOX aspect ratio
 
   return (
     <ScrollView style={st.container} contentContainerStyle={st.content} showsVerticalScrollIndicator={false}>
-      <Text style={st.title}>Mi Salud</Text>
-      <Text style={st.subtitle}>Reporta molestias para que tu entrenador las tenga en cuenta</Text>
+      <View style={st.headerRow}>
+        <View style={{ flex: 1 }}>
+          <Text style={st.title}>Mi Salud</Text>
+          <Text style={st.subtitle}>Reporta molestias para que tu entrenador las tenga en cuenta</Text>
+        </View>
+      </View>
 
+      {/* Gender toggle */}
+      <View style={st.genderContainer}>
+        <TouchableOpacity onPress={() => handleGenderChange("male")} style={[st.genderBtn, gender === "male" && st.genderBtnActive]}>
+          <Text style={[st.genderBtnText, gender === "male" && st.genderBtnTextActive]}>HOMBRE</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => handleGenderChange("female")} style={[st.genderBtn, gender === "female" && st.genderBtnActive]}>
+          <Text style={[st.genderBtnText, gender === "female" && st.genderBtnTextActive]}>MUJER</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* View toggle */}
       <View style={st.toggleContainer}>
         <TouchableOpacity onPress={() => setView("front")} style={[st.toggleBtn, view === "front" && st.toggleBtnActive]}>
           <Text style={[st.toggleBtnText, view === "front" && st.toggleBtnTextActive]}>FRONTAL</Text>
@@ -144,6 +199,7 @@ export default function HealthScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Legend */}
       <View style={st.legendRow}>
         <View style={st.legendItem}>
           <View style={[st.legendDot, { backgroundColor: "rgba(255,255,255,0.06)" }]} />
@@ -159,30 +215,40 @@ export default function HealthScreen() {
         </View>
       </View>
 
-      <View style={st.mapCard}>
-        <Svg width={svgWidth} height={svgHeight} viewBox="0 0 208 330">
-          <Path d={HEAD_OUTLINE} fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.08)" strokeWidth={0.8} strokeLinejoin="round" />
-          <Path d={view === "front" ? FRONT_BODY_OUTLINE : BACK_BODY_OUTLINE} fill="rgba(255,255,255,0.015)" stroke="rgba(255,255,255,0.06)" strokeWidth={0.8} strokeLinejoin="round" />
-          <Line x1="104" y1="56" x2="104" y2="174" stroke="rgba(255,255,255,0.025)" strokeWidth={0.4} strokeDasharray="2,4" />
-          {muscles.map((muscle) => {
-            const isSelected = selectedMuscle === muscle.id;
+      {/* Anatomy map with image + SVG overlay */}
+      <View style={[st.mapCard, { width: mapWidth, height: mapHeight }]}>
+        <Image
+          source={getAnatomyImage(gender, view)}
+          style={StyleSheet.absoluteFillObject}
+          resizeMode="contain"
+        />
+        <Svg
+          width={mapWidth}
+          height={mapHeight}
+          viewBox={ANATOMY_VIEWBOX}
+          style={StyleSheet.absoluteFillObject}
+        >
+          {zones.map((zone) => {
+            const isSelected = selectedMuscle === zone.id;
             return (
               <Path
-                key={muscle.id}
-                d={muscle.path}
-                fill={getMuscleColor(logs, muscle.id, isSelected)}
-                stroke={getMuscleStroke(logs, muscle.id, isSelected)}
-                strokeWidth={isSelected ? 1.2 : 0.6}
+                key={zone.id}
+                d={zone.path}
+                fill={getZoneFill(logs, zone.id, isSelected)}
+                stroke={getZoneStroke(logs, zone.id, isSelected)}
+                strokeWidth={isSelected ? 1.5 : 0.8}
                 strokeLinejoin="round"
-                onPress={() => handleMusclePress(muscle.id)}
+                onPress={() => handleMusclePress(zone.id)}
               />
             );
           })}
-          <SvgText x="104" y="328" textAnchor="middle" fill="rgba(255,255,255,0.12)" fontSize="6" fontWeight="600">
-            {view === "front" ? "VISTA FRONTAL" : "VISTA POSTERIOR"}
-          </SvgText>
         </Svg>
       </View>
+
+      {/* View label */}
+      <Text style={st.viewLabel}>
+        {view === "front" ? "Vista frontal" : "Vista posterior"} — {gender === "male" ? "Hombre" : "Mujer"}
+      </Text>
 
       {activeLogs.length > 0 && (
         <View style={st.activeBadge}>
@@ -205,7 +271,7 @@ export default function HealthScreen() {
         activeLogs.map((log) => (
           <TouchableOpacity key={log.id} onPress={() => { setSelectedMuscle(log.muscle_id); setShowModal(true); }} style={st.logCard}>
             <View style={st.logHeader}>
-              <Text style={st.logMuscle}>{MUSCLE_LABELS[log.muscle_id] ?? log.muscle_id}</Text>
+              <Text style={st.logMuscle}>{ZONE_LABELS[log.muscle_id] ?? log.muscle_id}</Text>
               <Text style={[st.logPainScore, { color: log.pain_score >= 6 ? colors.red : colors.orange }]}>{log.pain_score}</Text>
               <View style={[st.statusBadge, { backgroundColor: STATUS_CONFIG[log.status]?.bg }]}>
                 <Text style={[st.statusBadgeText, { color: STATUS_CONFIG[log.status]?.color }]}>{STATUS_CONFIG[log.status]?.label}</Text>
@@ -238,12 +304,18 @@ export default function HealthScreen() {
 
 const st = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  content: { paddingHorizontal: spacing.xl, paddingTop: spacing.section + spacing.xxxl, paddingBottom: spacing.section },
+  content: { paddingHorizontal: spacing.xl, paddingTop: spacing.section + spacing.xxxl, paddingBottom: spacing.section, alignItems: "center" },
   loadingContainer: { flex: 1, backgroundColor: colors.bg, justifyContent: "center", alignItems: "center" },
+  headerRow: { flexDirection: "row", alignItems: "flex-start", width: "100%", marginBottom: spacing.lg },
   title: { fontSize: 28, fontFamily: fonts.extraBold, letterSpacing: -1, color: colors.white },
-  subtitle: { fontSize: 13, color: colors.muted, marginTop: spacing.xs, marginBottom: spacing.xl },
-  toggleContainer: { flexDirection: "row", backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.xs, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border },
-  toggleBtn: { flex: 1, paddingVertical: spacing.sm, borderRadius: radius.sm, alignItems: "center" },
+  subtitle: { fontSize: 13, color: colors.muted, marginTop: spacing.xs },
+  genderContainer: { flexDirection: "row", backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.xs, marginBottom: spacing.md, borderWidth: 1, borderColor: colors.border, alignSelf: "center" },
+  genderBtn: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.sm, alignItems: "center" },
+  genderBtnActive: { backgroundColor: "rgba(124,58,237,0.1)" },
+  genderBtnText: { fontSize: 11, fontFamily: fonts.bold, color: colors.muted, letterSpacing: 1 },
+  genderBtnTextActive: { color: colors.violet },
+  toggleContainer: { flexDirection: "row", backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.xs, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border, alignSelf: "center" },
+  toggleBtn: { paddingHorizontal: spacing.xl, paddingVertical: spacing.sm, borderRadius: radius.sm, alignItems: "center" },
   toggleBtnActive: { backgroundColor: colors.cyanDim },
   toggleBtnText: { fontSize: 11, fontFamily: fonts.bold, color: colors.muted, letterSpacing: 1 },
   toggleBtnTextActive: { color: colors.cyan },
@@ -251,14 +323,15 @@ const st = StyleSheet.create({
   legendItem: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
   legendText: { fontSize: 10, color: colors.muted, textTransform: "uppercase", letterSpacing: 0.5 },
-  mapCard: { alignItems: "center", backgroundColor: colors.surface, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, paddingVertical: spacing.xl, marginBottom: spacing.lg, ...shadows.card },
+  mapCard: { alignSelf: "center", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, overflow: "hidden", marginBottom: spacing.sm, ...shadows.card },
+  viewLabel: { fontSize: 9, fontFamily: fonts.bold, color: "rgba(90,90,114,0.4)", textTransform: "uppercase", letterSpacing: 3, textAlign: "center", marginBottom: spacing.lg },
   activeBadge: { alignSelf: "center", backgroundColor: colors.redDim, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, marginBottom: spacing.lg },
   activeBadgeText: { fontSize: 11, fontFamily: fonts.bold, color: colors.red },
-  sectionTitle: { fontSize: 10, fontFamily: fonts.bold, color: colors.dimmed, letterSpacing: 2, marginBottom: spacing.md },
-  emptyCard: { alignItems: "center", justifyContent: "center", gap: spacing.sm, backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingVertical: spacing.section },
+  sectionTitle: { fontSize: 10, fontFamily: fonts.bold, color: colors.dimmed, letterSpacing: 2, marginBottom: spacing.md, alignSelf: "flex-start" },
+  emptyCard: { alignItems: "center", justifyContent: "center", gap: spacing.sm, backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingVertical: spacing.section, width: "100%" },
   emptyTitle: { fontSize: 14, fontFamily: fonts.medium, color: colors.white },
   emptySubtitle: { fontSize: 12, color: colors.muted },
-  logCard: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, marginBottom: spacing.md },
+  logCard: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, marginBottom: spacing.md, width: "100%" },
   logHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   logMuscle: { fontSize: 14, fontFamily: fonts.bold, color: colors.white },
   logPainScore: { fontSize: 18, fontFamily: fonts.extraBold, letterSpacing: -0.5 },

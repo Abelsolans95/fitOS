@@ -1,9 +1,13 @@
+export type SetType = "normal" | "rest_pause" | "drop_set";
+
 export interface MobileSetConfig {
   reps_min: number;
   reps_max: number;
   rir: number;
   target_weight: number | null;
   rest_s: number;
+  target_rpe?: number | null;
+  set_type?: SetType;
 }
 
 export interface MobileWeekConfig {
@@ -13,6 +17,7 @@ export interface MobileWeekConfig {
   rir: number;
   target_weight: number | null;
   rest_s: number;
+  target_rpe?: number | null;
   sets_detail?: MobileSetConfig[];
   coach_notes?: string;
 }
@@ -80,8 +85,9 @@ export interface SetEntry {
   weight_kg: string;
   reps_done: string;
   rir: string;
+  rpe: string;
   completed: boolean;
-  type: "main" | "rest_pause";
+  type: "main" | "rest_pause" | "drop_set";
 }
 
 export interface SavedLogEntry {
@@ -98,4 +104,4 @@ export interface InProgressSession {
   created_at: string;
 }
 
-export type ScreenMode = "overview" | "registration" | "active" | "rest" | "rpe" | "summary";
+export type ScreenMode = "overview" | "registration" | "active" | "rest" | "sfr" | "rpe" | "summary";

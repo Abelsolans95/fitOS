@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import type { ExerciseData, PreviousLog, SavedLogEntry } from "./types";
 import { useActiveTraining } from "./useActiveTraining";
 import { RestTimer } from "./components/RestTimer";
+import { SFRSelector } from "./components/SFRSelector";
 import { RPESelector } from "./components/RPESelector";
 import { SummaryView } from "./components/SummaryView";
 import { ExerciseCard } from "./components/ExerciseCard";
@@ -153,6 +154,19 @@ function ActiveTrainingPage() {
     );
   }
 
+  if (state.phase === "sfr") {
+    return (
+      <SFRSelector
+        exerciseName={t.currentEx?.name || ""}
+        stimulus={state.exerciseStimulus[state.currentExIdx] ?? 0}
+        fatigue={state.exerciseFatigue[state.currentExIdx] ?? 0}
+        onStimulusChange={(v) => t.dispatch({ type: "SET_STIMULUS", exIdx: state.currentExIdx, value: v })}
+        onFatigueChange={(v) => t.dispatch({ type: "SET_FATIGUE", exIdx: state.currentExIdx, value: v })}
+        onConfirm={t.confirmSfr}
+      />
+    );
+  }
+
   if (state.phase === "rpe") {
     return (
       <>
@@ -186,10 +200,8 @@ function ActiveTrainingPage() {
       isSaved={state.savedExercises.includes(state.currentExIdx)}
       elapsed={state.elapsed}
       week={week}
-      exerciseRpe={state.exerciseRpe[state.currentExIdx] ?? ""}
       onCompleteSet={t.completeSet}
       onSetValueChange={(si, f, v) => t.dispatch({ type: "UPDATE_SET_VALUE", exIdx: state.currentExIdx, setIdx: si, field: f, value: v })}
-      onExerciseRpeChange={(v) => t.dispatch({ type: "SET_EXERCISE_RPE", exIdx: state.currentExIdx, value: v })}
       onNext={t.goNextExercise} onPrev={t.goPrevExercise} onFinishRoutine={t.finishRoutine}
     />
   );

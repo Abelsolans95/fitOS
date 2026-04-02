@@ -3,33 +3,58 @@
 import { Label } from "@/components/ui/label";
 import { DynamicField } from "./DynamicField";
 import { Spinner } from "./Shared";
-import type { OnboardingForm, TrainerInfo, Responses } from "./types";
+import type { OnboardingForm, TrainerInfo, Responses, FormField } from "./types";
+import type { SectionGroup } from "@fitos/shared";
 
 interface StepDynamicFormProps {
   trainer: TrainerInfo | null;
   form: OnboardingForm | null;
   responses: Responses;
-  step1Errors: Record<string, string>;
+  errors: Record<string, string>;
   pageError: string | null;
   submitting: boolean;
   onUpdateResponse: (fieldId: string, val: string | number | boolean | string[]) => void;
   onNext: () => void;
+  onBack?: () => void;
+  /** If provided, render only this section's fields */
+  sectionGroup?: SectionGroup;
+  /** Whether this is the first step (hides back button) */
+  isFirstStep?: boolean;
 }
 
 export function StepDynamicForm({
   trainer,
   form,
   responses,
-  step1Errors,
+  errors,
   pageError,
   submitting,
   onUpdateResponse,
   onNext,
+  onBack,
+  sectionGroup,
+  isFirstStep,
 }: StepDynamicFormProps) {
+  // Determine which fields to render
+  const fields: FormField[] = sectionGroup
+    ? (sectionGroup.fields as FormField[])
+    : form?.fields.filter((f) => f.type !== "section") ?? [];
+
   return (
     <div className="space-y-6">
-      {/* Trainer header */}
-      {trainer && (
+      {/* Header */}
+      {sectionGroup?.section ? (
+        <div className="text-center">
+          <h2 className="text-lg font-semibold text-[#7C3AED]">
+            {sectionGroup.section.label}
+          </h2>
+          {sectionGroup.section.description && (
+            <p className="mt-1 text-xs text-[#8B8BA3]">
+              {sectionGroup.section.description}
+            </p>
+          )}
+        </div>
+      ) : trainer ? (
         <div className="text-center">
           <h2 className="text-lg font-semibold text-white">
             Formulario de{" "}
@@ -39,10 +64,10 @@ export function StepDynamicForm({
             Tu entrenador necesita esta informacion para personalizar tu plan.
           </p>
         </div>
-      )}
+      ) : null}
 
       {/* No form case */}
-      {!form && (
+      {!form && !sectionGroup && (
         <div className="rounded-xl border border-white/[0.08] bg-[#1A1A2E]/50 p-6 text-center">
           <div className="mb-3 flex justify-center">
             <svg
@@ -69,26 +94,25 @@ export function StepDynamicForm({
       )}
 
       {/* Dynamic fields */}
-      {form &&
-        form.fields.map((field) => (
-          <div key={field.id} className="space-y-2">
-            <Label className="text-[#8B8BA3]">
-              {field.label}
-              {field.required && (
-                <span className="ml-1 text-[#FF1744]">*</span>
-              )}
-            </Label>
-            <DynamicField
-              field={field}
-              value={responses[field.id]}
-              onChange={(val) => onUpdateResponse(field.id, val)}
-              error={step1Errors[field.id]}
-            />
-            {step1Errors[field.id] && (
-              <p className="text-xs text-[#FF1744]">{step1Errors[field.id]}</p>
+      {fields.map((field) => (
+        <div key={field.id} className="space-y-2">
+          <Label className="text-[#8B8BA3]">
+            {field.label}
+            {field.required && (
+              <span className="ml-1 text-[#FF1744]">*</span>
             )}
-          </div>
-        ))}
+          </Label>
+          <DynamicField
+            field={field}
+            value={responses[field.id]}
+            onChange={(val) => onUpdateResponse(field.id, val)}
+            error={errors[field.id]}
+          />
+          {errors[field.id] && (
+            <p className="text-xs text-[#FF1744]">{errors[field.id]}</p>
+          )}
+        </div>
+      ))}
 
       {/* Error banner */}
       {pageError && (
@@ -98,7 +122,32 @@ export function StepDynamicForm({
       )}
 
       {/* Actions */}
-      <div className="flex justify-end pt-2">
+      <div className="flex items-center justify-between pt-2">
+        {onBack && !isFirstStep ? (
+          <button
+            type="button"
+            onClick={onBack}
+            disabled={submitting}
+            className="flex items-center gap-2 rounded-xl border border-white/[0.08] px-5 py-3 text-sm font-medium text-[#8B8BA3] transition-all duration-200 hover:border-white/20 hover:bg-[#1A1A2E] hover:text-white disabled:opacity-40"
+          >
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M11 17l-5-5m0 0l5-5m-5 5h12"
+              />
+            </svg>
+            Anterior
+          </button>
+        ) : (
+          <div />
+        )}
         <button
           type="button"
           onClick={onNext}

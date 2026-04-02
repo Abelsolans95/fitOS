@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from "react-native";
 import { colors, spacing } from "../../theme";
 import { formatTime, getScheme, calculateProgress } from "./constants";
@@ -13,23 +13,49 @@ interface Props {
   dayExercises: ExerciseData[];
   allSets: Record<number, SetEntry[]>;
   clientNotes: Record<string, string>;
-  exerciseRpe: Record<number, string>;
   rpeGlobal: number;
   saving: boolean;
   getPreviousLog: (name: string) => PreviousSet[];
   formatPrevious: (name: string) => string;
-  onSetChange: (exIdx: number, setIdx: number, field: "weight_kg" | "reps_done", val: string) => void;
+  onSetChange: (exIdx: number, setIdx: number, field: "weight_kg" | "reps_done" | "rir" | "rpe", val: string) => void;
   onClientNoteChange: (name: string, val: string) => void;
-  onExerciseRpeChange: (exIdx: number, val: string) => void;
   onRpeChange: (val: number) => void;
   onSave: () => void;
   onBack: () => void;
 }
 
+function shouldShowRir(ex: ExerciseData): boolean {
+  if (ex.rir > 0) return true;
+  const sc = ex.sets_config ?? [];
+  if (sc.some((c) => c.rir > 0)) return true;
+  const wc = ex.weekly_config;
+  if (wc) {
+    for (const w of Object.values(wc)) {
+      if (w.rir > 0) return true;
+      if (w.sets_detail?.some((d) => d.rir > 0)) return true;
+    }
+  }
+  return false;
+}
+
+function shouldShowRpe(ex: ExerciseData): boolean {
+  if (ex.target_rpe != null && ex.target_rpe > 0) return true;
+  const sc = ex.sets_config ?? [];
+  if (sc.some((c: any) => (c.target_rpe ?? 0) > 0)) return true;
+  const wc = ex.weekly_config;
+  if (wc) {
+    for (const w of Object.values(wc)) {
+      if ((w as any).target_rpe > 0) return true;
+      if (w.sets_detail?.some((d: any) => (d.target_rpe ?? 0) > 0)) return true;
+    }
+  }
+  return false;
+}
+
 export function RegistrationMode({
   dayLabel, activeWeek, elapsed, dayExercises, allSets, clientNotes,
-  exerciseRpe, rpeGlobal, saving, getPreviousLog, formatPrevious,
-  onSetChange, onClientNoteChange, onExerciseRpeChange, onRpeChange, onSave, onBack,
+  rpeGlobal, saving, getPreviousLog, formatPrevious,
+  onSetChange, onClientNoteChange, onRpeChange, onSave, onBack,
 }: Props) {
   return (
     <ScrollView style={st.container} contentContainerStyle={st.content}>
@@ -56,6 +82,8 @@ export function RegistrationMode({
           .map((s) => ({ weight: Number(s.weight_kg) || 0, reps: Number(s.reps_done) || 0 }));
         const prevData = prevSets.map((s) => ({ weight: s.weight_kg, reps: s.reps_done }));
         const progress = currentData.length > 0 ? calculateProgress(currentData, prevData) : null;
+        const showRir = shouldShowRir(ex);
+        const showRpe = shouldShowRpe(ex);
 
         return (
           <View key={`${ex.exercise_id}-${exIdx}`} style={st.regExCard}>
@@ -83,20 +111,31 @@ export function RegistrationMode({
             {progressionRule ? <Text style={st.progressionInline}>{progressionRule}</Text> : null}
             {notes ? <Text style={st.notesInline}>{notes}</Text> : null}
 
+            {/* Dynamic columns header */}
             <View style={st.regSetHeader}>
               <Text style={[st.regSetHeaderText, { width: 32 }]}>S</Text>
               <Text style={[st.regSetHeaderText, { flex: 1 }]}>Peso (kg)</Text>
               <Text style={[st.regSetHeaderText, { flex: 1 }]}>Reps</Text>
+              {showRir && <Text style={[st.regSetHeaderText, { width: 40 }]}>RIR</Text>}
+              {showRpe && <Text style={[st.regSetHeaderText, { width: 40 }]}>RPE</Text>}
             </View>
 
             {sets.map((set, setIdx) => {
               const prevSet = prevSets[setIdx];
               const isRP = set.type === "rest_pause";
+              const isDS = set.type === "drop_set";
+              const isDeriv = isRP || isDS;
+              let normalNum = 0;
+              if (!isDeriv) {
+                for (let k = 0; k <= setIdx; k++) {
+                  if (sets[k].type === "main") normalNum++;
+                }
+              }
               return (
-                <View key={setIdx} style={st.regSetRow}>
-                  <View style={[st.regSetNum, isRP && { backgroundColor: colors.orangeDim }]}>
-                    <Text style={[st.regSetNumText, isRP && { color: colors.orange }]}>
-                      {isRP ? "RP" : setIdx + 1}
+                <View key={setIdx} style={[st.regSetRow, isDeriv && { marginLeft: 20, borderLeftWidth: 2, borderLeftColor: isRP ? "rgba(255,145,0,0.4)" : "rgba(124,58,237,0.4)" }]}>
+                  <View style={[st.regSetNum, isRP && { backgroundColor: colors.orangeDim }, isDS && { backgroundColor: "rgba(124,58,237,0.08)" }]}>
+                    <Text style={[st.regSetNumText, isRP && { color: colors.orange }, isDS && { color: colors.violet }]}>
+                      {isRP ? "RP" : isDS ? "DS" : normalNum}
                     </Text>
                   </View>
                   <TextInput
@@ -111,27 +150,28 @@ export function RegistrationMode({
                     placeholder={prevSet ? String(prevSet.reps_done) : `${ex.reps_min}`}
                     placeholderTextColor="rgba(90,90,114,0.4)"
                   />
+                  {showRir && (
+                    <TextInput
+                      style={[st.regInput, { width: 40, flex: 0 }]}
+                      keyboardType="number-pad" value={set.rir}
+                      onChangeText={(val) => onSetChange(exIdx, setIdx, "rir", val)}
+                      placeholder={String(ex.rir)}
+                      placeholderTextColor="rgba(90,90,114,0.4)"
+                    />
+                  )}
+                  {showRpe && (
+                    <TextInput
+                      style={[st.regInput, { width: 40, flex: 0 }]}
+                      keyboardType="number-pad" value={set.rpe}
+                      onChangeText={(val) => onSetChange(exIdx, setIdx, "rpe", val)}
+                      placeholder={String(ex.target_rpe)}
+                      placeholderTextColor="rgba(255,145,0,0.3)"
+                      maxLength={2}
+                    />
+                  )}
                 </View>
               );
             })}
-
-            {ex.target_rpe != null && (
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderWidth: 1, borderColor: "rgba(255,145,0,0.25)", backgroundColor: "rgba(255,145,0,0.05)", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, marginTop: 8 }}>
-                <View>
-                  <Text style={{ fontSize: 10, fontWeight: "700", letterSpacing: 1.5, color: colors.orange, textTransform: "uppercase" }}>RPE del ejercicio</Text>
-                  <Text style={{ fontSize: 10, color: colors.dimmed, marginTop: 1 }}>Objetivo: {ex.target_rpe} · Escala 1-10</Text>
-                </View>
-                <TextInput
-                  style={{ width: 52, height: 44, borderWidth: 1, borderColor: "rgba(255,145,0,0.35)", backgroundColor: "rgba(255,145,0,0.1)", borderRadius: 12, textAlign: "center", fontSize: 18, fontWeight: "900", color: colors.orange }}
-                  keyboardType="number-pad"
-                  value={exerciseRpe[exIdx] || ""}
-                  onChangeText={(val) => onExerciseRpeChange(exIdx, val)}
-                  placeholder={String(ex.target_rpe)}
-                  placeholderTextColor="rgba(255,145,0,0.3)"
-                  maxLength={2}
-                />
-              </View>
-            )}
 
             <TextInput
               style={st.clientNotesInput}

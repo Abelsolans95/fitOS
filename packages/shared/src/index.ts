@@ -3,6 +3,7 @@
 
 // Types
 export type {
+  SetType,
   SetConfig,
   WeekConfig,
   ExerciseData,
@@ -36,9 +37,33 @@ export type {
 
 export type { Message } from "./types/messages";
 
+export type {
+  SupportTicket,
+  TicketReply,
+  TicketCategory,
+  TicketStatus,
+} from "./types/tickets";
+export { TICKET_CATEGORIES, TICKET_STATUSES } from "./types/tickets";
+
 // Data
 export { DAY_KEYS, DAY_LABELS, DAY_SHORT } from "./data/days";
 export type { DayKey } from "./data/days";
+
+// Anatomy
+export type { MuscleZone } from "./anatomy/zones";
+export {
+  MUSCLE_ZONES,
+  getZonesByView,
+  ALL_ZONE_IDS,
+  ZONE_LABELS,
+  ANATOMY_VIEWBOX,
+  ANATOMY_WIDTH,
+  ANATOMY_HEIGHT,
+} from "./anatomy/zones";
+
+// Onboarding
+export type { SectionGroup } from "./onboarding";
+export { groupFieldsBySection, getEnabledSections } from "./onboarding";
 
 // Utils
 export { formatTime } from "./utils/time";

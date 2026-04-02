@@ -18,9 +18,13 @@ Este archivo contiene TODO lo necesario para continuar el desarrollo: reglas, cr
 - **Fase 6 (parcial, 28/03/2026):** Rediseño planificador de menú ✅ — selección de días con fechas reales, semanas de mesociclo, % macros, panel flotante de info nutricional en tiempo real
 - **Fase 6 ampliada (29/03/2026):** Menús guardados ✅ — guardar/cargar configuraciones de menú reutilizables (tabla `saved_menu_templates`, migración 033). Navegación semanal mejorada ✅ — botones semana anterior/siguiente en la parte inferior del planificador. DarkSelect ✅ — todos los `<select>` nativos reemplazados por componente custom dark.
 - **Fase 7 (29/03/2026):** Comunidad Premium ✅ — Feed privado por trainer con posts (título+texto+imagen), comentarios, likes, posts fijados. Dos modos: OPEN (clientes publican) y READ_ONLY_CLIENTS (solo coach). Badge verificado violeta para el coach. Storage bucket para imágenes. Realtime. Badge de no leídos en sidebar. Web trainer + web cliente.
+- **Fase 8 (01/04/2026):** Métricas de ejercicio ✅ — Stress Index (auto-calculado), Ratio Estímulo-Fatiga (SFR, input cliente 1-5), RPE por serie (condicional, solo si trainer configura `target_rpe`), gráficas de progresión por ejercicio para el trainer. Columnas RIR/RPE dinámicas. Migración 037. Web + mobile. `recharts` para charts.
 - **Code Quality Review (30/03/2026):** Fragmentación completa ✅ — todas las páginas >300 líneas fragmentadas en `components/`. Error handling Patrón C aplicado ✅ — todas las queries con `error` destructurado. Performance ✅ — `select("*")` eliminados, `.limit()` en tablas crecientes, `Promise.all` para queries independientes. `React.memo` en componentes hoja.
 - **Auditoría de Permisos (30/03/2026):** Arquitectura de permisos verificada y corregida ✅ — middleware sólido, RLS correcto en 19 tablas, 3 fixes de seguridad aplicados, `AuthContext` mobile preparado para rol Admin.
 - **`@fitos/theme` (30/03/2026):** Paquete compartido creado ✅ — `packages/theme/src/index.ts` es la única fuente de verdad para colores, spacing y radius. Mobile re-exporta desde ahí. Script `npm run sync-theme` regenera el bloque `@theme` de `globals.css`. Metro `watchFolders` configurado.
+- **Mapa anatómico con imágenes reales (31/03/2026):** Reemplazo del mapa SVG puro por imágenes anatómicas reales con overlay SVG interactivo ✅ — 4 imágenes (hombre/mujer × frontal/posterior), zonas definidas en `packages/shared/src/anatomy/zones.ts`, campo `gender` añadido a `profiles` (migración 036), toggle de género en UI cliente. Web + mobile.
+- **Fase 9 (01/04/2026):** Sistema de Consultas/Tickets ✅ — Cliente envía dudas categorizadas (Nutrición, Rutina, Lesión, General) al trainer. Trainer gestiona inbox con filtros de estado/categoría/búsqueda, responde en hilo conversacional, y marca como resuelta. Realtime. Badges de no leídos en ambos sidebars. Migración 038. Web trainer + web cliente + mobile.
+- **Onboarding con secciones (01/04/2026):** Formulario de onboarding extendido con secciones opcionales ✅ — 5 secciones predefinidas (historial medico, deportivo, experiencias, estado actual, objetivos) que el trainer puede activar/desactivar. Cliente ve wizard multi-paso (1 seccion = 1 step). Plantilla cargable con un click. AI edge function actualizada para analisis por seccion. Sin migracion DB (todo en JSONB existente). Web + mobile.
 
 ---
 
@@ -32,6 +36,7 @@ Este archivo contiene TODO lo necesario para continuar el desarrollo: reglas, cr
 | Estilos | Tailwind CSS 4, shadcn/ui (`nova` style, `neutral` base) |
 | DB | Supabase PostgreSQL — proyecto `fitos-prod` |
 | Mobile | Expo SDK 55 + React Navigation (Bottom Tabs) + expo-linear-gradient + react-native-svg |
+| Charts | recharts (web trainer analytics) |
 | Edge Functions | Supabase Deno — 4 funciones IA (Claude API) |
 | Monorepo | Turborepo 2.x + npm workspaces (npm@11.8.0) |
 
@@ -155,7 +160,7 @@ Este archivo contiene TODO lo necesario para continuar el desarrollo: reglas, cr
 61. **Progresión semanal por ejercicio (`weekly_config`)** — Cada `RoutineExercise` puede tener `weekly_config: Record<number, WeekConfig>` con valores distintos por semana (reps, RIR, carga, descanso, notas del entrenador). `WeekConfig` incluye `sets_detail?: SetConfig[]` para modo "different" y `coach_notes?: string` para notas semanales. Se configura desde la modal "Progresión semanal" en `DaySchedule.tsx`. Los datos se guardan en el JSONB de `user_routines.exercises` junto con `mode` y `sets_config`. Botón "Replicar para siguientes semanas" copia valores de una semana a todas las siguientes.
 62. **`handleSave` debe incluir `mode`, `weekly_config` y `total_weeks`** — Al guardar una rutina desde el trainer, el `flatExercises` en `useRoutinesPage.ts` DEBE incluir `mode`, `sets_config` (si es "different") y `weekly_config` (si tiene entradas). El `routineData` debe incluir `total_weeks` y `training_days`. Sin estos campos, el cliente ve los mismos valores en todas las semanas. Error ocurrido: se añadió UI de progresión semanal pero `handleSave` no serializaba `weekly_config` → los datos se perdían.
 63. **Valores del trainer como placeholders, no pre-rellenados (web + mobile)** — En entrenamiento activo, peso/reps/RIR configurados por el trainer se muestran como `placeholder` (gris tenue) para guiar al cliente, pero los inputs empiezan vacíos. El cliente introduce sus valores reales. Los placeholders son week-aware: resuelven `weekly_config[week]` → `sets_config` → valores base del ejercicio. Si hay sesión anterior, el placeholder muestra el valor anterior en su lugar.
-64. **RIR editable por serie en entrenamiento activo (web + mobile)** — `SetEntry` incluye campo `rir: string`. Se muestra como columna adicional en la tabla de series (entre Reps y el botón ✓). El valor se guarda en `weight_log.sets_data[].rir`. Grid de 5 columnas: Serie | Peso | Reps | RIR | ✓. Se eliminó la visualización estática de RIR del header del ejercicio.
+64. **RIR y RPE editables por serie en entrenamiento activo (web + mobile)** — `SetEntry` incluye campos `rir: string` y `rpe: string`. Ambas columnas son **condicionales**: RIR se muestra solo si el trainer configuró `rir > 0` (en el ejercicio o en `sets_config`/`weekly_config`). RPE se muestra solo si `target_rpe != null && > 0`. Grid dinámico: Serie | Peso | Reps | [RIR] | [RPE] | ✓. Los valores se guardan en `weight_log.sets_data[].rir` y `sets_data[].rpe`. El campo `exercise_rpe` en `weight_log` es la media de los RPE por serie.
 65. **Vista del cliente muestra todas las series configuradas** — En la vista de rutina del cliente (`/app/client/routine`), cada card de ejercicio muestra un desglose por serie (S1, S2, S3...) con reps, RIR, peso y descanso para cada una. Los valores son dinámicos según la semana activa (`activeWeek`), resolviendo `weekly_config[activeWeek]` → `sets_config` → valores base. El badge de esquema también se recalcula dinámicamente.
 
 ---
@@ -217,7 +222,7 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 ```
 
 66. **Tabla `health_logs` para lesiones/molestias** — Migración 031. Campos clave: `client_id`, `trainer_id`, `reported_by` ('coach'|'client'), `muscle_id` (ej. 'quadriceps_left'), `pain_score` (1-10), `incident_type` ('puntual'|'diagnosticada'|'cronica'), `status` ('active'|'recovering'|'recovered'), `notes`. RLS: trainer acceso total, cliente SELECT + INSERT (reported_by='client') + UPDATE propios. Realtime habilitado.
-67. **Mapa anatómico SVG interactivo** — Componente compartido `components/health/AnatomyMap.tsx` (web) con vista frontal (17 regiones) y posterior (15 regiones). Código de colores: gris=sin molestias, naranja=leve (1-5), rojo=grave (6-10). Mobile: SVG equivalente con `react-native-svg` en `HealthScreen.tsx`. Web trainer: tab "Salud" en detalle de cliente (`TabSalud.tsx`). Web cliente: `/app/client/health`. Mobile: tab "Salud" en bottom nav (8 tabs).
+67. **Mapa anatómico con imágenes reales + overlay SVG** — Componente `components/health/AnatomyMap.tsx` (web) usa 4 imágenes anatómicas (`/assets/anatomy/`) como fondo con SVG interactivo superpuesto. 18 zonas frontales + 16 posteriores definidas en `packages/shared/src/anatomy/zones.ts`. Soporta `gender` prop (`male`|`female`) para cambiar imagen. Mobile: `HealthScreen.tsx` con `Image` + `Svg` overlay. Colores: transparente=sin molestias, naranja=leve (1-5), rojo=grave (6-10), cyan=seleccionado. Web trainer: tab "Salud" en detalle de cliente (`TabSalud.tsx`). Web cliente: `/app/client/health` con toggle Hombre/Mujer. Mobile: tab "Salud" en bottom nav.
 68. **`health_logs.muscle_id` es un texto libre** — No hay enum en DB. Los IDs válidos están definidos en las constantes `FRONT_MUSCLES` y `BACK_MUSCLES` de los componentes (ej: 'neck', 'chest_left', 'quadriceps_right', 'lower_back', 'traps', 'glute_left'). Al insertar, siempre usar uno de estos IDs.
 69. **Tabla `routine_templates` para plantillas de rutina** — Migración 032. Campos clave: `trainer_id`, `name`, `training_days` (TEXT[]), `day_labels` (JSONB), `exercises` (JSONB — sin weight/RIR), `total_weeks`, `goal`. RLS: trainer full CRUD sobre sus propias plantillas. Los ejercicios de la plantilla usan tipos `TemplateExercise`, `TemplateSetConfig`, `TemplateWeekConfig` definidos en `types.ts` — NO reusar `SetConfig`/`WeekConfig` porque las plantillas excluyen `rir` y `target_weight`.
 70. **Flujo plantillas en wizard de rutinas** — Step 1: dropdown "Cargar plantilla" (violeta) aplica goal, semanas, días y labels al estado. Step 2: si hay plantilla seleccionada, los labels se eligen por dropdown (labels de la plantilla) en vez de input libre. Step 3: `INIT_TRAINING_DAYS` carga ejercicios de la plantilla mapeando por `day_of_week` + `day_label`. El trainer puede modificar libremente y re-guardar como nueva plantilla con el botón "Guardar plantilla" (violeta, junto a "Enviar al cliente").
@@ -289,6 +294,11 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 
 110. **`React.memo` obligatorio en componentes que se renderizan en listas** — Cualquier componente que sea hijo directo de un `.map()` sobre un array de datos (ejercicios, comidas, posts, mensajes) DEBE estar wrapeado con `memo()`. Patrón: `export const Foo = memo(function Foo(props) { ... })`. Sin memo, el componente se re-renderiza en cada cambio de estado del padre aunque sus props no hayan cambiado.
 
+129. **Tablas `support_tickets` + `ticket_replies` para consultas** — Migración 038. `support_tickets`: `trainer_id`, `client_id`, `category` (nutricion|rutina|lesion|general), `subject`, `description`, `image_url`, `status` (open|in_progress|resolved). `ticket_replies`: `ticket_id`, `sender_id`, `content`, `image_url`, `read_at`. RLS: trainer full CRUD sobre sus tickets; cliente SELECT + INSERT propios tickets + INSERT replies en sus tickets + UPDATE read_at. Realtime habilitado en ambas tablas. Storage bucket `ticket-images` (5MB, jpeg/png/webp).
+130. **Consultas: trainer master-detail, cliente list/create/detail** — Web trainer: `/app/trainer/tickets` con layout master-detail (lista filtrable + hilo conversacional). `useTicketsPage.ts` con useReducer. Web cliente: `/app/client/tickets` con 3 vistas (list, create, detail). `useClientTicketsPage.ts` con useReducer. Mobile: `TicketsScreen.tsx` con 3 vistas locales. Tab "Consultas" entre Salud y Chat en bottom nav.
+131. **Badges de consultas no leídas en sidebars** — `TrainerSidebar`: cuenta `ticket_replies` donde `sender_id != trainerId AND read_at IS NULL`. `ClientSidebar`: misma lógica inversa. Realtime: escucha INSERT en `ticket_replies`. Reset al visitar `/app/*/tickets`.
+132. **Tipos compartidos en `@fitos/shared`** — `SupportTicket`, `TicketReply`, `TicketCategory`, `TicketStatus`, `TICKET_CATEGORIES`, `TICKET_STATUSES` exportados desde `packages/shared/src/types/tickets.ts`.
+
 ---
 
 ## Arquitectura de permisos — estado auditado (30/03/2026)
@@ -304,7 +314,7 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 
 **Capa 2 — RLS (Supabase, todas las tablas):**
 - Todas las tablas tienen RLS habilitado. Las políticas usan `auth.uid()` para scope por usuario.
-- Tablas con políticas diferenciadas trainer/client: `appointments`, `messages`, `health_logs`, `community_posts`, `workout_sessions`, `weight_log`, `trainer_exercise_overrides`, `trainer_food_overrides`, `excel_imports`, `routine_templates`, `saved_menu_templates`.
+- Tablas con políticas diferenciadas trainer/client: `appointments`, `messages`, `health_logs`, `community_posts`, `workout_sessions`, `weight_log`, `trainer_exercise_overrides`, `trainer_food_overrides`, `excel_imports`, `routine_templates`, `saved_menu_templates`, `support_tickets`, `ticket_replies`.
 - Tablas solo-trainer: `user_routines` (INSERT/UPDATE), `meal_plans` (INSERT/UPDATE), `trainer_exercise_library`, `trainer_food_library`.
 - Tablas solo-cliente: `food_log`, `body_metrics` (propias).
 
@@ -368,6 +378,25 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 
 117. **`rgba` strings en `@fitos/theme` son solo para web/CSS** — Valores como `border: "rgba(255,255,255,0.06)"` son correctos para web. En React Native, si se necesita opacidad dinámica sobre un color, usar `borderHex` (el hex puro `#FFFFFF`) junto con `StyleSheet opacity` o una librería como `tinycolor2`. Nunca manipular strings rgba dinámicamente en RN.
 
+118. **Mapa anatómico basado en imágenes reales + overlay SVG** — El componente `AnatomyMap` (web: `components/health/AnatomyMap.tsx`, mobile: `HealthScreen.tsx`) usa 4 imágenes anatómicas como fondo (`apps/web/public/assets/anatomy/`, `apps/mobile/assets/anatomy/`) con un SVG interactivo superpuesto. Las zonas musculares se definen en `packages/shared/src/anatomy/zones.ts` (`MUSCLE_ZONES`, viewBox `0 0 400 720`). Los paths SVG son aproximaciones que pueden refinarse con un SVG Path Visualizer. No volver a usar el SVG puro antiguo (body outline + muscle shapes dibujadas a mano).
+
+119. **`profiles.gender` para selección de imagen anatómica** — Migración 036. Columna TEXT nullable (`'male'` | `'female'`). Default `NULL` = se trata como `'male'` en el componente. El toggle Hombre/Mujer está en la página de salud del cliente (web + mobile). Al cambiar, se actualiza en DB de forma no bloqueante.
+
+120. **Zonas anatómicas en `@fitos/shared` — fuente de verdad única** — Los IDs de zona (`neck`, `chest_left`, `quadriceps_right`, etc.) y labels (español) se definen SOLO en `packages/shared/src/anatomy/zones.ts`. Web importa via `AnatomyMap.tsx` → re-exporta `MUSCLE_LABELS` (alias de `ZONE_LABELS`). Mobile importa `ZONE_LABELS` directamente de `@fitos/shared`. No duplicar definiciones de zonas. El antiguo `apps/mobile/src/screens/health/muscleData.ts` está deprecado (no borrado).
+
+121. **Métricas de ejercicio: stress_index + stimulus/fatigue en `weight_log`** — Migración 037. Tres columnas nuevas: `stress_index` NUMERIC (auto-calculado), `stimulus_rating` SMALLINT 1-5, `fatigue_rating` SMALLINT 1-5. El SFR (ratio) se calcula en frontend como `stimulus / fatigue`. Fórmula del stress index: `sum(weight × reps × rirFactor)` donde rirFactor va de 1.0 (RIR=0) a 0.75 (RIR≥5). Se captura una vez por ejercicio (no por serie) en la fase `"sfr"` del entrenamiento activo, justo después de completar todas las series.
+122. **Fase `"sfr"` en entrenamiento activo (web + mobile)** — Cuando todas las series de un ejercicio se completan, el flujo pasa a fase `"sfr"` (no directamente a "training"). Se muestran 2 inputs (Estímulo 1-5 + Fatiga 1-5) con preview del SFR. Al confirmar, se guarda el progreso y vuelve a "training". Web: componente `SFRSelector.tsx` en `routine/active/components/`. Mobile: `SfrScreen.tsx` en `screens/routine/`. Estado en `exerciseStimulus` y `exerciseFatigue` (Record<number, number>).
+123. **Gráficas de ejercicio con `recharts`** — Paquete `recharts` instalado en `apps/web`. Componente `ExerciseAnalytics.tsx` en `trainer/clients/[id]/components/`. Se accede desde TabRutina con toggle "Historial" / "Análisis". 4 gráficas: Volumen + Stress Index, SFR temporal, Peso Máximo, Estímulo vs Fatiga. Cards de tendencia con porcentaje de cambio últimas 3 sesiones vs anteriores. Necesita mínimo 2 sesiones con datos.
+124. **`calculateStressIndex` exportada** — Función pura en `useActiveTraining.ts` (web). Recibe array de sets con weight_kg, reps_done, rir, completed. Devuelve número redondeado a 2 decimales. Mobile tiene la misma lógica inline en `calcStressIndex` dentro de `useRoutineScreen.ts`.
+125. **RPE por serie, no por ejercicio (web + mobile)** — `SetEntry` incluye campo `rpe: string`. Se muestra como columna adicional en la tabla de series, solo si el trainer configuró `target_rpe > 0` para ese ejercicio. Grid dinámico: columnas Serie | Peso | Reps | [RIR si configurado] | [RPE si configurado] | ✓. El `exercise_rpe` guardado en `weight_log` se calcula como media de los RPE por serie completados. Eliminada la caja RPE por ejercicio que había antes. Web: `ExerciseCard.tsx` con `showRir`/`showRpe` booleanos. Mobile: `ActiveTraining.tsx` y `RegistrationMode.tsx` con la misma lógica.
+126. **Columnas RIR y RPE condicionales en entrenamiento activo** — RIR se muestra solo si `exercise.rir > 0` o algún `sets_config`/`weekly_config` tiene rir > 0. RPE se muestra si `exercise.target_rpe > 0` O algún `sets_config[].target_rpe > 0` O algún `weekly_config[].target_rpe > 0` o `weekly_config[].sets_detail[].target_rpe > 0`. `SetConfig.target_rpe` permite configurar RPE por serie (tanto en "Series diferentes" como en "Progresión semanal"). `WeekConfig.target_rpe` es el RPE por serie en modo "Todas iguales" dentro de la progresión semanal. El placeholder RPE en el cliente resuelve: `cfg.target_rpe ?? exercise.target_rpe`. Si el trainer no configuró ninguno, el cliente solo ve Serie | Peso | Reps | ✓. Aplica en web (`ExerciseCard.tsx`) y mobile (`ActiveTraining.tsx`, `RegistrationMode.tsx`).
+127. **Series derivadas: Rest-Pause y Drop Set (web + mobile)** — Tanto en modo "Series diferentes" como en "Todas iguales", cada serie normal tiene botones "RP" (naranja) y "DS" (violeta) que insertan una serie derivada justo después. `SetConfig.set_type` puede ser `"normal"` (defecto), `"rest_pause"` o `"drop_set"`. La serie derivada se inicializa con los mismos reps de la serie origen; RP con 15s de descanso, DS con 0s descanso y 80% de la carga. Se pueden eliminar con botón ✕. El trainer las configura en `DaySchedule.tsx` (editor de rutinas) tanto en la vista principal como en la modal "Progresión semanal" (`WeeklyConfigModal`). En la modal, ambos modos soportan RP/DS: "diferentes" muestra per-set view directamente; "iguales" muestra botones RP/DS que al pulsar expanden la semana a `sets_detail` (via `expandEqualAndAddDerivative`). Si se eliminan todas las derivadas, la semana vuelve a scalar. Acciones del reducer: `CR_ADD_DERIVATIVE_SET` y `CR_REMOVE_DERIVATIVE_SET` (vista principal). La modal semanal maneja RP/DS con estado local (`addWeekDerivativeSet` / `removeWeekDerivativeSet` / `expandEqualAndAddDerivative`). En el save, `rest_pause_sets` se calcula automáticamente como count de series con `set_type !== "normal"`. El `sets` del ejercicio incluye todas las series (normales + derivadas). El template save también preserva `set_type` en `sets_config` y `weekly_config.sets_detail`.
+128. **Visualización de series derivadas para el cliente** — Series RP/DS se muestran con indentación (`ml-4` web, `marginLeft: 24` mobile), borde izquierdo coloreado (naranja para RP, violeta para DS), y badge "RP"/"DS" en lugar de número de serie. La numeración de series normales es independiente (S1, S2, S3) — las derivadas no afectan el conteo. Aplica en: vista previa del cliente (`routine/components/ExerciseCard.tsx`), entrenamiento activo web (`routine/active/components/ExerciseCard.tsx`), mobile (`ActiveTraining.tsx`, `RegistrationMode.tsx`). Historial del trainer (`TabRutina.tsx`) muestra "RP"/"DS" en los chips de series completadas.
+129. **Secciones en formulario de onboarding (`type: "section"`)** — `FormField` ahora soporta `type: "section"` como tipo especial que actua como cabecera de grupo. Campos adicionales: `description?: string` (texto para el cliente), `enabled?: boolean` (default true, el trainer puede desactivar la seccion). Los campos que siguen a un section field pertenecen a esa seccion hasta el siguiente section field. Utility `groupFieldsBySection()` en `@fitos/shared` agrupa el array plano en `SectionGroup[]`. `getEnabledSections()` filtra las desactivadas. Backwards compatible: formularios sin sections se renderizan como antes (1 step plano).
+130. **Plantilla de secciones de onboarding** — `apps/web/lib/onboarding-templates.ts` exporta `getOnboardingSectionsTemplate()` que genera 5 secciones con preguntas sugeridas (IDs unicos por llamada). Secciones: Historial Medico, Historial Deportivo, Experiencia en Entrenamiento, Estado Actual, Objetivos. El trainer carga la plantilla con un click ("Cargar plantilla de secciones") en la pagina de formularios o en el onboarding wizard. Las secciones son opcionales — el trainer puede activar/desactivar cada una.
+131. **Cliente onboarding multi-paso por seccion (web + mobile)** — Si el formulario tiene section fields, el wizard del cliente muestra cada seccion habilitada como un step separado (con nombre de seccion en el indicador). El ultimo step siempre es "Datos fisicos y preferencias". Las respuestas se guardan via upsert despues de cada seccion. Si el formulario no tiene sections, se mantiene el comportamiento anterior (1 step formulario + 1 step datos fisicos).
+132. **Edge Function `analyze-onboarding-form` — analisis por seccion** — La funcion agrupa las respuestas del cliente por seccion para dar contexto estructurado a Claude. Incluye `medical_flags` y `precautions` en el JSON de analisis. Columnas de perfil corregidas: usa `weight` y `height` (no `weight_kg`/`height_cm`). Preferencias alimenticias formateadas como texto legible.
+
 ---
 
 ## Regla de mantenimiento — obligatoria
@@ -430,10 +459,19 @@ fitOS/
 ├── package.json (root, npm workspaces, npm@11.8.0)
 ├── turbo.json (tasks, no pipeline)
 ├── packages/
-│   └── theme/
-│       ├── src/index.ts          ← fuente de verdad: colors, spacing, radius, fonts
-│       ├── scripts/sync-css.ts
-│       └── package.json          ← @fitos/theme
+│   ├── theme/
+│   │   ├── src/index.ts          ← fuente de verdad: colors, spacing, radius, fonts
+│   │   ├── scripts/sync-css.ts
+│   │   └── package.json          ← @fitos/theme
+│   └── shared/
+│       ├── src/
+│       │   ├── index.ts          ← barrel export de tipos, zonas, utils, onboarding
+│       │   ├── anatomy/zones.ts  ← MUSCLE_ZONES, ZONE_LABELS, ANATOMY_VIEWBOX
+│       │   ├── onboarding/index.ts ← groupFieldsBySection, getEnabledSections
+│       │   ├── types/            ← health, routine, appointments, community, messages
+│       │   ├── data/days.ts
+│       │   └── utils/time.ts
+│       └── package.json          ← @fitos/shared
 ├── apps/
 │   ├── web/
 │   │   ├── app/
@@ -456,7 +494,7 @@ fitOS/
 │   │   │   │       │   ├── dashboard/page.tsx
 │   │   │   │       │   ├── clients/page.tsx
 │   │   │   │       │   ├── clients/[id]/page.tsx    ← 7 tabs
-│   │   │   │       │   ├── clients/[id]/components/ ← TabPerfil/Progreso/Rutina/Menu/Formulario/Chat/Salud
+│   │   │   │       │   ├── clients/[id]/components/ ← TabPerfil/Progreso/Rutina/Menu/Formulario/Chat/Salud/ExerciseAnalytics
 │   │   │   │       │   ├── exercises/page.tsx
 │   │   │   │       │   ├── routines/page.tsx        ← orquestador
 │   │   │   │       │   ├── routines/useRoutinesPage.ts
@@ -470,6 +508,9 @@ fitOS/
 │   │   │   │       │   ├── community/page.tsx       ← orquestador
 │   │   │   │       │   ├── community/useCommunityPage.ts
 │   │   │   │       │   ├── community/components/
+│   │   │   │       │   ├── tickets/page.tsx         ← orquestador master-detail
+│   │   │   │       │   ├── tickets/useTicketsPage.ts
+│   │   │   │       │   ├── tickets/components/      ← types/shared/TicketList/TicketDetail
 │   │   │   │       │   └── settings/page.tsx
 │   │   │   │       ├── client/
 │   │   │   │       │   ├── layout.tsx               ← ClientSidebar con badges
@@ -479,7 +520,7 @@ fitOS/
 │   │   │   │       │   ├── routine/page.tsx
 │   │   │   │       │   ├── routine/active/page.tsx  ← Suspense wrapper
 │   │   │   │       │   ├── routine/active/useActiveTraining.ts
-│   │   │   │       │   ├── routine/active/components/
+│   │   │   │       │   ├── routine/active/components/ ← ExerciseCard/RestTimer/RPESelector/SFRSelector/SummaryView
 │   │   │   │       │   ├── meals/page.tsx
 │   │   │   │       │   ├── calendar/page.tsx
 │   │   │   │       │   ├── progress/page.tsx
@@ -487,6 +528,9 @@ fitOS/
 │   │   │   │       │   ├── health/page.tsx          ← mapa anatómico + logs
 │   │   │   │       │   ├── community/page.tsx
 │   │   │   │       │   ├── community/useClientCommunityPage.ts
+│   │   │   │       │   ├── tickets/page.tsx         ← orquestador list/create/detail
+│   │   │   │       │   ├── tickets/useClientTicketsPage.ts
+│   │   │   │       │   ├── tickets/components/      ← types/shared/CreateTicketForm/TicketThread
 │   │   │   │       │   └── chat/page.tsx            ← Realtime
 │   │   │   │       └── admin/
 │   │   │   │           └── dashboard/page.tsx       ← placeholder
@@ -500,14 +544,16 @@ fitOS/
 │   │   │   └── components/
 │   │   │       ├── layout/TrainerSidebar.tsx + ClientSidebar.tsx
 │   │   │       ├── ui/DarkSelect.tsx
-│   │   │       └── health/AnatomyMap.tsx
+│   │   │       └── health/AnatomyMap.tsx        ← imagen + overlay SVG, soporta gender
+│   │   ├── public/assets/anatomy/              ← 4 imágenes anatómicas (front/back × male/female)
 │   │   ├── lib/
 │   │   │   ├── supabase.ts + supabase-server.ts
 │   │   │   ├── exercise-resolver.ts + .test.ts
 │   │   │   ├── food-resolver.ts + .test.ts
 │   │   │   ├── excel-parser.ts + .test.ts
 │   │   │   ├── email-notifications.ts + .test.ts
-│   │   │   └── google-calendar.ts + .test.ts
+│   │   │   ├── google-calendar.ts + .test.ts
+│   │   │   └── onboarding-templates.ts  ← plantilla 5 secciones onboarding
 │   │   ├── hooks/useChat.ts
 │   │   ├── middleware.ts
 │   │   └── vitest.config.ts
@@ -523,7 +569,7 @@ fitOS/
 │       │   │   ├── DashboardScreen.tsx + CaloriesScreen.tsx
 │       │   │   ├── RoutineScreen.tsx + MealsScreen.tsx
 │       │   │   ├── ProgressScreen.tsx + ChatScreen.tsx
-│       │   │   ├── HealthScreen.tsx + AppointmentsScreen.tsx
+│       │   │   ├── HealthScreen.tsx + AppointmentsScreen.tsx + TicketsScreen.tsx
 │       │   └── widgets/
 │       │       ├── TodayWorkoutWidget.tsx       ← Android JSX (sin hooks)
 │       │       └── widget-task-handler.tsx
@@ -538,7 +584,10 @@ fitOS/
         ├── 032_routine_templates.sql
         ├── 033_saved_menu_templates.sql
         ├── 034_communities.sql
-        └── 035_community_read_status.sql
+        ├── 035_community_read_status.sql
+        ├── 036_add_gender_to_profiles.sql
+        ├── 037_exercise_metrics.sql
+        └── 038_support_tickets.sql
 ```
 
 ---
@@ -557,6 +606,9 @@ fitOS/
 | Fase 7 — Comunidad Premium | ✅ Completo | |
 | Code Quality + Permisos | ✅ Completo | Patrón C, fragmentación, RLS auditado |
 | `@fitos/theme` | ✅ Completo | paquete compartido, Metro watchFolders |
+| Mapa anatómico con imágenes reales | ✅ Completo | Migración 036 pendiente aplicar |
+| Fase 8 — Métricas ejercicio (SFR + Stress Index + Charts) | ✅ Completo | Migración 037 pendiente aplicar |
+| Fase 9 — Consultas/Tickets | ✅ Completo | Migración 038 pendiente aplicar |
 | Gamificación | ❌ Sin UI | Tablas existen, falta interfaz |
 | Stripe + suscripciones | ❌ Sin implementar | |
 | Push notifications | ❌ Sin implementar | |
@@ -569,6 +621,9 @@ fitOS/
 | Aplicar migración `031_health_logs.sql` | 🔴 Alta | Tabla lesiones funcional |
 | Aplicar migración `032_routine_templates.sql` | 🔴 Alta | Plantillas rutina |
 | Aplicar migración `033_saved_menu_templates.sql` | 🔴 Alta | Menús guardados |
+| Aplicar migración `036_add_gender_to_profiles.sql` | 🟡 Media | Campo género para mapa anatómico |
+| Aplicar migración `037_exercise_metrics.sql` | 🔴 Alta | Stress Index + SFR en weight_log |
+| Aplicar migración `038_support_tickets.sql` | 🔴 Alta | Sistema de consultas/tickets |
 | `ANTHROPIC_API_KEY` en Supabase secrets | 🟠 Alta | Edge Functions IA (ahora mock) |
 | Verificar dominio en Resend + `RESEND_API_KEY` | 🟠 Alta | Emails confirmación citas |
 | OAuth 2.0 Google Calendar | 🟠 Alta | Sync citas → Google Calendar |
@@ -713,3 +768,11 @@ supabase functions deploy analyze-onboarding-form
 | 56 | Build | trainer/types.ts no existía al re-exportar | Crear archivos centralizados ANTES de añadir re-exports |
 | 57 | Web | pnpm install falla en raíz | packageManager activo es npm — usar `npm install` |
 | 58 | Build | sync-css.ts genera doble indentación | No añadir espacios al prefijo — `before` ya incluye indentación |
+| 59 | Web+Mobile | SFR data no se guardaba en DB | `confirmSfr` comprobaba `savedExercises.includes(exIdx)` que ya era true tras `completeSet`. Eliminar el guard — siempre re-guardar en `confirmSfr` |
+| 60 | DB | Sesión huérfana `in_progress` tras completar | Si `finalizeSession` falla, la sesión queda en `in_progress` y el cliente ve "Completar rutina en curso" para siempre. Fix: marcar como `abandoned` vía SQL. Prevención: `finalizeSession` retorna boolean, botón "Reintentar" |
+| 61 | Mobile | SetEntry sin campo `rpe` tras añadirlo al tipo | Al añadir un campo a `SetEntry`, actualizar TODAS las creaciones de objetos SetEntry (initSets, resumeSession map, resumeSession padding, resumeSession else). Hay 4+ puntos de creación |
+| 62 | Web+Mobile | RPE per-exercise no coincidía con configuración per-set del trainer | El trainer configura RPE por serie (en `target_rpe`), pero el UI mostraba un solo input por ejercicio. Cambiado a columna RPE condicional por serie — `exercise_rpe` en DB es ahora la media de los RPE por serie |
+| 63 | Web | `rest_pause_sets` campo legacy no sincronizado con `sets_config` | `rest_pause_sets` era un número independiente. Ahora se calcula automáticamente del count de `set_type !== "normal"` en `sets_config`. El campo `sets` ya incluye todas las series (normales + derivadas) |
+| 64 | Web | `totalSets` sumaba `sets + rest_pause_sets` duplicando count | En modo "different", `sets` ya incluye derivadas tras `CR_ADD_DERIVATIVE_SET`. Cambiado a solo `sum(ex.sets)` |
+| 65 | Web+Mobile | `weekly_config.sets_detail` ignorado en modo "equal" | El código cliente solo leía `sets_detail` cuando `mode === "different"`. Ahora verifica `wk?.sets_detail?.length > 0` independientemente del modo. Afecta: `initializeSets`, `resumeFromSession`, `getTrainerConfig`, `ExerciseCard` pre-training, mobile `initSets`/`resumeSession` |
+| 66 | RLS | `trainer_replies_all` WITH CHECK bloquea UPDATE de `read_at` en replies de clientes | La política `FOR ALL` tenía `sender_id = auth.uid()` en WITH CHECK. Cuando el trainer actualiza `read_at` en una reply del cliente, `sender_id` ≠ trainer → UPDATE rechazado silenciosamente. Fix: política `trainer_replies_update_read` separada sin check de `sender_id`. Regla: en políticas FOR ALL, verificar que WITH CHECK no bloquee UPDATEs legítimos sobre filas de otros usuarios |

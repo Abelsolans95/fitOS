@@ -14,7 +14,8 @@ export type FieldType =
   | "multiselect"
   | "boolean"
   | "scale"
-  | "date";
+  | "date"
+  | "section";
 
 export interface FormField {
   id: string;
@@ -23,6 +24,8 @@ export interface FormField {
   placeholder?: string;
   required: boolean;
   options?: string[];
+  description?: string;
+  enabled?: boolean;
 }
 
 const FIELD_TYPE_CONFIG: Record<
@@ -77,6 +80,12 @@ const FIELD_TYPE_CONFIG: Record<
     color: "#FF1744",
     description: "Selector de fecha",
   },
+  section: {
+    label: "Seccion",
+    icon: "§",
+    color: "#7C3AED",
+    description: "Cabecera de seccion",
+  },
 };
 
 interface FormFieldEditorProps {
@@ -97,10 +106,11 @@ export function FormFieldEditor({ fields, onFieldsChange }: FormFieldEditorProps
       const newField: FormField = {
         id: generateId(),
         type,
-        label: `Nueva pregunta (${config.label})`,
+        label: type === "section" ? "Nueva seccion" : `Nueva pregunta (${config.label})`,
         placeholder: "",
         required: false,
         options: type === "select" || type === "multiselect" ? ["Opción 1", "Opción 2"] : undefined,
+        ...(type === "section" ? { description: "", enabled: true } : {}),
       };
       onFieldsChange([...fields, newField]);
       setEditingFieldId(newField.id);
@@ -141,10 +151,12 @@ export function FormFieldEditor({ fields, onFieldsChange }: FormFieldEditorProps
       {/* Add field buttons */}
       <div>
         <Label className="mb-3 block text-sm text-[#8B8BA3]">
-          Añadir campo
+          Anadir campo
         </Label>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {(Object.entries(FIELD_TYPE_CONFIG) as [FieldType, typeof FIELD_TYPE_CONFIG[FieldType]][]).map(
+          {(Object.entries(FIELD_TYPE_CONFIG) as [FieldType, typeof FIELD_TYPE_CONFIG[FieldType]][]).filter(
+            ([type]) => type !== "section"
+          ).map(
             ([type, config]) => (
               <button
                 key={type}
@@ -163,6 +175,15 @@ export function FormFieldEditor({ fields, onFieldsChange }: FormFieldEditorProps
             )
           )}
         </div>
+        {/* Add section button */}
+        <button
+          type="button"
+          onClick={() => addField("section")}
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[#7C3AED]/30 bg-[#7C3AED]/5 px-3 py-2 text-xs text-[#7C3AED] transition-all hover:border-[#7C3AED]/50 hover:bg-[#7C3AED]/10"
+        >
+          <span className="text-sm font-bold">§</span>
+          Anadir seccion
+        </button>
       </div>
 
       {/* Fields list */}
@@ -183,11 +204,19 @@ export function FormFieldEditor({ fields, onFieldsChange }: FormFieldEditorProps
           {fields.map((field, index) => {
             const config = FIELD_TYPE_CONFIG[field.type];
             const isEditing = editingFieldId === field.id;
+            const isSection = field.type === "section";
+            const isSectionDisabled = isSection && field.enabled === false;
 
             return (
               <div
                 key={field.id}
-                className="rounded-xl border border-white/[0.06] bg-[#12121A]"
+                className={`rounded-xl border ${
+                  isSection
+                    ? isSectionDisabled
+                      ? "border-white/[0.04] bg-[#0E0E18]/50 opacity-60"
+                      : "border-[#7C3AED]/20 bg-[#7C3AED]/[0.04]"
+                    : "border-white/[0.06] bg-[#12121A]"
+                }`}
               >
                 {/* Field header */}
                 <div className="flex items-center gap-3 p-3">
@@ -231,12 +260,23 @@ export function FormFieldEditor({ fields, onFieldsChange }: FormFieldEditorProps
                   </Badge>
 
                   {/* Field label */}
-                  <span className="flex-1 truncate text-sm text-white">
+                  <span className={`flex-1 truncate text-sm ${isSection ? "font-semibold text-[#7C3AED]" : "text-white"}`}>
                     {field.label}
                   </span>
 
-                  {/* Required indicator */}
-                  {field.required && (
+                  {/* Section: enable toggle */}
+                  {isSection && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-[#8B8BA3]">{field.enabled !== false ? "Activa" : "Desactivada"}</span>
+                      <Switch
+                        checked={field.enabled !== false}
+                        onCheckedChange={(checked) => updateField(field.id, { enabled: checked })}
+                      />
+                    </div>
+                  )}
+
+                  {/* Required indicator (non-section only) */}
+                  {!isSection && field.required && (
                     <span className="text-xs text-[#FF1744]">Obligatorio</span>
                   )}
 
@@ -261,22 +301,42 @@ export function FormFieldEditor({ fields, onFieldsChange }: FormFieldEditorProps
                   </button>
                 </div>
 
+                {/* Section description preview */}
+                {isSection && !isEditing && field.description && (
+                  <div className="px-3 pb-3">
+                    <p className="text-xs text-[#8B8BA3]/70">{field.description}</p>
+                  </div>
+                )}
+
                 {/* Editing panel */}
                 {isEditing && (
                   <div className="border-t border-white/[0.06] p-4 space-y-4">
                     {/* Label */}
                     <div className="space-y-1">
-                      <Label className="text-xs text-[#8B8BA3]">Pregunta</Label>
+                      <Label className="text-xs text-[#8B8BA3]">{isSection ? "Nombre de la seccion" : "Pregunta"}</Label>
                       <Input
                         value={field.label}
                         onChange={(e) => updateField(field.id, { label: e.target.value })}
                         className="border-white/[0.08] bg-[#0A0A0F] text-white focus:border-[#00E5FF]"
-                        placeholder="Escribe la pregunta..."
+                        placeholder={isSection ? "Ej: Historial Medico" : "Escribe la pregunta..."}
                       />
                     </div>
 
-                    {/* Placeholder */}
-                    {(field.type === "text" || field.type === "textarea" || field.type === "number") && (
+                    {/* Section description */}
+                    {isSection && (
+                      <div className="space-y-1">
+                        <Label className="text-xs text-[#8B8BA3]">Descripcion de la seccion</Label>
+                        <Input
+                          value={field.description || ""}
+                          onChange={(e) => updateField(field.id, { description: e.target.value })}
+                          className="border-white/[0.08] bg-[#0A0A0F] text-white focus:border-[#00E5FF]"
+                          placeholder="Breve descripcion para el cliente..."
+                        />
+                      </div>
+                    )}
+
+                    {/* Placeholder (non-section) */}
+                    {!isSection && (field.type === "text" || field.type === "textarea" || field.type === "number") && (
                       <div className="space-y-1">
                         <Label className="text-xs text-[#8B8BA3]">Placeholder</Label>
                         <Input
@@ -320,23 +380,25 @@ export function FormFieldEditor({ fields, onFieldsChange }: FormFieldEditorProps
                         <button
                           type="button"
                           onClick={() => updateField(field.id, {
-                            options: [...(field.options || []), `Opción ${(field.options || []).length + 1}`],
+                            options: [...(field.options || []), `Opcion ${(field.options || []).length + 1}`],
                           })}
                           className="text-xs text-[#00E5FF] hover:text-[#00E5FF]/80"
                         >
-                          + Añadir opción
+                          + Anadir opcion
                         </button>
                       </div>
                     )}
 
-                    {/* Required toggle */}
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs text-[#8B8BA3]">Campo obligatorio</Label>
-                      <Switch
-                        checked={field.required}
-                        onCheckedChange={(checked) => updateField(field.id, { required: checked })}
-                      />
-                    </div>
+                    {/* Required toggle (non-section) */}
+                    {!isSection && (
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-[#8B8BA3]">Campo obligatorio</Label>
+                        <Switch
+                          checked={field.required}
+                          onCheckedChange={(checked) => updateField(field.id, { required: checked })}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

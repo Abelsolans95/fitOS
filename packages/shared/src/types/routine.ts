@@ -1,11 +1,16 @@
 // ── Routine & Training types ──────────────────────────────────────────────────
 
+export type SetType = "normal" | "rest_pause" | "drop_set";
+
 export interface SetConfig {
   reps_min: number;
   reps_max: number;
   rir: number;
   target_weight: number | null;
   rest_s: number;
+  target_rpe?: number | null;
+  /** Set technique type. "normal" by default. "rest_pause" / "drop_set" are derivative sets. */
+  set_type?: SetType;
 }
 
 export interface WeekConfig {
@@ -15,6 +20,7 @@ export interface WeekConfig {
   rir: number;
   target_weight: number | null;
   rest_s: number;
+  target_rpe?: number | null;
   sets_detail?: SetConfig[];
   coach_notes?: string;
 }
@@ -79,6 +85,7 @@ export interface SetEntry {
   weight_kg: string;
   reps_done: string;
   rir: string;
+  rpe: string;
   completed: boolean;
 }
 
@@ -94,7 +101,7 @@ export interface SavedLogEntry {
   client_notes: string | null;
 }
 
-export type Phase = "loading" | "ready" | "training" | "rest" | "rpe" | "summary";
+export type Phase = "loading" | "ready" | "training" | "rest" | "sfr" | "rpe" | "summary";
 
 export interface SummaryExerciseResult {
   name: string;

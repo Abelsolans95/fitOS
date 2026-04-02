@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, ActivityIndicator } from "react-native";
 import { useRoutineScreen } from "./routine/useRoutineScreen";
 import { RestTimer } from "./routine/RestTimer";
+import { SfrScreen } from "./routine/SfrScreen";
 import { RpeScreen } from "./routine/RpeScreen";
 import { SummaryScreen } from "./routine/SummaryScreen";
 import { ActiveTraining } from "./routine/ActiveTraining";
@@ -17,7 +18,9 @@ export default function RoutineScreen() {
     selectedDay, setSelectedDay, activeWeek, setActiveWeek,
     currentExIdx, allSets, setAllSets,
     clientNotes, setClientNotes, exerciseNotes, setExerciseNotes,
-    exerciseRpe, setExerciseRpe, rpeGlobal, setRpeGlobal,
+    exerciseStimulus, setExerciseStimulus,
+    exerciseFatigue, setExerciseFatigue,
+    rpeGlobal, setRpeGlobal,
     saving, savedExercises,
     inProgressSession, isSessionCompleted,
     restTime, restTotal, elapsed,
@@ -26,7 +29,7 @@ export default function RoutineScreen() {
     getDayLabel, getPreviousLog, formatPrevious,
     startSession, resumeSession, completeSet,
     saveRegistration, goNextExercise, goPrevExercise, finishRoutine, finishSession,
-    skipRest,
+    confirmSfr, skipRest,
   } = useRoutineScreen();
 
   if (loading) {
@@ -57,6 +60,19 @@ export default function RoutineScreen() {
         exerciseNote={exerciseNotes[currentExIdx] || ""}
         onNoteChange={(val) => setExerciseNotes((prev) => ({ ...prev, [currentExIdx]: val }))}
         onSkip={skipRest}
+      />
+    );
+  }
+
+  if (mode === "sfr") {
+    return (
+      <SfrScreen
+        exerciseName={currentEx?.name || ""}
+        stimulus={exerciseStimulus[currentExIdx] ?? 0}
+        fatigue={exerciseFatigue[currentExIdx] ?? 0}
+        onStimulusChange={(v) => setExerciseStimulus((prev) => ({ ...prev, [currentExIdx]: v }))}
+        onFatigueChange={(v) => setExerciseFatigue((prev) => ({ ...prev, [currentExIdx]: v }))}
+        onConfirm={confirmSfr}
       />
     );
   }
@@ -105,7 +121,6 @@ export default function RoutineScreen() {
         currentSetIdx={currentSetIdx}
         allCurrentDone={allCurrentDone}
         savedExercises={savedExercises}
-        exerciseRpe={exerciseRpe}
         onSetChange={(setIdx, field, val) => {
           setAllSets((prev) => {
             const u = { ...prev };
@@ -116,7 +131,6 @@ export default function RoutineScreen() {
           });
         }}
         onCompleteSet={completeSet}
-        onSetRpe={(val) => setExerciseRpe((prev) => ({ ...prev, [currentExIdx]: val }))}
         onPrev={goPrevExercise}
         onNext={goNextExercise}
         onFinish={finishRoutine}
@@ -134,7 +148,6 @@ export default function RoutineScreen() {
         dayExercises={dayExercises}
         allSets={allSets}
         clientNotes={clientNotes}
-        exerciseRpe={exerciseRpe}
         rpeGlobal={rpeGlobal}
         saving={saving}
         getPreviousLog={getPreviousLog}
@@ -149,7 +162,6 @@ export default function RoutineScreen() {
           });
         }}
         onClientNoteChange={(name, val) => setClientNotes((prev) => ({ ...prev, [name]: val }))}
-        onExerciseRpeChange={(exIdx, val) => setExerciseRpe((prev) => ({ ...prev, [exIdx]: val }))}
         onRpeChange={setRpeGlobal}
         onSave={saveRegistration}
         onBack={() => setMode("overview")}

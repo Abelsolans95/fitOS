@@ -7,11 +7,10 @@ export default function ClientLayout({
 }) {
   return (
     <div className="relative min-h-screen bg-[#0A0A0F] text-white">
-      {/* ── Ambient Background Glows ── */}
+      {/* ── Premium Ambient Background ── */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute inset-0 dot-grid opacity-70" />
-        <div className="absolute -top-32 left-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[#7C3AED] opacity-[0.03] blur-[120px]" />
-        <div className="absolute bottom-0 right-1/4 h-[400px] w-[500px] translate-x-1/2 rounded-full bg-[#00E5FF] opacity-[0.03] blur-[100px]" />
+        <div className="absolute inset-0 mesh-gradient" />
+        <div className="absolute inset-0 premium-grid" />
       </div>
 
       <div className="relative z-10">

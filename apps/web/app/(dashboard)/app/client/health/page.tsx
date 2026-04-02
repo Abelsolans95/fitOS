@@ -5,13 +5,42 @@ import { useClientHealth } from "./useClientHealth";
 import { HealthLogList } from "./components/HealthLogList";
 import { AnatomyMap } from "@/components/health/AnatomyMap";
 import { HealthReportForm } from "@/components/health/HealthReportForm";
-import type { MuscleStatus } from "@/components/health/AnatomyMap";
+import type { MuscleStatus, Gender } from "@/components/health/AnatomyMap";
+
+function GenderToggle({ gender, onChange }: { gender: Gender; onChange: (g: Gender) => void }) {
+  return (
+    <div className="flex gap-1 rounded-lg border border-white/[0.06] bg-[#0A0A12] p-1">
+      <button
+        type="button"
+        onClick={() => onChange("male")}
+        className={`rounded-md px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] transition-all ${
+          gender === "male"
+            ? "bg-[#7C3AED]/10 text-[#7C3AED]"
+            : "text-[#5A5A72] hover:text-[#8B8BA3]"
+        }`}
+      >
+        Hombre
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("female")}
+        className={`rounded-md px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] transition-all ${
+          gender === "female"
+            ? "bg-[#7C3AED]/10 text-[#7C3AED]"
+            : "text-[#5A5A72] hover:text-[#8B8BA3]"
+        }`}
+      >
+        Mujer
+      </button>
+    </div>
+  );
+}
 
 function ClientHealthInner() {
   const {
-    logs, loading, selectedMuscle, showForm, saving,
+    logs, loading, selectedMuscle, showForm, saving, gender,
     activeLogs, recoveredLogs, existingForMuscle,
-    handleMuscleClick, handleSubmit, handleCancel,
+    handleMuscleClick, handleSubmit, handleCancel, handleGenderChange,
   } = useClientHealth();
 
   const muscleStatuses: MuscleStatus[] = logs
@@ -37,11 +66,14 @@ function ClientHealthInner() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-black tracking-tight text-white">Mi Salud</h1>
-        <p className="mt-1 text-sm text-[#8B8BA3]">
-          Reporta molestias o lesiones para que tu entrenador las tenga en cuenta
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight text-white">Mi Salud</h1>
+          <p className="mt-1 text-sm text-[#8B8BA3]">
+            Reporta molestias o lesiones para que tu entrenador las tenga en cuenta
+          </p>
+        </div>
+        <GenderToggle gender={gender} onChange={handleGenderChange} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -55,7 +87,7 @@ function ClientHealthInner() {
               </span>
             )}
           </div>
-          <AnatomyMap muscleStatuses={muscleStatuses} onMuscleClick={handleMuscleClick} selectedMuscle={selectedMuscle} />
+          <AnatomyMap muscleStatuses={muscleStatuses} onMuscleClick={handleMuscleClick} selectedMuscle={selectedMuscle} gender={gender} />
         </div>
 
         {/* Right: Form or log list */}

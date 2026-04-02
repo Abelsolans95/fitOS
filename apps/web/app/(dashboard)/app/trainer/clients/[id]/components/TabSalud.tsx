@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase";
 import { toast } from "sonner";
 import { AnatomyMap, MUSCLE_LABELS } from "@/components/health/AnatomyMap";
 import { HealthReportForm, HealthLogFormData } from "@/components/health/HealthReportForm";
-import type { MuscleStatus } from "@/components/health/AnatomyMap";
+import type { MuscleStatus, Gender } from "@/components/health/AnatomyMap";
 import type { HealthLog } from "./types";
 import { formatDate, EmptyState } from "./shared";
 
@@ -33,15 +33,25 @@ export function TabSalud({
   const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [clientGender, setClientGender] = useState<Gender>("male");
 
   const fetchLogs = useCallback(async () => {
     const supabase = createClient();
-    const { data, error } = await supabase
-      .from("health_logs")
-      .select("id,client_id,trainer_id,reported_by,muscle_id,pain_score,incident_type,status,notes,created_at")
-      .eq("client_id", clientId)
-      .eq("trainer_id", trainerId)
-      .order("created_at", { ascending: false });
+    const [logsResult, profileResult] = await Promise.all([
+      supabase
+        .from("health_logs")
+        .select("id,client_id,trainer_id,reported_by,muscle_id,pain_score,incident_type,status,notes,created_at")
+        .eq("client_id", clientId)
+        .eq("trainer_id", trainerId)
+        .order("created_at", { ascending: false }),
+      supabase.from("profiles").select("gender").eq("user_id", clientId).single(),
+    ]);
+
+    if (profileResult.data?.gender) {
+      setClientGender(profileResult.data.gender as Gender);
+    } // No bloqueante
+
+    const { data, error } = logsResult;
 
     if (error) {
       toast.error("Error al cargar registros de salud");
@@ -181,6 +191,7 @@ export function TabSalud({
           muscleStatuses={muscleStatuses}
           onMuscleClick={handleMuscleClick}
           selectedMuscle={selectedMuscle}
+          gender={clientGender}
         />
       </div>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -14,7 +14,9 @@ import {
 } from "react-native";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
-import { colors , fonts} from "../theme";
+import { colors, fonts } from "../theme";
+import { groupFieldsBySection, getEnabledSections } from "@fitos/shared";
+import type { SectionGroup } from "@fitos/shared";
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                      */
@@ -23,10 +25,12 @@ import { colors , fonts} from "../theme";
 interface FormField {
   id: string;
   label: string;
-  type: "text" | "textarea" | "number" | "select" | "multiselect" | "boolean" | "scale" | "date";
+  type: "text" | "textarea" | "number" | "select" | "multiselect" | "boolean" | "scale" | "date" | "section";
   required: boolean;
   options?: string[];
   placeholder?: string;
+  description?: string;
+  enabled?: boolean;
 }
 
 interface OnboardingForm {
@@ -173,7 +177,7 @@ function DynamicField({
             trackColor={{ false: colors.border, true: colors.cyan + "60" }}
             thumbColor={value ? colors.cyan : colors.muted}
           />
-          <Text style={styles.switchLabel}>{value ? "Sí" : "No"}</Text>
+          <Text style={styles.switchLabel}>{value ? "Si" : "No"}</Text>
         </View>
       );
 
@@ -216,19 +220,40 @@ export default function OnboardingScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [pageError, setPageError] = useState<string | null>(null);
 
-  // Step 1
+  // Form data
   const [trainerName, setTrainerName] = useState("");
   const [trainerId, setTrainerId] = useState("");
   const [form, setForm] = useState<OnboardingForm | null>(null);
   const [responses, setResponses] = useState<Responses>({});
 
-  // Step 2
+  // Profile data
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
   const [goal, setGoal] = useState("");
   const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
   const [allergies, setAllergies] = useState("");
   const [dislikedFoods, setDislikedFoods] = useState("");
+
+  /* ----- Compute sections from form fields ----- */
+
+  const sectionGroups = useMemo(() => {
+    if (!form) return [];
+    return getEnabledSections(
+      groupFieldsBySection(form.fields as Array<FormField & Record<string, unknown>>)
+    );
+  }, [form]);
+
+  const hasSections = sectionGroups.some((g) => g.section !== null);
+  const formStepCount = form ? (hasSections ? sectionGroups.length : 1) : 0;
+  const totalSteps = formStepCount + 1;
+  const isProfileStep = step > formStepCount;
+  const currentSectionIndex = step - 1;
+
+  const stepLabel = useMemo(() => {
+    if (isProfileStep) return "Datos fisicos";
+    if (hasSections) return sectionGroups[currentSectionIndex]?.section?.label ?? "General";
+    return "Formulario de tu entrenador";
+  }, [isProfileStep, hasSections, sectionGroups, currentSectionIndex]);
 
   /* ----- Load trainer form ----- */
 
@@ -245,7 +270,7 @@ export default function OnboardingScreen() {
         .single();
 
       if (!tc) {
-        setPageError("No se encontró un entrenador vinculado a tu cuenta.");
+        setPageError("No se encontro un entrenador vinculado a tu cuenta.");
         setPageLoading(false);
         return;
       }
@@ -291,53 +316,76 @@ export default function OnboardingScreen() {
     fetchData();
   }, [fetchData]);
 
-  /* ----- Step 1 → Save responses & advance ----- */
+  /* ----- Save responses ----- */
 
-  const handleNext = async () => {
-    // Validate required fields
-    if (form) {
-      for (const field of form.fields) {
-        if (field.required) {
-          const val = responses[field.id];
-          if (val === undefined || val === "" || val === null) {
-            Alert.alert("Campo obligatorio", `Por favor completa: ${field.label}`);
-            return;
-          }
-          if (Array.isArray(val) && val.length === 0) {
-            Alert.alert("Campo obligatorio", `Selecciona al menos una opción en: ${field.label}`);
-            return;
-          }
-        }
-      }
-
-      setSubmitting(true);
-      try {
-        const { error } = await supabase.from("onboarding_responses").upsert(
-          {
-            form_id: form.id,
-            client_id: user!.id,
-            trainer_id: trainerId,
-            responses,
-          },
-          { onConflict: "form_id,client_id" }
-        );
-        if (error) {
-          Alert.alert("Error", "No se pudieron guardar las respuestas.");
-          setSubmitting(false);
-          return;
-        }
-      } catch {
-        Alert.alert("Error", "Error inesperado.");
+  const saveResponses = async (): Promise<boolean> => {
+    if (!form || !trainerId || !user) return true;
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from("onboarding_responses").upsert(
+        {
+          form_id: form.id,
+          client_id: user.id,
+          trainer_id: trainerId,
+          responses,
+        },
+        { onConflict: "form_id,client_id" }
+      );
+      if (error) {
+        Alert.alert("Error", "No se pudieron guardar las respuestas.");
         setSubmitting(false);
-        return;
+        return false;
       }
+    } catch {
+      Alert.alert("Error", "Error inesperado.");
       setSubmitting(false);
+      return false;
     }
-
-    setStep(2);
+    setSubmitting(false);
+    return true;
   };
 
-  /* ----- Step 2 → Save profile & complete ----- */
+  /* ----- Validation ----- */
+
+  const validateCurrentFormStep = (): boolean => {
+    if (!form) return true;
+
+    const fieldsToValidate = hasSections
+      ? (sectionGroups[currentSectionIndex]?.fields ?? [])
+      : form.fields.filter((f) => f.type !== "section");
+
+    for (const field of fieldsToValidate) {
+      if (field.required) {
+        const val = responses[field.id];
+        if (val === undefined || val === "" || val === null) {
+          Alert.alert("Campo obligatorio", `Por favor completa: ${field.label}`);
+          return false;
+        }
+        if (Array.isArray(val) && val.length === 0) {
+          Alert.alert("Campo obligatorio", `Selecciona al menos una opcion en: ${field.label}`);
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+
+  /* ----- Navigation ----- */
+
+  const handleNext = async () => {
+    if (!isProfileStep) {
+      if (!validateCurrentFormStep()) return;
+      const saved = await saveResponses();
+      if (!saved) return;
+      setStep(step + 1);
+    }
+  };
+
+  const handleBack = () => {
+    if (step > 1) setStep(step - 1);
+  };
+
+  /* ----- Complete ----- */
 
   const handleComplete = async () => {
     if (!height || Number(height) <= 0) {
@@ -385,14 +433,24 @@ export default function OnboardingScreen() {
       await supabase.auth.updateUser({
         data: { onboarding_completed: true },
       });
-
-      // AuthContext will pick up the metadata change and re-render App
     } catch {
       Alert.alert("Error", "Error al guardar el perfil.");
     }
 
     setSubmitting(false);
   };
+
+  /* ----- Get fields for current form step ----- */
+
+  const currentFields = useMemo((): FormField[] => {
+    if (!form || isProfileStep) return [];
+    if (hasSections) return (sectionGroups[currentSectionIndex]?.fields ?? []) as FormField[];
+    return form.fields.filter((f) => f.type !== "section");
+  }, [form, isProfileStep, hasSections, sectionGroups, currentSectionIndex]);
+
+  const currentSection: SectionGroup["section"] | null = hasSections
+    ? sectionGroups[currentSectionIndex]?.section ?? null
+    : null;
 
   /* ----- Loading ----- */
 
@@ -436,33 +494,52 @@ export default function OnboardingScreen() {
 
         {/* Step indicator */}
         <View style={styles.stepRow}>
-          <View style={[styles.stepDot, step >= 1 && styles.stepDotActive]} />
-          <View style={[styles.stepLine, step >= 2 && styles.stepLineActive]} />
-          <View style={[styles.stepDot, step >= 2 && styles.stepDotActive]} />
+          {Array.from({ length: totalSteps }, (_, i) => (
+            <React.Fragment key={i}>
+              <View style={[styles.stepDot, step >= i + 1 && styles.stepDotActive]} />
+              {i < totalSteps - 1 && (
+                <View style={[styles.stepLine, step > i + 1 && styles.stepLineActive]} />
+              )}
+            </React.Fragment>
+          ))}
         </View>
         <Text style={styles.stepLabel}>
-          Paso {step} de 2 — {step === 1 ? "Formulario de tu entrenador" : "Datos físicos"}
+          Paso {step} de {totalSteps} — {stepLabel}
         </Text>
 
-        {/* ============ STEP 1 ============ */}
-        {step === 1 && (
+        {/* ============ FORM STEPS ============ */}
+        {!isProfileStep && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              Formulario de <Text style={{ color: colors.cyan }}>{trainerName}</Text>
-            </Text>
-            <Text style={styles.sectionSubtitle}>
-              Tu entrenador necesita esta información para personalizar tu plan.
-            </Text>
+            {/* Section header */}
+            {currentSection ? (
+              <>
+                <Text style={[styles.sectionTitle, { color: colors.violet }]}>
+                  {currentSection.label}
+                </Text>
+                {currentSection.description && (
+                  <Text style={styles.sectionSubtitle}>{currentSection.description}</Text>
+                )}
+              </>
+            ) : (
+              <>
+                <Text style={styles.sectionTitle}>
+                  Formulario de <Text style={{ color: colors.cyan }}>{trainerName}</Text>
+                </Text>
+                <Text style={styles.sectionSubtitle}>
+                  Tu entrenador necesita esta informacion para personalizar tu plan.
+                </Text>
+              </>
+            )}
 
             {!form ? (
               <View style={styles.noFormCard}>
                 <Text style={styles.noFormText}>
-                  Tu entrenador aún no ha configurado un formulario de onboarding.
+                  Tu entrenador aun no ha configurado un formulario de onboarding.
                 </Text>
                 <Text style={styles.noFormHint}>Puedes continuar al siguiente paso.</Text>
               </View>
             ) : (
-              form.fields.map((field) => (
+              currentFields.map((field) => (
                 <View key={field.id} style={styles.fieldGroup}>
                   <Text style={styles.fieldLabel}>
                     {field.label}
@@ -477,27 +554,39 @@ export default function OnboardingScreen() {
               ))
             )}
 
-            <TouchableOpacity
-              style={[styles.primaryButton, submitting && { opacity: 0.5 }]}
-              onPress={handleNext}
-              disabled={submitting}
-              activeOpacity={0.8}
-            >
-              {submitting ? (
-                <ActivityIndicator color={colors.bg} />
-              ) : (
-                <Text style={styles.primaryButtonText}>Siguiente</Text>
+            {/* Navigation */}
+            <View style={styles.actionsRow}>
+              {step > 1 && (
+                <TouchableOpacity
+                  style={styles.backButton}
+                  onPress={handleBack}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.backButtonText}>Anterior</Text>
+                </TouchableOpacity>
               )}
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.primaryButton, submitting && { opacity: 0.5 }, step > 1 && { flex: 1 }]}
+                onPress={handleNext}
+                disabled={submitting}
+                activeOpacity={0.8}
+              >
+                {submitting ? (
+                  <ActivityIndicator color={colors.bg} />
+                ) : (
+                  <Text style={styles.primaryButtonText}>Siguiente</Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
-        {/* ============ STEP 2 ============ */}
-        {step === 2 && (
+        {/* ============ PROFILE STEP ============ */}
+        {isProfileStep && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Datos físicos y preferencias</Text>
+            <Text style={styles.sectionTitle}>Datos fisicos y preferencias</Text>
             <Text style={styles.sectionSubtitle}>
-              Esta información nos ayuda a personalizar tus planes.
+              Esta informacion nos ayuda a personalizar tus planes.
             </Text>
 
             {/* Height & Weight */}
@@ -596,7 +685,7 @@ export default function OnboardingScreen() {
               <Text style={styles.fieldLabel}>Alimentos que no me gustan</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Ej: brócoli, hígado..."
+                placeholder="Ej: brocoli, higado..."
                 placeholderTextColor={colors.muted + "80"}
                 value={dislikedFoods}
                 onChangeText={setDislikedFoods}
@@ -607,7 +696,7 @@ export default function OnboardingScreen() {
             <View style={styles.actionsRow}>
               <TouchableOpacity
                 style={styles.backButton}
-                onPress={() => setStep(1)}
+                onPress={handleBack}
                 activeOpacity={0.7}
               >
                 <Text style={styles.backButtonText}>Anterior</Text>
@@ -650,7 +739,7 @@ const styles = StyleSheet.create({
   stepRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", marginBottom: 8 },
   stepDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.border, borderWidth: 1, borderColor: colors.border },
   stepDotActive: { backgroundColor: colors.cyan, borderColor: colors.cyan },
-  stepLine: { width: 60, height: 2, backgroundColor: colors.border, marginHorizontal: 8 },
+  stepLine: { width: 30, height: 2, backgroundColor: colors.border, marginHorizontal: 4 },
   stepLineActive: { backgroundColor: colors.cyan },
   stepLabel: { fontSize: 12, color: colors.muted, textAlign: "center", marginBottom: 20 },
 

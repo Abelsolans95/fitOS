@@ -136,6 +136,19 @@ export type RoutinesAction =
       updates: Partial<SetConfig>;
     }
   | {
+      type: "CR_ADD_DERIVATIVE_SET";
+      dayKey: string;
+      exIndex: number;
+      afterSetIndex: number;
+      setType: "rest_pause" | "drop_set";
+    }
+  | {
+      type: "CR_REMOVE_DERIVATIVE_SET";
+      dayKey: string;
+      exIndex: number;
+      setIndex: number;
+    }
+  | {
       type: "CR_UPDATE_WEEKLY_CONFIG";
       dayKey: string;
       exIndex: number;
@@ -393,6 +406,54 @@ export function routinesReducer(state: RoutinesState, action: RoutinesAction): R
         }),
       };
 
+    case "CR_ADD_DERIVATIVE_SET":
+      return {
+        ...state,
+        crTrainingDays: state.crTrainingDays.map((d) => {
+          if (d.key !== action.dayKey) return d;
+          return {
+            ...d,
+            exercises: d.exercises.map((e, i) => {
+              if (i !== action.exIndex) return e;
+              const sourceSet = e.sets_config[action.afterSetIndex];
+              if (!sourceSet) return e;
+              const derivative: SetConfig = {
+                reps_min: sourceSet.reps_min,
+                reps_max: sourceSet.reps_max,
+                rir: 0,
+                target_weight: action.setType === "drop_set"
+                  ? (sourceSet.target_weight != null ? Math.round(sourceSet.target_weight * 0.8) : null)
+                  : sourceSet.target_weight,
+                rest_s: action.setType === "rest_pause" ? 15 : 0,
+                target_rpe: sourceSet.target_rpe,
+                set_type: action.setType,
+              };
+              const newConfig = [...e.sets_config];
+              newConfig.splice(action.afterSetIndex + 1, 0, derivative);
+              return { ...e, sets_config: newConfig, sets: newConfig.length };
+            }),
+          };
+        }),
+      };
+
+    case "CR_REMOVE_DERIVATIVE_SET":
+      return {
+        ...state,
+        crTrainingDays: state.crTrainingDays.map((d) => {
+          if (d.key !== action.dayKey) return d;
+          return {
+            ...d,
+            exercises: d.exercises.map((e, i) => {
+              if (i !== action.exIndex) return e;
+              const target = e.sets_config[action.setIndex];
+              if (!target || !target.set_type || target.set_type === "normal") return e;
+              const newConfig = e.sets_config.filter((_, si) => si !== action.setIndex);
+              return { ...e, sets_config: newConfig, sets: newConfig.length };
+            }),
+          };
+        }),
+      };
+
     case "CR_UPDATE_WEEKLY_CONFIG":
       return {
         ...state,
@@ -641,7 +702,7 @@ export function useRoutinesPage() {
     (dayKey: string) => {
       const day = state.crTrainingDays.find((d) => d.key === dayKey);
       if (!day) return 0;
-      return day.exercises.reduce((sum, ex) => sum + ex.sets + ex.rest_pause_sets, 0);
+      return day.exercises.reduce((sum, ex) => sum + ex.sets, 0);
     },
     [state.crTrainingDays]
   );
@@ -681,7 +742,9 @@ export function useRoutinesPage() {
             sets,
             reps_min: firstSet ? firstSet.reps_min : ex.reps_min,
             reps_max: firstSet ? firstSet.reps_max : ex.reps_max,
-            rest_pause_sets: ex.rest_pause_sets,
+            rest_pause_sets: ex.mode === "different"
+              ? ex.sets_config.filter((s) => s.set_type && s.set_type !== "normal").length
+              : ex.rest_pause_sets,
             rir: firstSet ? firstSet.rir : ex.rir,
             target_weight: firstSet ? firstSet.target_weight : ex.target_weight,
             weight_kg: (firstSet ? firstSet.target_weight : ex.target_weight) ?? 0,
@@ -788,7 +851,7 @@ export function useRoutinesPage() {
           order: ex.order,
           mode: ex.mode,
           sets_config: ex.mode === "different"
-            ? ex.sets_config.map(({ reps_min, reps_max, rest_s }) => ({ reps_min, reps_max, rest_s }))
+            ? ex.sets_config.map(({ reps_min, reps_max, rest_s, target_rpe, set_type }) => ({ reps_min, reps_max, rest_s, ...(target_rpe != null ? { target_rpe } : {}), ...(set_type && set_type !== "normal" ? { set_type } : {}) }))
             : undefined,
           weekly_config: ex.weekly_config && Object.keys(ex.weekly_config).length > 0
             ? Object.fromEntries(
@@ -799,9 +862,10 @@ export function useRoutinesPage() {
                     reps_min: wc.reps_min,
                     reps_max: wc.reps_max,
                     rest_s: wc.rest_s,
+                    target_rpe: wc.target_rpe,
                     coach_notes: wc.coach_notes,
                     sets_detail: wc.sets_detail
-                      ? wc.sets_detail.map(({ reps_min, reps_max, rest_s }) => ({ reps_min, reps_max, rest_s }))
+                      ? wc.sets_detail.map(({ reps_min, reps_max, rest_s, target_rpe, set_type }) => ({ reps_min, reps_max, rest_s, ...(target_rpe != null ? { target_rpe } : {}), ...(set_type && set_type !== "normal" ? { set_type } : {}) }))
                       : undefined,
                   },
                 ])

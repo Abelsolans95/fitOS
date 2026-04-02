@@ -12,6 +12,46 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+/** Groups flat fields by section for structured prompt */
+function groupFieldsBySection(
+  fields: Array<{ id: string; type: string; label: string; description?: string; enabled?: boolean }>
+): Array<{
+  sectionLabel: string | null;
+  sectionDescription: string | null;
+  fields: Array<{ id: string; label: string }>;
+}> {
+  const groups: Array<{
+    sectionLabel: string | null;
+    sectionDescription: string | null;
+    fields: Array<{ id: string; label: string }>;
+  }> = [];
+  let current: (typeof groups)[number] | null = null;
+
+  for (const field of fields) {
+    if (field.type === "section") {
+      if (field.enabled === false) {
+        // Skip disabled sections — advance until next section
+        current = null;
+        continue;
+      }
+      current = {
+        sectionLabel: field.label,
+        sectionDescription: field.description || null,
+        fields: [],
+      };
+      groups.push(current);
+    } else {
+      if (!current) {
+        current = { sectionLabel: null, sectionDescription: null, fields: [] };
+        groups.push(current);
+      }
+      current.fields.push({ id: field.id, label: field.label });
+    }
+  }
+
+  return groups;
+}
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -55,10 +95,10 @@ serve(async (req: Request) => {
       );
     }
 
-    // Obtener perfil del cliente
+    // Obtener perfil del cliente (columnas reales: height, weight)
     const { data: profile } = await supabase
       .from("profiles")
-      .select("full_name, goal, weight_kg, height_cm, food_preferences")
+      .select("full_name, goal, weight, height, food_preferences")
       .eq("user_id", client_id)
       .single();
 
@@ -68,7 +108,7 @@ serve(async (req: Request) => {
       return new Response(
         JSON.stringify({
           error: "ANTHROPIC_API_KEY no configurada",
-          message: "Configura la API key de Anthropic para análisis con IA.",
+          message: "Configura la API key de Anthropic para analisis con IA.",
           mock: true,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -76,43 +116,70 @@ serve(async (req: Request) => {
     }
 
     const formFields = onboardingResponse.onboarding_forms?.fields || [];
-    const answers = onboardingResponse.answers || {};
+    const answers = onboardingResponse.responses || {};
 
-    // Construir contexto legible de preguntas/respuestas
-    const qaContext = formFields
-      .map((field: { label: string; id: string }) => {
+    // Group fields by section for structured analysis
+    const sectionGroups = groupFieldsBySection(formFields);
+
+    // Build section-aware Q&A context
+    let qaContext = "";
+    for (const group of sectionGroups) {
+      if (group.sectionLabel) {
+        qaContext += `\n--- SECCION: ${group.sectionLabel} ---\n`;
+        if (group.sectionDescription) {
+          qaContext += `(${group.sectionDescription})\n`;
+        }
+      }
+      for (const field of group.fields) {
         const answer = answers[field.id];
-        return `P: ${field.label}\nR: ${answer ?? "(sin respuesta)"}`;
-      })
-      .join("\n\n");
+        const answerStr = Array.isArray(answer) ? answer.join(", ") : answer;
+        qaContext += `P: ${field.label}\nR: ${answerStr ?? "(sin respuesta)"}\n\n`;
+      }
+    }
+
+    // Format food preferences
+    const foodPrefs = profile?.food_preferences;
+    let foodPrefsStr = "No especificadas";
+    if (foodPrefs && typeof foodPrefs === "object") {
+      const parts: string[] = [];
+      if (foodPrefs.dietary_restrictions?.length) {
+        parts.push(`Restricciones: ${foodPrefs.dietary_restrictions.join(", ")}`);
+      }
+      if (foodPrefs.allergies) parts.push(`Alergias: ${foodPrefs.allergies}`);
+      if (foodPrefs.disliked_foods) parts.push(`No le gusta: ${foodPrefs.disliked_foods}`);
+      if (parts.length) foodPrefsStr = parts.join(". ");
+    }
 
     const prompt = `Eres un entrenador personal y nutricionista experto. Analiza las respuestas del formulario de onboarding de un nuevo cliente y proporciona un informe estructurado.
 
 **Datos del cliente:**
 - Nombre: ${profile?.full_name || "No especificado"}
 - Objetivo: ${profile?.goal || "No especificado"}
-- Peso: ${profile?.weight_kg || "No especificado"} kg
-- Altura: ${profile?.height_cm || "No especificado"} cm
-- Preferencias alimenticias: ${profile?.food_preferences || "No especificadas"}
+- Peso: ${profile?.weight || "No especificado"} kg
+- Altura: ${profile?.height || "No especificado"} cm
+- Preferencias alimenticias: ${foodPrefsStr}
 
 **Respuestas del formulario "${onboardingResponse.onboarding_forms?.title || "Onboarding"}":**
 
 ${qaContext}
 
-**Genera un informe en JSON:**
+**Analiza TODAS las secciones del formulario (historial medico, deportivo, experiencias, estado actual, objetivos y cualquier otra seccion presente). Genera un informe completo en JSON:**
 {
   "summary": "resumen ejecutivo del cliente en 2-3 frases",
-  "risk_flags": ["lista de posibles riesgos o señales de alerta"],
-  "strengths": ["puntos fuertes del cliente"],
+  "medical_flags": ["lista de señales medicas relevantes (patologias, medicacion, lesiones)"],
+  "risk_flags": ["lista de posibles riesgos o señales de alerta para el entrenamiento"],
+  "strengths": ["puntos fuertes del cliente (experiencia, motivacion, disponibilidad)"],
+  "experience_level": "principiante|intermedio|avanzado",
   "recommendations": {
-    "training": "recomendaciones de entrenamiento específicas",
-    "nutrition": "recomendaciones nutricionales específicas",
-    "lifestyle": "recomendaciones de estilo de vida"
+    "training": "recomendaciones de entrenamiento especificas basadas en TODO el historial",
+    "nutrition": "recomendaciones nutricionales especificas",
+    "lifestyle": "recomendaciones de estilo de vida (sueno, estres, habitos)",
+    "precautions": "precauciones por lesiones, patologias o medicacion"
   },
   "suggested_goal_kcal": number,
   "suggested_protein_g": number,
   "suggested_training_days": number,
-  "priority_focus": "fuerza|hipertrofia|pérdida de grasa|resistencia|salud general",
+  "priority_focus": "fuerza|hipertrofia|perdida de grasa|resistencia|salud general",
   "notes": "notas adicionales para el entrenador"
 }`;
 
@@ -136,7 +203,7 @@ ${qaContext}
     const jsonMatch = textContent.match(/\{[\s\S]*\}/);
     const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : { raw: textContent };
 
-    // Guardar el análisis en la respuesta del onboarding
+    // Guardar el analisis en la respuesta del onboarding
     await supabase
       .from("onboarding_responses")
       .update({ ai_analysis: analysis, analyzed_at: new Date().toISOString() })

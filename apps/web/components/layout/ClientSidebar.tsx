@@ -82,6 +82,15 @@ const BASE_NAV: Omit<SidebarNavItem, "badge">[] = [
     ),
   },
   {
+    label: "Consultas",
+    href: "/app/client/tickets",
+    icon: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+      </svg>
+    ),
+  },
+  {
     label: "Chat",
     href: CHAT_HREF,
     icon: (
@@ -98,6 +107,7 @@ export function ClientSidebar() {
   const pathname = usePathname();
   const [unread, setUnread] = useState(0);
   const [communityUnread, setCommunityUnread] = useState(0);
+  const [ticketUnread, setTicketUnread] = useState(0);
 
   useEffect(() => {
     const supabase = createClient();
@@ -163,10 +173,19 @@ export function ClientSidebar() {
         .single();
       if (comm) communityId = comm.id;
 
-      await fetchUnread();
-      await fetchCommunityUnread();
+      const fetchTicketUnread = async () => {
+        const { count, error } = await supabase
+          .from("ticket_replies")
+          .select("id", { count: "exact", head: true })
+          .neq("sender_id", clientId)
+          .is("read_at", null);
+        if (error) console.error("[ClientSidebar] Error counting unread replies:", error);
+        setTicketUnread(count ?? 0);
+      };
 
-      // Realtime: listen for new trainer messages + community posts
+      await Promise.all([fetchUnread(), fetchCommunityUnread(), fetchTicketUnread()]);
+
+      // Realtime: listen for new trainer messages + community posts + ticket replies
       channel = supabase
         .channel(`sidebar-unread-${clientId}`)
         .on(
@@ -193,6 +212,16 @@ export function ClientSidebar() {
             }
           }
         )
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "ticket_replies" },
+          (payload) => {
+            const reply = payload.new as { sender_id: string };
+            if (reply.sender_id !== clientId) {
+              setTicketUnread((n) => n + 1);
+            }
+          }
+        )
         .subscribe();
     };
 
@@ -207,6 +236,7 @@ export function ClientSidebar() {
   useEffect(() => {
     if (pathname === CHAT_HREF) setUnread(0);
     if (pathname === COMMUNITY_HREF) setCommunityUnread(0);
+    if (pathname === "/app/client/tickets") setTicketUnread(0);
   }, [pathname]);
 
   const navItems: SidebarNavItem[] = BASE_NAV.map((item) => {
@@ -214,6 +244,8 @@ export function ClientSidebar() {
       return { ...item, badge: unread };
     if (item.href === COMMUNITY_HREF && communityUnread > 0)
       return { ...item, badge: communityUnread };
+    if (item.href === "/app/client/tickets" && ticketUnread > 0)
+      return { ...item, badge: ticketUnread };
     return item;
   });
 

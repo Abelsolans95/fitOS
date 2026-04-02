@@ -30,7 +30,9 @@ export function useRoutineScreen() {
   const [allSets, setAllSets] = useState<Record<number, SetEntry[]>>({});
   const [clientNotes, setClientNotes] = useState<Record<string, string>>({});
   const [exerciseNotes, setExerciseNotes] = useState<Record<number, string>>({});
-  const [exerciseRpe, setExerciseRpe] = useState<Record<number, string>>({});
+  // exerciseRpe removed — RPE is now per-set, not per-exercise
+  const [exerciseStimulus, setExerciseStimulus] = useState<Record<number, number>>({});
+  const [exerciseFatigue, setExerciseFatigue] = useState<Record<number, number>>({});
   const [rpeGlobal, setRpeGlobal] = useState(7);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -104,7 +106,7 @@ export function useRoutineScreen() {
 
   // Elapsed timer
   useEffect(() => {
-    if (mode === "active" || mode === "rest" || mode === "registration") {
+    if (mode === "active" || mode === "rest" || mode === "registration" || mode === "sfr") {
       if (!elapsedRef.current && sessionStart > 0) {
         elapsedRef.current = setInterval(() => setElapsed((p) => p + 1), 1000);
       }
@@ -213,16 +215,36 @@ export function useRoutineScreen() {
   const initSets = useCallback((exercises: ExerciseData[]) => {
     const initial: Record<number, SetEntry[]> = {};
     exercises.forEach((ex, idx) => {
-      const mainCount = ex.sets || 3;
-      const rpCount = ex.rest_pause_sets || 0;
-      const total = mainCount + rpCount;
-      initial[idx] = Array.from({ length: total }, (_, i) => ({
-        weight_kg: "", reps_done: "", rir: "", completed: false,
-        type: i < mainCount ? "main" as const : "rest_pause" as const,
-      }));
+      // Check weekly_config sets_detail first (works for both equal and different modes)
+      const wkDetail = ex.weekly_config?.[activeWeek]?.sets_detail;
+      if (wkDetail && wkDetail.length > 0) {
+        initial[idx] = wkDetail.map((sc) => {
+          const st = (sc as any).set_type || "normal";
+          return {
+            weight_kg: "", reps_done: "", rir: "", rpe: "", completed: false,
+            type: (st === "rest_pause" ? "rest_pause" : st === "drop_set" ? "drop_set" : "main") as any,
+          };
+        });
+      } else if (ex.mode === "different" && ex.sets_config && ex.sets_config.length > 0) {
+        initial[idx] = ex.sets_config.map((sc) => {
+          const st = (sc as any).set_type || "normal";
+          return {
+            weight_kg: "", reps_done: "", rir: "", rpe: "", completed: false,
+            type: (st === "rest_pause" ? "rest_pause" : st === "drop_set" ? "drop_set" : "main") as any,
+          };
+        });
+      } else {
+        const mainCount = ex.sets || 3;
+        const rpCount = ex.rest_pause_sets || 0;
+        const total = mainCount + rpCount;
+        initial[idx] = Array.from({ length: total }, (_, i) => ({
+          weight_kg: "", reps_done: "", rir: "", rpe: "", completed: false,
+          type: i < mainCount ? "main" as const : "rest_pause" as const,
+        }));
+      }
     });
     setAllSets(initial);
-  }, []);
+  }, [activeWeek]);
 
   const saveCalendarAndRpe = useCallback(async (totalVolume: number) => {
     if (!user || !routine) return;
@@ -262,28 +284,37 @@ export function useRoutineScreen() {
     const restoredNotes: Record<number, string> = {};
 
     dayExercises.forEach((ex, idx) => {
+      const wkDetail = ex.weekly_config?.[activeWeek]?.sets_detail;
       const mainCount = ex.sets || 3;
       const rpCount = ex.rest_pause_sets || 0;
-      const total = mainCount + rpCount;
+      const total = wkDetail?.length ?? (mainCount + rpCount);
       const savedLog = savedLogs.find((l) => l.exercise_name === ex.name);
+
+      const getSetType = (i: number): "main" | "rest_pause" | "drop_set" => {
+        if (wkDetail?.[i]) {
+          const st = (wkDetail[i] as any).set_type || "normal";
+          return st === "rest_pause" ? "rest_pause" : st === "drop_set" ? "drop_set" : "main";
+        }
+        return i < mainCount ? "main" : "rest_pause";
+      };
 
       if (savedLog && savedLog.sets_data) {
         initial[idx] = savedLog.sets_data.map((s: any, i: number) => ({
           weight_kg: String(s.weight_kg), reps_done: String(s.reps_done),
-          rir: String(s.rir ?? ""), completed: s.completed !== false,
-          type: i < mainCount ? "main" as const : "rest_pause" as const,
+          rir: String(s.rir ?? ""), rpe: String(s.rpe ?? ""), completed: s.completed !== false,
+          type: getSetType(i),
         }));
         const allSetsDone = initial[idx].every((s) => s.completed);
         if (allSetsDone) alreadySaved.add(idx);
         while (initial[idx].length < total) {
           const i = initial[idx].length;
-          initial[idx].push({ weight_kg: "", reps_done: "", rir: "", completed: false, type: i < mainCount ? "main" as const : "rest_pause" as const });
+          initial[idx].push({ weight_kg: "", reps_done: "", rir: "", rpe: "", completed: false, type: getSetType(i) });
         }
         if (savedLog.client_notes) restoredNotes[idx] = savedLog.client_notes;
       } else {
         initial[idx] = Array.from({ length: total }, (_, i) => ({
-          weight_kg: "", reps_done: "", rir: "", completed: false,
-          type: i < mainCount ? "main" as const : "rest_pause" as const,
+          weight_kg: "", reps_done: "", rir: "", rpe: "", completed: false,
+          type: getSetType(i),
         }));
       }
     });
@@ -303,6 +334,16 @@ export function useRoutineScreen() {
     setMode("active");
   }, [inProgressSession, user, dayExercises, previousLogs]);
 
+  const calcStressIndex = useCallback((setsData: { weight_kg: number; reps_done: number; rir: number; completed: boolean }[]): number => {
+    const rirFactor = (rir: number) => rir <= 0 ? 1.0 : rir === 1 ? 0.95 : rir === 2 ? 0.90 : rir === 3 ? 0.85 : rir === 4 ? 0.80 : 0.75;
+    let stress = 0;
+    for (const s of setsData) {
+      if (!s.completed) continue;
+      stress += s.weight_kg * s.reps_done * rirFactor(s.rir);
+    }
+    return Math.round(stress * 100) / 100;
+  }, []);
+
   const savePartialProgress = useCallback(async (exIdx: number, updatedSets: SetEntry[]) => {
     if (!user || !sessionId) return;
     const ex = dayExercises[exIdx];
@@ -313,18 +354,23 @@ export function useRoutineScreen() {
     const setsData = updatedSets.map((s, i) => ({
       set_number: i + 1, weight_kg: Number(s.weight_kg) || 0,
       reps_done: Number(s.reps_done) || 0, rir: Number(s.rir) || 0,
+      rpe: Number(s.rpe) || 0,
       type: i < mainCount ? "main" : "rest_pause", completed: s.completed,
     }));
     const totalVol = setsData.reduce((sum, s) => sum + s.weight_kg * s.reps_done, 0);
     const notes = exerciseNotes[exIdx]?.trim() || null;
-    const rpeVal = exerciseRpe[exIdx] ? Number(exerciseRpe[exIdx]) : null;
+    const rpeVals = setsData.filter((s) => s.completed && s.rpe > 0).map((s) => s.rpe);
+    const rpeVal = rpeVals.length > 0 ? Math.round((rpeVals.reduce((a, b) => a + b, 0) / rpeVals.length) * 10) / 10 : null;
+    const stimulusVal = exerciseStimulus[exIdx] ?? null;
+    const fatigueVal = exerciseFatigue[exIdx] ?? null;
+    const stressIndex = calcStressIndex(setsData);
 
     const { data: existing } = await supabase.from("weight_log").select("id")
       .eq("session_id", sessionId).eq("exercise_name", ex.name).maybeSingle();
 
     if (existing) {
       await supabase.from("weight_log")
-        .update({ sets_data: setsData, total_volume_kg: totalVol, client_notes: notes, exercise_rpe: rpeVal })
+        .update({ sets_data: setsData, total_volume_kg: totalVol, client_notes: notes, exercise_rpe: rpeVal, stress_index: stressIndex, stimulus_rating: stimulusVal, fatigue_rating: fatigueVal })
         .eq("id", existing.id);
     } else {
       await supabase.from("weight_log").insert({
@@ -332,12 +378,13 @@ export function useRoutineScreen() {
         exercise_id: ex.exercise_id, exercise_name: ex.name,
         session_date: today, session_id: sessionId,
         sets_data: setsData, total_volume_kg: totalVol, client_notes: notes, exercise_rpe: rpeVal,
+        stress_index: stressIndex, stimulus_rating: stimulusVal, fatigue_rating: fatigueVal,
       });
     }
     if (updatedSets.every((s) => s.completed)) {
       setSavedExercises((prev) => new Set(prev).add(exIdx));
     }
-  }, [user, sessionId, dayExercises, exerciseNotes, exerciseRpe, routine]);
+  }, [user, sessionId, dayExercises, exerciseNotes, exerciseStimulus, exerciseFatigue, routine, calcStressIndex]);
 
   const saveExerciseLog = useCallback(async (exIdx: number) => {
     if (!user || !sessionId) return;
@@ -407,7 +454,9 @@ export function useRoutineScreen() {
     setAllSets((prev) => { const u = { ...prev }; u[currentExIdx] = updatedSets; return u; });
     savePartialProgress(currentExIdx, updatedSets);
     const allDone = updatedSets.every((s) => s.completed);
-    if (!allDone) {
+    if (allDone) {
+      setMode("sfr");
+    } else {
       const ex = dayExercises[currentExIdx];
       setRestTotal(ex?.rest_s || 90);
       setRestTime(ex?.rest_s || 90);
@@ -558,6 +607,13 @@ export function useRoutineScreen() {
   const allCurrentDone = currentSetIdx === -1 && (allSets[currentExIdx]?.length || 0) > 0;
   const currentEx = dayExercises[currentExIdx] || null;
 
+  const confirmSfr = useCallback(async () => {
+    const sets = allSets[currentExIdx] || [];
+    // Always re-save — stimulus/fatigue were set AFTER the initial save
+    await savePartialProgress(currentExIdx, sets);
+    setMode("active");
+  }, [currentExIdx, allSets, savePartialProgress]);
+
   const skipRest = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     setRestTime(0);
@@ -569,7 +625,9 @@ export function useRoutineScreen() {
     selectedDay, setSelectedDay, activeWeek, setActiveWeek,
     currentExIdx, allSets, setAllSets,
     clientNotes, setClientNotes, exerciseNotes, setExerciseNotes,
-    exerciseRpe, setExerciseRpe, rpeGlobal, setRpeGlobal,
+    exerciseStimulus, setExerciseStimulus,
+    exerciseFatigue, setExerciseFatigue,
+    rpeGlobal, setRpeGlobal,
     sessionId, saving, savedExercises,
     inProgressSession, isSessionCompleted,
     restTime, restTotal, timerRef, elapsed,
@@ -578,6 +636,6 @@ export function useRoutineScreen() {
     getDayLabel, getPreviousLog, formatPrevious,
     startSession, resumeSession, completeSet, saveAndNext,
     saveRegistration, goNextExercise, goPrevExercise, finishRoutine, finishSession,
-    skipRest,
+    confirmSfr, skipRest,
   };
 }
