@@ -61,27 +61,13 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Increment promo code current_uses
-      const { data: currentCode, error: promoSelectError } = await supabase
-        .from("trainer_promo_codes")
-        .select("current_uses")
-        .eq("id", promo_code_id)
-        .single();
-
-      if (promoSelectError) {
-        console.error("[complete-registration] Promo code select error:", promoSelectError);
-        // No bloqueante
-      }
-
-      if (currentCode) {
-        const { error: promoUpdateError } = await supabase
-          .from("trainer_promo_codes")
-          .update({ current_uses: currentCode.current_uses + 1 })
-          .eq("id", promo_code_id);
-        if (promoUpdateError) {
-          console.error("[complete-registration] Promo code update error:", promoUpdateError);
-          // No bloqueante
-        }
+      // Increment promo code current_uses atomically (avoids race condition)
+      const { error: promoRpcError } = await supabase.rpc("increment_promo_code_uses", {
+        p_promo_code_id: promo_code_id,
+      });
+      if (promoRpcError) {
+        console.error("[complete-registration] Promo code increment error:", promoRpcError);
+        // No bloqueante — el registro del cliente ya se completó
       }
     }
 

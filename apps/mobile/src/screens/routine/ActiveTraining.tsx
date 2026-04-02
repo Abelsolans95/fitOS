@@ -53,12 +53,12 @@ export function ActiveTraining({
   const showRpe = useMemo(() => {
     if (currentEx.target_rpe != null && currentEx.target_rpe > 0) return true;
     const sc = currentEx.sets_config ?? [];
-    if (sc.some((c: any) => (c.target_rpe ?? 0) > 0)) return true;
+    if (sc.some((c) => (c.target_rpe ?? 0) > 0)) return true;
     const wc = currentEx.weekly_config;
     if (wc) {
       for (const w of Object.values(wc)) {
-        if ((w as any).target_rpe > 0) return true;
-        if (w.sets_detail?.some((d: any) => (d.target_rpe ?? 0) > 0)) return true;
+        if ((w.target_rpe ?? 0) > 0) return true;
+        if (w.sets_detail?.some((d) => (d.target_rpe ?? 0) > 0)) return true;
       }
     }
     return false;

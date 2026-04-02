@@ -91,12 +91,26 @@ export async function syncWidgetData(userId: string): Promise<WidgetData | null>
     }
 
     // 2. Parse exercises (same logic as RoutineScreen)
-    let allExercises: any[] = [];
+    interface WidgetExercise {
+      name: string;
+      day_of_week: string;
+      day_label?: string;
+      week_of_month?: number;
+      order?: number;
+      sets?: number;
+      reps_min?: number;
+      reps_max?: number;
+      rir?: number;
+      rest_s?: number;
+      sets_config?: { reps_min: number; reps_max: number }[];
+      weekly_config?: Record<number, { sets?: number; reps_min?: number; reps_max?: number }>;
+    }
+    let allExercises: WidgetExercise[] = [];
     if (routine.exercises && Array.isArray(routine.exercises) && routine.exercises.length > 0) {
       allExercises = routine.exercises;
     } else if (routine.days && Array.isArray(routine.days)) {
-      allExercises = routine.days.flatMap((d: any) =>
-        (d.exercises || []).map((ex: any) => ({
+      allExercises = routine.days.flatMap((d: { day: string; label?: string; exercises?: WidgetExercise[] }) =>
+        (d.exercises || []).map((ex) => ({
           ...ex,
           day_of_week: ex.day_of_week || d.day,
           day_label: ex.day_label || d.label,
@@ -108,12 +122,12 @@ export async function syncWidgetData(userId: string): Promise<WidgetData | null>
 
     // 3. Filter today's exercises
     const todayExercises = allExercises
-      .filter((ex: any) => {
+      .filter((ex) => {
         if (ex.day_of_week !== todayKey) return false;
         if (ex.week_of_month && ex.week_of_month !== activeWeek) return false;
         return true;
       })
-      .sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0));
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
     const isRestDay = todayExercises.length === 0;
 
@@ -134,7 +148,7 @@ export async function syncWidgetData(userId: string): Promise<WidgetData | null>
 
       const completedKey = `${dayLabel}::${activeWeek}`;
       const isCompleted = doneSessions?.some(
-        (s: any) => `${s.day_label}::${s.week_number}` === completedKey
+        (s: { day_label: string; week_number: number }) => `${s.day_label}::${s.week_number}` === completedKey
       );
       completedCount = isCompleted ? todayExercises.length : 0;
     }
@@ -143,7 +157,7 @@ export async function syncWidgetData(userId: string): Promise<WidgetData | null>
     const widgetData: WidgetData = {
       dayName,
       dayLabel,
-      exercises: todayExercises.map((ex: any) => ({
+      exercises: todayExercises.map((ex) => ({
         name: ex.name,
         scheme: buildScheme(ex),
         completed: completedCount > 0,

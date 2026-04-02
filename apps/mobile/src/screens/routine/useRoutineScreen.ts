@@ -74,7 +74,7 @@ export function useRoutineScreen() {
           .eq("status", "completed");
 
         if (doneSessions) {
-          const keys = new Set(doneSessions.map((s: any) => `${s.day_label}::${s.week_number}`));
+          const keys = new Set(doneSessions.map((s: { day_label: string; week_number: number }) => `${s.day_label}::${s.week_number}`));
           setCompletedSessions(keys);
         }
       }
@@ -219,18 +219,18 @@ export function useRoutineScreen() {
       const wkDetail = ex.weekly_config?.[activeWeek]?.sets_detail;
       if (wkDetail && wkDetail.length > 0) {
         initial[idx] = wkDetail.map((sc) => {
-          const st = (sc as any).set_type || "normal";
+          const st = sc.set_type || "normal";
           return {
             weight_kg: "", reps_done: "", rir: "", rpe: "", completed: false,
-            type: (st === "rest_pause" ? "rest_pause" : st === "drop_set" ? "drop_set" : "main") as any,
+            type: (st === "rest_pause" ? "rest_pause" : st === "drop_set" ? "drop_set" : "main") as SetEntry["type"],
           };
         });
       } else if (ex.mode === "different" && ex.sets_config && ex.sets_config.length > 0) {
         initial[idx] = ex.sets_config.map((sc) => {
-          const st = (sc as any).set_type || "normal";
+          const st = sc.set_type || "normal";
           return {
             weight_kg: "", reps_done: "", rir: "", rpe: "", completed: false,
-            type: (st === "rest_pause" ? "rest_pause" : st === "drop_set" ? "drop_set" : "main") as any,
+            type: (st === "rest_pause" ? "rest_pause" : st === "drop_set" ? "drop_set" : "main") as SetEntry["type"],
           };
         });
       } else {
@@ -292,14 +292,14 @@ export function useRoutineScreen() {
 
       const getSetType = (i: number): "main" | "rest_pause" | "drop_set" => {
         if (wkDetail?.[i]) {
-          const st = (wkDetail[i] as any).set_type || "normal";
+          const st = wkDetail[i].set_type || "normal";
           return st === "rest_pause" ? "rest_pause" : st === "drop_set" ? "drop_set" : "main";
         }
         return i < mainCount ? "main" : "rest_pause";
       };
 
       if (savedLog && savedLog.sets_data) {
-        initial[idx] = savedLog.sets_data.map((s: any, i: number) => ({
+        initial[idx] = savedLog.sets_data.map((s: PreviousSet & { rir?: number; rpe?: number; completed?: boolean }, i: number) => ({
           weight_kg: String(s.weight_kg), reps_done: String(s.reps_done),
           rir: String(s.rir ?? ""), rpe: String(s.rpe ?? ""), completed: s.completed !== false,
           type: getSetType(i),

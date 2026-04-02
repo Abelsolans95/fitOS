@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   title: "FitOS — Software para Entrenadores Personales con IA",
   description:
     "La herramienta que usan los entrenadores personales para escalar su negocio. Genera rutinas y menús con IA, gestiona clientes y analiza comidas con la cámara. Prueba gratis: 14 días o tus primeros 5 clientes.",
-  alternates: { canonical: "https://fit-os-web.vercel.app" },
+  alternates: { canonical: process.env.NEXT_PUBLIC_BASE_URL ?? "https://fit-os-web.vercel.app" },
 };
 
 /* ─── Icons ─────────────────────────────────────────────── */

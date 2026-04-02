@@ -47,7 +47,7 @@ export default function CaloriesScreen() {
 
   const loadTodayLogs = async () => {
     if (!user) return;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("food_log")
       .select("id, logged_at, meal_type, total_kcal, total_protein, total_carbs, total_fat, source, photo_url")
       .eq("client_id", user.id)
@@ -55,6 +55,10 @@ export default function CaloriesScreen() {
       .lte("logged_at", today + "T23:59:59")
       .order("logged_at", { ascending: true });
 
+    if (error) {
+      console.error("[CaloriesScreen] Error cargando registros:", error);
+      Alert.alert("Error", "No se pudieron cargar los registros de hoy");
+    }
     if (data) setTodayLogs(data);
     setLoading(false);
   };

@@ -49,15 +49,22 @@ export default function AppointmentsScreen() {
       if (!user) { setLoading(false); return; }
       setClientId(user.id);
 
-      const { data: rel } = await supabase
+      const { data: rel, error: relErr } = await supabase
         .from("trainer_clients").select("trainer_id")
         .eq("client_id", user.id).eq("status", "active").single();
 
+      if (relErr) {
+        console.error("[AppointmentsScreen] Error cargando relación trainer:", relErr); // No bloqueante
+      }
+
       if (rel) {
         setTrainerId(rel.trainer_id as string);
-        const { data: profile } = await supabase
+        const { data: profile, error: profileErr } = await supabase
           .from("profiles").select("user_id, full_name")
           .eq("user_id", rel.trainer_id).single();
+        if (profileErr) {
+          console.error("[AppointmentsScreen] Error cargando perfil trainer:", profileErr); // No bloqueante
+        }
         setTrainer(profile as TrainerInfo | null);
       }
 
@@ -90,8 +97,13 @@ export default function AppointmentsScreen() {
         text: "Sí, cancelar", style: "destructive",
         onPress: async () => {
           setCancelling(id);
-          await supabase.from("appointments").update({ status: "cancelled", cancelled_by: clientId }).eq("id", id);
-          await fetchAppointments();
+          const { error: cancelErr } = await supabase.from("appointments").update({ status: "cancelled", cancelled_by: clientId }).eq("id", id);
+          if (cancelErr) {
+            console.error("[AppointmentsScreen] Error cancelando cita:", cancelErr);
+            Alert.alert("Error", "No se pudo cancelar la cita. Inténtalo de nuevo.");
+          } else {
+            await fetchAppointments();
+          }
           setCancelling(null);
         },
       },
