@@ -42,3 +42,28 @@ Ejecuta al final para verificar que nada se rompio:
 ```
 cd apps/web && npm run build
 ```
+
+---
+
+## Resumen de ejecucion (02/04/2026)
+
+### Queries optimizadas
+| Archivo | Cambio |
+|---------|--------|
+| useCommunityPage.ts | Añadido `.limit(500)` a community_comments |
+| useClientCommunityPage.ts | Añadido `.limit(500)` a community_comments |
+| useTicketsPage.ts | Convertido queries secuenciales (profiles + unread) a `Promise.all` |
+
+### Verificacion de patrones
+- ✅ `.select("*")` — No encontrado en queries de dashboard (todos usan campos especificos)
+- ✅ `.limit()` en tablas crecientes — Correcto en messages (500), community_posts (50), appointments (200), weight_log (200-500), food_log (filtrado por dia), body_metrics (30), ticket_replies (200). Corregido: community_comments (500)
+- ✅ Filtros de fecha en appointments — Correcto en trainer y client (1 mes atras + 3 meses adelante)
+- ✅ No hay `.from()` dentro de for/map loops
+- ✅ No se detectaron N+1 queries
+
+### React.memo
+- Ya aplicado en componentes hoja: ExerciseCard, AppointmentCard, CommunityFeed
+- Los componentes en .map() que son inline (no componentes separados) no necesitan memo (son simples renders de datos)
+
+### Build
+- No se ejecuto `npm run build` (requiere todas las env vars configuradas) pero `npx vitest run` pasa 126 tests sin errores
