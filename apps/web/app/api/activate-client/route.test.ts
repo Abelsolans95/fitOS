@@ -62,7 +62,7 @@ describe("POST /api/activate-client", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetUser.mockResolvedValue({
-      data: { user: { id: "client-1", email: "client@test.com" } },
+      data: { user: { id: "client-1", email: "client@test.com", user_metadata: { role: "client" } } },
       error: null,
     });
   });
@@ -100,7 +100,18 @@ describe("POST /api/activate-client", () => {
     expect(json.error).toBe("Unauthorized");
   });
 
-  // 3. trainer_clients update fails → 500
+  // 3. Wrong role → 403
+  it("returns 403 when user is not a client", async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: "t1", user_metadata: { role: "trainer" } } },
+      error: null,
+    });
+
+    const res = await POST(makeRequest() as any);
+    expect(res.status).toBe(403);
+  });
+
+  // 4. trainer_clients update fails → 500
   it("returns 500 when trainer_clients update fails", async () => {
     const failChain = createChain({
       data: null,
@@ -116,7 +127,7 @@ describe("POST /api/activate-client", () => {
     expect(json.error).toBe("Error al activar el cliente");
   });
 
-  // 4. Profile update fails — non-blocking, still returns success
+  // 5. Profile update fails — non-blocking, still returns success
   it("returns success even if profile email update fails", async () => {
     const trainerClientsChain = createChain({ data: null, error: null });
     const profilesChain = createChain({
@@ -137,7 +148,7 @@ describe("POST /api/activate-client", () => {
     expect(json.success).toBe(true);
   });
 
-  // 5. Unexpected error → 500 via catch
+  // 6. Unexpected error → 500 via catch
   it("returns 500 when an unexpected error is thrown", async () => {
     mockGetUser.mockRejectedValue(new Error("unexpected crash"));
 

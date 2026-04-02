@@ -68,7 +68,7 @@ describe("trainingReducer — COMPLETE_SET", () => {
       restSeconds: 90,
     });
     expect(next.allSets[0][1].completed).toBe(true);
-    expect(next.phase).toBe("training"); // all done → no rest
+    expect(next.phase).toBe("sfr"); // all done → SFR phase (stimulus/fatigue rating)
   });
 
   it("ignores already-completed sets", () => {
