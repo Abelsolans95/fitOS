@@ -9,10 +9,13 @@ export interface FormField {
     | "multiselect"
     | "boolean"
     | "scale"
-    | "date";
+    | "date"
+    | "section";
   required: boolean;
   options?: string[];
   placeholder?: string;
+  description?: string;
+  enabled?: boolean;
 }
 
 export interface OnboardingForm {

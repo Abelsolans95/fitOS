@@ -1,119 +1,25 @@
 /* ────────────────────────────────────────────
-   Active Training — Shared Types & Helpers
+   Active Training — re-exports from @fitos/shared
    ──────────────────────────────────────────── */
 
-export interface SetConfig {
-  reps_min: number;
-  reps_max: number;
-  rir: number;
-  target_weight: number | null;
-  rest_s: number;
-}
+export type {
+  SetConfig,
+  WeekConfig,
+  ExerciseData,
+  DayData,
+  RoutineRaw,
+  PreviousSet,
+  PreviousLog,
+  SetEntry,
+  SavedLogEntry,
+  Phase,
+  SummaryExerciseResult,
+  SummaryData,
+} from "@fitos/shared";
 
-export interface WeekConfig {
-  sets: number;
-  reps_min: number;
-  reps_max: number;
-  rir: number;
-  target_weight: number | null;
-  rest_s: number;
-  sets_detail?: SetConfig[];
-  coach_notes?: string;
-}
+export { formatTime } from "@fitos/shared";
 
-export interface ExerciseData {
-  exercise_id: string;
-  name: string;
-  day_of_week: string;
-  day_label?: string;
-  scheme?: string;
-  sets: number;
-  reps_min: number;
-  reps_max: number;
-  rest_pause_sets?: number;
-  rir: number;
-  weight_kg?: number;
-  target_weight?: number | null;
-  rest_s: number;
-  progression_rule?: string;
-  coach_notes?: string;
-  trainer_notes?: string;
-  technique_notes?: string;
-  video_url?: string;
-  order?: number;
-  mode?: "equal" | "different";
-  sets_config?: SetConfig[];
-  weekly_config?: Record<number, WeekConfig>;
-}
-
-export interface DayData {
-  day: string;
-  label?: string;
-  exercises: ExerciseData[];
-}
-
-export interface RoutineRaw {
-  id: string;
-  title: string;
-  trainer_id: string;
-  exercises?: ExerciseData[];
-  days?: DayData[];
-}
-
-export interface PreviousSet {
-  weight_kg: number;
-  reps_done: number;
-  type?: string;
-}
-
-export interface PreviousLog {
-  exercise_name: string;
-  session_date: string;
-  sets_data: PreviousSet[];
-}
-
-export interface SetEntry {
-  weight_kg: string;
-  reps_done: string;
-  rir: string;
-  completed: boolean;
-}
-
-export interface SavedLogEntry {
-  exercise_name: string;
-  sets_data: {
-    set_number: number;
-    weight_kg: number;
-    reps_done: number;
-    type: string;
-    completed?: boolean;
-  }[];
-  client_notes: string | null;
-}
-
-export type Phase = "loading" | "ready" | "training" | "rest" | "rpe" | "summary";
-
-export interface SummaryExerciseResult {
-  name: string;
-  sets: SetEntry[];
-  previous: PreviousSet[];
-  progress: { label: string; color: string };
-  notes: string | null;
-}
-
-export interface SummaryData {
-  totalVolume: number;
-  totalSetsCount: number;
-  exerciseResults: SummaryExerciseResult[];
-}
-
-/* ── Helpers ── */
-
-export function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
+/* ── calculateProgress (web-specific labels/colors) ── */
 
 export function calculateProgress(
   current: { weight: number; reps: number }[],

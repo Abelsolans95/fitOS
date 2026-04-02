@@ -1,6 +1,6 @@
 # FitOS — Guía para Agentes
 
-**Lee `desarrollo.md` antes de cualquier tarea.** Contiene el estado completo del proyecto, estructura de archivos, tablas de base de datos, convenciones y próximos pasos. Está escrito para ser leído de arriba abajo.
+Este archivo contiene TODO lo necesario para continuar el desarrollo: reglas, credenciales, variables de entorno, árbol de archivos, estado y blockers, flujos de auth, gotchas documentados y cómo activar integraciones pendientes.
 
 ---
 
@@ -18,8 +18,14 @@
 - **Fase 6 (parcial, 28/03/2026):** Rediseño planificador de menú ✅ — selección de días con fechas reales, semanas de mesociclo, % macros, panel flotante de info nutricional en tiempo real
 - **Fase 6 ampliada (29/03/2026):** Menús guardados ✅ — guardar/cargar configuraciones de menú reutilizables (tabla `saved_menu_templates`, migración 033). Navegación semanal mejorada ✅ — botones semana anterior/siguiente en la parte inferior del planificador. DarkSelect ✅ — todos los `<select>` nativos reemplazados por componente custom dark.
 - **Fase 7 (29/03/2026):** Comunidad Premium ✅ — Feed privado por trainer con posts (título+texto+imagen), comentarios, likes, posts fijados. Dos modos: OPEN (clientes publican) y READ_ONLY_CLIENTS (solo coach). Badge verificado violeta para el coach. Storage bucket para imágenes. Realtime. Badge de no leídos en sidebar. Web trainer + web cliente.
+- **Fase 8 (01/04/2026):** Métricas de ejercicio ✅ — Stress Index (auto-calculado), Ratio Estímulo-Fatiga (SFR, input cliente 1-5), RPE por serie (condicional, solo si trainer configura `target_rpe`), gráficas de progresión por ejercicio para el trainer. Columnas RIR/RPE dinámicas. Migración 037. Web + mobile. `recharts` para charts.
 - **Code Quality Review (30/03/2026):** Fragmentación completa ✅ — todas las páginas >300 líneas fragmentadas en `components/`. Error handling Patrón C aplicado ✅ — todas las queries con `error` destructurado. Performance ✅ — `select("*")` eliminados, `.limit()` en tablas crecientes, `Promise.all` para queries independientes. `React.memo` en componentes hoja.
 - **Auditoría de Permisos (30/03/2026):** Arquitectura de permisos verificada y corregida ✅ — middleware sólido, RLS correcto en 19 tablas, 3 fixes de seguridad aplicados, `AuthContext` mobile preparado para rol Admin.
+- **`@fitos/theme` (30/03/2026):** Paquete compartido creado ✅ — `packages/theme/src/index.ts` es la única fuente de verdad para colores, spacing y radius. Mobile re-exporta desde ahí. Script `npm run sync-theme` regenera el bloque `@theme` de `globals.css`. Metro `watchFolders` configurado.
+- **Mapa anatómico con imágenes reales (31/03/2026):** Reemplazo del mapa SVG puro por imágenes anatómicas reales con overlay SVG interactivo ✅ — 4 imágenes (hombre/mujer × frontal/posterior), zonas definidas en `packages/shared/src/anatomy/zones.ts`, campo `gender` añadido a `profiles` (migración 036), toggle de género en UI cliente. Web + mobile.
+- **Fase 9 (01/04/2026):** Sistema de Consultas/Tickets ✅ — Cliente envía dudas categorizadas (Nutrición, Rutina, Lesión, General) al trainer. Trainer gestiona inbox con filtros de estado/categoría/búsqueda, responde en hilo conversacional, y marca como resuelta. Realtime. Badges de no leídos en ambos sidebars. Migración 038. Web trainer + web cliente + mobile. Fix post-deploy (02/04): política RLS `trainer_replies_update_read` para permitir al trainer marcar replies de clientes como leídas; acciones de reducer `MARK_TICKET_READ` e `INCREMENT_UNREAD` para evitar stale closures; reset de badge en sidebar via `usePathname`.
+- **Onboarding con secciones (01/04/2026):** Formulario de onboarding extendido con secciones opcionales ✅ — 5 secciones predefinidas (historial medico, deportivo, experiencias, estado actual, objetivos) que el trainer puede activar/desactivar. Cliente ve wizard multi-paso (1 seccion = 1 step). Plantilla cargable con un click. AI edge function actualizada para analisis por seccion. Sin migracion DB (todo en JSONB existente). Web + mobile.
+- **Fase 10 (02/04/2026):** Base de Conocimiento / FAQ ✅ — Trainer escribe artículos FAQ categorizados (Nutrición, Rutina, Lesión, Técnica, Suplementación, General) con texto + video URL. Cliente busca/filtra artículos antes de preguntar. Integración bidireccional con Consultas: convertir ticket resuelto en artículo, sugerir artículos relevantes al crear ticket (debounced search). Vista contador incrementada via SECURITY DEFINER. Full-text search PostgreSQL (español). Migración 039. Web trainer + web cliente + mobile. Tipos compartidos en `@fitos/shared`.
 
 ---
 
@@ -31,14 +37,15 @@
 | Estilos | Tailwind CSS 4, shadcn/ui (`nova` style, `neutral` base) |
 | DB | Supabase PostgreSQL — proyecto `fitos-prod` |
 | Mobile | Expo SDK 55 + React Navigation (Bottom Tabs) + expo-linear-gradient + react-native-svg |
+| Charts | recharts (web trainer analytics) |
 | Edge Functions | Supabase Deno — 4 funciones IA (Claude API) |
-| Monorepo | Turborepo 2.x + pnpm (raíz) / npm (apps/web) |
+| Monorepo | Turborepo 2.x + npm workspaces (npm@11.8.0) |
 
 ---
 
 ## Reglas críticas — leer siempre
 
-1. **pnpm en raíz, npm en `apps/web`** — no mezclar. En `apps/web` siempre `--legacy-peer-deps`.
+1. **npm en raíz y en `apps/web`** — el root usa `npm@11.8.0` con npm workspaces. En `apps/web` siempre `--legacy-peer-deps`. El fichero `pnpm-workspace.yaml` existe pero NO está activo — `package.json` tiene `"packageManager": "npm@11.8.0"` que tiene precedencia. Nunca usar `pnpm install` en la raíz.
 2. **`turbo.json` usa `"tasks"`** (no `"pipeline"`) — es Turbo 2.x.
 3. **Dark mode permanente** — clase `dark` hardcodeada en `<html>`, no hay toggle.
 4. **RLS activo en todas las tablas** — si una query no devuelve datos, revisar las políticas de la tabla.
@@ -55,7 +62,7 @@
 15. **`onboarding_responses` tiene unique constraint** — `(form_id, client_id)`. Usar siempre `upsert` con `onConflict: "form_id,client_id"`, nunca `insert`.
 16. **`SUPABASE_SERVICE_ROLE_KEY` en API routes** — necesaria en `apps/web/.env.local` para operaciones que bypaseen RLS (e.g. `/api/complete-registration`). Nunca exponer en frontend.
 17. **Landing page en `page.tsx` raíz** — `apps/web/app/page.tsx` es ahora la landing page pública (hero, features, pricing). Ya no redirige a `/login`. Los links de CTA llevan a `/login` y `/register`.
-18. **Theme mobile extendido** — `apps/mobile/src/theme.ts` exporta `colors`, `spacing`, `radius` y `shadows`. Usar estos tokens en vez de valores hardcoded. `shadows.glow(color)` genera un glow effect.
+18. **Theme mobile extendido** — `apps/mobile/src/theme.ts` re-exporta `colors`, `spacing`, `radius` y `fonts` desde `@fitos/theme` (fuente de verdad compartida). Define `shadows` localmente (usa APIs de React Native). Usar estos tokens en vez de valores hardcoded. `shadows.glow(color)` genera un glow effect. Para cambiar colores de marca: editar `packages/theme/src/index.ts` y ejecutar `npm run sync-theme`.
 19. **SVG icons en mobile** — Usar `react-native-svg` (Svg, Path, Circle) para iconos. No usar emojis ni Text como iconos en la app mobile.
 20. **expo-linear-gradient para gradientes** — En mobile usar `LinearGradient` de `expo-linear-gradient` para botones y fondos con gradiente. Ya está instalado.
 21. **Three-layer exercise/food resolution** — Layer A: globales (`is_global=true`), Layer B: privados del trainer (`is_global=false`), Layer C: overrides (`trainer_exercise_overrides` / `trainer_food_overrides`). Usar resolvers en `lib/exercise-resolver.ts` y `lib/food-resolver.ts`.
@@ -72,13 +79,13 @@
 32. **Trainer ve datos del cliente** — Tab Rutina muestra historial de `workout_sessions` con `weight_log` expandible (series, pesos, reps, RPE, notas). Tab Menú muestra `food_log` del cliente por día con selector de fecha y totales macro.
 33. **Excel import usa Claude Haiku** — `POST /api/import/excel` envía las primeras 40 filas de cada hoja a Haiku para detectar estructura (headers, columnas, secciones). Reemplaza el parser basado en reglas.
 34. **Clone-on-edit para ejercicios globales** — Cuando un entrenador edita un ejercicio global, se clona como privado (`is_global: false`) y el original se oculta via `trainer_exercise_overrides.hidden = true`. En import Excel, "enlazar" (link) crea un ejercicio privado con el nombre del trainer SI el nombre es diferente al global. Si el nombre es idéntico (match 100%), no se clona porque el global ya es visible.
+35. **Ejercicios sin category/difficulty obligatorios** — `category` es TEXT nullable (sin CHECK constraint). No hay columna `difficulty` ni `equipment` en `trainer_exercise_library`.
+36. **`weight_log` se guarda en cada check (set)** — Cada vez que el cliente marca una serie como completada en entrenamiento activo, se hace upsert inmediato a `weight_log` con `savePartialProgress()`. El campo `sets_data` incluye `completed: boolean` por set. Esto permite que al resumir una sesión se restauren incluso ejercicios parcialmente completados.
+37. **No repetir sesión ya completada** — La página de rutina (web y mobile) carga todas las `workout_sessions` con `status: "completed"` para la rutina actual. Compara por `day_label::week_number` (no por fecha). Si la combinación día+semana ya fue completada, muestra badge "Sesión completada" en lugar de los botones de entrenamiento. Esto permite hacer dos sesiones distintas el mismo día (ej. Pierna + Espalda) pero impide repetir la misma.
 38. **Import Excel: 100% match = auto-link sin opciones** — Si `confidence === 1`, el ejercicio se enlaza automáticamente sin mostrar botones "Crear nuevo" / "Omitir" ni matches alternativos. Solo muestra badge "Match 100%" y el nombre enlazado.
 39. **No crear endpoints temporales** — Nunca crear API routes "temporales" para fixes de DB. El usuario ejecuta los SQLs directamente en Supabase.
 40. **Clientes Supabase en API routes siempre dentro del handler** — Nunca inicializar `createClient()` a nivel de módulo en API routes (`const x = createClient(...)` fuera de funciones). Vercel evalúa los módulos durante el build y las env vars no están disponibles → crash `supabaseKey is required`. Siempre inicializar dentro de la función `POST`/`GET`/etc.
 41. **`useSearchParams` en "use client" requiere `<Suspense>`** — En Next.js 15, cualquier componente que use `useSearchParams()` debe estar envuelto en `<Suspense>` en el `export default`. Patrón obligatorio: función interna con la lógica + export default wrapper con `<Suspense fallback={...}>`. `export const dynamic = "force-dynamic"` NO soluciona el error de prerender en client components.
-35. **Ejercicios sin category/difficulty obligatorios** — `category` es TEXT nullable (sin CHECK constraint). No hay columna `difficulty` ni `equipment` en `trainer_exercise_library`.
-36. **`weight_log` se guarda en cada check (set)** — Cada vez que el cliente marca una serie como completada en entrenamiento activo, se hace upsert inmediato a `weight_log` con `savePartialProgress()`. El campo `sets_data` incluye `completed: boolean` por set. Esto permite que al resumir una sesión se restauren incluso ejercicios parcialmente completados.
-37. **No repetir sesión ya completada** — La página de rutina (web y mobile) carga todas las `workout_sessions` con `status: "completed"` para la rutina actual. Compara por `day_label::week_number` (no por fecha). Si la combinación día+semana ya fue completada, muestra badge "Sesión completada" en lugar de los botones de entrenamiento. Esto permite hacer dos sesiones distintas el mismo día (ej. Pierna + Espalda) pero impide repetir la misma.
 42. **Tabla `messages` para chat** — `trainer_id` + `client_id` identifican la conversación (par único). `sender_id` indica quién envió. RLS doble: el trainer accede por `trainer_id`, el cliente por `client_id`. Realtime habilitado (`supabase_realtime`). Web trainer: tab "Chat" en `/app/trainer/clients/[id]`. Web cliente: `/app/client/chat`. Mobile: `ChatScreen.tsx` en tab "Chat". Marcar como leído actualizando `read_at` al entrar a la conversación.
 43. **Tabla `appointments` para citas** — Migración 030. Campos clave: `trainer_id`, `client_id`, `session_type` (presencial/online/telefonica/evaluacion/seguimiento), `starts_at`, `ends_at`, `status` (pending/confirmed/cancelled/completed), `google_event_id` (NULL hasta OAuth), `email_sent_at` (NULL hasta Resend). RLS: trainer acceso total; cliente puede SELECT, INSERT (solo status='pending'), UPDATE (solo a 'cancelled'). Web trainer: `/app/trainer/appointments`. Web cliente: `/app/client/appointments`. Mobile: `AppointmentsScreen.tsx` en tab "Citas".
 44. **Calendario de citas — PENDIENTE DE DESARROLLO** — `lib/google-calendar.ts` tiene la función `syncAppointmentToCalendar()` lista pero requiere OAuth 2.0 configurado (NEXT_PUBLIC_GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET). `lib/email-notifications.ts` tiene `sendAppointmentEmail()` con template HTML lista pero requiere dominio verificado en Resend + RESEND_API_KEY. Cuando ambos estén configurados: (1) instalar `resend` en apps/web, (2) descomentar el bloque TODO en `sendAppointmentEmail()`, (3) añadir RESEND_API_KEY y RESEND_FROM_EMAIL a .env.local y Vercel, (4) configurar OAuth en Google Cloud Console, (5) guardar tokens en Supabase Vault.
@@ -154,7 +161,7 @@
 61. **Progresión semanal por ejercicio (`weekly_config`)** — Cada `RoutineExercise` puede tener `weekly_config: Record<number, WeekConfig>` con valores distintos por semana (reps, RIR, carga, descanso, notas del entrenador). `WeekConfig` incluye `sets_detail?: SetConfig[]` para modo "different" y `coach_notes?: string` para notas semanales. Se configura desde la modal "Progresión semanal" en `DaySchedule.tsx`. Los datos se guardan en el JSONB de `user_routines.exercises` junto con `mode` y `sets_config`. Botón "Replicar para siguientes semanas" copia valores de una semana a todas las siguientes.
 62. **`handleSave` debe incluir `mode`, `weekly_config` y `total_weeks`** — Al guardar una rutina desde el trainer, el `flatExercises` en `useRoutinesPage.ts` DEBE incluir `mode`, `sets_config` (si es "different") y `weekly_config` (si tiene entradas). El `routineData` debe incluir `total_weeks` y `training_days`. Sin estos campos, el cliente ve los mismos valores en todas las semanas. Error ocurrido: se añadió UI de progresión semanal pero `handleSave` no serializaba `weekly_config` → los datos se perdían.
 63. **Valores del trainer como placeholders, no pre-rellenados (web + mobile)** — En entrenamiento activo, peso/reps/RIR configurados por el trainer se muestran como `placeholder` (gris tenue) para guiar al cliente, pero los inputs empiezan vacíos. El cliente introduce sus valores reales. Los placeholders son week-aware: resuelven `weekly_config[week]` → `sets_config` → valores base del ejercicio. Si hay sesión anterior, el placeholder muestra el valor anterior en su lugar.
-64. **RIR editable por serie en entrenamiento activo (web + mobile)** — `SetEntry` incluye campo `rir: string`. Se muestra como columna adicional en la tabla de series (entre Reps y el botón ✓). El valor se guarda en `weight_log.sets_data[].rir`. Grid de 5 columnas: Serie | Peso | Reps | RIR | ✓. Se eliminó la visualización estática de RIR del header del ejercicio.
+64. **RIR y RPE editables por serie en entrenamiento activo (web + mobile)** — `SetEntry` incluye campos `rir: string` y `rpe: string`. Ambas columnas son **condicionales**: RIR se muestra solo si el trainer configuró `rir > 0` (en el ejercicio o en `sets_config`/`weekly_config`). RPE se muestra solo si `target_rpe != null && > 0`. Grid dinámico: Serie | Peso | Reps | [RIR] | [RPE] | ✓. Los valores se guardan en `weight_log.sets_data[].rir` y `sets_data[].rpe`. El campo `exercise_rpe` en `weight_log` es la media de los RPE por serie.
 65. **Vista del cliente muestra todas las series configuradas** — En la vista de rutina del cliente (`/app/client/routine`), cada card de ejercicio muestra un desglose por serie (S1, S2, S3...) con reps, RIR, peso y descanso para cada una. Los valores son dinámicos según la semana activa (`activeWeek`), resolviendo `weekly_config[activeWeek]` → `sets_config` → valores base. El badge de esquema también se recalcula dinámicamente.
 
 ---
@@ -169,8 +176,6 @@ Violet:    #7C3AED   (acento secundario)
 Muted:     #8B8BA3   (texto secundario)
 Error:     #FF1744
 Success:   #00C853
-```
-
 Orange:    #FF9100   (acento terciario)
 Dimmed:    #5A5A72   (texto muy secundario)
 ```
@@ -185,8 +190,9 @@ Dimmed:    #5A5A72   (texto muy secundario)
 
 ### Patrones de card
 ```
-Patrón de card: `rounded-2xl border border-white/[0.06] bg-[#12121A]`
-Botón primario: `bg-[#00E5FF] text-[#0A0A0F] rounded-xl font-semibold`
+Patrón de card: rounded-2xl border border-white/[0.06] bg-[#12121A]
+Botón primario: bg-[#00E5FF] text-[#0A0A0F] rounded-xl font-semibold
+```
 
 ---
 
@@ -216,7 +222,7 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 ```
 
 66. **Tabla `health_logs` para lesiones/molestias** — Migración 031. Campos clave: `client_id`, `trainer_id`, `reported_by` ('coach'|'client'), `muscle_id` (ej. 'quadriceps_left'), `pain_score` (1-10), `incident_type` ('puntual'|'diagnosticada'|'cronica'), `status` ('active'|'recovering'|'recovered'), `notes`. RLS: trainer acceso total, cliente SELECT + INSERT (reported_by='client') + UPDATE propios. Realtime habilitado.
-67. **Mapa anatómico SVG interactivo** — Componente compartido `components/health/AnatomyMap.tsx` (web) con vista frontal (17 regiones) y posterior (15 regiones). Código de colores: gris=sin molestias, naranja=leve (1-5), rojo=grave (6-10). Mobile: SVG equivalente con `react-native-svg` en `HealthScreen.tsx`. Web trainer: tab "Salud" en detalle de cliente (`TabSalud.tsx`). Web cliente: `/app/client/health`. Mobile: tab "Salud" en bottom nav (8 tabs).
+67. **Mapa anatómico con imágenes reales + overlay SVG** — Componente `components/health/AnatomyMap.tsx` (web) usa 4 imágenes anatómicas (`/assets/anatomy/`) como fondo con SVG interactivo superpuesto. 18 zonas frontales + 16 posteriores definidas en `packages/shared/src/anatomy/zones.ts`. Soporta `gender` prop (`male`|`female`) para cambiar imagen. Mobile: `HealthScreen.tsx` con `Image` + `Svg` overlay. Colores: transparente=sin molestias, naranja=leve (1-5), rojo=grave (6-10), cyan=seleccionado. Web trainer: tab "Salud" en detalle de cliente (`TabSalud.tsx`). Web cliente: `/app/client/health` con toggle Hombre/Mujer. Mobile: tab "Salud" en bottom nav.
 68. **`health_logs.muscle_id` es un texto libre** — No hay enum en DB. Los IDs válidos están definidos en las constantes `FRONT_MUSCLES` y `BACK_MUSCLES` de los componentes (ej: 'neck', 'chest_left', 'quadriceps_right', 'lower_back', 'traps', 'glute_left'). Al insertar, siempre usar uno de estos IDs.
 69. **Tabla `routine_templates` para plantillas de rutina** — Migración 032. Campos clave: `trainer_id`, `name`, `training_days` (TEXT[]), `day_labels` (JSONB), `exercises` (JSONB — sin weight/RIR), `total_weeks`, `goal`. RLS: trainer full CRUD sobre sus propias plantillas. Los ejercicios de la plantilla usan tipos `TemplateExercise`, `TemplateSetConfig`, `TemplateWeekConfig` definidos en `types.ts` — NO reusar `SetConfig`/`WeekConfig` porque las plantillas excluyen `rir` y `target_weight`.
 70. **Flujo plantillas en wizard de rutinas** — Step 1: dropdown "Cargar plantilla" (violeta) aplica goal, semanas, días y labels al estado. Step 2: si hay plantilla seleccionada, los labels se eligen por dropdown (labels de la plantilla) en vez de input libre. Step 3: `INIT_TRAINING_DAYS` carga ejercicios de la plantilla mapeando por `day_of_week` + `day_label`. El trainer puede modificar libremente y re-guardar como nueva plantilla con el botón "Guardar plantilla" (violeta, junto a "Enviar al cliente").
@@ -233,15 +239,15 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 81. **Comunidad se crea automáticamente** — La primera vez que el trainer visita `/app/trainer/community`, si no existe `communities` para su `coach_id`, se crea con nombre "Mi Comunidad" y `mode: 'OPEN'`. No requiere setup manual.
 82. **Badge de verificado para el coach** — En posts y comentarios, el nombre del trainer aparece en color violeta (`#7C3AED`) con un badge "Coach" (checkmark SVG + texto uppercase) junto al nombre. Los clientes aparecen en blanco. Los avatares del coach usan fondo violeta; los de clientes, fondo cyan.
 83. **Comunidad fragmentada en componentes** — `apps/web/app/(dashboard)/app/trainer/community/`: `useCommunityPage.ts` (hook con useReducer, 30 acciones), `components/types.ts`, `components/CommunityFeed.tsx` (feed-only: posts + comments), `components/CommunityPublish.tsx` (formulario de crear publicación), `components/CommunitySettings.tsx` (nombre, descripcion, toggle mode, toggle active), `page.tsx` orquestador (~160 líneas, 3 tabs: Feed/Publicar/Ajustes). Cliente: `apps/web/app/(dashboard)/app/client/community/page.tsx` (tabs Feed + Publicar condicional según mode).
-89. **Tab "Publicar" separado y condicional** — La creación de publicaciones está en su propio tab tanto en trainer como en cliente. En el trainer siempre se muestra (3 tabs: Feed, Publicar, Ajustes). En el cliente, el tab "Publicar" solo aparece si `community.mode === 'OPEN'`; si es `READ_ONLY_CLIENTS` solo se muestra el tab "Feed" (sin barra de tabs). `CommunityTab` type incluye `"publish"`.
-90. **`community_posts.title` opcional** — Migración 035. Columna `TEXT` nullable. El formulario de publicación muestra input de título con placeholder "Titulo (opcional)". En el feed, si el post tiene título se muestra como `<h3>` bold blanco encima del contenido.
-91. **Tabla `community_read_status` para tracking de lectura** — Migración 035. `(community_id, user_id)` unique. `last_seen_at` se actualiza con upsert al visitar la comunidad. Se usa para calcular posts no leídos en sidebar.
-92. **Badge de no leídos en sidebar para Comunidad** — Mismo patrón que el badge de chat. `TrainerSidebar`: cuenta posts de clientes posteriores a `last_seen_at`. `ClientSidebar`: cuenta todos los posts posteriores a `last_seen_at`. Realtime: escucha INSERT en `community_posts` para incrementar el badge. Se resetea al visitar `/app/*/community`. Estilo: pill cyan con glow, igual que chat.
 84. **Publicaciones fijadas (pinned)** — El trainer puede fijar posts con el botón bookmark. Posts fijados aparecen primero (order by `is_pinned DESC, created_at DESC`) y tienen borde violeta con ring. Badge "Fijado" visible.
 85. **Sidebar: "Comunidad" entre "Citas" y "Chat"** — Tanto en `TrainerSidebar` como en `ClientSidebar`. Icono: grupo de personas (users SVG). Badge de no leídos cuando hay posts nuevos. El cliente solo ve la comunidad si su trainer la tiene activa (`is_active = true`).
 86. **Respuestas a comentarios (threading)** — `community_comments.parent_id` (FK self-referencial, nullable). Comentarios se renderizan como árbol con indentación (`ml-6 border-l`). Profundidad máxima: 2 niveles. Botón "Responder" abre input inline debajo del comentario. Enter envía la respuesta. El tree se construye en `handleLoadComments` agrupando por `parent_id`.
 87. **Likes en comentarios + diferenciación coach** — Tabla `community_comment_likes` con `comment_id`, `user_id`, `is_coach` (BOOLEAN). El coach al dar like se marca `is_coach: true`. En el UI: like del coach muestra corazón violeta + badge "Coach" junto al contador. Likes de clientes son cyan estándar. RLS: mismas políticas que `community_likes` pero sobre comments. Realtime habilitado.
 88. **`community_comment_likes` tiene unique constraint** — `(comment_id, user_id)`. Misma lógica que `community_likes`: toggle optimista, insert si no existe, delete si ya existe.
+89. **Tab "Publicar" separado y condicional** — La creación de publicaciones está en su propio tab tanto en trainer como en cliente. En el trainer siempre se muestra (3 tabs: Feed, Publicar, Ajustes). En el cliente, el tab "Publicar" solo aparece si `community.mode === 'OPEN'`; si es `READ_ONLY_CLIENTS` solo se muestra el tab "Feed" (sin barra de tabs). `CommunityTab` type incluye `"publish"`.
+90. **`community_posts.title` opcional** — Migración 035. Columna `TEXT` nullable. El formulario de publicación muestra input de título con placeholder "Titulo (opcional)". En el feed, si el post tiene título se muestra como `<h3>` bold blanco encima del contenido.
+91. **Tabla `community_read_status` para tracking de lectura** — Migración 035. `(community_id, user_id)` unique. `last_seen_at` se actualiza con upsert al visitar la comunidad. Se usa para calcular posts no leídos en sidebar.
+92. **Badge de no leídos en sidebar para Comunidad** — Mismo patrón que el badge de chat. `TrainerSidebar`: cuenta posts de clientes posteriores a `last_seen_at`. `ClientSidebar`: cuenta todos los posts posteriores a `last_seen_at`. Realtime: escucha INSERT en `community_posts` para incrementar el badge. Se resetea al visitar `/app/*/community`. Estilo: pill cyan con glow, igual que chat.
 
 93. **Layout auth como Server Component async** — `apps/web/app/(dashboard)/layout.tsx` es un Server Component async. Usa `createClient()` de `@/lib/supabase-server`, llama a `supabase.auth.getUser()` y hace `redirect("/login")` si no hay sesión. NO usar middleware ni `getSession()` en layouts (no verifica JWT con el servidor). Las redirecciones basadas en rol usan `headers()` para obtener el pathname sin acceder a `window`.
 
@@ -286,7 +292,10 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 
 109. **Componentes `components/` deben ser importados en `page.tsx`** — Cuando existe una carpeta `components/` junto a un `page.tsx`, verificar que el `page.tsx` realmente importa desde ella. Si `page.tsx` tiene funciones de componente definidas inline y `components/` existe pero no se usa, el refactor está incompleto. Ejecutar `grep "from \"./components"` en el `page.tsx` para verificar.
 
-110. **`React.memo` obligatorio en componentes que se renderizan en listas** — Cualquier componente que sea hijo directo de un `.map()` sobre un array de datos (ejercicios, comidas, posts, mensajes) DEBE estar wrapeado con `memo()`. Patrón: `export const Foo = memo(function Foo(props) { ... })`. Sin memo, el componente se re-renderiza en cada cambio de estado del padre aunque sus props no hayan cambiado.
+129. **Tablas `support_tickets` + `ticket_replies` para consultas** — Migración 038. `support_tickets`: `trainer_id`, `client_id`, `category` (nutricion|rutina|lesion|general), `subject`, `description`, `image_url`, `status` (open|in_progress|resolved). `ticket_replies`: `ticket_id`, `sender_id`, `content`, `image_url`, `read_at`. RLS: trainer full CRUD sobre sus tickets; cliente SELECT + INSERT propios tickets + INSERT replies en sus tickets + UPDATE read_at. Realtime habilitado en ambas tablas. Storage bucket `ticket-images` (5MB, jpeg/png/webp).
+130. **Consultas: trainer master-detail, cliente list/create/detail** — Web trainer: `/app/trainer/tickets` con layout master-detail (lista filtrable + hilo conversacional). `useTicketsPage.ts` con useReducer. Web cliente: `/app/client/tickets` con 3 vistas (list, create, detail). `useClientTicketsPage.ts` con useReducer. Mobile: `TicketsScreen.tsx` con 3 vistas locales. Tab "Consultas" entre Salud y Chat en bottom nav.
+131. **Badges de consultas no leídas en sidebars** — `TrainerSidebar`: cuenta `support_tickets` con `trainer_read_at IS NULL` (tickets nuevos) + `ticket_replies` con `sender_id != trainerId AND read_at IS NULL` (respuestas no leídas). `ClientSidebar`: cuenta `ticket_replies` con `sender_id != clientId AND read_at IS NULL`. Realtime: escucha INSERT en `support_tickets` + `ticket_replies`. Reset al visitar `/app/*/tickets` via `usePathname`. La política RLS `trainer_replies_update_read` permite al trainer marcar como leídas replies de clientes (la política `trainer_replies_all` FOR ALL tiene `sender_id = auth.uid()` en WITH CHECK que bloqueaba estos UPDATEs).
+132. **Tipos compartidos en `@fitos/shared`** — `SupportTicket`, `TicketReply`, `TicketCategory`, `TicketStatus`, `TICKET_CATEGORIES`, `TICKET_STATUSES` exportados desde `packages/shared/src/types/tickets.ts`.
 
 ---
 
@@ -298,11 +307,12 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 - Redirige usuarios no autenticados desde `/app/*` y `/onboarding/*` → `/login`
 - Redirige usuarios autenticados desde `/login`/`/register` → dashboard según rol + onboarding
 - Bloquea cross-role: trainer → `/app/client/*` redirige a `/app/trainer/dashboard`; client → `/app/trainer/*` redirige a `/app/client/dashboard`
+- Admin routing implementado: admin desde `/login`/`/register` → `/app/admin/dashboard`; admin en `/app/client/*` o `/app/trainer/*` → `/app/admin/dashboard`
 - Usa `user.user_metadata?.role` (JWT, verificado por Supabase)
 
 **Capa 2 — RLS (Supabase, todas las tablas):**
 - Todas las tablas tienen RLS habilitado. Las políticas usan `auth.uid()` para scope por usuario.
-- Tablas con políticas diferenciadas trainer/client: `appointments`, `messages`, `health_logs`, `community_posts`, `workout_sessions`, `weight_log`, `trainer_exercise_overrides`, `trainer_food_overrides`, `excel_imports`, `routine_templates`, `saved_menu_templates`.
+- Tablas con políticas diferenciadas trainer/client: `appointments`, `messages`, `health_logs`, `community_posts`, `workout_sessions`, `weight_log`, `trainer_exercise_overrides`, `trainer_food_overrides`, `excel_imports`, `routine_templates`, `saved_menu_templates`, `support_tickets`, `ticket_replies`.
 - Tablas solo-trainer: `user_routines` (INSERT/UPDATE), `meal_plans` (INSERT/UPDATE), `trainer_exercise_library`, `trainer_food_library`.
 - Tablas solo-cliente: `food_log`, `body_metrics` (propias).
 
@@ -322,47 +332,452 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 | `profiles.role` (DB) | Verificación en API routes | Escrito en onboarding via upsert |
 | `AuthContext.role` (mobile) | Navegación y lógica en mobile | Leído de `profiles.role` al iniciar sesión |
 
-### Preparación para rol Admin (instrucciones futuras)
+### Rol Admin — Implementado parcialmente (30/03/2026)
 
-Cuando se añada el rol `admin`, seguir estos pasos:
+**Estado actual:** Middleware y página placeholder ya implementados. Falta el contenido real del panel.
 
-1. **Sin migración necesaria en `profiles`** — La columna `role` es TEXT sin CHECK constraint, acepta cualquier valor.
+**Ya implementado:**
+- ✅ Middleware: routing completo para admin (login/register → `/app/admin/dashboard`, bloquea `/app/client/*` y `/app/trainer/*`)
+- ✅ `apps/web/app/(dashboard)/app/admin/dashboard/page.tsx` — placeholder "Panel de Administración"
+- ✅ `AuthContext` mobile acepta `role: "admin"` (`UserRole = "client" | "trainer" | "admin" | null`)
+- ✅ `profiles.role` es TEXT sin CHECK constraint — acepta "admin" sin migración
 
-2. **Middleware** (`middleware.ts`) — Añadir caso admin:
-   ```ts
-   if (role === "admin" && pathname.startsWith("/app/client/")) { redirect → /app/admin/dashboard }
-   if (role === "admin" && pathname.startsWith("/app/trainer/")) { redirect → /app/admin/dashboard }
-   ```
+**Para añadir contenido real al panel admin:**
 
-3. **Registro de admin** — Crear flujo separado (no expuesto en `/register` público). Al hacer `signUp`, pasar `{ data: { role: "admin" } }`. Luego upsert en `profiles` con `role: "admin"`.
+1. **Registro de admin** — Crear flujo separado (no expuesto en `/register` público). SQL en Supabase: INSERT en `auth.users` con `role: "admin"` en `user_metadata` + upsert en `profiles` con `role: "admin"`.
 
-4. **API routes nuevas de admin** — Verificar `profiles.role === "admin"` igual que trainer. Pueden usar `supabaseAdmin` (service_role) para bypass total de RLS.
+2. **API routes de admin** — Verificar `profiles.role === "admin"` igual que trainer. Pueden usar `supabaseAdmin` (service_role) para bypass total de RLS.
 
-5. **RLS para admin** — Opción A: añadir policy `FOR ALL USING (EXISTS (SELECT 1 FROM profiles WHERE user_id = auth.uid() AND role = 'admin'))` en tablas donde admin necesite acceso. Opción B: usar service_role en API routes (más sencillo y seguro).
+3. **RLS para admin** — Opción A: añadir policy `FOR ALL USING (EXISTS (SELECT 1 FROM profiles WHERE user_id = auth.uid() AND role = 'admin'))` en tablas donde admin necesite acceso. Opción B: usar service_role en API routes (más sencillo y seguro).
 
-6. **Mobile** — El `AuthContext` ya acepta `role: "admin"`. La navegación en `App.tsx` debe añadir un tercer navigator `AppNavigatorAdmin` con las pantallas de administración.
+4. **Mobile** — El `AuthContext` ya acepta `role: "admin"`. La navegación en `App.tsx` debe añadir un tercer navigator `AppNavigatorAdmin` con las pantallas de administración.
 
-7. **Regla de decisión**: ¿Una nueva API route es para admin? → verificar `role === "admin"`. ¿Puede admin acceder a datos de trainer y cliente? → usar service_role en la route, no modificar RLS existente.
+5. **Regla de decisión**: ¿Una nueva API route es para admin? → verificar `role === "admin"`. ¿Puede admin acceder a datos de trainer y cliente? → usar service_role en la route, no modificar RLS existente.
+
+---
+
+## `@fitos/theme` — Paquete compartido de tokens de diseño
+
+**Fuente de verdad única:** `packages/theme/src/index.ts` — contiene todos los colores, spacing, radius y fonts del proyecto.
+
+### Reglas de uso
+
+111. **`@fitos/theme` para todo código NUEVO** — Al escribir componentes nuevos (mobile o web), importar siempre los colores desde `@fitos/theme` en lugar de usar valores hardcoded. En mobile: `import { colors } from "@fitos/theme"`. En web JS/TSX (inline styles, charts): `import { colors } from "@fitos/theme"`. En web Tailwind: usar clases con nombre (`bg-neon-cyan`, `text-neon-violet`) en lugar de `bg-[#00E5FF]`.
+
+112. **NO migrar los valores hardcodeados existentes** — Hay 1021+ instancias de `bg-[#00E5FF]` y similares en el web. No tocarlos. La política es "new code only": solo el código nuevo usa `@fitos/theme` o clases Tailwind con nombre.
+
+113. **Cambio de marca en 1 comando** — Para actualizar un color de marca: (1) editar `packages/theme/src/index.ts`, (2) ejecutar `npm run sync-theme` desde la raíz. Esto regenera automáticamente el bloque CSS de Tailwind v4 en `globals.css` entre los marcadores `[fitos-theme-start]` y `[fitos-theme-end]`. Mobile recoge el cambio sin acción adicional (import JS directo).
+
+114. **Tailwind v4 no usa `tailwind.config.js`** — Este proyecto usa Tailwind v4 CSS-first. Los tokens de color para Tailwind se definen en el bloque `@theme inline {}` de `apps/web/app/globals.css`, generado por `npm run sync-theme`. No crear `tailwind.config.js` — rompería el setup actual.
+
+115. **`shadows` permanece en `apps/mobile/src/theme.ts`** — Las sombras (shadowColor, elevation) usan APIs de React Native y no se pueden compartir con web. `theme.ts` importa y re-exporta desde `@fitos/theme` pero define `shadows` localmente.
+
+116. **Metro Bundler necesita `watchFolders`** — Expo/Metro no ve archivos fuera de `apps/mobile/` por defecto. `metro.config.js` ya tiene `watchFolders` configurado apuntando a `../../packages`. Si se añaden más paquetes compartidos, añadir al array.
+
+117. **`rgba` strings en `@fitos/theme` son solo para web/CSS** — Valores como `border: "rgba(255,255,255,0.06)"` son correctos para web. En React Native, si se necesita opacidad dinámica sobre un color, usar `borderHex` (el hex puro `#FFFFFF`) junto con `StyleSheet opacity` o una librería como `tinycolor2`. Nunca manipular strings rgba dinámicamente en RN.
+
+118. **Mapa anatómico basado en imágenes reales + overlay SVG** — El componente `AnatomyMap` (web: `components/health/AnatomyMap.tsx`, mobile: `HealthScreen.tsx`) usa 4 imágenes anatómicas como fondo (`apps/web/public/assets/anatomy/`, `apps/mobile/assets/anatomy/`) con un SVG interactivo superpuesto. Las zonas musculares se definen en `packages/shared/src/anatomy/zones.ts` (`MUSCLE_ZONES`, viewBox `0 0 400 720`). Los paths SVG son aproximaciones que pueden refinarse con un SVG Path Visualizer. No volver a usar el SVG puro antiguo (body outline + muscle shapes dibujadas a mano).
+
+119. **`profiles.gender` para selección de imagen anatómica** — Migración 036. Columna TEXT nullable (`'male'` | `'female'`). Default `NULL` = se trata como `'male'` en el componente. El toggle Hombre/Mujer está en la página de salud del cliente (web + mobile). Al cambiar, se actualiza en DB de forma no bloqueante.
+
+120. **Zonas anatómicas en `@fitos/shared` — fuente de verdad única** — Los IDs de zona (`neck`, `chest_left`, `quadriceps_right`, etc.) y labels (español) se definen SOLO en `packages/shared/src/anatomy/zones.ts`. Web importa via `AnatomyMap.tsx` → re-exporta `MUSCLE_LABELS` (alias de `ZONE_LABELS`). Mobile importa `ZONE_LABELS` directamente de `@fitos/shared`. No duplicar definiciones de zonas. El antiguo `apps/mobile/src/screens/health/muscleData.ts` está deprecado (no borrado).
+
+121. **Métricas de ejercicio: stress_index + stimulus/fatigue en `weight_log`** — Migración 037. Tres columnas nuevas: `stress_index` NUMERIC (auto-calculado), `stimulus_rating` SMALLINT 1-5, `fatigue_rating` SMALLINT 1-5. El SFR (ratio) se calcula en frontend como `stimulus / fatigue`. Fórmula del stress index: `sum(weight × reps × rirFactor)` donde rirFactor va de 1.0 (RIR=0) a 0.75 (RIR≥5). Se captura una vez por ejercicio (no por serie) en la fase `"sfr"` del entrenamiento activo, justo después de completar todas las series.
+122. **Fase `"sfr"` en entrenamiento activo (web + mobile)** — Cuando todas las series de un ejercicio se completan, el flujo pasa a fase `"sfr"` (no directamente a "training"). Se muestran 2 inputs (Estímulo 1-5 + Fatiga 1-5) con preview del SFR. Al confirmar, se guarda el progreso y vuelve a "training". Web: componente `SFRSelector.tsx` en `routine/active/components/`. Mobile: `SfrScreen.tsx` en `screens/routine/`. Estado en `exerciseStimulus` y `exerciseFatigue` (Record<number, number>).
+123. **Gráficas de ejercicio con `recharts`** — Paquete `recharts` instalado en `apps/web`. Componente `ExerciseAnalytics.tsx` en `trainer/clients/[id]/components/`. Se accede desde TabRutina con toggle "Historial" / "Análisis". 4 gráficas: Volumen + Stress Index, SFR temporal, Peso Máximo, Estímulo vs Fatiga. Cards de tendencia con porcentaje de cambio últimas 3 sesiones vs anteriores. Necesita mínimo 2 sesiones con datos.
+124. **`calculateStressIndex` exportada** — Función pura en `useActiveTraining.ts` (web). Recibe array de sets con weight_kg, reps_done, rir, completed. Devuelve número redondeado a 2 decimales. Mobile tiene la misma lógica inline en `calcStressIndex` dentro de `useRoutineScreen.ts`.
+125. **RPE por serie, no por ejercicio (web + mobile)** — `SetEntry` incluye campo `rpe: string`. Se muestra como columna adicional en la tabla de series, solo si el trainer configuró `target_rpe > 0` para ese ejercicio. Grid dinámico: columnas Serie | Peso | Reps | [RIR si configurado] | [RPE si configurado] | ✓. El `exercise_rpe` guardado en `weight_log` se calcula como media de los RPE por serie completados. Eliminada la caja RPE por ejercicio que había antes. Web: `ExerciseCard.tsx` con `showRir`/`showRpe` booleanos. Mobile: `ActiveTraining.tsx` y `RegistrationMode.tsx` con la misma lógica.
+126. **Columnas RIR y RPE condicionales en entrenamiento activo** — RIR se muestra solo si `exercise.rir > 0` o algún `sets_config`/`weekly_config` tiene rir > 0. RPE se muestra si `exercise.target_rpe > 0` O algún `sets_config[].target_rpe > 0` O algún `weekly_config[].target_rpe > 0` o `weekly_config[].sets_detail[].target_rpe > 0`. `SetConfig.target_rpe` permite configurar RPE por serie (tanto en "Series diferentes" como en "Progresión semanal"). `WeekConfig.target_rpe` es el RPE por serie en modo "Todas iguales" dentro de la progresión semanal. El placeholder RPE en el cliente resuelve: `cfg.target_rpe ?? exercise.target_rpe`. Si el trainer no configuró ninguno, el cliente solo ve Serie | Peso | Reps | ✓. Aplica en web (`ExerciseCard.tsx`) y mobile (`ActiveTraining.tsx`, `RegistrationMode.tsx`).
+127. **Series derivadas: Rest-Pause y Drop Set (web + mobile)** — Tanto en modo "Series diferentes" como en "Todas iguales", cada serie normal tiene botones "RP" (naranja) y "DS" (violeta) que insertan una serie derivada justo después. `SetConfig.set_type` puede ser `"normal"` (defecto), `"rest_pause"` o `"drop_set"`. La serie derivada se inicializa con los mismos reps de la serie origen; RP con 15s de descanso, DS con 0s descanso y 80% de la carga. Se pueden eliminar con botón ✕. El trainer las configura en `DaySchedule.tsx` (editor de rutinas) tanto en la vista principal como en la modal "Progresión semanal" (`WeeklyConfigModal`). En la modal, ambos modos soportan RP/DS: "diferentes" muestra per-set view directamente; "iguales" muestra botones RP/DS que al pulsar expanden la semana a `sets_detail` (via `expandEqualAndAddDerivative`). Si se eliminan todas las derivadas, la semana vuelve a scalar. Acciones del reducer: `CR_ADD_DERIVATIVE_SET` y `CR_REMOVE_DERIVATIVE_SET` (vista principal). La modal semanal maneja RP/DS con estado local (`addWeekDerivativeSet` / `removeWeekDerivativeSet` / `expandEqualAndAddDerivative`). En el save, `rest_pause_sets` se calcula automáticamente como count de series con `set_type !== "normal"`. El `sets` del ejercicio incluye todas las series (normales + derivadas). El template save también preserva `set_type` en `sets_config` y `weekly_config.sets_detail`.
+128. **Visualización de series derivadas para el cliente** — Series RP/DS se muestran con indentación (`ml-4` web, `marginLeft: 24` mobile), borde izquierdo coloreado (naranja para RP, violeta para DS), y badge "RP"/"DS" en lugar de número de serie. La numeración de series normales es independiente (S1, S2, S3) — las derivadas no afectan el conteo. Aplica en: vista previa del cliente (`routine/components/ExerciseCard.tsx`), entrenamiento activo web (`routine/active/components/ExerciseCard.tsx`), mobile (`ActiveTraining.tsx`, `RegistrationMode.tsx`). Historial del trainer (`TabRutina.tsx`) muestra "RP"/"DS" en los chips de series completadas.
+133. **Secciones en formulario de onboarding (`type: "section"`)** — `FormField` ahora soporta `type: "section"` como tipo especial que actua como cabecera de grupo. Campos adicionales: `description?: string` (texto para el cliente), `enabled?: boolean` (default true, el trainer puede desactivar la seccion). Los campos que siguen a un section field pertenecen a esa seccion hasta el siguiente section field. Utility `groupFieldsBySection()` en `@fitos/shared` agrupa el array plano en `SectionGroup[]`. `getEnabledSections()` filtra las desactivadas. Backwards compatible: formularios sin sections se renderizan como antes (1 step plano).
+134. **Plantilla de secciones de onboarding** — `apps/web/lib/onboarding-templates.ts` exporta `getOnboardingSectionsTemplate()` que genera 5 secciones con preguntas sugeridas (IDs unicos por llamada). Secciones: Historial Medico, Historial Deportivo, Experiencia en Entrenamiento, Estado Actual, Objetivos. El trainer carga la plantilla con un click ("Cargar plantilla de secciones") en la pagina de formularios o en el onboarding wizard. Las secciones son opcionales — el trainer puede activar/desactivar cada una.
+135. **Cliente onboarding multi-paso por seccion (web + mobile)** — Si el formulario tiene section fields, el wizard del cliente muestra cada seccion habilitada como un step separado (con nombre de seccion en el indicador). El ultimo step siempre es "Datos fisicos y preferencias". Las respuestas se guardan via upsert despues de cada seccion. Si el formulario no tiene sections, se mantiene el comportamiento anterior (1 step formulario + 1 step datos fisicos).
+136. **Edge Function `analyze-onboarding-form` — analisis por seccion** — La funcion agrupa las respuestas del cliente por seccion para dar contexto estructurado a Claude. Incluye `medical_flags` y `precautions` en el JSON de analisis. Columnas de perfil corregidas: usa `weight` y `height` (no `weight_kg`/`height_cm`). Preferencias alimenticias formateadas como texto legible.
+137. **Tabla `knowledge_articles` para base de conocimiento** — Migración 039. Campos clave: `trainer_id`, `title`, `content`, `category` (CHECK: nutricion, rutina, lesion, tecnica, suplementacion, general), `image_url`, `video_url`, `is_published`, `view_count`, `source_ticket_id` (FK nullable a `support_tickets`). RLS: trainer full CRUD sobre sus artículos; cliente SELECT solo artículos publicados de su trainer (via `trainer_clients`). Función `search_knowledge_articles(p_trainer_id, p_query)` con full-text search (español) + ILIKE fallback. Función `increment_article_view(article_id)` SECURITY DEFINER para que el cliente pueda incrementar view_count en artículos del trainer sin UPDATE directo. Storage bucket `knowledge-images` (5MB, jpeg/png/webp). Realtime no habilitado (no necesario).
+138. **Tipos compartidos de conocimiento en `@fitos/shared`** — `KnowledgeCategory` (6 valores), `KnowledgeArticle` interface, `KNOWLEDGE_CATEGORIES` array con labels e iconos. Exportados desde `packages/shared/src/types/knowledge.ts`.
+139. **Integración Consultas ↔ Conocimiento** — Bidireccional: (1) Trainer puede convertir ticket resuelto en artículo via botón "Convertir en artículo" en `TicketDetail.tsx` → navega a `/app/trainer/knowledge?from_ticket=&title=&category=`. (2) Cliente ve artículos sugeridos al crear ticket: debounced search (400ms, 3+ chars) en `CreateTicketForm.tsx` busca por título con ILIKE. Click en sugerencia navega a `/app/client/knowledge?article=<id>`.
+140. **Conocimiento: trainer CRUD, cliente browse** — Web trainer: `/app/trainer/knowledge` con `useKnowledgePage.ts` (useReducer, 12 acciones), `components/ArticleList.tsx` + `ArticleEditor.tsx`. Stats cards (total, publicados, vistas). Filtros por categoría, estado publicado, búsqueda. Web cliente: `/app/client/knowledge` con `useClientKnowledgePage.ts`, grid de artículos con filtro de categoría y búsqueda. `ArticleDetail.tsx` con embed YouTube + link video + imagen. Mobile: `KnowledgeScreen.tsx` con list/detail views. Tab "Conocimiento" entre Salud y Consultas en bottom nav (icono libro). Sidebar web: entre Consultas y Chat.
 
 ---
 
 ## Regla de mantenimiento — obligatoria
 
-**Al terminar cualquier desarrollo, bugfix o cambio significativo, actualiza `CLAUDE.md` y `desarrollo.md` antes de cerrar la sesión.**
+**Al terminar cualquier desarrollo, bugfix o cambio significativo, actualiza `CLAUDE.md` antes de cerrar la sesión.**
 
-Qué actualizar en cada archivo:
-- **`CLAUDE.md`**: añadir nuevas reglas críticas que hayan surgido, corregir las que ya no apliquen, actualizar el estado de fases completadas.
-- **`desarrollo.md`**: reflejar los archivos nuevos o modificados en la estructura de rutas, actualizar próximos pasos, y — **obligatorio** — documentar cualquier error que haya ocurrido en la sección "Errores conocidos y cómo evitarlos" con el formato: archivo afectado, qué pasó, solución aplicada, regla a seguir.
+Qué actualizar:
+- **Reglas críticas:** añadir nuevas que hayan surgido, corregir las que ya no apliquen, actualizar estado de fases completadas.
+- **Árbol de archivos:** reflejar archivos nuevos o modificados en la sección "Árbol de archivos clave".
+- **Estado y blockers:** actualizar la tabla de la sección "Estado y blockers".
+- **Gotchas:** documentar cualquier error nuevo en la tabla de la sección "Gotchas — errores documentados" con formato: `# | Área | Error cometido | Regla resultante`.
 
-**Documentar errores no es opcional.** Un error no documentado es un error que se repetirá. Cualquier crash, query incorrecta, incompatibilidad de librería o comportamiento inesperado de la DB debe quedar registrado para que no vuelva a ocurrir.
+**Documentar errores no es opcional.** Un error no documentado es un error que se repetirá.
 
-**Paridad web ↔ mobile es obligatoria.** Cualquier funcionalidad nueva o corrección de error debe aplicarse en web (`apps/web`) Y en mobile (`apps/mobile`). Al recibir un bug report o una petición de feature, revisar si aplica a ambas plataformas y actuar en consecuencia.
+**Paridad web ↔ mobile es obligatoria.** Cualquier funcionalidad nueva o corrección de error debe aplicarse en web (`apps/web`) Y en mobile (`apps/mobile`).
 
-El objetivo es que cualquier persona o agente que llegue al proyecto pueda continuar desde cero sin preguntar nada y sin repetir los mismos errores.
+**Especificaciones del producto:** `especificaciones.md` (especialmente Cap. 3 arquitectura y Cap. 4 base de datos).
 
 ---
 
-## Para más detalle
+## Credenciales Supabase
 
-- **Estado completo y notas:** `desarrollo.md`
-- **Especificaciones del producto:** `especificaciones.md` (especialmente Cap. 3 arquitectura y Cap. 4 base de datos)
+**Proyecto:** fitos-prod
+**Project ID:** rgrtxlciqmexdkxagomo
+**URL:** https://rgrtxlciqmexdkxagomo.supabase.co
+**Region:** eu-west-1
+
+---
+
+## Variables de entorno
+
+### Web — `apps/web/.env.local`
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://rgrtxlciqmexdkxagomo.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Google Calendar (configurar cuando esté listo)
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+NEXT_PUBLIC_GOOGLE_REDIRECT_URI=https://tu-dominio.com/api/auth/google/callback
+
+# Resend (configurar cuando dominio verificado)
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=citas@tu-dominio.com
+```
+
+### Mobile — `apps/mobile/.env`
+```env
+EXPO_PUBLIC_SUPABASE_URL=https://rgrtxlciqmexdkxagomo.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+---
+
+## Árbol de archivos clave
+
+```
+fitOS/
+├── package.json (root, npm workspaces, npm@11.8.0)
+├── turbo.json (tasks, no pipeline)
+├── packages/
+│   ├── theme/
+│   │   ├── src/index.ts          ← fuente de verdad: colors, spacing, radius, fonts
+│   │   ├── scripts/sync-css.ts
+│   │   └── package.json          ← @fitos/theme
+│   └── shared/
+│       ├── src/
+│       │   ├── index.ts          ← barrel export de tipos, zonas, utils, onboarding
+│       │   ├── anatomy/zones.ts  ← MUSCLE_ZONES, ZONE_LABELS, ANATOMY_VIEWBOX
+│       │   ├── onboarding/index.ts ← groupFieldsBySection, getEnabledSections
+│       │   ├── types/            ← health, routine, appointments, community, messages, knowledge
+│       │   ├── data/days.ts
+│       │   └── utils/time.ts
+│       └── package.json          ← @fitos/shared
+├── apps/
+│   ├── web/
+│   │   ├── app/
+│   │   │   ├── layout.tsx                           ← dark mode hardcodeado
+│   │   │   ├── globals.css                          ← @theme con marcadores fitos-theme-*
+│   │   │   ├── page.tsx                             ← landing pública
+│   │   │   ├── (auth)/
+│   │   │   │   ├── login/page.tsx
+│   │   │   │   ├── register/page.tsx
+│   │   │   │   └── onboarding/
+│   │   │   │       ├── trainer/page.tsx             ← wizard 3 pasos
+│   │   │   │       └── client/page.tsx              ← wizard 2 pasos
+│   │   │   ├── (dashboard)/
+│   │   │   │   ├── layout.tsx                       ← Server Component async, auth check
+│   │   │   │   ├── loading.tsx
+│   │   │   │   └── app/
+│   │   │   │       ├── trainer/
+│   │   │   │       │   ├── layout.tsx               ← TrainerSidebar
+│   │   │   │       │   ├── loading.tsx
+│   │   │   │       │   ├── dashboard/page.tsx
+│   │   │   │       │   ├── clients/page.tsx
+│   │   │   │       │   ├── clients/[id]/page.tsx    ← 7 tabs
+│   │   │   │       │   ├── clients/[id]/components/ ← TabPerfil/Progreso/Rutina/Menu/Formulario/Chat/Salud/ExerciseAnalytics
+│   │   │   │       │   ├── exercises/page.tsx
+│   │   │   │       │   ├── routines/page.tsx        ← orquestador
+│   │   │   │       │   ├── routines/useRoutinesPage.ts
+│   │   │   │       │   ├── routines/components/
+│   │   │   │       │   ├── nutrition/page.tsx       ← orquestador
+│   │   │   │       │   ├── nutrition/useNutritionPage.ts
+│   │   │   │       │   ├── import/page.tsx          ← wizard Excel 4 pasos
+│   │   │   │       │   ├── forms/page.tsx
+│   │   │   │       │   ├── appointments/page.tsx    ← orquestador
+│   │   │   │       │   ├── appointments/components/ ← types/shared/CreateModal/Calendar/List
+│   │   │   │       │   ├── community/page.tsx       ← orquestador
+│   │   │   │       │   ├── community/useCommunityPage.ts
+│   │   │   │       │   ├── community/components/
+│   │   │   │       │   ├── tickets/page.tsx         ← orquestador master-detail
+│   │   │   │       │   ├── tickets/useTicketsPage.ts
+│   │   │   │       │   ├── tickets/components/      ← types/shared/TicketList/TicketDetail
+│   │   │   │       │   ├── knowledge/page.tsx       ← orquestador CRUD artículos
+│   │   │   │       │   ├── knowledge/useKnowledgePage.ts
+│   │   │   │       │   ├── knowledge/components/    ← types/shared/ArticleList/ArticleEditor
+│   │   │   │       │   └── settings/page.tsx
+│   │   │   │       ├── client/
+│   │   │   │       │   ├── layout.tsx               ← ClientSidebar con badges
+│   │   │   │       │   ├── loading.tsx
+│   │   │   │       │   ├── dashboard/page.tsx
+│   │   │   │       │   ├── calories/page.tsx        ← AI Vision tracker
+│   │   │   │       │   ├── routine/page.tsx
+│   │   │   │       │   ├── routine/active/page.tsx  ← Suspense wrapper
+│   │   │   │       │   ├── routine/active/useActiveTraining.ts
+│   │   │   │       │   ├── routine/active/components/ ← ExerciseCard/RestTimer/RPESelector/SFRSelector/SummaryView
+│   │   │   │       │   ├── meals/page.tsx
+│   │   │   │       │   ├── calendar/page.tsx
+│   │   │   │       │   ├── progress/page.tsx
+│   │   │   │       │   ├── appointments/page.tsx
+│   │   │   │       │   ├── health/page.tsx          ← mapa anatómico + logs
+│   │   │   │       │   ├── community/page.tsx
+│   │   │   │       │   ├── community/useClientCommunityPage.ts
+│   │   │   │       │   ├── tickets/page.tsx         ← orquestador list/create/detail
+│   │   │   │       │   ├── tickets/useClientTicketsPage.ts
+│   │   │   │       │   ├── tickets/components/      ← types/shared/CreateTicketForm/TicketThread
+│   │   │   │       │   ├── knowledge/page.tsx       ← browse artículos + deep link ?article=
+│   │   │   │       │   ├── knowledge/useClientKnowledgePage.ts
+│   │   │   │       │   ├── knowledge/components/    ← types/shared/ArticleDetail
+│   │   │   │       │   └── chat/page.tsx            ← Realtime
+│   │   │   │       └── admin/
+│   │   │   │           └── dashboard/page.tsx       ← placeholder
+│   │   │   ├── api/
+│   │   │   │   ├── auth/google/route.ts
+│   │   │   │   ├── auth/google/callback/route.ts
+│   │   │   │   ├── import/excel/route.ts
+│   │   │   │   ├── import/create-exercises/route.ts
+│   │   │   │   ├── import/reconcile/route.ts
+│   │   │   │   └── complete-registration/route.ts
+│   │   │   └── components/
+│   │   │       ├── layout/TrainerSidebar.tsx + ClientSidebar.tsx
+│   │   │       ├── ui/DarkSelect.tsx
+│   │   │       └── health/AnatomyMap.tsx        ← imagen + overlay SVG, soporta gender
+│   │   ├── public/assets/anatomy/              ← 4 imágenes anatómicas (front/back × male/female)
+│   │   ├── lib/
+│   │   │   ├── supabase.ts + supabase-server.ts
+│   │   │   ├── exercise-resolver.ts + .test.ts
+│   │   │   ├── food-resolver.ts + .test.ts
+│   │   │   ├── excel-parser.ts + .test.ts
+│   │   │   ├── email-notifications.ts + .test.ts
+│   │   │   ├── google-calendar.ts + .test.ts
+│   │   │   └── onboarding-templates.ts  ← plantilla 5 secciones onboarding
+│   │   ├── hooks/useChat.ts
+│   │   ├── middleware.ts
+│   │   └── vitest.config.ts
+│   └── mobile/
+│       ├── App.tsx                              ← AuthProvider + NavigationContainer
+│       ├── index.ts                             ← registerWidgetTaskHandler
+│       ├── src/
+│       │   ├── theme.ts                         ← re-exporta @fitos/theme + shadows local
+│       │   ├── contexts/AuthContext.tsx
+│       │   ├── lib/supabase.ts + widget-data.ts + widget-sync.ts
+│       │   ├── screens/
+│       │   │   ├── LoginScreen.tsx + OnboardingScreen.tsx
+│       │   │   ├── DashboardScreen.tsx + CaloriesScreen.tsx
+│       │   │   ├── RoutineScreen.tsx + MealsScreen.tsx
+│       │   │   ├── ProgressScreen.tsx + ChatScreen.tsx
+│       │   │   ├── HealthScreen.tsx + AppointmentsScreen.tsx + TicketsScreen.tsx + KnowledgeScreen.tsx
+│       │   └── widgets/
+│       │       ├── TodayWorkoutWidget.tsx       ← Android JSX (sin hooks)
+│       │       └── widget-task-handler.tsx
+│       ├── metro.config.js                      ← watchFolders apunta a ../../packages
+│       └── tsconfig.json                        ← paths: @fitos/theme
+└── supabase/
+    └── migrations/
+        ├── 001–028 (schema base, auth, ejercicios, alimentos, Excel import)
+        ├── 029_chat_messages.sql
+        ├── 030_appointments.sql
+        ├── 031_health_logs.sql
+        ├── 032_routine_templates.sql
+        ├── 033_saved_menu_templates.sql
+        ├── 034_communities.sql
+        ├── 035_community_read_status.sql
+        ├── 036_add_gender_to_profiles.sql
+        ├── 037_exercise_metrics.sql
+        ├── 038_support_tickets.sql
+        └── 039_knowledge_articles.sql
+```
+
+---
+
+## Estado y blockers
+
+| Feature | Estado | Notas |
+|---------|--------|-------|
+| Fase 0 — estructura base, auth, 19 tablas | ✅ Completo | |
+| Fase 1 — dashboards, IA base | ✅ Casi completo | Google Calendar pendiente OAuth |
+| Fase 2 — Chat + Citas | ✅ Web+mobile completo | Google Calendar + Resend pendiente config |
+| Fase 3 — Widgets iOS/Android | ✅ Completo | iOS requiere Xcode manual |
+| Fase 4 — Sistema lesiones | ✅ Completo | |
+| Fase 5 — Plantillas rutina | ✅ Completo | |
+| Fase 6 — Planificador menú | ✅ Completo | |
+| Fase 7 — Comunidad Premium | ✅ Completo | |
+| Code Quality + Permisos | ✅ Completo | Patrón C, fragmentación, RLS auditado |
+| `@fitos/theme` | ✅ Completo | paquete compartido, Metro watchFolders |
+| Mapa anatómico con imágenes reales | ✅ Completo | Migración 036 aplicada |
+| Fase 8 — Métricas ejercicio (SFR + Stress Index + Charts) | ✅ Completo | Migración 037 aplicada |
+| Fase 9 — Consultas/Tickets | ✅ Completo | Migración 038 aplicada + política `trainer_replies_update_read` |
+| Fase 10 — Base de Conocimiento / FAQ | ✅ Completo | Migración 039 pendiente aplicar |
+| Gamificación | ❌ Sin UI | Tablas existen, falta interfaz |
+| Stripe + suscripciones | ❌ Sin implementar | |
+| Push notifications | ❌ Sin implementar | |
+
+### Configuración pendiente para desbloquear features
+
+| Config | Prioridad | Qué desbloquea |
+|--------|-----------|----------------|
+| Ejecutar migración 039_knowledge_articles.sql | 🔴 Alta | Base de Conocimiento / FAQ (tabla + funciones + RLS + storage) |
+| Ejecutar política RLS `trainer_replies_update_read` | 🔴 Alta | Trainer pueda marcar replies de clientes como leídas |
+| `ANTHROPIC_API_KEY` en Supabase secrets | 🟠 Alta | Edge Functions IA (ahora mock) |
+| Verificar dominio en Resend + `RESEND_API_KEY` | 🟠 Alta | Emails confirmación citas |
+| OAuth 2.0 Google Calendar | 🟠 Alta | Sync citas → Google Calendar |
+| Seed ejercicios + alimentos globales | 🟡 Media | Biblioteca inicial |
+
+---
+
+## Flujos de autenticación
+
+### Registro Trainer (wizard 3 pasos)
+1. `/register` → seleccionar "Soy Entrenador"
+2. Nombre, email, password → `supabase.auth.signUp({ options: { data: { role: "trainer" } } })`
+3. Trigger DB crea `profiles` + `user_roles`
+4. Redirect → `/onboarding/trainer`:
+   - Step 1: nombre negocio, especialidad, bio → upsert `profiles`
+   - Step 2: crear formulario onboarding → `onboarding_forms`
+   - Step 3: generar código promo → `trainer_promo_codes`
+5. Set `user_metadata.onboarding_completed = true`
+
+### Registro Cliente (wizard 2 pasos + código promo)
+1. `/register` → seleccionar "Soy Cliente"
+2. Introducir código promo del trainer (validación en tiempo real)
+3. Registro → crea `profiles`, `user_roles`, `trainer_clients`
+4. Redirect → `/onboarding/client`:
+   - Step 1: rellenar formulario del trainer (`onboarding_responses`)
+   - Step 2: datos biométricos (weight, height, goal) → `body_metrics`
+5. Set `user_metadata.onboarding_completed = true`
+
+### Protección de rutas (middleware)
+- Sin sesión → `/login`
+- Sesión + onboarding incompleto → `/onboarding/[role]`
+- Sesión + rol incorrecto → dashboard del rol correcto
+- `onboarding_completed` se lee de `user_metadata` (sin query DB)
+
+---
+
+## Edge Functions
+
+4 funciones Deno en `supabase/functions/`. Todas requieren `ANTHROPIC_API_KEY` en Supabase secrets. Sin la key devuelven respuesta mock.
+
+| Función | Endpoint | Descripción |
+|---------|----------|-------------|
+| `analyze-food-image` | POST | Imagen base64 → Claude Vision → alimentos + macros estimados |
+| `generate-meal-plan` | POST | Datos cliente → Claude genera plan semanal JSON |
+| `generate-gym-routine` | POST | Objetivo/nivel/días → Claude genera rutina + progresión |
+| `analyze-onboarding-form` | POST | `response_id` → Claude analiza respuestas → informe |
+
+```bash
+supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
+supabase functions deploy analyze-food-image
+supabase functions deploy generate-meal-plan
+supabase functions deploy generate-gym-routine
+supabase functions deploy analyze-onboarding-form
+```
+
+---
+
+## Activar integraciones pendientes
+
+### Google Calendar OAuth
+
+1. Crear credenciales en Google Cloud Console (tipo: Web application)
+   - Authorized origins: `https://tu-dominio.com`, `http://localhost:3000`
+   - Redirect URIs: `https://tu-dominio.com/api/auth/google/callback`, `http://localhost:3000/api/auth/google/callback`
+2. Añadir a `.env.local`:
+   ```env
+   NEXT_PUBLIC_GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=GOCSPX-xxx
+   NEXT_PUBLIC_GOOGLE_REDIRECT_URI=https://tu-dominio.com/api/auth/google/callback
+   ```
+3. Todo el código está listo en `lib/google-calendar.ts` — funciones: `getGoogleAuthUrl`, `exchangeCodeForTokens`, `syncAppointmentToCalendar`, etc.
+4. Tokens se guardan en `profiles.google_calendar_tokens` (JSONB)
+
+### Resend Email
+
+1. Verificar dominio en resend.com (añadir registros DNS)
+2. `cd apps/web && npm install resend --legacy-peer-deps`
+3. Añadir a `.env.local` y Vercel: `RESEND_API_KEY=re_xxx` + `RESEND_FROM_EMAIL=citas@tu-dominio.com`
+4. Descomentar bloque `TODO` en `lib/email-notifications.ts` (función `sendAppointmentEmail`)
+
+---
+
+## Gotchas — errores documentados
+
+| # | Área | Error cometido | Regla resultante |
+|---|------|---------------|-----------------|
+| 1 | DB | Asumir FK entre trainer_clients y profiles | Dos queries separadas — ambas referencian auth.users independientemente |
+| 2 | DB | Query a tabla trainer_profiles inexistente | Verificar esquema en especificaciones.md antes de escribir |
+| 3 | Web | react-beautiful-dnd con React 19 | Usar @dnd-kit/core — react-beautiful-dnd usa APIs internas eliminadas |
+| 4 | DB | Asumir arrays DB nunca son null | Usar `?? []` al iterar, `?.length ?? 0` al comprobar longitud |
+| 5 | DB | Nombres inventados en body_metrics | Columnas reales: body_weight_kg, hips_cm, right_arm_cm, right_thigh_cm |
+| 6 | DB | Ordenar trainer_clients por created_at | Columna es `joined_at`, no `created_at` |
+| 7 | DB | Guardar altura/peso como height_cm/weight_kg | Columnas en profiles son `height` y `weight` (sin sufijo) |
+| 8 | DB | Upsert a profiles sin incluir role | `profiles.role` es NOT NULL — siempre incluir en upserts |
+| 9 | DB | Insert en onboarding_responses | Usar `upsert` con `onConflict: "form_id,client_id"` |
+| 10 | DB | Columna content de meal_plans | Los datos están en columna `days` (JSONB) |
+| 11 | Web | Renderizar JSONB directamente en React | Usar `JSON.stringify()` o acceder a propiedades específicas |
+| 12 | DB | Insert a meal_plans con user_id y name | Usar FK `client_id` y columna `title`; `target_kcal` es NOT NULL |
+| 13 | API | Insertar en trainer_clients desde frontend | RLS bloquea — usar API route con service_role |
+| 14 | DB | Múltiples nombres de columna incorrectos | Verificar especificaciones.md antes de escribir — nombres son específicos |
+| 15 | Web | Duplicar editor de formulario | Editor solo en `/trainer/forms` — Settings es read-only |
+| 16 | DB | Insert a body_metrics sin recorded_at | `recorded_at` es TIMESTAMPTZ NOT NULL — siempre `new Date().toISOString()` |
+| 17 | DB | Goal con espacios/mayúsculas | Solo acepta: hipertrofia, fuerza, perdida_peso, mantenimiento |
+| 18 | DB | Usar `.update()` en profiles en onboarding | Usar `upsert` con `onConflict: "user_id"` + incluir `role` |
+| 19 | Auth | Onboarding no dispara tras login | Usar `user_metadata.onboarding_completed` en middleware |
+| 20 | Mobile | Error cosmético de expo install | Error cosmético — verificar package.json directamente |
+| 21 | DB | Usar moddatetime() en triggers | No disponible — usar función custom `set_updated_at()` |
+| 22 | API | Registration view no crea workout_sessions | Crear sesión primero, pasar `session_id` a weight_log |
+| 23 | Web | Rest timer múltiples intervals | Depender de valores estables (phase/mode), no expresiones ternarias |
+| 24 | Mobile | Elapsed timer no limpia al desmontar | Añadir `clearInterval()` en return cleanup del useEffect |
+| 25 | DB | Columna days de user_routines | No existe — ejercicios están en columna `exercises` (JSONB) |
+| 26 | API | Import Excel no verifica rol trainer | Consultar `profiles.role`, no `user_roles` |
+| 27 | DB | Insertar ejercicios desde frontend | RLS bloquea silenciosamente — usar API route con service_role |
+| 28 | DB | CHECK constraint violation en category | `trainer_exercise_library.category` es TEXT libre (sin CHECK) |
+| 29 | DB | Update ejercicio global se pierde | Clone-on-edit: clonar como privado + ocultar original via `hidden = true` |
+| 30 | Web | Sets completados se pierden al salir | Llamar `savePartialProgress()` en cada check — no solo en estado local |
+| 31 | Web | Botones "Registrar" visibles tras completar | Consultar workout_sessions completadas — bloquear por (rutina + día + semana) |
+| 32 | API | Import Excel "link" oculta globales | Link con nombre diferente = privado; nombre igual = no hacer nada |
+| 33 | API | `supabaseKey is required` en Vercel | Cliente Supabase a nivel módulo — mover dentro del handler POST |
+| 34 | Web | Build crash con prerendering + useSearchParams | Envolver en `<Suspense>` — `export const dynamic = "force-dynamic"` no funciona |
+| 35 | Web | Mensajes chat no aparecen tras enviar | Optimistic updates para propios mensajes — no depender de Realtime |
+| 36 | Web | Optimistic desaparece si INSERT falla | Mantener con `id: err-{timestamp}` — nunca eliminar |
+| 37 | Web | Cliente recarga para ver propios mensajes | No encadenar `.insert().select().single()` — dos pasos separados |
+| 38 | Web | Tab bar rota con 6ª pestaña | Usar `flex-1 px-2` en tabs — no `shrink-0` |
+| 39 | API | Resolver no filtra hidden=true | Comprobar `override?.hidden` antes de incluir ejercicio |
+| 40 | API | Map<string, any> oculta campo hidden | Definir interface tipada — nunca `any` para datos DB |
+| 41 | API | Endpoints temporales activos | Eliminar endpoints temporales — SQL directo en Supabase |
+| 42 | API | complete-registration sin auth | Verificar auth con createClient de supabase-server (Patrón C) |
+| 43 | API | `\|\|` en lugar de `??` en override merges | Usar `??` — permite cadenas vacías y valores falsy |
+| 44 | API | food-resolver con any[] | Definir interfaces TrainerFoodOverride — nunca `any` |
+| 45 | API | import/reconcile accesible por clientes | Verificar rol trainer — no solo autenticación |
+| 46 | API | Cliente Anthropic a nivel módulo | Mover `new Anthropic(...)` dentro del handler POST |
+| 47 | Web | appointments/page.tsx con 1187 líneas | Fragmentar durante creación — nunca crear >300 líneas monolíticas |
+| 48 | Test | Tests no creados junto al código | Crear .test.ts en misma sesión — happy path + edge case + error |
+| 49 | Review | Code review lista issues ya corregidos | Leer el código primero — verificar antes de crear tickets |
+| 50 | API | handleSave no serializa weekly_config | Verificar que handleSave incluye mode/weekly_config/total_weeks |
+| 51 | Web | Peso pre-rellenado como valor | Mostrar como placeholder (gris) — inputs siempre vacíos |
+| 52 | API | detectedColumns pierde campo type | Incluir ambos: `type: col.type` e `inferred_type: col.type` |
+| 53 | Web | buildEmptyDays() crashea | Actualizar TODAS las llamadas en reducer — no solo definiciones |
+| 54 | Web | `<select>` nativo blanco en Chrome | Usar siempre el componente `DarkSelect` |
+| 55 | Build | active/utils.ts no existía al importar | Crear archivos destino en mismo commit que imports |
+| 56 | Build | trainer/types.ts no existía al re-exportar | Crear archivos centralizados ANTES de añadir re-exports |
+| 57 | Web | pnpm install falla en raíz | packageManager activo es npm — usar `npm install` |
+| 58 | Build | sync-css.ts genera doble indentación | No añadir espacios al prefijo — `before` ya incluye indentación |
+| 59 | Web+Mobile | SFR data no se guardaba en DB | `confirmSfr` comprobaba `savedExercises.includes(exIdx)` que ya era true tras `completeSet`. Eliminar el guard — siempre re-guardar en `confirmSfr` |
+| 60 | DB | Sesión huérfana `in_progress` tras completar | Si `finalizeSession` falla, la sesión queda en `in_progress` y el cliente ve "Completar rutina en curso" para siempre. Fix: marcar como `abandoned` vía SQL. Prevención: `finalizeSession` retorna boolean, botón "Reintentar" |
+| 61 | Mobile | SetEntry sin campo `rpe` tras añadirlo al tipo | Al añadir un campo a `SetEntry`, actualizar TODAS las creaciones de objetos SetEntry (initSets, resumeSession map, resumeSession padding, resumeSession else). Hay 4+ puntos de creación |
+| 62 | Web+Mobile | RPE per-exercise no coincidía con configuración per-set del trainer | El trainer configura RPE por serie (en `target_rpe`), pero el UI mostraba un solo input por ejercicio. Cambiado a columna RPE condicional por serie — `exercise_rpe` en DB es ahora la media de los RPE por serie |
+| 63 | Web | `rest_pause_sets` campo legacy no sincronizado con `sets_config` | `rest_pause_sets` era un número independiente. Ahora se calcula automáticamente del count de `set_type !== "normal"` en `sets_config`. El campo `sets` ya incluye todas las series (normales + derivadas) |
+| 64 | Web | `totalSets` sumaba `sets + rest_pause_sets` duplicando count | En modo "different", `sets` ya incluye derivadas tras `CR_ADD_DERIVATIVE_SET`. Cambiado a solo `sum(ex.sets)` |
+| 65 | Web+Mobile | `weekly_config.sets_detail` ignorado en modo "equal" | El código cliente solo leía `sets_detail` cuando `mode === "different"`. Ahora verifica `wk?.sets_detail?.length > 0` independientemente del modo. Afecta: `initializeSets`, `resumeFromSession`, `getTrainerConfig`, `ExerciseCard` pre-training, mobile `initSets`/`resumeSession` |
+| 66 | RLS | `trainer_replies_all` WITH CHECK bloquea UPDATE de `read_at` en replies de clientes | La política `FOR ALL` tenía `sender_id = auth.uid()` en WITH CHECK. Cuando el trainer actualiza `read_at` en una reply del cliente, `sender_id` ≠ trainer → UPDATE rechazado silenciosamente. Fix: política `trainer_replies_update_read` separada sin check de `sender_id`. Regla: en políticas FOR ALL, verificar que WITH CHECK no bloquee UPDATEs legítimos sobre filas de otros usuarios |

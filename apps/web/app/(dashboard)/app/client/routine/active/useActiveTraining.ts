@@ -25,6 +25,9 @@ export interface TrainingState {
   allSets: Record<number, SetEntry[]>;
   savedExercises: number[];
   exerciseNotes: Record<number, string>;
+  exerciseRpe: Record<number, string>;
+  exerciseStimulus: Record<number, number>;
+  exerciseFatigue: Record<number, number>;
   rpeGlobal: number;
   restTime: number;
   restTotal: number;
@@ -33,12 +36,15 @@ export interface TrainingState {
   sessionId: string | null;
 }
 
-const initialState: TrainingState = {
+export const initialState: TrainingState = {
   phase: "loading",
   currentExIdx: 0,
   allSets: {},
   savedExercises: [],
   exerciseNotes: {},
+  exerciseRpe: {},
+  exerciseStimulus: {},
+  exerciseFatigue: {},
   rpeGlobal: 7,
   restTime: 0,
   restTotal: 0,
@@ -74,12 +80,15 @@ export type TrainingAction =
     }
   | { type: "MARK_SAVED"; exIdx: number }
   | { type: "SET_NOTES"; exIdx: number; notes: string }
+  | { type: "SET_EXERCISE_RPE"; exIdx: number; value: string }
+  | { type: "SET_STIMULUS"; exIdx: number; value: number }
+  | { type: "SET_FATIGUE"; exIdx: number; value: number }
   | { type: "SET_RPE"; value: number }
   | {
       type: "UPDATE_SET_VALUE";
       exIdx: number;
       setIdx: number;
-      field: "weight_kg" | "reps_done" | "rir";
+      field: "weight_kg" | "reps_done" | "rir" | "rpe";
       value: string;
     }
   | { type: "SKIP_REST" }
@@ -92,7 +101,7 @@ export type TrainingAction =
    Reducer
    ──────────────────────────────────────────── */
 
-function trainingReducer(
+export function trainingReducer(
   state: TrainingState,
   action: TrainingAction
 ): TrainingState {
@@ -143,7 +152,7 @@ function trainingReducer(
       return {
         ...state,
         allSets: { ...state.allSets, [action.exIdx]: sets },
-        phase: allDone ? "training" : "rest",
+        phase: allDone ? "sfr" : "rest",
         restTime: allDone ? state.restTime : action.restSeconds,
         restTotal: allDone ? state.restTotal : action.restSeconds,
       };
@@ -156,6 +165,24 @@ function trainingReducer(
         savedExercises: [...state.savedExercises, action.exIdx],
       };
     }
+
+    case "SET_EXERCISE_RPE":
+      return {
+        ...state,
+        exerciseRpe: { ...state.exerciseRpe, [action.exIdx]: action.value },
+      };
+
+    case "SET_STIMULUS":
+      return {
+        ...state,
+        exerciseStimulus: { ...state.exerciseStimulus, [action.exIdx]: action.value },
+      };
+
+    case "SET_FATIGUE":
+      return {
+        ...state,
+        exerciseFatigue: { ...state.exerciseFatigue, [action.exIdx]: action.value },
+      };
 
     case "SET_NOTES":
       return {
@@ -202,6 +229,32 @@ function trainingReducer(
     default:
       return state;
   }
+}
+
+/* ────────────────────────────────────────────
+   Stress Index calculation
+   ──────────────────────────────────────────── */
+
+/** RIR → intensity factor (0 = failure = 1.0, 5+ = 0.75) */
+function rirToIntensityFactor(rir: number): number {
+  if (rir <= 0) return 1.0;
+  if (rir === 1) return 0.95;
+  if (rir === 2) return 0.90;
+  if (rir === 3) return 0.85;
+  if (rir === 4) return 0.80;
+  return 0.75;
+}
+
+/** Calculate stress index from sets data: sum(weight × reps × intensityFactor) */
+export function calculateStressIndex(
+  sets: { weight_kg: number; reps_done: number; rir: number; completed: boolean }[]
+): number {
+  let stress = 0;
+  for (const s of sets) {
+    if (!s.completed) continue;
+    stress += s.weight_kg * s.reps_done * rirToIntensityFactor(s.rir);
+  }
+  return Math.round(stress * 100) / 100;
 }
 
 /* ────────────────────────────────────────────
@@ -252,7 +305,7 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
 
   /* ── Session elapsed timer ── */
   useEffect(() => {
-    if (state.phase !== "training" && state.phase !== "rest") return;
+    if (state.phase !== "training" && state.phase !== "rest" && state.phase !== "sfr") return;
     elapsedTimerRef.current = setInterval(() => {
       dispatch({ type: "TICK_ELAPSED" });
     }, 1000);
@@ -339,6 +392,7 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
         weight_kg: Number(s.weight_kg) || 0,
         reps_done: Number(s.reps_done) || 0,
         rir: Number(s.rir) || 0,
+        rpe: Number(s.rpe) || 0,
         type: i < (ex.sets || 3) ? "main" : "rest_pause",
         completed: s.completed,
       }));
@@ -347,6 +401,12 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
         0
       );
       const notes = state.exerciseNotes[exIdx]?.trim() || null;
+      // Compute average RPE from per-set values
+      const rpeValues = setsData.filter((s) => s.rpe > 0 && s.completed).map((s) => s.rpe);
+      const exerciseRpeVal = rpeValues.length > 0 ? Math.round(rpeValues.reduce((a, b) => a + b, 0) / rpeValues.length) : null;
+      const stimulusVal = state.exerciseStimulus[exIdx] ?? null;
+      const fatigueVal = state.exerciseFatigue[exIdx] ?? null;
+      const stressIndex = calculateStressIndex(setsData);
 
       const supabase = createClient();
 
@@ -362,6 +422,10 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
             sets_data: setsData,
             total_volume_kg: totalVolume,
             client_notes: notes,
+            exercise_rpe: exerciseRpeVal,
+            stress_index: stressIndex,
+            stimulus_rating: stimulusVal,
+            fatigue_rating: fatigueVal,
           },
           { onConflict: "session_id,exercise_name" }
         );
@@ -383,7 +447,7 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
         dispatch({ type: "MARK_SAVED", exIdx });
       }
     },
-    [userId, state.sessionId, exercises, state.allSets, state.exerciseNotes, trainerId]
+    [userId, state.sessionId, exercises, state.allSets, state.exerciseNotes, state.exerciseRpe, state.exerciseStimulus, state.exerciseFatigue, trainerId]
   );
 
   /* ── DB: Start session ── */
@@ -467,6 +531,16 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
     },
     [userId, state.sessionId, state.allSets, state.savedExercises, savePartialProgress]
   );
+
+  /* ── Confirm SFR ratings and save exercise ── */
+
+  const confirmSfr = useCallback(async () => {
+    const exIdx = state.currentExIdx;
+    const sets = state.allSets[exIdx] || [];
+    // Always re-save — stimulus/fatigue were set AFTER the initial save
+    await savePartialProgress(exIdx, sets);
+    dispatch({ type: "SET_PHASE", phase: "training" });
+  }, [state.currentExIdx, state.allSets, savePartialProgress]);
 
   /* ── Navigate next ── */
 
@@ -602,17 +676,24 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
     (exs: ExerciseData[]) => {
       const initial: Record<number, SetEntry[]> = {};
       exs.forEach((ex, idx) => {
-        const totalSetsCount = (ex.sets || 3) + (ex.rest_pause_sets || 0);
+        // Check weekly_config sets_detail first (works for both equal and different modes)
+        const wkDetail = ex.weekly_config?.[week]?.sets_detail;
+        const totalSetsCount = wkDetail?.length
+          ? wkDetail.length
+          : ex.mode === "different" && ex.sets_config?.length
+            ? ex.sets_config.length
+            : (ex.sets || 3) + (ex.rest_pause_sets || 0);
         initial[idx] = Array.from({ length: totalSetsCount }, () => ({
           weight_kg: "",
           reps_done: "",
           rir: "",
+          rpe: "",
           completed: false,
         }));
       });
       dispatch({ type: "INIT_SETS", sets: initial });
     },
-    []
+    [week]
   );
 
   /* ── Resume from in-progress session ── */
@@ -636,7 +717,10 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
       const alreadySaved: number[] = [];
 
       exs.forEach((ex, idx) => {
-        const totalSetsCount = (ex.sets || 3) + (ex.rest_pause_sets || 0);
+        const wkDetail = ex.weekly_config?.[week]?.sets_detail;
+        const totalSetsCount = wkDetail?.length
+          ? wkDetail.length
+          : (ex.sets || 3) + (ex.rest_pause_sets || 0);
         const savedLog = sessionLogs.find(
           (l) => l.exercise_name === ex.name
         );
@@ -646,6 +730,7 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
             weight_kg: String(s.weight_kg),
             reps_done: String(s.reps_done),
             rir: String(s.rir ?? ex.rir ?? ""),
+            rpe: String(s.rpe ?? ""),
             completed: s.completed !== false,
           }));
           const allSetsDone = initial[idx].every((s) => s.completed);
@@ -656,6 +741,7 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
               weight_kg: "",
               reps_done: "",
               rir: "",
+              rpe: "",
               completed: false,
             });
           }
@@ -668,6 +754,7 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
               weight_kg: "",
               reps_done: "",
               rir: "",
+              rpe: "",
               completed: false,
             };
           });
@@ -712,6 +799,7 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
     completeSet,
     savePartialProgress,
     saveExerciseLog,
+    confirmSfr,
     goNextExercise,
     goPrevExercise,
     skipRest,

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Spotlight, SpotlightCard } from "@/components/ui/spotlight";
 import { createClient } from "@/lib/supabase";
+import { groupFieldsBySection, getEnabledSections } from "@fitos/shared";
 import { Spinner, StepIndicator } from "./components/Shared";
 import { StepDynamicForm } from "./components/StepDynamicForm";
 import { StepProfile } from "./components/StepProfile";
@@ -13,22 +14,18 @@ export default function ClientOnboardingPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  // Wizard state
-  const [step, setStep] = useState(1);
-  const totalSteps = 2;
-
   // Global loading / error
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Step 1 state
+  // Form data
   const [trainer, setTrainer] = useState<TrainerInfo | null>(null);
   const [form, setForm] = useState<OnboardingForm | null>(null);
   const [responses, setResponses] = useState<Responses>({});
-  const [step1Errors, setStep1Errors] = useState<Record<string, string>>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // Step 2 state
+  // Profile state (last step)
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
   const [goal, setGoal] = useState<GoalValue | "">("");
@@ -37,6 +34,39 @@ export default function ClientOnboardingPage() {
   const [dislikedFoods, setDislikedFoods] = useState("");
   const [step2Errors, setStep2Errors] = useState<Record<string, string>>({});
 
+  /* ----- Compute sections from form fields ----- */
+
+  const sectionGroups = useMemo(() => {
+    if (!form) return [];
+    return getEnabledSections(groupFieldsBySection(form.fields as Array<FormField & Record<string, unknown>>));
+  }, [form]);
+
+  const hasSections = sectionGroups.some((g) => g.section !== null);
+
+  // Steps: form steps (sections or 1 flat) + 1 profile step
+  // If no form, only 1 step (profile)
+  const formStepCount = form ? (hasSections ? sectionGroups.length : 1) : 0;
+  const totalSteps = formStepCount + 1;
+
+  const [step, setStep] = useState(1);
+  const isProfileStep = step > formStepCount;
+  const currentSectionIndex = step - 1; // 0-indexed into sectionGroups
+
+  /* ----- Step labels for indicator ----- */
+
+  const stepLabels = useMemo(() => {
+    const labels: string[] = [];
+    if (hasSections) {
+      for (const group of sectionGroups) {
+        labels.push(group.section?.label ?? "General");
+      }
+    } else if (form) {
+      labels.push("Formulario de tu entrenador");
+    }
+    labels.push("Datos fisicos y preferencias");
+    return labels;
+  }, [hasSections, sectionGroups, form]);
+
   /* ----- Fetch trainer + form on mount ----- */
 
   const fetchTrainerForm = useCallback(async () => {
@@ -44,7 +74,6 @@ export default function ClientOnboardingPage() {
     setPageError(null);
 
     try {
-      // 1. Get current user
       const {
         data: { user },
         error: userErr,
@@ -55,7 +84,6 @@ export default function ClientOnboardingPage() {
         return;
       }
 
-      // 2. Get trainer via API (bypasses RLS)
       const trainerRes = await fetch("/api/client-trainer");
       if (!trainerRes.ok) {
         const body = await trainerRes.json().catch(() => ({}));
@@ -66,10 +94,8 @@ export default function ClientOnboardingPage() {
         return;
       }
       const tc: { trainer_id: string; full_name: string } = await trainerRes.json();
-
       setTrainer({ trainer_id: tc.trainer_id, full_name: tc.full_name });
 
-      // 4. Get active onboarding form (most recent)
       const { data: forms, error: formErr } = await supabase
         .from("onboarding_forms")
         .select("id, title, fields")
@@ -92,7 +118,7 @@ export default function ClientOnboardingPage() {
           fields: (f.fields as FormField[]) ?? [],
         });
 
-        // Initialize boolean fields to false
+        // Initialize boolean & multiselect fields
         const initial: Responses = {};
         for (const field of (f.fields as FormField[]) ?? []) {
           if (field.type === "boolean") initial[field.id] = false;
@@ -100,7 +126,6 @@ export default function ClientOnboardingPage() {
         }
         setResponses(initial);
       }
-      // If no forms found, step 1 will show a message and let the user skip
     } catch {
       setPageError("Ocurrio un error inesperado. Intenta nuevamente.");
     }
@@ -112,13 +137,18 @@ export default function ClientOnboardingPage() {
     fetchTrainerForm();
   }, [fetchTrainerForm]);
 
-  /* ----- Step 1 validation ----- */
+  /* ----- Validation ----- */
 
-  const validateStep1 = (): boolean => {
-    if (!form) return true; // No form = skip
+  const validateCurrentFormStep = (): boolean => {
+    if (!form) return true;
+
+    // Get fields for current step
+    const fieldsToValidate = hasSections
+      ? (sectionGroups[currentSectionIndex]?.fields ?? [])
+      : form.fields.filter((f) => f.type !== "section");
 
     const errors: Record<string, string> = {};
-    for (const field of form.fields) {
+    for (const field of fieldsToValidate) {
       if (field.required) {
         const val = responses[field.id];
         if (val === undefined || val === "" || val === null) {
@@ -128,13 +158,11 @@ export default function ClientOnboardingPage() {
         }
       }
     }
-    setStep1Errors(errors);
+    setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  /* ----- Step 2 validation ----- */
-
-  const validateStep2 = (): boolean => {
+  const validateProfile = (): boolean => {
     const errors: Record<string, string> = {};
     if (!height || Number(height) <= 0) errors.height = "Ingresa tu altura";
     if (!weight || Number(weight) <= 0) errors.weight = "Ingresa tu peso";
@@ -143,48 +171,58 @@ export default function ClientOnboardingPage() {
     return Object.keys(errors).length === 0;
   };
 
-  /* ----- Navigation handlers ----- */
+  /* ----- Save form responses ----- */
+
+  const saveResponses = async (): Promise<boolean> => {
+    if (!form || !trainer) return true;
+
+    setSubmitting(true);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("No auth");
+
+      const { error: insertErr } = await supabase
+        .from("onboarding_responses")
+        .upsert(
+          {
+            form_id: form.id,
+            client_id: user.id,
+            trainer_id: trainer.trainer_id,
+            responses,
+          },
+          { onConflict: "form_id,client_id" }
+        );
+
+      if (insertErr) {
+        setPageError(`Error al guardar las respuestas: ${insertErr.message}`);
+        setSubmitting(false);
+        return false;
+      }
+    } catch {
+      setPageError("Error al guardar las respuestas. Intenta nuevamente.");
+      setSubmitting(false);
+      return false;
+    }
+    setSubmitting(false);
+    return true;
+  };
+
+  /* ----- Navigation ----- */
 
   const handleNext = async () => {
-    if (step === 1) {
-      if (!validateStep1()) return;
+    if (!isProfileStep) {
+      // Form step — validate current section
+      if (!validateCurrentFormStep()) return;
 
-      // Save step 1 responses to DB if form exists
-      if (form && trainer) {
-        setSubmitting(true);
-        try {
-          const {
-            data: { user },
-          } = await supabase.auth.getUser();
-          if (!user) throw new Error("No auth");
+      // Save after each section (upsert, so safe to call multiple times)
+      const saved = await saveResponses();
+      if (!saved) return;
 
-          const { error: insertErr } = await supabase
-            .from("onboarding_responses")
-            .upsert(
-              {
-                form_id: form.id,
-                client_id: user.id,
-                trainer_id: trainer.trainer_id,
-                responses,
-              },
-              { onConflict: "form_id,client_id" }
-            );
-
-          if (insertErr) {
-            setPageError(`Error al guardar las respuestas: ${insertErr.message}`);
-            setSubmitting(false);
-            return;
-          }
-        } catch {
-          setPageError("Error al guardar las respuestas. Intenta nuevamente.");
-          setSubmitting(false);
-          return;
-        }
-        setSubmitting(false);
-      }
-
-      setStep(2);
+      setStep(step + 1);
       setPageError(null);
+      setFieldErrors({});
     }
   };
 
@@ -192,13 +230,14 @@ export default function ClientOnboardingPage() {
     if (step > 1) {
       setStep(step - 1);
       setPageError(null);
+      setFieldErrors({});
     }
   };
 
   /* ----- Final submit ----- */
 
   const handleComplete = async () => {
-    if (!validateStep2()) return;
+    if (!validateProfile()) return;
 
     setSubmitting(true);
     setPageError(null);
@@ -215,7 +254,6 @@ export default function ClientOnboardingPage() {
         disliked_foods: dislikedFoods.trim(),
       };
 
-      // Update profile (upsert in case trigger didn't create the row)
       const { error: profileErr } = await supabase
         .from("profiles")
         .upsert({
@@ -233,7 +271,7 @@ export default function ClientOnboardingPage() {
         return;
       }
 
-      // Insert body_metrics
+      // Non-blocking body_metrics insert
       const { error: metricsErr } = await supabase
         .from("body_metrics")
         .insert({
@@ -241,13 +279,10 @@ export default function ClientOnboardingPage() {
           recorded_at: new Date().toISOString(),
           body_weight_kg: Number(weight),
         });
-
       if (metricsErr) {
-        // Non-blocking — log but continue
         console.error("[ClientOnboardingPage] Error inserting body_metrics:", metricsErr);
       }
 
-      // Mark onboarding as completed in user metadata
       await supabase.auth.updateUser({
         data: { onboarding_completed: true },
       });
@@ -259,13 +294,12 @@ export default function ClientOnboardingPage() {
     }
   };
 
-  /* ----- Render helpers ----- */
+  /* ----- Response updater ----- */
 
   const updateResponse = (fieldId: string, val: string | number | boolean | string[]) => {
     setResponses((prev) => ({ ...prev, [fieldId]: val }));
-    // Clear error for this field on change
-    if (step1Errors[fieldId]) {
-      setStep1Errors((prev) => {
+    if (fieldErrors[fieldId]) {
+      setFieldErrors((prev) => {
         const copy = { ...prev };
         delete copy[fieldId];
         return copy;
@@ -355,27 +389,31 @@ export default function ClientOnboardingPage() {
           <div className="mt-3 flex justify-center">
             <span className="text-xs text-[#8B8BA3]">
               Paso {step} de {totalSteps}
-              {step === 1 && " — Formulario de tu entrenador"}
-              {step === 2 && " — Datos fisicos y preferencias"}
+              {stepLabels[step - 1] && ` — ${stepLabels[step - 1]}`}
             </span>
           </div>
         </div>
 
         <SpotlightCard className="max-h-[70vh] overflow-y-auto">
-          {step === 1 && (
+          {/* Form steps (sections or flat) */}
+          {!isProfileStep && (
             <StepDynamicForm
               trainer={trainer}
               form={form}
               responses={responses}
-              step1Errors={step1Errors}
+              errors={fieldErrors}
               pageError={pageError}
               submitting={submitting}
               onUpdateResponse={updateResponse}
               onNext={handleNext}
+              onBack={handleBack}
+              sectionGroup={hasSections ? sectionGroups[currentSectionIndex] : undefined}
+              isFirstStep={step === 1}
             />
           )}
 
-          {step === 2 && (
+          {/* Profile step */}
+          {isProfileStep && (
             <StepProfile
               height={height}
               setHeight={setHeight}

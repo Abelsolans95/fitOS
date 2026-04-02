@@ -46,7 +46,7 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
-  /* FitOS Custom Colors */
+  /* [fitos-theme-start] — AUTO-GENERATED: edit packages/theme/src/index.ts + run pnpm sync-theme */
   --color-neon-cyan: #00E5FF;
   --color-neon-violet: #7C3AED;
   --color-neon-green: #00C853;
@@ -54,6 +54,7 @@
   --color-neon-red: #FF1744;
   --color-surface: #12121A;
   --color-surface-hover: #1A1A2E;
+  /* [fitos-theme-end] */
 }
 
 /* ===== FitOS Dark-Only Theme ===== */
@@ -160,6 +161,25 @@
   .dot-grid {
     background-image: radial-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px);
     background-size: 26px 26px;
+  }
+
+  /* Premium fine-line grid — fades out via radial mask */
+  .premium-grid {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 72px 72px;
+    -webkit-mask-image: radial-gradient(ellipse 70% 55% at 50% 45%, rgba(0,0,0,0.5) 0%, transparent 100%);
+    mask-image: radial-gradient(ellipse 70% 55% at 50% 45%, rgba(0,0,0,0.5) 0%, transparent 100%);
+  }
+
+  /* Mesh gradient — soft ambient glow with brand colors */
+  .mesh-gradient {
+    background:
+      radial-gradient(ellipse 70% 50% at 50% -15%, rgba(124,58,237,0.10), transparent),
+      radial-gradient(ellipse 50% 45% at 80% 0%, rgba(0,229,255,0.06), transparent),
+      radial-gradient(ellipse 45% 35% at 0% 85%, rgba(124,58,237,0.04), transparent),
+      radial-gradient(ellipse 35% 30% at 100% 65%, rgba(0,229,255,0.025), transparent);
   }
 
   /* Custom scrollbar */

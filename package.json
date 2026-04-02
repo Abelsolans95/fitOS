@@ -8,10 +8,12 @@
         "services/*"
     ],
     "devDependencies": {
-        "turbo": "latest"
+        "turbo": "latest",
+        "tsx": "^4.19.0"
     },
     "scripts": {
         "dev": "turbo run dev",
-        "build": "turbo run build"
+        "build": "turbo run build",
+        "sync-theme": "tsx packages/theme/scripts/sync-css.ts"
     }
 }

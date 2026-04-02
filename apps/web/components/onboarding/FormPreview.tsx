@@ -34,7 +34,21 @@ export function FormPreview({ title, description, fields }: FormPreviewProps) {
 
       {/* Fields */}
       <div className="space-y-5">
-        {fields.map((field) => (
+        {fields.filter((f) => f.type !== "section" || f.enabled !== false).map((field) => {
+          if (field.type === "section") {
+            return (
+              <div key={field.id} className="pt-4 first:pt-0">
+                <div className="border-b border-[#7C3AED]/20 pb-2">
+                  <h4 className="text-sm font-bold uppercase tracking-[0.15em] text-[#7C3AED]">{field.label}</h4>
+                  {field.description && (
+                    <p className="mt-1 text-xs text-[#8B8BA3]/70">{field.description}</p>
+                  )}
+                </div>
+              </div>
+            );
+          }
+
+          return (
           <div key={field.id} className="space-y-2">
             <Label className="text-sm text-[#E8E8ED]">
               {field.label}
@@ -125,7 +139,8 @@ export function FormPreview({ title, description, fields }: FormPreviewProps) {
               />
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

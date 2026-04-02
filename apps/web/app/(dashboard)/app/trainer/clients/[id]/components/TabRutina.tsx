@@ -5,6 +5,9 @@ import { toast } from "sonner";
 import { createClient } from "@/lib/supabase";
 import { UserRoutine, WorkoutSession, WeightLogEntry } from "./types";
 import { EmptyState, formatDate } from "./shared";
+import { ExerciseAnalytics } from "./ExerciseAnalytics";
+
+type RutinaView = "historial" | "analisis";
 
 function formatDuration(seconds: number | null): string {
   if (!seconds) return "—";
@@ -20,6 +23,7 @@ export function TabRutina({
   routine: UserRoutine | null;
   clientId: string;
 }) {
+  const [view, setView] = useState<RutinaView>("historial");
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [weightLogs, setWeightLogs] = useState<WeightLogEntry[]>([]);
   const [expandedSession, setExpandedSession] = useState<string | null>(null);
@@ -90,7 +94,34 @@ export function TabRutina({
         <p className="mt-3 text-xs text-[#8B8BA3]">Creada el {formatDate(routine.created_at)}</p>
       </div>
 
-      {/* Session history */}
+      {/* View toggle */}
+      <div className="flex gap-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-1">
+        <button
+          onClick={() => setView("historial")}
+          className={`flex-1 rounded-lg py-2 text-xs font-bold uppercase tracking-[0.15em] transition-all ${
+            view === "historial"
+              ? "bg-[#00E5FF]/10 text-[#00E5FF]"
+              : "text-[#5A5A72] hover:text-white"
+          }`}
+        >
+          Historial
+        </button>
+        <button
+          onClick={() => setView("analisis")}
+          className={`flex-1 rounded-lg py-2 text-xs font-bold uppercase tracking-[0.15em] transition-all ${
+            view === "analisis"
+              ? "bg-[#7C3AED]/10 text-[#7C3AED]"
+              : "text-[#5A5A72] hover:text-white"
+          }`}
+        >
+          Análisis
+        </button>
+      </div>
+
+      {view === "analisis" ? (
+        <ExerciseAnalytics clientId={clientId} />
+      ) : (
+      /* Session history */
       <div>
         <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#8B8BA3]">
           Historial de sesiones
@@ -180,6 +211,12 @@ export function TabRutina({
                                 >
                                   <span className="font-semibold text-white">{set.weight_kg}</span>kg ×{" "}
                                   <span className="font-semibold text-white">{set.reps_done}</span>
+                                  {set.rir != null && Number(set.rir) > 0 && (
+                                    <span className="ml-1 text-[#00E5FF]">RIR {set.rir}</span>
+                                  )}
+                                  {set.rpe != null && Number(set.rpe) > 0 && (
+                                    <span className="ml-1 text-[#FF9100]">RPE {set.rpe}</span>
+                                  )}
                                   {set.type === "rest_pause" && (
                                     <span className="ml-1 text-[#FF9100]">RP</span>
                                   )}
@@ -202,6 +239,7 @@ export function TabRutina({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

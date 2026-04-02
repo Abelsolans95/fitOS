@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { AppSidebar, SidebarNavItem } from "./AppSidebar";
 
@@ -74,6 +75,24 @@ const BASE_NAV_ITEMS: SidebarNavItem[] = [
     ),
   },
   {
+    label: "Consultas",
+    href: "/app/trainer/tickets",
+    icon: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+      </svg>
+    ),
+  },
+  {
+    label: "Conocimiento",
+    href: "/app/trainer/knowledge",
+    icon: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+      </svg>
+    ),
+  },
+  {
     label: "Chat",
     href: "/app/trainer/chat",
     icon: (
@@ -99,8 +118,15 @@ const BASE_NAV_ITEMS: SidebarNavItem[] = [
 ];
 
 export function TrainerSidebar() {
+  const pathname = usePathname();
   const [unreadCount, setUnreadCount] = useState(0);
   const [communityUnread, setCommunityUnread] = useState(0);
+  const [ticketUnread, setTicketUnread] = useState(0);
+
+  // Reset badges when entering pages
+  useEffect(() => {
+    if (pathname === "/app/trainer/tickets") setTicketUnread(0);
+  }, [pathname]);
 
   useEffect(() => {
     let trainerId: string | null = null;
@@ -159,14 +185,40 @@ export function TrainerSidebar() {
       setCommunityUnread(count ?? 0);
     };
 
+    const fetchTicketUnread = async () => {
+      if (!trainerId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        trainerId = user.id;
+      }
+      // Count new tickets (never opened by trainer)
+      const { count: newTickets, error: ticketsErr } = await supabase
+        .from("support_tickets")
+        .select("id", { count: "exact", head: true })
+        .eq("trainer_id", trainerId)
+        .is("trainer_read_at", null);
+      if (ticketsErr) console.error("[TrainerSidebar] Error counting unread tickets:", ticketsErr);
+      // Count unread client replies on existing tickets
+      const { count: unreadReplies, error: repliesErr } = await supabase
+        .from("ticket_replies")
+        .select("id", { count: "exact", head: true })
+        .neq("sender_id", trainerId)
+        .is("read_at", null);
+      if (repliesErr) console.error("[TrainerSidebar] Error counting unread replies:", repliesErr);
+      setTicketUnread((newTickets ?? 0) + (unreadReplies ?? 0));
+    };
+
     fetchUnread();
     fetchCommunityUnread();
+    fetchTicketUnread();
 
     // Real-time: refresh badges
     const channel = supabase
       .channel("trainer-sidebar-unread")
       .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, fetchUnread)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "community_posts" }, fetchCommunityUnread)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "support_tickets" }, fetchTicketUnread)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "ticket_replies" }, fetchTicketUnread)
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
@@ -177,6 +229,8 @@ export function TrainerSidebar() {
       return { ...item, badge: unreadCount };
     if (item.href === "/app/trainer/community" && communityUnread > 0)
       return { ...item, badge: communityUnread };
+    if (item.href === "/app/trainer/tickets" && ticketUnread > 0)
+      return { ...item, badge: ticketUnread };
     return item;
   });
 

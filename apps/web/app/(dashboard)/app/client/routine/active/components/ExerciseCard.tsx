@@ -16,7 +16,7 @@ interface ExerciseCardProps {
   onCompleteSet: (setIdx: number) => void;
   onSetValueChange: (
     setIdx: number,
-    field: "weight_kg" | "reps_done" | "rir",
+    field: "weight_kg" | "reps_done" | "rir" | "rpe",
     value: string
   ) => void;
   onNext: () => void;
@@ -57,12 +57,9 @@ export function ExerciseCard({
   const notes = weekNotes || baseNotes;
 
   const getTrainerConfig = (setIdx: number): SetConfig => {
-    const isDifferent = exercise.mode === "different";
-    if (isDifferent) {
-      const detail = wk?.sets_detail ?? exercise.sets_config ?? [];
-      if (detail[setIdx]) return detail[setIdx];
-    }
-    // Equal mode or fallback
+    // Use sets_detail if available — works for both "different" mode and equal mode with derivatives
+    const detail = wk?.sets_detail ?? (exercise.mode === "different" ? exercise.sets_config : undefined) ?? [];
+    if (detail.length > 0 && detail[setIdx]) return detail[setIdx];
     return {
       reps_min: wk?.reps_min ?? exercise.reps_min,
       reps_max: wk?.reps_max ?? exercise.reps_max,
@@ -70,6 +67,26 @@ export function ExerciseCard({
       target_weight: wk?.target_weight ?? exercise.target_weight ?? null,
       rest_s: wk?.rest_s ?? exercise.rest_s,
     };
+  };
+
+  // Determine which optional columns to show
+  const showRir = (exercise.rir ?? 0) > 0 ||
+    (exercise.sets_config ?? []).some((sc) => (sc.rir ?? 0) > 0) ||
+    Object.values(exercise.weekly_config ?? {}).some((wc) => (wc.rir ?? 0) > 0);
+  const showRpe = (exercise.target_rpe != null && exercise.target_rpe > 0) ||
+    (exercise.sets_config ?? []).some((sc) => (sc as any).target_rpe > 0) ||
+    Object.values(exercise.weekly_config ?? {}).some((wc) =>
+      (wc.target_rpe ?? 0) > 0 || (wc.sets_detail ?? []).some((sd) => ((sd as any).target_rpe ?? 0) > 0)
+    );
+
+  // Dynamic grid template
+  const gridCols = `grid-cols-[3rem_1fr_1fr${showRir ? "_3.5rem" : ""}${showRpe ? "_3.5rem" : ""}_3rem]`.replace(/_/g, "_");
+  // Build actual tailwind-compatible class
+  const colCount = 3 + (showRir ? 1 : 0) + (showRpe ? 1 : 0) + 1; // serie + peso + reps + [rir] + [rpe] + check
+  const gridStyle = {
+    display: "grid",
+    gridTemplateColumns: `3rem 1fr 1fr${showRir ? " 3.5rem" : ""}${showRpe ? " 3.5rem" : ""} 3rem`,
+    gap: "0.5rem",
   };
 
   return (
@@ -197,7 +214,7 @@ export function ExerciseCard({
       {/* Sets */}
       <div className="space-y-2">
         {/* Header */}
-        <div className="grid grid-cols-[3rem_1fr_1fr_3.5rem_3rem] gap-2 px-1">
+        <div style={gridStyle} className="px-1">
           <span className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-[#5A5A72]">
             Serie
           </span>
@@ -207,22 +224,41 @@ export function ExerciseCard({
           <span className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-[#5A5A72]">
             Reps
           </span>
-          <span className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-[#5A5A72]">
-            RIR
-          </span>
+          {showRir && (
+            <span className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-[#5A5A72]">
+              RIR
+            </span>
+          )}
+          {showRpe && (
+            <span className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-[#FF9100]">
+              RPE
+            </span>
+          )}
           <span />
         </div>
 
         {sets.map((set, setIdx) => {
           const prevSet = previousSets[setIdx];
           const isCurrent = setIdx === currentSetIdx;
-          const isRP = setIdx >= (exercise.sets || 3);
           const cfg = getTrainerConfig(setIdx);
+          const cfgType = (cfg as any).set_type || "normal";
+          const isRP = cfgType === "rest_pause";
+          const isDS = cfgType === "drop_set";
+          const isDeriv = isRP || isDS;
+          // Count normal sets up to this index for display numbering
+          let normalNum = 0;
+          if (!isDeriv) {
+            for (let k = 0; k <= setIdx; k++) {
+              const t = (getTrainerConfig(k) as any).set_type || "normal";
+              if (t === "normal") normalNum++;
+            }
+          }
 
           return (
             <div
               key={setIdx}
-              className={`grid grid-cols-[3rem_1fr_1fr_3.5rem_3rem] gap-2 rounded-xl px-1 py-1 transition-all ${
+              style={gridStyle}
+              className={`rounded-xl px-1 py-1 transition-all ${isDeriv ? "ml-4 border-l-2" : ""} ${isRP ? "border-[#FF9100]/40" : ""} ${isDS ? "border-[#7C3AED]/40" : ""} ${
                 set.completed
                   ? "opacity-50"
                   : isCurrent
@@ -237,10 +273,12 @@ export function ExerciseCard({
                     ? "bg-[#00C853]/10 text-[#00C853]"
                     : isRP
                       ? "bg-[#FF9100]/10 text-[#FF9100]"
-                      : "bg-white/[0.04] text-[#8B8BA3]"
+                      : isDS
+                        ? "bg-[#7C3AED]/10 text-[#7C3AED]"
+                        : "bg-white/[0.04] text-[#8B8BA3]"
                 }`}
               >
-                {set.completed ? "✓" : isRP ? "RP" : setIdx + 1}
+                {set.completed ? "✓" : isRP ? "RP" : isDS ? "DS" : normalNum}
               </div>
 
               {/* Weight */}
@@ -279,20 +317,39 @@ export function ExerciseCard({
                 className="h-11 w-full rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 text-center text-base font-semibold tabular-nums text-white placeholder:text-[#5A5A72]/40 outline-none transition-colors focus:border-[#00E5FF]/50 disabled:opacity-40"
               />
 
-              {/* RIR */}
-              <input
-                type="number"
-                inputMode="numeric"
-                min={0}
-                max={10}
-                value={set.rir}
-                onChange={(e) =>
-                  onSetValueChange(setIdx, "rir", e.target.value)
-                }
-                disabled={set.completed}
-                placeholder={String(cfg.rir)}
-                className="h-11 w-full rounded-lg border border-white/[0.08] bg-white/[0.02] px-1 text-center text-base font-semibold tabular-nums text-white placeholder:text-[#5A5A72]/40 outline-none transition-colors focus:border-[#00E5FF]/50 disabled:opacity-40"
-              />
+              {/* RIR (conditional) */}
+              {showRir && (
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={10}
+                  value={set.rir}
+                  onChange={(e) =>
+                    onSetValueChange(setIdx, "rir", e.target.value)
+                  }
+                  disabled={set.completed}
+                  placeholder={String(cfg.rir)}
+                  className="h-11 w-full rounded-lg border border-white/[0.08] bg-white/[0.02] px-1 text-center text-base font-semibold tabular-nums text-white placeholder:text-[#5A5A72]/40 outline-none transition-colors focus:border-[#00E5FF]/50 disabled:opacity-40"
+                />
+              )}
+
+              {/* RPE (conditional) */}
+              {showRpe && (
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={10}
+                  value={set.rpe}
+                  onChange={(e) =>
+                    onSetValueChange(setIdx, "rpe", e.target.value)
+                  }
+                  disabled={set.completed}
+                  placeholder={String((cfg as any).target_rpe ?? exercise.target_rpe ?? "")}
+                  className="h-11 w-full rounded-lg border border-[#FF9100]/20 bg-[#FF9100]/[0.04] px-1 text-center text-base font-semibold tabular-nums text-[#FF9100] placeholder:text-[#FF9100]/30 outline-none transition-colors focus:border-[#FF9100]/50 disabled:opacity-40"
+                />
+              )}
 
               {/* Complete set button */}
               <button

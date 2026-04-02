@@ -4,7 +4,7 @@ import { useState } from "react";
 import { BodyMetric } from "./types";
 import { EmptyState, formatDate } from "./shared";
 import { MetricChart } from "@/app/(dashboard)/app/client/progress/components/MetricChart";
-import { MetricKey, TimeFilter } from "@/app/(dashboard)/app/client/progress/components/types";
+import { MetricKey, TimeFilter, METRIC_CONFIG } from "@/app/(dashboard)/app/client/progress/components/types";
 
 export function TabProgreso({ metrics }: { metrics: BodyMetric[] }) {
   const [selectedChart, setSelectedChart] = useState<MetricKey>("body_weight_kg");
@@ -41,35 +41,32 @@ export function TabProgreso({ metrics }: { metrics: BodyMetric[] }) {
         {[...metrics].reverse().map((m) => (
           <div
             key={m.id}
-            className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3"
+            className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4"
           >
-            <div className="flex flex-wrap items-center gap-4">
-              {m.body_weight_kg != null && (
-                <div>
-                  <p className="text-xs text-[#8B8BA3]">Peso</p>
-                  <p className="text-sm font-medium text-white">{m.body_weight_kg} kg</p>
-                </div>
-              )}
-              {m.body_fat_pct != null && (
-                <div>
-                  <p className="text-xs text-[#8B8BA3]">Grasa</p>
-                  <p className="text-sm font-medium text-white">{m.body_fat_pct}%</p>
-                </div>
-              )}
-              {m.muscle_mass_kg != null && (
-                <div>
-                  <p className="text-xs text-[#8B8BA3]">Músculo</p>
-                  <p className="text-sm font-medium text-white">{m.muscle_mass_kg} kg</p>
-                </div>
-              )}
-              {m.waist_cm != null && (
-                <div>
-                  <p className="text-xs text-[#8B8BA3]">Cintura</p>
-                  <p className="text-sm font-medium text-white">{m.waist_cm} cm</p>
-                </div>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-xs text-[#8B8BA3]">{formatDate(m.recorded_at)}</span>
+              {m.notes && (
+                <span className="max-w-[200px] truncate text-xs italic text-[#8B8BA3]/60">
+                  {m.notes}
+                </span>
               )}
             </div>
-            <p className="shrink-0 text-xs text-[#8B8BA3]">{formatDate(m.recorded_at)}</p>
+            <div className="flex flex-wrap gap-3">
+              {METRIC_CONFIG.map((config) => {
+                const val = m[config.key as keyof BodyMetric];
+                if (val === null || val === undefined) return null;
+                return (
+                  <div key={config.key} className="flex items-baseline gap-1">
+                    <span className="text-sm font-semibold" style={{ color: config.color }}>
+                      {val}
+                    </span>
+                    <span className="text-[10px] text-[#8B8BA3]">
+                      {config.unit} {config.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         ))}
       </div>

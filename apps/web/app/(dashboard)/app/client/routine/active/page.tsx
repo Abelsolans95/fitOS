@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import type { ExerciseData, PreviousLog, SavedLogEntry } from "./types";
 import { useActiveTraining } from "./useActiveTraining";
 import { RestTimer } from "./components/RestTimer";
+import { SFRSelector } from "./components/SFRSelector";
 import { RPESelector } from "./components/RPESelector";
 import { SummaryView } from "./components/SummaryView";
 import { ExerciseCard } from "./components/ExerciseCard";
@@ -149,6 +150,19 @@ function ActiveTrainingPage() {
         onNotesChange={(n) => t.dispatch({ type: "SET_NOTES", exIdx: state.currentExIdx, notes: n })}
         onSkipRest={t.skipRest}
         nextExerciseName={state.currentExIdx < t.totalExercises - 1 ? exercises[state.currentExIdx + 1]?.name : undefined}
+      />
+    );
+  }
+
+  if (state.phase === "sfr") {
+    return (
+      <SFRSelector
+        exerciseName={t.currentEx?.name || ""}
+        stimulus={state.exerciseStimulus[state.currentExIdx] ?? 0}
+        fatigue={state.exerciseFatigue[state.currentExIdx] ?? 0}
+        onStimulusChange={(v) => t.dispatch({ type: "SET_STIMULUS", exIdx: state.currentExIdx, value: v })}
+        onFatigueChange={(v) => t.dispatch({ type: "SET_FATIGUE", exIdx: state.currentExIdx, value: v })}
+        onConfirm={t.confirmSfr}
       />
     );
   }

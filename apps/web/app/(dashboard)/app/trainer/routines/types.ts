@@ -12,12 +12,17 @@ export interface ExerciseItem {
   category: string | null;
 }
 
+export type SetType = "normal" | "rest_pause" | "drop_set";
+
 export interface SetConfig {
   reps_min: number;
   reps_max: number;
   rir: number;
   target_weight: number | null;
   rest_s: number;
+  target_rpe?: number | null;
+  /** Set technique type. "normal" by default. "rest_pause" and "drop_set" are derivative sets inserted after a normal set. */
+  set_type?: SetType;
 }
 
 /** Per-week override for an exercise (progressive overload across mesocycle) */
@@ -29,6 +34,7 @@ export interface WeekConfig {
   rir: number;
   target_weight: number | null;
   rest_s: number;
+  target_rpe?: number | null;
   /** Used in "different" mode — one entry per set */
   sets_detail?: SetConfig[];
   /** Per-week coach notes (dynamic per week, unlike progression_rule which is per exercise) */
@@ -53,6 +59,8 @@ export interface RoutineExercise {
   sets_config: SetConfig[];
   /** Per-week overrides keyed by week number (1-based). If absent, uses base values. */
   weekly_config?: Record<number, WeekConfig>;
+  /** Optional target RPE (1-10) the trainer sets per exercise. If null/undefined, client won't see the RPE input. */
+  target_rpe?: number | null;
 }
 
 export interface TrainingDay {
@@ -157,6 +165,7 @@ export function makeDefaultSetConfig(ex: RoutineExercise): SetConfig {
     rir: ex.rir,
     target_weight: ex.target_weight,
     rest_s: ex.rest_s,
+    target_rpe: ex.target_rpe ?? null,
   };
 }
 

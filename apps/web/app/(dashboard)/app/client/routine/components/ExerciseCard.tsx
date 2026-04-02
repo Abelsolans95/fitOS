@@ -27,18 +27,30 @@ export const ExerciseCard = memo(function ExerciseCard({ ex, idx, activeWeek, fo
     rir: number;
     weight: number | null;
     rest: number;
+    setType?: string;
   }[] = [];
 
-  if (effectiveMode === "different") {
+  // Use sets_detail if available — even in equal mode (weekly_config may have derivatives)
+  const hasSetsDetail = effectiveMode === "different"
+    ? true
+    : (wk?.sets_detail?.length ?? 0) > 0;
+
+  if (hasSetsDetail) {
     const detail = wk?.sets_detail ?? ex.sets_config ?? [];
-    setRows = detail.map((s, i) => ({
-      idx: i + 1,
-      repsMin: s.reps_min,
-      repsMax: s.reps_max,
-      rir: s.rir,
-      weight: s.target_weight,
-      rest: s.rest_s,
-    }));
+    let normalNum = 0;
+    setRows = detail.map((s, i) => {
+      const st = (s as any).set_type || "normal";
+      if (st === "normal") normalNum++;
+      return {
+        idx: st === "normal" ? normalNum : i + 1,
+        repsMin: s.reps_min,
+        repsMax: s.reps_max,
+        rir: s.rir,
+        weight: s.target_weight,
+        rest: s.rest_s,
+        setType: st,
+      };
+    });
   } else {
     const rMin = wk?.reps_min ?? ex.reps_min;
     const rMax = wk?.reps_max ?? ex.reps_max;
@@ -84,24 +96,29 @@ export const ExerciseCard = memo(function ExerciseCard({ ex, idx, activeWeek, fo
 
       {/* Per-set breakdown */}
       <div className="mt-1.5 space-y-0.5">
-        {setRows.map((s) => (
-          <div
-            key={s.idx}
-            className="flex items-center gap-x-2 text-[10px] text-[#5A5A72]"
-          >
-            <span className="w-[26px] shrink-0 text-[9px] font-bold text-[#8B8BA3]">
-              S{s.idx}
-            </span>
-            <span>
-              {s.repsMin === s.repsMax
-                ? `${s.repsMin} reps`
-                : `${s.repsMin}-${s.repsMax} reps`}
-            </span>
-            <span>RIR {s.rir}</span>
-            {s.weight != null && s.weight > 0 && <span>{s.weight}kg</span>}
-            <span>{s.rest}s</span>
-          </div>
-        ))}
+        {setRows.map((s, i) => {
+          const isRP = s.setType === "rest_pause";
+          const isDS = s.setType === "drop_set";
+          const isDeriv = isRP || isDS;
+          return (
+            <div
+              key={i}
+              className={`flex items-center gap-x-2 text-[10px] ${isDeriv ? "ml-4 border-l-2 pl-2" : ""} ${isRP ? "border-[#FF9100]/40 text-[#FF9100]" : isDS ? "border-[#7C3AED]/40 text-[#7C3AED]" : "text-[#5A5A72]"}`}
+            >
+              <span className={`w-[26px] shrink-0 text-[9px] font-bold ${isRP ? "text-[#FF9100]" : isDS ? "text-[#7C3AED]" : "text-[#8B8BA3]"}`}>
+                {isRP ? "RP" : isDS ? "DS" : `S${s.idx}`}
+              </span>
+              <span>
+                {s.repsMin === s.repsMax
+                  ? `${s.repsMin} reps`
+                  : `${s.repsMin}-${s.repsMax} reps`}
+              </span>
+              {s.rir > 0 && <span>RIR {s.rir}</span>}
+              {s.weight != null && s.weight > 0 && <span>{s.weight}kg</span>}
+              <span>{s.rest}s</span>
+            </div>
+          );
+        })}
       </div>
 
       {/* Previous session */}

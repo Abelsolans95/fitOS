@@ -19,7 +19,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@fitos/theme": ["../../packages/theme/src/index.ts"],
+      "@fitos/shared": ["../../packages/shared/src/index.ts"]
     }
   },
   "include": [
