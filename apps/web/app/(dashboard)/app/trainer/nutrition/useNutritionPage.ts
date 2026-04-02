@@ -283,6 +283,8 @@ export interface NutritionState {
   libFormFat: number | "";
   libFormFiber: number | "";
   libFormCategory: string;
+  libHasMore: boolean;
+  libLoadingMore: boolean;
 }
 
 const initialState: NutritionState = {
@@ -328,6 +330,8 @@ const initialState: NutritionState = {
   libFormFat: 0,
   libFormFiber: 0,
   libFormCategory: "Comida",
+  libHasMore: false,
+  libLoadingMore: false,
 };
 
 /* ────────────────────────────────────────────
@@ -391,6 +395,9 @@ export type NutritionAction =
   | { type: "CR_LOAD_SAVED_MENU"; menu: SavedMenuTemplate }
   | { type: "CR_RESET" }
   /* Library */
+  | { type: "LIB_SET_FOODS"; foods: FoodItem[]; hasMore: boolean }
+  | { type: "LIB_APPEND_FOODS"; foods: FoodItem[]; hasMore: boolean }
+  | { type: "LIB_SET_LOADING_MORE"; loading: boolean }
   | { type: "LIB_SET_SEARCH"; search: string }
   | { type: "LIB_SET_CATEGORY"; category: string }
   | { type: "LIB_SHOW_ADD_FORM" }
@@ -426,6 +433,7 @@ function nutritionReducer(state: NutritionState, action: NutritionAction): Nutri
         mealPlans: action.mealPlans,
         clients: action.clients,
         foods: action.foods,
+        libHasMore: action.foods.length === 50,
         loading: false,
         error: null,
       };
@@ -761,6 +769,12 @@ function nutritionReducer(state: NutritionState, action: NutritionAction): Nutri
       };
 
     /* ── Library ── */
+    case "LIB_SET_FOODS":
+      return { ...state, foods: action.foods, libHasMore: action.hasMore, libLoadingMore: false };
+    case "LIB_APPEND_FOODS":
+      return { ...state, foods: [...state.foods, ...action.foods], libHasMore: action.hasMore, libLoadingMore: false };
+    case "LIB_SET_LOADING_MORE":
+      return { ...state, libLoadingMore: action.loading };
     case "LIB_SET_SEARCH":
       return { ...state, libSearch: action.search };
     case "LIB_SET_CATEGORY":
@@ -855,7 +869,8 @@ export function useNutritionPage() {
           .from("trainer_food_library")
           .select("id,name,kcal,protein,carbs,fat,fiber,is_global,trainer_id,category")
           .or(`trainer_id.eq.${user.id},is_global.eq.true`)
-          .order("name"),
+          .order("name")
+          .limit(50),
         supabase
           .from("saved_menu_templates")
           .select("id, name, config, created_at")
@@ -941,6 +956,69 @@ export function useNutritionPage() {
     loadData();
   }, [loadData]);
 
+  /* ── Library: load foods (paginated or search) ── */
+
+  const loadLibFoods = useCallback(
+    async (opts?: { append?: boolean; offset?: number; searchQuery?: string }) => {
+      if (!state.trainerId) return;
+      const { append = false, offset = 0, searchQuery } = opts ?? {};
+      const isSearch = typeof searchQuery === "string" && searchQuery.trim().length > 0;
+
+      if (append) dispatch({ type: "LIB_SET_LOADING_MORE", loading: true });
+
+      const supabase = createClient();
+      let query = supabase
+        .from("trainer_food_library")
+        .select("id,name,kcal,protein,carbs,fat,fiber,is_global,trainer_id,category")
+        .or(`trainer_id.eq.${state.trainerId},is_global.eq.true`)
+        .order("name");
+
+      if (isSearch) {
+        query = query.ilike("name", `%${searchQuery!.trim()}%`);
+      } else {
+        query = query.range(offset, offset + 49);
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        console.error("[NutritionPage] Error loading foods:", error);
+        return;
+      }
+
+      const rows = (data as FoodItem[]) ?? [];
+      const hasMore = !isSearch && rows.length === 50;
+
+      if (append) {
+        dispatch({ type: "LIB_APPEND_FOODS", foods: rows, hasMore });
+      } else {
+        dispatch({ type: "LIB_SET_FOODS", foods: rows, hasMore });
+      }
+    },
+    [state.trainerId]
+  );
+
+  const loadMoreFoods = useCallback(() => {
+    if (!state.libHasMore || state.libLoadingMore) return;
+    loadLibFoods({ append: true, offset: state.foods.length });
+  }, [state.libHasMore, state.libLoadingMore, state.foods.length, loadLibFoods]);
+
+  // Debounced search for food library
+  useEffect(() => {
+    if (!state.trainerId) return;
+
+    if (!state.libSearch.trim()) {
+      // Reset to paginated view
+      loadLibFoods();
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      loadLibFoods({ searchQuery: state.libSearch });
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [state.libSearch, state.trainerId]);
+
   /* ── Computed ── */
 
   const selectedClient = useMemo(
@@ -956,12 +1034,9 @@ export function useNutritionPage() {
         return cats.some((c) => c?.toLowerCase() === state.libActiveCategory.toLowerCase());
       });
     }
-    if (state.libSearch.trim()) {
-      const q = state.libSearch.toLowerCase();
-      result = result.filter((f) => f.name.toLowerCase().includes(q));
-    }
+    // Client-side search filtering no longer needed — search queries DB directly
     return result;
-  }, [state.foods, state.libSearch, state.libActiveCategory]);
+  }, [state.foods, state.libActiveCategory]);
 
   /* ── Creator: add food to meal ── */
 
@@ -1246,5 +1321,6 @@ export function useNutritionPage() {
     handleSaveTemplate,
     handleSaveFood,
     handleDeleteFood,
+    loadMoreFoods,
   };
 }

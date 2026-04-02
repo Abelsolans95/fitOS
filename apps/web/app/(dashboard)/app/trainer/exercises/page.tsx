@@ -10,13 +10,14 @@ import { useExercisesPage } from "./useExercisesPage";
 
 export default function TrainerExercisesPage() {
   const {
-    loading, error, setError, loadExercises,
+    loading, loadingMore, hasMore, error, setError,
     search, setSearch,
     ownershipFilter, setOwnershipFilter,
     filteredExercises,
     modalOpen, editingExercise, form, saving,
     openCreateModal, openEditModal, closeModal, updateForm, handleSave,
     deleteTarget, setDeleteTarget, deleting, handleDelete,
+    handleLoadMore,
   } = useExercisesPage();
 
   if (loading) {
@@ -35,7 +36,7 @@ export default function TrainerExercisesPage() {
         </div>
         <button
           type="button"
-          onClick={() => { setError(null); loadExercises(); }}
+          onClick={() => { setError(null); window.location.reload(); }}
           className="rounded-xl px-4 py-2 text-[13px] font-medium text-[#00E5FF] transition-colors hover:bg-[#00E5FF]/10"
         >
           Reintentar
@@ -129,16 +130,37 @@ export default function TrainerExercisesPage() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredExercises.map((exercise) => (
-                <ExerciseCard
-                  key={exercise.id}
-                  exercise={exercise}
-                  onEdit={() => openEditModal(exercise)}
-                  onDelete={() => setDeleteTarget(exercise)}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredExercises.map((exercise) => (
+                  <ExerciseCard
+                    key={exercise.id}
+                    exercise={exercise}
+                    onEdit={() => openEditModal(exercise)}
+                    onDelete={() => setDeleteTarget(exercise)}
+                  />
+                ))}
+              </div>
+              {hasMore && !search.trim() && (
+                <div className="flex justify-center pt-4">
+                  <button
+                    type="button"
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-[#12121A] px-6 py-2.5 text-[13px] font-semibold text-[#8B8BA3] transition-all hover:border-[#00E5FF]/30 hover:text-white disabled:opacity-50"
+                  >
+                    {loadingMore ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#00E5FF]/20 border-t-[#00E5FF]" />
+                        Cargando...
+                      </>
+                    ) : (
+                      "Cargar más ejercicios"
+                    )}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
 
