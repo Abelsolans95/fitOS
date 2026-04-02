@@ -256,13 +256,9 @@ export function useTicketsPage() {
     const now = new Date().toISOString();
     const ticket = state.tickets.find((t) => t.id === ticketId);
 
-    const promises: Promise<unknown>[] = [];
-
     // Set trainer_read_at if not yet read
     if (ticket && !ticket.trainer_read_at) {
-      promises.push(
-        supabase.from("support_tickets").update({ trainer_read_at: now }).eq("id", ticketId)
-      );
+      await supabase.from("support_tickets").update({ trainer_read_at: now }).eq("id", ticketId);
     }
 
     // Mark client replies as read
@@ -271,13 +267,7 @@ export function useTicketsPage() {
       .map((r) => r.id);
 
     if (unreadIds.length > 0) {
-      promises.push(
-        supabase.from("ticket_replies").update({ read_at: now }).in("id", unreadIds)
-      );
-    }
-
-    if (promises.length > 0) {
-      await Promise.all(promises);
+      await supabase.from("ticket_replies").update({ read_at: now }).in("id", unreadIds);
     }
 
     // Always reset unread count locally when trainer views a ticket

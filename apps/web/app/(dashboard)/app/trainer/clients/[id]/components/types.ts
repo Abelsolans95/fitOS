@@ -96,7 +96,7 @@ export interface WorkoutSession {
 export interface WeightLogEntry {
   id: string;
   exercise_name: string;
-  sets_data: { set_number: number; weight_kg: number; reps_done: number; type: string }[];
+  sets_data: { set_number: number; weight_kg: number; reps_done: number; type: string; rir?: number | string; rpe?: number | string }[];
   total_volume_kg: number | null;
   client_notes: string | null;
   session_id: string;
