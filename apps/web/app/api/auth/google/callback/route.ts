@@ -33,18 +33,38 @@ export async function GET(request: Request) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (user) {
-      await supabase
-        .from("profiles")
-        .update({
-          google_calendar_tokens: {
-            access_token: tokens.access_token,
-            refresh_token: tokens.refresh_token,
-            expires_at: Date.now() + tokens.expires_in * 1000,
-          },
-        })
-        .eq("user_id", user.id);
+    if (!user) {
+      return NextResponse.json(
+        { error: "No autenticado" },
+        { status: 401 }
+      );
     }
+
+    // Only trainers can connect Google Calendar
+    const { data: profile, error: profileErr } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("user_id", user.id)
+      .single();
+
+    if (profileErr || profile?.role !== "trainer") {
+      console.error("[GoogleOAuth] Role check failed:", profileErr?.message ?? `role=${profile?.role}`);
+      return NextResponse.json(
+        { error: "Solo los entrenadores pueden conectar Google Calendar" },
+        { status: 403 }
+      );
+    }
+
+    await supabase
+      .from("profiles")
+      .update({
+        google_calendar_tokens: {
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+          expires_at: Date.now() + tokens.expires_in * 1000,
+        },
+      })
+      .eq("user_id", user.id);
 
     const returnTo = state || "/app/client/calendar";
     return NextResponse.redirect(

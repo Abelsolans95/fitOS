@@ -188,7 +188,7 @@ describe("POST /api/complete-registration", () => {
     const json = await res.json();
 
     expect(res.status).toBe(500);
-    expect(json.error).toBe("unique violation");
+    expect(json.error).toBe("Error al vincular con el entrenador");
   });
 
   // 7. Skips email update when email is not provided

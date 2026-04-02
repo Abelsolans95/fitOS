@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
       if (tcError) {
         console.error("[complete-registration] Insert error:", tcError);
-        return NextResponse.json({ error: tcError.message }, { status: 500 });
+        return NextResponse.json({ error: "Error al vincular con el entrenador" }, { status: 500 });
       }
 
       // Store email in profile

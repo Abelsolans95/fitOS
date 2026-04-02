@@ -20,6 +20,7 @@ export interface RoutineRaw {
   is_active: boolean;
   sent_at: string | null;
   created_at: string;
+  trainer_id?: string;
 }
 
 export interface SetInput {
@@ -268,7 +269,7 @@ export function useClientRoutine() {
             .maybeSingle(),
           supabase
             .from("user_routines")
-            .select("id,title,goal,duration_months,total_weeks,exercises,is_active,sent_at,created_at")
+            .select("id,title,goal,duration_months,total_weeks,exercises,is_active,sent_at,created_at,trainer_id")
             .eq("client_id", user.id)
             .eq("is_active", true)
             .order("created_at", { ascending: false })
@@ -520,9 +521,7 @@ export function useClientRoutine() {
         .insert({
           client_id: state.userId,
           routine_id: state.routine?.id,
-          trainer_id: state.routine
-            ? (state.routine as any).trainer_id
-            : null,
+          trainer_id: state.routine?.trainer_id ?? null,
           session_date: today,
           day_label: dayLabel,
           week_number: state.activeWeek,

@@ -352,7 +352,8 @@ export function useClientCommunityPage() {
       .from("community_comments")
       .select("id, post_id, parent_id, author_id, content, created_at")
       .eq("post_id", postId)
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: true })
+      .limit(500);
 
     if (error) { toast.error("Error al cargar comentarios"); console.error("[ClientCommunity] comments:", error); dispatch({ type: "SET_LOADING_COMMENTS", payload: { postId, loading: false } }); return; }
 

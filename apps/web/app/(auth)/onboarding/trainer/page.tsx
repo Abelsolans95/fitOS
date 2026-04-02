@@ -84,8 +84,8 @@ export default function TrainerOnboardingPage() {
 
       if (upsertError) throw upsertError;
       setCurrentStep(1);
-    } catch (err: any) {
-      setError(err?.message || "Error al guardar el perfil. Intenta de nuevo.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error al guardar el perfil. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -115,9 +115,9 @@ export default function TrainerOnboardingPage() {
 
       if (insertError) throw insertError;
       setCurrentStep(2);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(
-        err?.message || "Error al guardar el formulario. Intenta de nuevo."
+        err instanceof Error ? err.message : "Error al guardar el formulario. Intenta de nuevo."
       );
     } finally {
       setLoading(false);
@@ -156,9 +156,9 @@ export default function TrainerOnboardingPage() {
           is_active: true,
           current_uses: 0,
         });
-      } catch (err: any) {
+      } catch (err: unknown) {
         setError(
-          err?.message ||
+          err instanceof Error ? err.message :
             "Error al generar el codigo promocional. Intenta de nuevo."
         );
       } finally {

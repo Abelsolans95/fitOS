@@ -464,7 +464,8 @@ export function useCommunityPage() {
       .from("community_comments")
       .select("id,post_id,parent_id,author_id,content,created_at")
       .eq("post_id", postId)
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: true })
+      .limit(500);
 
     if (error) {
       toast.error("Error al cargar comentarios");
