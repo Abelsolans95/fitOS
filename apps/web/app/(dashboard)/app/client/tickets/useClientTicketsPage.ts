@@ -127,7 +127,7 @@ export function useClientTicketsPage() {
   const loadTickets = useCallback(async (clientId: string) => {
     const { data, error } = await supabase
       .from("support_tickets")
-      .select("id, trainer_id, client_id, category, subject, description, image_url, status, created_at, updated_at")
+      .select("id, trainer_id, client_id, category, subject, description, image_url, status, trainer_read_at, created_at, updated_at")
       .eq("client_id", clientId)
       .order("created_at", { ascending: false })
       .limit(100);

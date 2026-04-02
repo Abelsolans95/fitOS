@@ -23,8 +23,9 @@ Este archivo contiene TODO lo necesario para continuar el desarrollo: reglas, cr
 - **Auditoría de Permisos (30/03/2026):** Arquitectura de permisos verificada y corregida ✅ — middleware sólido, RLS correcto en 19 tablas, 3 fixes de seguridad aplicados, `AuthContext` mobile preparado para rol Admin.
 - **`@fitos/theme` (30/03/2026):** Paquete compartido creado ✅ — `packages/theme/src/index.ts` es la única fuente de verdad para colores, spacing y radius. Mobile re-exporta desde ahí. Script `npm run sync-theme` regenera el bloque `@theme` de `globals.css`. Metro `watchFolders` configurado.
 - **Mapa anatómico con imágenes reales (31/03/2026):** Reemplazo del mapa SVG puro por imágenes anatómicas reales con overlay SVG interactivo ✅ — 4 imágenes (hombre/mujer × frontal/posterior), zonas definidas en `packages/shared/src/anatomy/zones.ts`, campo `gender` añadido a `profiles` (migración 036), toggle de género en UI cliente. Web + mobile.
-- **Fase 9 (01/04/2026):** Sistema de Consultas/Tickets ✅ — Cliente envía dudas categorizadas (Nutrición, Rutina, Lesión, General) al trainer. Trainer gestiona inbox con filtros de estado/categoría/búsqueda, responde en hilo conversacional, y marca como resuelta. Realtime. Badges de no leídos en ambos sidebars. Migración 038. Web trainer + web cliente + mobile.
+- **Fase 9 (01/04/2026):** Sistema de Consultas/Tickets ✅ — Cliente envía dudas categorizadas (Nutrición, Rutina, Lesión, General) al trainer. Trainer gestiona inbox con filtros de estado/categoría/búsqueda, responde en hilo conversacional, y marca como resuelta. Realtime. Badges de no leídos en ambos sidebars. Migración 038. Web trainer + web cliente + mobile. Fix post-deploy (02/04): política RLS `trainer_replies_update_read` para permitir al trainer marcar replies de clientes como leídas; acciones de reducer `MARK_TICKET_READ` e `INCREMENT_UNREAD` para evitar stale closures; reset de badge en sidebar via `usePathname`.
 - **Onboarding con secciones (01/04/2026):** Formulario de onboarding extendido con secciones opcionales ✅ — 5 secciones predefinidas (historial medico, deportivo, experiencias, estado actual, objetivos) que el trainer puede activar/desactivar. Cliente ve wizard multi-paso (1 seccion = 1 step). Plantilla cargable con un click. AI edge function actualizada para analisis por seccion. Sin migracion DB (todo en JSONB existente). Web + mobile.
+- **Fase 10 (02/04/2026):** Base de Conocimiento / FAQ ✅ — Trainer escribe artículos FAQ categorizados (Nutrición, Rutina, Lesión, Técnica, Suplementación, General) con texto + video URL. Cliente busca/filtra artículos antes de preguntar. Integración bidireccional con Consultas: convertir ticket resuelto en artículo, sugerir artículos relevantes al crear ticket (debounced search). Vista contador incrementada via SECURITY DEFINER. Full-text search PostgreSQL (español). Migración 039. Web trainer + web cliente + mobile. Tipos compartidos en `@fitos/shared`.
 
 ---
 
@@ -175,8 +176,6 @@ Violet:    #7C3AED   (acento secundario)
 Muted:     #8B8BA3   (texto secundario)
 Error:     #FF1744
 Success:   #00C853
-```
-
 Orange:    #FF9100   (acento terciario)
 Dimmed:    #5A5A72   (texto muy secundario)
 ```
@@ -191,8 +190,9 @@ Dimmed:    #5A5A72   (texto muy secundario)
 
 ### Patrones de card
 ```
-Patrón de card: `rounded-2xl border border-white/[0.06] bg-[#12121A]`
-Botón primario: `bg-[#00E5FF] text-[#0A0A0F] rounded-xl font-semibold`
+Patrón de card: rounded-2xl border border-white/[0.06] bg-[#12121A]
+Botón primario: bg-[#00E5FF] text-[#0A0A0F] rounded-xl font-semibold
+```
 
 ---
 
@@ -239,15 +239,15 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 81. **Comunidad se crea automáticamente** — La primera vez que el trainer visita `/app/trainer/community`, si no existe `communities` para su `coach_id`, se crea con nombre "Mi Comunidad" y `mode: 'OPEN'`. No requiere setup manual.
 82. **Badge de verificado para el coach** — En posts y comentarios, el nombre del trainer aparece en color violeta (`#7C3AED`) con un badge "Coach" (checkmark SVG + texto uppercase) junto al nombre. Los clientes aparecen en blanco. Los avatares del coach usan fondo violeta; los de clientes, fondo cyan.
 83. **Comunidad fragmentada en componentes** — `apps/web/app/(dashboard)/app/trainer/community/`: `useCommunityPage.ts` (hook con useReducer, 30 acciones), `components/types.ts`, `components/CommunityFeed.tsx` (feed-only: posts + comments), `components/CommunityPublish.tsx` (formulario de crear publicación), `components/CommunitySettings.tsx` (nombre, descripcion, toggle mode, toggle active), `page.tsx` orquestador (~160 líneas, 3 tabs: Feed/Publicar/Ajustes). Cliente: `apps/web/app/(dashboard)/app/client/community/page.tsx` (tabs Feed + Publicar condicional según mode).
-89. **Tab "Publicar" separado y condicional** — La creación de publicaciones está en su propio tab tanto en trainer como en cliente. En el trainer siempre se muestra (3 tabs: Feed, Publicar, Ajustes). En el cliente, el tab "Publicar" solo aparece si `community.mode === 'OPEN'`; si es `READ_ONLY_CLIENTS` solo se muestra el tab "Feed" (sin barra de tabs). `CommunityTab` type incluye `"publish"`.
-90. **`community_posts.title` opcional** — Migración 035. Columna `TEXT` nullable. El formulario de publicación muestra input de título con placeholder "Titulo (opcional)". En el feed, si el post tiene título se muestra como `<h3>` bold blanco encima del contenido.
-91. **Tabla `community_read_status` para tracking de lectura** — Migración 035. `(community_id, user_id)` unique. `last_seen_at` se actualiza con upsert al visitar la comunidad. Se usa para calcular posts no leídos en sidebar.
-92. **Badge de no leídos en sidebar para Comunidad** — Mismo patrón que el badge de chat. `TrainerSidebar`: cuenta posts de clientes posteriores a `last_seen_at`. `ClientSidebar`: cuenta todos los posts posteriores a `last_seen_at`. Realtime: escucha INSERT en `community_posts` para incrementar el badge. Se resetea al visitar `/app/*/community`. Estilo: pill cyan con glow, igual que chat.
 84. **Publicaciones fijadas (pinned)** — El trainer puede fijar posts con el botón bookmark. Posts fijados aparecen primero (order by `is_pinned DESC, created_at DESC`) y tienen borde violeta con ring. Badge "Fijado" visible.
 85. **Sidebar: "Comunidad" entre "Citas" y "Chat"** — Tanto en `TrainerSidebar` como en `ClientSidebar`. Icono: grupo de personas (users SVG). Badge de no leídos cuando hay posts nuevos. El cliente solo ve la comunidad si su trainer la tiene activa (`is_active = true`).
 86. **Respuestas a comentarios (threading)** — `community_comments.parent_id` (FK self-referencial, nullable). Comentarios se renderizan como árbol con indentación (`ml-6 border-l`). Profundidad máxima: 2 niveles. Botón "Responder" abre input inline debajo del comentario. Enter envía la respuesta. El tree se construye en `handleLoadComments` agrupando por `parent_id`.
 87. **Likes en comentarios + diferenciación coach** — Tabla `community_comment_likes` con `comment_id`, `user_id`, `is_coach` (BOOLEAN). El coach al dar like se marca `is_coach: true`. En el UI: like del coach muestra corazón violeta + badge "Coach" junto al contador. Likes de clientes son cyan estándar. RLS: mismas políticas que `community_likes` pero sobre comments. Realtime habilitado.
 88. **`community_comment_likes` tiene unique constraint** — `(comment_id, user_id)`. Misma lógica que `community_likes`: toggle optimista, insert si no existe, delete si ya existe.
+89. **Tab "Publicar" separado y condicional** — La creación de publicaciones está en su propio tab tanto en trainer como en cliente. En el trainer siempre se muestra (3 tabs: Feed, Publicar, Ajustes). En el cliente, el tab "Publicar" solo aparece si `community.mode === 'OPEN'`; si es `READ_ONLY_CLIENTS` solo se muestra el tab "Feed" (sin barra de tabs). `CommunityTab` type incluye `"publish"`.
+90. **`community_posts.title` opcional** — Migración 035. Columna `TEXT` nullable. El formulario de publicación muestra input de título con placeholder "Titulo (opcional)". En el feed, si el post tiene título se muestra como `<h3>` bold blanco encima del contenido.
+91. **Tabla `community_read_status` para tracking de lectura** — Migración 035. `(community_id, user_id)` unique. `last_seen_at` se actualiza con upsert al visitar la comunidad. Se usa para calcular posts no leídos en sidebar.
+92. **Badge de no leídos en sidebar para Comunidad** — Mismo patrón que el badge de chat. `TrainerSidebar`: cuenta posts de clientes posteriores a `last_seen_at`. `ClientSidebar`: cuenta todos los posts posteriores a `last_seen_at`. Realtime: escucha INSERT en `community_posts` para incrementar el badge. Se resetea al visitar `/app/*/community`. Estilo: pill cyan con glow, igual que chat.
 
 93. **Layout auth como Server Component async** — `apps/web/app/(dashboard)/layout.tsx` es un Server Component async. Usa `createClient()` de `@/lib/supabase-server`, llama a `supabase.auth.getUser()` y hace `redirect("/login")` si no hay sesión. NO usar middleware ni `getSession()` en layouts (no verifica JWT con el servidor). Las redirecciones basadas en rol usan `headers()` para obtener el pathname sin acceder a `window`.
 
@@ -292,11 +292,9 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 
 109. **Componentes `components/` deben ser importados en `page.tsx`** — Cuando existe una carpeta `components/` junto a un `page.tsx`, verificar que el `page.tsx` realmente importa desde ella. Si `page.tsx` tiene funciones de componente definidas inline y `components/` existe pero no se usa, el refactor está incompleto. Ejecutar `grep "from \"./components"` en el `page.tsx` para verificar.
 
-110. **`React.memo` obligatorio en componentes que se renderizan en listas** — Cualquier componente que sea hijo directo de un `.map()` sobre un array de datos (ejercicios, comidas, posts, mensajes) DEBE estar wrapeado con `memo()`. Patrón: `export const Foo = memo(function Foo(props) { ... })`. Sin memo, el componente se re-renderiza en cada cambio de estado del padre aunque sus props no hayan cambiado.
-
 129. **Tablas `support_tickets` + `ticket_replies` para consultas** — Migración 038. `support_tickets`: `trainer_id`, `client_id`, `category` (nutricion|rutina|lesion|general), `subject`, `description`, `image_url`, `status` (open|in_progress|resolved). `ticket_replies`: `ticket_id`, `sender_id`, `content`, `image_url`, `read_at`. RLS: trainer full CRUD sobre sus tickets; cliente SELECT + INSERT propios tickets + INSERT replies en sus tickets + UPDATE read_at. Realtime habilitado en ambas tablas. Storage bucket `ticket-images` (5MB, jpeg/png/webp).
 130. **Consultas: trainer master-detail, cliente list/create/detail** — Web trainer: `/app/trainer/tickets` con layout master-detail (lista filtrable + hilo conversacional). `useTicketsPage.ts` con useReducer. Web cliente: `/app/client/tickets` con 3 vistas (list, create, detail). `useClientTicketsPage.ts` con useReducer. Mobile: `TicketsScreen.tsx` con 3 vistas locales. Tab "Consultas" entre Salud y Chat en bottom nav.
-131. **Badges de consultas no leídas en sidebars** — `TrainerSidebar`: cuenta `ticket_replies` donde `sender_id != trainerId AND read_at IS NULL`. `ClientSidebar`: misma lógica inversa. Realtime: escucha INSERT en `ticket_replies`. Reset al visitar `/app/*/tickets`.
+131. **Badges de consultas no leídas en sidebars** — `TrainerSidebar`: cuenta `support_tickets` con `trainer_read_at IS NULL` (tickets nuevos) + `ticket_replies` con `sender_id != trainerId AND read_at IS NULL` (respuestas no leídas). `ClientSidebar`: cuenta `ticket_replies` con `sender_id != clientId AND read_at IS NULL`. Realtime: escucha INSERT en `support_tickets` + `ticket_replies`. Reset al visitar `/app/*/tickets` via `usePathname`. La política RLS `trainer_replies_update_read` permite al trainer marcar como leídas replies de clientes (la política `trainer_replies_all` FOR ALL tiene `sender_id = auth.uid()` en WITH CHECK que bloqueaba estos UPDATEs).
 132. **Tipos compartidos en `@fitos/shared`** — `SupportTicket`, `TicketReply`, `TicketCategory`, `TicketStatus`, `TICKET_CATEGORIES`, `TICKET_STATUSES` exportados desde `packages/shared/src/types/tickets.ts`.
 
 ---
@@ -392,10 +390,14 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 126. **Columnas RIR y RPE condicionales en entrenamiento activo** — RIR se muestra solo si `exercise.rir > 0` o algún `sets_config`/`weekly_config` tiene rir > 0. RPE se muestra si `exercise.target_rpe > 0` O algún `sets_config[].target_rpe > 0` O algún `weekly_config[].target_rpe > 0` o `weekly_config[].sets_detail[].target_rpe > 0`. `SetConfig.target_rpe` permite configurar RPE por serie (tanto en "Series diferentes" como en "Progresión semanal"). `WeekConfig.target_rpe` es el RPE por serie en modo "Todas iguales" dentro de la progresión semanal. El placeholder RPE en el cliente resuelve: `cfg.target_rpe ?? exercise.target_rpe`. Si el trainer no configuró ninguno, el cliente solo ve Serie | Peso | Reps | ✓. Aplica en web (`ExerciseCard.tsx`) y mobile (`ActiveTraining.tsx`, `RegistrationMode.tsx`).
 127. **Series derivadas: Rest-Pause y Drop Set (web + mobile)** — Tanto en modo "Series diferentes" como en "Todas iguales", cada serie normal tiene botones "RP" (naranja) y "DS" (violeta) que insertan una serie derivada justo después. `SetConfig.set_type` puede ser `"normal"` (defecto), `"rest_pause"` o `"drop_set"`. La serie derivada se inicializa con los mismos reps de la serie origen; RP con 15s de descanso, DS con 0s descanso y 80% de la carga. Se pueden eliminar con botón ✕. El trainer las configura en `DaySchedule.tsx` (editor de rutinas) tanto en la vista principal como en la modal "Progresión semanal" (`WeeklyConfigModal`). En la modal, ambos modos soportan RP/DS: "diferentes" muestra per-set view directamente; "iguales" muestra botones RP/DS que al pulsar expanden la semana a `sets_detail` (via `expandEqualAndAddDerivative`). Si se eliminan todas las derivadas, la semana vuelve a scalar. Acciones del reducer: `CR_ADD_DERIVATIVE_SET` y `CR_REMOVE_DERIVATIVE_SET` (vista principal). La modal semanal maneja RP/DS con estado local (`addWeekDerivativeSet` / `removeWeekDerivativeSet` / `expandEqualAndAddDerivative`). En el save, `rest_pause_sets` se calcula automáticamente como count de series con `set_type !== "normal"`. El `sets` del ejercicio incluye todas las series (normales + derivadas). El template save también preserva `set_type` en `sets_config` y `weekly_config.sets_detail`.
 128. **Visualización de series derivadas para el cliente** — Series RP/DS se muestran con indentación (`ml-4` web, `marginLeft: 24` mobile), borde izquierdo coloreado (naranja para RP, violeta para DS), y badge "RP"/"DS" en lugar de número de serie. La numeración de series normales es independiente (S1, S2, S3) — las derivadas no afectan el conteo. Aplica en: vista previa del cliente (`routine/components/ExerciseCard.tsx`), entrenamiento activo web (`routine/active/components/ExerciseCard.tsx`), mobile (`ActiveTraining.tsx`, `RegistrationMode.tsx`). Historial del trainer (`TabRutina.tsx`) muestra "RP"/"DS" en los chips de series completadas.
-129. **Secciones en formulario de onboarding (`type: "section"`)** — `FormField` ahora soporta `type: "section"` como tipo especial que actua como cabecera de grupo. Campos adicionales: `description?: string` (texto para el cliente), `enabled?: boolean` (default true, el trainer puede desactivar la seccion). Los campos que siguen a un section field pertenecen a esa seccion hasta el siguiente section field. Utility `groupFieldsBySection()` en `@fitos/shared` agrupa el array plano en `SectionGroup[]`. `getEnabledSections()` filtra las desactivadas. Backwards compatible: formularios sin sections se renderizan como antes (1 step plano).
-130. **Plantilla de secciones de onboarding** — `apps/web/lib/onboarding-templates.ts` exporta `getOnboardingSectionsTemplate()` que genera 5 secciones con preguntas sugeridas (IDs unicos por llamada). Secciones: Historial Medico, Historial Deportivo, Experiencia en Entrenamiento, Estado Actual, Objetivos. El trainer carga la plantilla con un click ("Cargar plantilla de secciones") en la pagina de formularios o en el onboarding wizard. Las secciones son opcionales — el trainer puede activar/desactivar cada una.
-131. **Cliente onboarding multi-paso por seccion (web + mobile)** — Si el formulario tiene section fields, el wizard del cliente muestra cada seccion habilitada como un step separado (con nombre de seccion en el indicador). El ultimo step siempre es "Datos fisicos y preferencias". Las respuestas se guardan via upsert despues de cada seccion. Si el formulario no tiene sections, se mantiene el comportamiento anterior (1 step formulario + 1 step datos fisicos).
-132. **Edge Function `analyze-onboarding-form` — analisis por seccion** — La funcion agrupa las respuestas del cliente por seccion para dar contexto estructurado a Claude. Incluye `medical_flags` y `precautions` en el JSON de analisis. Columnas de perfil corregidas: usa `weight` y `height` (no `weight_kg`/`height_cm`). Preferencias alimenticias formateadas como texto legible.
+133. **Secciones en formulario de onboarding (`type: "section"`)** — `FormField` ahora soporta `type: "section"` como tipo especial que actua como cabecera de grupo. Campos adicionales: `description?: string` (texto para el cliente), `enabled?: boolean` (default true, el trainer puede desactivar la seccion). Los campos que siguen a un section field pertenecen a esa seccion hasta el siguiente section field. Utility `groupFieldsBySection()` en `@fitos/shared` agrupa el array plano en `SectionGroup[]`. `getEnabledSections()` filtra las desactivadas. Backwards compatible: formularios sin sections se renderizan como antes (1 step plano).
+134. **Plantilla de secciones de onboarding** — `apps/web/lib/onboarding-templates.ts` exporta `getOnboardingSectionsTemplate()` que genera 5 secciones con preguntas sugeridas (IDs unicos por llamada). Secciones: Historial Medico, Historial Deportivo, Experiencia en Entrenamiento, Estado Actual, Objetivos. El trainer carga la plantilla con un click ("Cargar plantilla de secciones") en la pagina de formularios o en el onboarding wizard. Las secciones son opcionales — el trainer puede activar/desactivar cada una.
+135. **Cliente onboarding multi-paso por seccion (web + mobile)** — Si el formulario tiene section fields, el wizard del cliente muestra cada seccion habilitada como un step separado (con nombre de seccion en el indicador). El ultimo step siempre es "Datos fisicos y preferencias". Las respuestas se guardan via upsert despues de cada seccion. Si el formulario no tiene sections, se mantiene el comportamiento anterior (1 step formulario + 1 step datos fisicos).
+136. **Edge Function `analyze-onboarding-form` — analisis por seccion** — La funcion agrupa las respuestas del cliente por seccion para dar contexto estructurado a Claude. Incluye `medical_flags` y `precautions` en el JSON de analisis. Columnas de perfil corregidas: usa `weight` y `height` (no `weight_kg`/`height_cm`). Preferencias alimenticias formateadas como texto legible.
+137. **Tabla `knowledge_articles` para base de conocimiento** — Migración 039. Campos clave: `trainer_id`, `title`, `content`, `category` (CHECK: nutricion, rutina, lesion, tecnica, suplementacion, general), `image_url`, `video_url`, `is_published`, `view_count`, `source_ticket_id` (FK nullable a `support_tickets`). RLS: trainer full CRUD sobre sus artículos; cliente SELECT solo artículos publicados de su trainer (via `trainer_clients`). Función `search_knowledge_articles(p_trainer_id, p_query)` con full-text search (español) + ILIKE fallback. Función `increment_article_view(article_id)` SECURITY DEFINER para que el cliente pueda incrementar view_count en artículos del trainer sin UPDATE directo. Storage bucket `knowledge-images` (5MB, jpeg/png/webp). Realtime no habilitado (no necesario).
+138. **Tipos compartidos de conocimiento en `@fitos/shared`** — `KnowledgeCategory` (6 valores), `KnowledgeArticle` interface, `KNOWLEDGE_CATEGORIES` array con labels e iconos. Exportados desde `packages/shared/src/types/knowledge.ts`.
+139. **Integración Consultas ↔ Conocimiento** — Bidireccional: (1) Trainer puede convertir ticket resuelto en artículo via botón "Convertir en artículo" en `TicketDetail.tsx` → navega a `/app/trainer/knowledge?from_ticket=&title=&category=`. (2) Cliente ve artículos sugeridos al crear ticket: debounced search (400ms, 3+ chars) en `CreateTicketForm.tsx` busca por título con ILIKE. Click en sugerencia navega a `/app/client/knowledge?article=<id>`.
+140. **Conocimiento: trainer CRUD, cliente browse** — Web trainer: `/app/trainer/knowledge` con `useKnowledgePage.ts` (useReducer, 12 acciones), `components/ArticleList.tsx` + `ArticleEditor.tsx`. Stats cards (total, publicados, vistas). Filtros por categoría, estado publicado, búsqueda. Web cliente: `/app/client/knowledge` con `useClientKnowledgePage.ts`, grid de artículos con filtro de categoría y búsqueda. `ArticleDetail.tsx` con embed YouTube + link video + imagen. Mobile: `KnowledgeScreen.tsx` con list/detail views. Tab "Conocimiento" entre Salud y Consultas en bottom nav (icono libro). Sidebar web: entre Consultas y Chat.
 
 ---
 
@@ -468,7 +470,7 @@ fitOS/
 │       │   ├── index.ts          ← barrel export de tipos, zonas, utils, onboarding
 │       │   ├── anatomy/zones.ts  ← MUSCLE_ZONES, ZONE_LABELS, ANATOMY_VIEWBOX
 │       │   ├── onboarding/index.ts ← groupFieldsBySection, getEnabledSections
-│       │   ├── types/            ← health, routine, appointments, community, messages
+│       │   ├── types/            ← health, routine, appointments, community, messages, knowledge
 │       │   ├── data/days.ts
 │       │   └── utils/time.ts
 │       └── package.json          ← @fitos/shared
@@ -511,6 +513,9 @@ fitOS/
 │   │   │   │       │   ├── tickets/page.tsx         ← orquestador master-detail
 │   │   │   │       │   ├── tickets/useTicketsPage.ts
 │   │   │   │       │   ├── tickets/components/      ← types/shared/TicketList/TicketDetail
+│   │   │   │       │   ├── knowledge/page.tsx       ← orquestador CRUD artículos
+│   │   │   │       │   ├── knowledge/useKnowledgePage.ts
+│   │   │   │       │   ├── knowledge/components/    ← types/shared/ArticleList/ArticleEditor
 │   │   │   │       │   └── settings/page.tsx
 │   │   │   │       ├── client/
 │   │   │   │       │   ├── layout.tsx               ← ClientSidebar con badges
@@ -531,6 +536,9 @@ fitOS/
 │   │   │   │       │   ├── tickets/page.tsx         ← orquestador list/create/detail
 │   │   │   │       │   ├── tickets/useClientTicketsPage.ts
 │   │   │   │       │   ├── tickets/components/      ← types/shared/CreateTicketForm/TicketThread
+│   │   │   │       │   ├── knowledge/page.tsx       ← browse artículos + deep link ?article=
+│   │   │   │       │   ├── knowledge/useClientKnowledgePage.ts
+│   │   │   │       │   ├── knowledge/components/    ← types/shared/ArticleDetail
 │   │   │   │       │   └── chat/page.tsx            ← Realtime
 │   │   │   │       └── admin/
 │   │   │   │           └── dashboard/page.tsx       ← placeholder
@@ -569,7 +577,7 @@ fitOS/
 │       │   │   ├── DashboardScreen.tsx + CaloriesScreen.tsx
 │       │   │   ├── RoutineScreen.tsx + MealsScreen.tsx
 │       │   │   ├── ProgressScreen.tsx + ChatScreen.tsx
-│       │   │   ├── HealthScreen.tsx + AppointmentsScreen.tsx + TicketsScreen.tsx
+│       │   │   ├── HealthScreen.tsx + AppointmentsScreen.tsx + TicketsScreen.tsx + KnowledgeScreen.tsx
 │       │   └── widgets/
 │       │       ├── TodayWorkoutWidget.tsx       ← Android JSX (sin hooks)
 │       │       └── widget-task-handler.tsx
@@ -587,7 +595,8 @@ fitOS/
         ├── 035_community_read_status.sql
         ├── 036_add_gender_to_profiles.sql
         ├── 037_exercise_metrics.sql
-        └── 038_support_tickets.sql
+        ├── 038_support_tickets.sql
+        └── 039_knowledge_articles.sql
 ```
 
 ---
@@ -606,9 +615,10 @@ fitOS/
 | Fase 7 — Comunidad Premium | ✅ Completo | |
 | Code Quality + Permisos | ✅ Completo | Patrón C, fragmentación, RLS auditado |
 | `@fitos/theme` | ✅ Completo | paquete compartido, Metro watchFolders |
-| Mapa anatómico con imágenes reales | ✅ Completo | Migración 036 pendiente aplicar |
-| Fase 8 — Métricas ejercicio (SFR + Stress Index + Charts) | ✅ Completo | Migración 037 pendiente aplicar |
-| Fase 9 — Consultas/Tickets | ✅ Completo | Migración 038 pendiente aplicar |
+| Mapa anatómico con imágenes reales | ✅ Completo | Migración 036 aplicada |
+| Fase 8 — Métricas ejercicio (SFR + Stress Index + Charts) | ✅ Completo | Migración 037 aplicada |
+| Fase 9 — Consultas/Tickets | ✅ Completo | Migración 038 aplicada + política `trainer_replies_update_read` |
+| Fase 10 — Base de Conocimiento / FAQ | ✅ Completo | Migración 039 pendiente aplicar |
 | Gamificación | ❌ Sin UI | Tablas existen, falta interfaz |
 | Stripe + suscripciones | ❌ Sin implementar | |
 | Push notifications | ❌ Sin implementar | |
@@ -617,13 +627,8 @@ fitOS/
 
 | Config | Prioridad | Qué desbloquea |
 |--------|-----------|----------------|
-| Aplicar migración `030_appointments.sql` | 🔴 Alta | Tabla citas funcional |
-| Aplicar migración `031_health_logs.sql` | 🔴 Alta | Tabla lesiones funcional |
-| Aplicar migración `032_routine_templates.sql` | 🔴 Alta | Plantillas rutina |
-| Aplicar migración `033_saved_menu_templates.sql` | 🔴 Alta | Menús guardados |
-| Aplicar migración `036_add_gender_to_profiles.sql` | 🟡 Media | Campo género para mapa anatómico |
-| Aplicar migración `037_exercise_metrics.sql` | 🔴 Alta | Stress Index + SFR en weight_log |
-| Aplicar migración `038_support_tickets.sql` | 🔴 Alta | Sistema de consultas/tickets |
+| Ejecutar migración 039_knowledge_articles.sql | 🔴 Alta | Base de Conocimiento / FAQ (tabla + funciones + RLS + storage) |
+| Ejecutar política RLS `trainer_replies_update_read` | 🔴 Alta | Trainer pueda marcar replies de clientes como leídas |
 | `ANTHROPIC_API_KEY` en Supabase secrets | 🟠 Alta | Edge Functions IA (ahora mock) |
 | Verificar dominio en Resend + `RESEND_API_KEY` | 🟠 Alta | Emails confirmación citas |
 | OAuth 2.0 Google Calendar | 🟠 Alta | Sync citas → Google Calendar |

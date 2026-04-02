@@ -4,7 +4,7 @@ import { trainingReducer, initialState, type TrainingState } from "./useActiveTr
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function makeSet(completed = false) {
-  return { weight_kg: "60", reps_done: "10", rir: "2", completed };
+  return { weight_kg: "60", reps_done: "10", rir: "2", rpe: "", completed };
 }
 
 function stateWithSets(sets: Record<number, ReturnType<typeof makeSet>[]>): TrainingState {

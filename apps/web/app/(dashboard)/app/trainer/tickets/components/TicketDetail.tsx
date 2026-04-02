@@ -14,6 +14,7 @@ interface TicketDetailProps {
   onSendReply: () => void;
   onUpdateStatus: (ticketId: string, status: TicketStatus) => void;
   onBack: () => void;
+  onCreateArticle?: (ticket: SupportTicket) => void;
 }
 
 export const TicketDetail = memo(function TicketDetail({
@@ -26,6 +27,7 @@ export const TicketDetail = memo(function TicketDetail({
   onSendReply,
   onUpdateStatus,
   onBack,
+  onCreateArticle,
 }: TicketDetailProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -91,6 +93,14 @@ export const TicketDetail = memo(function TicketDetail({
               className="rounded-lg border border-[#FF9100]/20 bg-[#FF9100]/5 px-3 py-1.5 text-xs font-medium text-[#FF9100] transition-colors hover:bg-[#FF9100]/10"
             >
               Reabrir
+            </button>
+          )}
+          {ticket.status === "resolved" && onCreateArticle && (
+            <button
+              onClick={() => onCreateArticle(ticket)}
+              className="rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-3 py-1.5 text-xs font-medium text-[#7C3AED] transition-colors hover:bg-[#7C3AED]/10"
+            >
+              Convertir en artículo
             </button>
           )}
         </div>

@@ -1,12 +1,15 @@
 "use client";
 
 import { Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { useTicketsPage } from "./useTicketsPage";
 import { TicketList } from "./components/TicketList";
 import { TicketDetail } from "./components/TicketDetail";
 import { EmptyState } from "./components/shared";
+import type { SupportTicket } from "./components/types";
 
 function TicketsPageInner() {
+  const router = useRouter();
   const {
     state,
     dispatch,
@@ -16,6 +19,16 @@ function TicketsPageInner() {
     handleSendReply,
     handleUpdateStatus,
   } = useTicketsPage();
+
+  const handleCreateArticle = (ticket: SupportTicket) => {
+    // Navigate to knowledge page with ticket data as query params
+    const params = new URLSearchParams({
+      from_ticket: ticket.id,
+      title: ticket.subject,
+      category: ticket.category,
+    });
+    router.push(`/app/trainer/knowledge?${params.toString()}`);
+  };
 
   if (state.loading) {
     return (
@@ -73,6 +86,7 @@ function TicketsPageInner() {
               onSendReply={handleSendReply}
               onUpdateStatus={handleUpdateStatus}
               onBack={() => handleSelectTicket(null)}
+              onCreateArticle={handleCreateArticle}
             />
           ) : (
             <div className="flex flex-1 items-center justify-center">
