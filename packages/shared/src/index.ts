@@ -45,6 +45,12 @@ export type {
 } from "./types/tickets";
 export { TICKET_CATEGORIES, TICKET_STATUSES } from "./types/tickets";
 
+export type {
+  KnowledgeArticle,
+  KnowledgeCategory,
+} from "./types/knowledge";
+export { KNOWLEDGE_CATEGORIES } from "./types/knowledge";
+
 // Data
 export { DAY_KEYS, DAY_LABELS, DAY_SHORT } from "./data/days";
 export type { DayKey } from "./data/days";

@@ -23,21 +23,18 @@ export default function RegisterPage() {
   const validatePromoCode = useCallback(async (code: string) => {
     if (!code || code.length < 3) { setPromo({ valid: false, loading: false }); return; }
     setPromo(prev => ({ ...prev, loading: true }));
-    const supabase = createClient();
-    const { data, error: qErr } = await supabase
-      .from("trainer_promo_codes")
-      .select("id, trainer_id, code, is_active, max_uses, current_uses, expires_at")
-      .eq("code", code.toUpperCase().trim())
-      .eq("is_active", true)
-      .single();
-
-    if (qErr || !data) { setPromo({ valid: false, error: "Código no válido o inactivo", loading: false }); return; }
-    if (data.max_uses !== null && data.current_uses >= data.max_uses) { setPromo({ valid: false, error: "Este código ha alcanzado su límite de usos", loading: false }); return; }
-    if (data.expires_at && new Date(data.expires_at) < new Date()) { setPromo({ valid: false, error: "Este código ha expirado", loading: false }); return; }
-
-    const { data: profile, error: profileErr } = await supabase.from("profiles").select("full_name, business_name").eq("user_id", data.trainer_id).single();
-    if (profileErr) { console.error("[Register] Error al obtener perfil del entrenador:", profileErr); }
-    setPromo({ valid: true, trainer_name: profile?.business_name || profile?.full_name || "Entrenador", trainer_id: data.trainer_id, promo_code_id: data.id, loading: false });
+    try {
+      const res = await fetch("/api/validate-promo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const body = await res.json();
+      if (!body.valid) { setPromo({ valid: false, error: body.error || "Código no válido", loading: false }); return; }
+      setPromo({ valid: true, trainer_name: body.trainer_name, trainer_id: body.trainer_id, promo_code_id: body.promo_code_id, loading: false });
+    } catch {
+      setPromo({ valid: false, error: "Error al validar el código", loading: false });
+    }
   }, []);
 
   useEffect(() => {
@@ -71,25 +68,22 @@ export default function RegisterPage() {
     });
     if (authError) { setError(authError.message); setLoading(false); return; }
     if (authData.user) {
-      const { error: roleError } = await supabase.from("user_roles").insert({ user_id: authData.user.id, role });
-      if (roleError) {
-        console.error("[Register] Error al asignar rol:", roleError);
-        setError("Error al configurar tu cuenta. Intenta de nuevo.");
+      const res = await fetch("/api/complete-registration", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          client_id: authData.user.id,
+          role,
+          trainer_id: promo.trainer_id ?? null,
+          promo_code_id: promo.promo_code_id ?? null,
+          email,
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(body.error || "Error al configurar tu cuenta. Intenta de nuevo.");
         setLoading(false);
         return;
-      }
-      if (role === "client" && promo.trainer_id && promo.promo_code_id) {
-        const res = await fetch("/api/complete-registration", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ trainer_id: promo.trainer_id, client_id: authData.user.id, promo_code_id: promo.promo_code_id, email }),
-        });
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          setError(body.error || "Error al vincular con tu entrenador. Intenta de nuevo.");
-          setLoading(false);
-          return;
-        }
       }
     }
     if (role === "trainer") router.push("/onboarding/trainer");

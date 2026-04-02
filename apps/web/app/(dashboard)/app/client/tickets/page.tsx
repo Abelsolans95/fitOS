@@ -1,12 +1,14 @@
 "use client";
 
 import { Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { useClientTicketsPage } from "./useClientTicketsPage";
 import { CreateTicketForm } from "./components/CreateTicketForm";
 import { TicketThread } from "./components/TicketThread";
 import { CategoryBadge, StatusBadge, timeAgo } from "./components/shared";
 
 function TicketsPageInner() {
+  const router = useRouter();
   const {
     state,
     dispatch,
@@ -52,11 +54,13 @@ function TicketsPageInner() {
             subject={state.formSubject}
             description={state.formDescription}
             submitting={state.submitting}
+            trainerId={state.trainerId}
             onSetCategory={(c) => dispatch({ type: "SET_FORM_CATEGORY", payload: c })}
             onSetSubject={(v) => dispatch({ type: "SET_FORM_SUBJECT", payload: v })}
             onSetDescription={(v) => dispatch({ type: "SET_FORM_DESCRIPTION", payload: v })}
             onSubmit={handleCreateTicket}
             onCancel={() => dispatch({ type: "SET_VIEW", payload: "list" })}
+            onViewArticle={(id) => router.push(`/app/client/knowledge?article=${id}`)}
           />
         )}
 
