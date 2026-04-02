@@ -2,15 +2,15 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "./route";
 
 // ---------------------------------------------------------------------------
-// Mock @supabase/supabase-js (service_role client)
+// Mock @/lib/supabase-admin (service_role client)
 // ---------------------------------------------------------------------------
 
 const mockFrom = vi.fn();
 const mockRpc = vi.fn();
 const mockGetUserById = vi.fn();
 
-vi.mock("@supabase/supabase-js", () => ({
-  createClient: vi.fn(() => ({
+vi.mock("@/lib/supabase-admin", () => ({
+  createAdminClient: vi.fn(() => ({
     from: mockFrom,
     rpc: mockRpc,
     auth: {
@@ -235,8 +235,8 @@ describe("POST /api/complete-registration", () => {
     expect(json.success).toBe(true);
   });
 
-  // 9. Invalid JSON body → 500
-  it("returns 500 when request body is unparseable", async () => {
+  // 9. Invalid JSON body → 400 (handled by parseJsonBody)
+  it("returns 400 when request body is unparseable", async () => {
     const badRequest = {
       json: () => Promise.reject(new Error("invalid json")),
     } as unknown as Request;
@@ -244,7 +244,7 @@ describe("POST /api/complete-registration", () => {
     const res = await POST(badRequest as any);
     const json = await res.json();
 
-    expect(res.status).toBe(500);
-    expect(json.error).toBe("invalid json");
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("JSON inválido");
   });
 });

@@ -1,0 +1,28 @@
+// ─── Query limits ────────────────────────────────────────────────────────────
+// Centralized limits for Supabase queries. Change here to affect all queries.
+
+export const QUERY_LIMITS = {
+  /** Chat messages per conversation */
+  MESSAGES: 500,
+  /** Appointments per calendar view */
+  APPOINTMENTS: 200,
+  /** Community posts per feed load */
+  COMMUNITY_POSTS: 50,
+  /** Community comments per post batch */
+  COMMUNITY_COMMENTS: 500,
+  /** Weight log entries per exercise analytics */
+  WEIGHT_LOG: 200,
+  /** Weight log entries for full analytics */
+  WEIGHT_LOG_ANALYTICS: 500,
+  /** Body metrics history */
+  BODY_METRICS: 30,
+  /** Support tickets per inbox */
+  TICKETS: 200,
+  /** Ticket replies per thread */
+  TICKET_REPLIES: 200,
+  /** Knowledge articles per page */
+  KNOWLEDGE_ARTICLES: 100,
+  /** Food log — filtered by day, no hard limit needed */
+  /** Exercises per page in library browser */
+  EXERCISES_PAGE: 50,
+} as const;

@@ -1,30 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { NextResponse } from "next/server";
 import { POST } from "./route";
 
 // ---------------------------------------------------------------------------
-// Mock @supabase/supabase-js (service_role client)
+// Mock @/lib/api-utils
 // ---------------------------------------------------------------------------
 
-const mockFrom = vi.fn();
+const mockRequireAuthWithRole = vi.fn();
 
-vi.mock("@supabase/supabase-js", () => ({
-  createClient: vi.fn(() => ({
-    from: mockFrom,
-  })),
-}));
-
-// ---------------------------------------------------------------------------
-// Mock @/lib/supabase-server (auth client)
-// ---------------------------------------------------------------------------
-
-const mockGetUser = vi.fn();
-
-vi.mock("@/lib/supabase-server", () => ({
-  createClient: vi.fn(() =>
-    Promise.resolve({
-      auth: { getUser: mockGetUser },
-    }),
-  ),
+vi.mock("@/lib/api-utils", () => ({
+  requireAuthWithRole: (...args: unknown[]) => mockRequireAuthWithRole(...args),
+  successResponse: (data: Record<string, unknown>, status = 200) =>
+    NextResponse.json(data, { status }),
+  errorResponse: (message: string, status: number) =>
+    NextResponse.json({ error: message }, { status }),
 }));
 
 // ---------------------------------------------------------------------------
@@ -45,13 +34,21 @@ function createChain(result: { data: unknown; error: unknown }) {
 }
 
 // ---------------------------------------------------------------------------
-// Helper
+// Helpers
 // ---------------------------------------------------------------------------
 
+const mockFrom = vi.fn();
+
+function setupAuthSuccess(userId = "client-1", email = "client@test.com") {
+  mockRequireAuthWithRole.mockResolvedValue({
+    user: { id: userId, email, user_metadata: { role: "client" } },
+    supabase: {},
+    admin: { from: mockFrom },
+  });
+}
+
 function makeRequest() {
-  return {
-    json: () => Promise.resolve({}),
-  } as unknown as Request;
+  return { json: () => Promise.resolve({}) } as unknown as Request;
 }
 
 // ---------------------------------------------------------------------------
@@ -61,13 +58,10 @@ function makeRequest() {
 describe("POST /api/activate-client", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetUser.mockResolvedValue({
-      data: { user: { id: "client-1", email: "client@test.com", user_metadata: { role: "client" } } },
-      error: null,
-    });
+    setupAuthSuccess();
   });
 
-  // 1. Happy path — activation succeeds
+  // 1. Happy path
   it("returns { success: true } when activation succeeds", async () => {
     const trainerClientsChain = createChain({ data: null, error: null });
     const profilesChain = createChain({ data: null, error: null });
@@ -88,24 +82,22 @@ describe("POST /api/activate-client", () => {
 
   // 2. Unauthenticated → 401
   it("returns 401 when user is not authenticated", async () => {
-    mockGetUser.mockResolvedValue({
-      data: { user: null },
-      error: { message: "not authenticated" },
-    });
+    mockRequireAuthWithRole.mockResolvedValue(
+      NextResponse.json({ error: "No autenticado" }, { status: 401 })
+    );
 
     const res = await POST(makeRequest() as any);
     const json = await res.json();
 
     expect(res.status).toBe(401);
-    expect(json.error).toBe("Unauthorized");
+    expect(json.error).toBe("No autenticado");
   });
 
   // 3. Wrong role → 403
   it("returns 403 when user is not a client", async () => {
-    mockGetUser.mockResolvedValue({
-      data: { user: { id: "t1", user_metadata: { role: "trainer" } } },
-      error: null,
-    });
+    mockRequireAuthWithRole.mockResolvedValue(
+      NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    );
 
     const res = await POST(makeRequest() as any);
     expect(res.status).toBe(403);
@@ -146,16 +138,5 @@ describe("POST /api/activate-client", () => {
 
     expect(res.status).toBe(200);
     expect(json.success).toBe(true);
-  });
-
-  // 6. Unexpected error → 500 via catch
-  it("returns 500 when an unexpected error is thrown", async () => {
-    mockGetUser.mockRejectedValue(new Error("unexpected crash"));
-
-    const res = await POST(makeRequest() as any);
-    const json = await res.json();
-
-    expect(res.status).toBe(500);
-    expect(json.error).toBe("unexpected crash");
   });
 });

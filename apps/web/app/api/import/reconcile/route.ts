@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase-server";
+import { requireAuthWithRole, errorResponse } from "@/lib/api-utils";
 
 interface SimilarExerciseMatch {
   id: string;
@@ -9,25 +9,9 @@ interface SimilarExerciseMatch {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
-
-  // Verify trainer role
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("user_id", user.id)
-    .single();
-
-  if (profileError || profile?.role !== "trainer") {
-    return NextResponse.json({ error: "Solo entrenadores" }, { status: 403 });
-  }
+  const result = await requireAuthWithRole("trainer");
+  if (result instanceof NextResponse) return result;
+  const { user, supabase } = result;
 
   const body = await request.json();
   const { import_id, exercise_names } = body as {
@@ -36,10 +20,7 @@ export async function POST(request: NextRequest) {
   };
 
   if (!import_id || !exercise_names?.length) {
-    return NextResponse.json(
-      { error: "Faltan import_id o exercise_names" },
-      { status: 400 }
-    );
+    return errorResponse("Faltan import_id o exercise_names", 400);
   }
 
   // Search similar exercises for each name

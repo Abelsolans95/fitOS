@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase-admin";
 
 export async function POST(req: Request) {
   const { code } = await req.json().catch(() => ({ code: "" }));
@@ -8,10 +8,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ valid: false, error: "Codigo no valido" }, { status: 400 });
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const supabase = createAdminClient();
 
   const { data, error: qErr } = await supabase
     .from("trainer_promo_codes")

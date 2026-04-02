@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { exchangeCodeForTokens } from "@/lib/google-calendar";
-import { createClient } from "@/lib/supabase-server";
+import { requireAuth, requireDbRole, errorResponse } from "@/lib/api-utils";
 
 // GET /api/auth/google/callback — Recibe el código de Google y guarda los tokens
 export async function GET(request: Request) {
@@ -18,42 +18,20 @@ export async function GET(request: Request) {
     }
 
     if (!code) {
-      return NextResponse.json(
-        { error: "No authorization code received" },
-        { status: 400 }
-      );
+      return errorResponse("No authorization code received", 400);
     }
 
     // Intercambiar código por tokens
     const tokens = await exchangeCodeForTokens(code);
 
-    // Guardar tokens en el perfil del usuario (en Supabase)
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    // Verify authentication
+    const authResult = await requireAuth();
+    if (authResult instanceof NextResponse) return authResult;
+    const { user, supabase } = authResult;
 
-    if (!user) {
-      return NextResponse.json(
-        { error: "No autenticado" },
-        { status: 401 }
-      );
-    }
-
-    // Only trainers can connect Google Calendar
-    const { data: profile, error: profileErr } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("user_id", user.id)
-      .single();
-
-    if (profileErr || profile?.role !== "trainer") {
-      console.error("[GoogleOAuth] Role check failed:", profileErr?.message ?? `role=${profile?.role}`);
-      return NextResponse.json(
-        { error: "Solo los entrenadores pueden conectar Google Calendar" },
-        { status: 403 }
-      );
-    }
+    // Only trainers can connect Google Calendar (DB role check)
+    const dbResult = await requireDbRole(user.id, "trainer");
+    if (dbResult instanceof NextResponse) return dbResult;
 
     await supabase
       .from("profiles")
