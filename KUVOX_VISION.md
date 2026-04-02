@@ -49,25 +49,68 @@
 
 ## 4. Pagos con Stripe
 
-### Planes
-| Plan | Precio (orientativo) | Limite clientes | Features |
-|------|---------------------|-----------------|----------|
-| Starter | 19€/mes | 15 clientes | Core features |
-| Pro | 49€/mes | 75 clientes | + IA avanzada, community, analytics |
-| Elite | 99€/mes | Ilimitado | + marketplace, white-label, prioridad soporte |
+### Modelo: precio por cliente, todo incluido
 
-### Implementacion
-- Checkout session para suscripcion
+**Filosofia: "4,90€ por cliente. Todo incluido. Sin sorpresas."**
+
+No hay tiers, no hay add-ons, no hay features bloqueadas. Cada trainer paga por el numero de clientes activos que tenga. El precio baja a medida que crece.
+
+### Tabla de precios (escalonado)
+```
+Primeros 2 clientes:    GRATIS (sin limite de tiempo)
+3 - 25 clientes:        4,90€/cliente/mes
+26 - 75 clientes:       3,90€/cliente/mes
+76 - 150 clientes:      2,90€/cliente/mes
+150+:                   Contactar (precio custom)
+```
+
+### Ejemplos reales
+| Clientes activos | Coste mensual | % de facturacion (si cobra 150€/cliente) |
+|-----------------|---------------|------------------------------------------|
+| 2 | 0€ | 0% |
+| 10 | 39,20€ | 2.6% |
+| 25 | 112,70€ | 3% |
+| 50 | 210,20€ | 2.8% |
+| 100 | 356,70€ | 2.4% |
+
+### Que incluye (TODO, sin excepciones)
+- Gestion de clientes
+- Rutinas con progresion semanal y mesociclos
+- Planificacion nutricional
+- Chat en tiempo real
+- Citas y calendario
+- Comunidad privada
+- IA: generacion de rutinas, analisis de comida, foto de nevera, video buffet
+- Wearables (sueno, pasos, FC)
+- Contratos digitales
+- Consultas/tickets
+- App mobile para los clientes
+- Modo offline para clientes
+
+### Marketplace (unica excepcion)
+- Comision Kuvox: 15-20% por venta de rutinas
+- No es suscripcion, es porcentaje de lo que el trainer gana
+- Natural y esperado (modelo Amazon/Gumroad)
+
+### Por que NO add-ons
+- Add-ons generan desconfianza ("¿cuanto voy a acabar pagando?")
+- Los trainers comparan precio base y ignoran el coste real con add-ons
+- Todo incluido = transparencia = confianza = menos churn = mas recomendaciones
+
+### Implementacion tecnica (Stripe)
+- Stripe metered billing con graduated pricing (tiers escalonados)
+- Backend cuenta clientes activos por trainer mensualmente
+- Reporta usage a Stripe via API → Stripe calcula y cobra automaticamente
+- Checkout session para alta
 - Portal de facturacion (Stripe Customer Portal)
 - Webhooks para eventos (pago exitoso, fallo, cancelacion)
-- Enforcement real del trial de 14 dias (bloqueo UI si no paga)
-- UI en settings del trainer: plan actual, boton upgrade, historial de facturas
-- Comision sobre ventas del marketplace: 15-20%
+- UI en settings del trainer: clientes activos, coste actual, historial
 
 ### API Routes necesarias
 - `/api/stripe/checkout` — crear sesion de pago
 - `/api/stripe/webhook` — recibir eventos de Stripe
 - `/api/stripe/portal` — redirigir al portal de facturacion
+- `/api/stripe/usage` — reportar clientes activos
 
 ---
 
@@ -273,7 +316,75 @@ Apple Watch, Garmin (todos), Oura Ring, Samsung Galaxy Watch, Fitbit, Whoop, Pol
 
 ---
 
-## 12. Flywheel del negocio
+## 12. Modo offline (imprescindible)
+
+### El problema
+Los gimnasios tienen mala cobertura movil (sotanos, estructuras metalicas). Un cliente que no puede entrenar porque la app necesita internet = desinstala la app.
+
+### La solucion: local-first con WatermelonDB
+
+La app SIEMPRE lee de la base de datos local (SQLite via WatermelonDB). Nunca directamente de Supabase. La sincronizacion ocurre en background cuando hay conexion.
+
+### Flujo
+```
+CON INTERNET (wifi, casa, vestuario):
+  App sincroniza → descarga rutina del dia/semana → guarda en local
+
+SIN INTERNET (gimnasio, sotano, zona sin cobertura):
+  App lee de local → cliente entrena normal → guarda sets en local
+
+CUANDO VUELVE INTERNET (automatico):
+  App detecta conexion → sube todo a Supabase → trainer lo ve
+```
+
+### Que se almacena en local
+```
+Prioridad alta (imprescindible para entrenar offline):
+├── Rutina activa completa (ejercicios, series, config semanal)
+├── Sesion en curso (sets completados, pesos, reps, RPE, RIR)
+├── Valores de la sesion anterior (para placeholders)
+└── Timer de descanso
+
+Prioridad media (mejora la experiencia offline):
+├── Menu del dia (para consultar entre series)
+├── Historial reciente (ultimas 2-3 sesiones)
+└── Perfil del cliente (macros objetivo, preferencias)
+
+NO se almacena (requiere internet):
+├── Chat con trainer
+├── Comunidad
+├── IA (analisis de fotos, generacion)
+└── Citas y calendario
+```
+
+### Tecnologia: WatermelonDB
+- SQLite por debajo (rendimiento nativo)
+- API en JavaScript (no escribes SQL)
+- Sync engine built-in que resuelve conflictos automaticamente
+- Observables reactivos (UI se actualiza sola cuando cambian datos locales)
+- Lazy loading (no carga todo en memoria)
+
+### Resolucion de conflictos
+```
+Regla simple: la sesion en curso del cliente SIEMPRE gana.
+
+- Cliente empieza sesion offline con rutina v1
+- Trainer modifica rutina a v2
+- Cliente termina y sincroniza
+- Resultado: la sesion se guarda con los datos de v1
+- La PROXIMA sesion usara v2
+```
+
+### Impacto en la experiencia
+| Situacion | Sin offline | Con offline |
+|-----------|-------------|-------------|
+| Gym sin cobertura | App no carga, frustracion | Entrena normal |
+| Metro/avion | No puede ni consultar rutina | Ve su rutina, puede entrenar |
+| Wifi lento del gym | Spinners, timeouts | Instantaneo |
+
+---
+
+## 13. Flywheel del negocio
 
 ```
                     ┌─────────────────────────────┐
@@ -319,24 +430,25 @@ Apple Watch, Garmin (todos), Oura Ring, Samsung Galaxy Watch, Fitbit, Whoop, Pol
 
 ---
 
-## 13. Orden de ejecucion
+## 14. Orden de ejecucion
 
 | Fase | Que | Prioridad | Complejidad |
 |------|-----|-----------|-------------|
 | 1 | Bugfixes y estabilizacion | Critica | Baja-media |
 | 2 | Conectar APIs existentes (Anthropic, Google Calendar, Resend) | Critica | Baja (solo config) |
 | 3 | Login con Google + Apple | Alta | Media |
-| 4 | Stripe (pagos y suscripciones) | Alta | Alta |
-| 5 | Wearables (HealthKit + Health Connect) | Media | Media |
-| 6 | IA comida avanzada (foto nevera + video buffet) | Media | Media |
-| 7 | Gestion de contratos | Media | Media-alta |
-| 8 | Marketplace de rutinas + formato .kuvox | Media | Alta |
-| 9 | Outlook Calendar + Apple Calendar | Baja | Media-alta |
-| 10 | Rebrand FitOS → Kuvox | Cuando dominios listos | Media |
+| 4 | Stripe (pagos por cliente, metered billing) | Alta | Alta |
+| 5 | Modo offline (WatermelonDB + sync) | Alta | Alta |
+| 6 | Wearables (HealthKit + Health Connect) | Media | Media |
+| 7 | IA comida avanzada (foto nevera + video buffet) | Media | Media |
+| 8 | Gestion de contratos | Media | Media-alta |
+| 9 | Marketplace de rutinas + formato .kuvox | Media | Alta |
+| 10 | Outlook Calendar + Apple Calendar | Baja | Media-alta |
+| 11 | Rebrand FitOS → Kuvox | Cuando dominios listos | Media |
 
 ---
 
-## 14. Decisiones de negocio clave
+## 15. Decisiones de negocio clave
 
 | Decision | Resolucion |
 |----------|-----------|
@@ -348,10 +460,13 @@ Apple Watch, Garmin (todos), Oura Ring, Samsung Galaxy Watch, Fitbit, Whoop, Pol
 | Wearables: build vs buy? | Build (HealthKit + Health Connect). Gratis, cubre 95%+ |
 | IA comida: alcance | Foto nevera + video buffet → sugerencia contextualizada con macros |
 | Contratos: firma digital | Canvas signature + timestamp + IP. No firma electronica avanzada (fase futura) |
+| Pricing | Por cliente activo, todo incluido. 4,90€ (3-25), 3,90€ (26-75), 2,90€ (76-150). 2 gratis |
+| Add-ons | NO. Todo incluido en el precio. Unica excepcion: comision marketplace 15-20% |
+| Offline | Imprescindible. WatermelonDB (SQLite) local-first. Sync automatica |
 
 ---
 
-## 15. Competencia y diferenciacion
+## 16. Competencia y diferenciacion
 
 | Competidor | Que hace | Que NO hace (y Kuvox si) |
 |------------|----------|--------------------------|
@@ -366,6 +481,8 @@ Apple Watch, Garmin (todos), Oura Ring, Samsung Galaxy Watch, Fitbit, Whoop, Pol
 3. **Marketplace de rutinas** — trainers venden sin necesidad de gestionar clientes
 4. **Wearables integrados** — datos de sueno/pasos/FC que afectan las recomendaciones de entrenamiento
 5. **Formato .kuvox** — rutinas portables e importables con 1 click
+6. **Modo offline** — entrena sin internet, sincroniza despues. Ningun competidor en español lo tiene bien resuelto
+7. **Precio por cliente** — sin tiers confusos, paga por lo que usa, todo incluido
 
 ---
 
