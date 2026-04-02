@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
 import { AppSidebar, SidebarNavItem } from "./AppSidebar";
-import { createClient } from "@/lib/supabase";
+import { useSidebarBadges } from "@/hooks/useSidebarBadges";
 
 const CHAT_HREF = "/app/client/chat";
 
@@ -113,144 +111,16 @@ const BASE_NAV: Omit<SidebarNavItem, "badge">[] = [
 const COMMUNITY_HREF = "/app/client/community";
 
 export function ClientSidebar() {
-  const pathname = usePathname();
-  const [unread, setUnread] = useState(0);
-  const [communityUnread, setCommunityUnread] = useState(0);
-  const [ticketUnread, setTicketUnread] = useState(0);
-
-  useEffect(() => {
-    const supabase = createClient();
-    let trainerId = "";
-    let clientId = "";
-    let communityId = "";
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-
-    const fetchUnread = async () => {
-      const { count } = await supabase
-        .from("messages")
-        .select("id", { count: "exact", head: true })
-        .eq("trainer_id", trainerId)
-        .eq("client_id", clientId)
-        .eq("sender_id", trainerId)
-        .is("read_at", null);
-      setUnread(count ?? 0);
-    };
-
-    const fetchCommunityUnread = async () => {
-      if (!communityId) { setCommunityUnread(0); return; }
-
-      const { data: readStatus } = await supabase
-        .from("community_read_status")
-        .select("last_seen_at")
-        .eq("community_id", communityId)
-        .eq("user_id", clientId)
-        .single();
-
-      let query = supabase
-        .from("community_posts")
-        .select("id", { count: "exact", head: true })
-        .eq("community_id", communityId);
-
-      if (readStatus?.last_seen_at) {
-        query = query.gt("created_at", readStatus.last_seen_at);
-      }
-
-      const { count } = await query;
-      setCommunityUnread(count ?? 0);
-    };
-
-    const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      clientId = user.id;
-
-      const { data: rel } = await supabase
-        .from("trainer_clients")
-        .select("trainer_id")
-        .eq("client_id", user.id)
-        .eq("status", "active")
-        .single();
-      if (!rel) return;
-      trainerId = rel.trainer_id as string;
-
-      // Check if trainer has active community
-      const { data: comm } = await supabase
-        .from("communities")
-        .select("id")
-        .eq("coach_id", trainerId)
-        .eq("is_active", true)
-        .single();
-      if (comm) communityId = comm.id;
-
-      const fetchTicketUnread = async () => {
-        const { count, error } = await supabase
-          .from("ticket_replies")
-          .select("id", { count: "exact", head: true })
-          .neq("sender_id", clientId)
-          .is("read_at", null);
-        if (error) console.error("[ClientSidebar] Error counting unread replies:", error);
-        setTicketUnread(count ?? 0);
-      };
-
-      await Promise.all([fetchUnread(), fetchCommunityUnread(), fetchTicketUnread()]);
-
-      // Realtime: listen for new trainer messages + community posts + ticket replies
-      channel = supabase
-        .channel(`sidebar-unread-${clientId}`)
-        .on(
-          "postgres_changes",
-          { event: "INSERT", schema: "public", table: "messages", filter: `client_id=eq.${clientId}` },
-          (payload) => {
-            const msg = payload.new as { sender_id: string; read_at: string | null };
-            if (msg.sender_id === trainerId && !msg.read_at) {
-              setUnread((n) => n + 1);
-            }
-          }
-        )
-        .on(
-          "postgres_changes",
-          { event: "UPDATE", schema: "public", table: "messages", filter: `client_id=eq.${clientId}` },
-          () => { fetchUnread(); }
-        )
-        .on(
-          "postgres_changes",
-          { event: "INSERT", schema: "public", table: "community_posts" },
-          (payload) => {
-            if (communityId && payload.new.community_id === communityId && payload.new.author_id !== clientId) {
-              setCommunityUnread((n) => n + 1);
-            }
-          }
-        )
-        .on(
-          "postgres_changes",
-          { event: "INSERT", schema: "public", table: "ticket_replies" },
-          (payload) => {
-            const reply = payload.new as { sender_id: string };
-            if (reply.sender_id !== clientId) {
-              setTicketUnread((n) => n + 1);
-            }
-          }
-        )
-        .subscribe();
-    };
-
-    init();
-
-    return () => {
-      if (channel) supabase.removeChannel(channel);
-    };
-  }, []);
-
-  // Reset badges when entering pages
-  useEffect(() => {
-    if (pathname === CHAT_HREF) setUnread(0);
-    if (pathname === COMMUNITY_HREF) setCommunityUnread(0);
-    if (pathname === "/app/client/tickets") setTicketUnread(0);
-  }, [pathname]);
+  const { chatUnread, communityUnread, ticketUnread } = useSidebarBadges({
+    role: "client",
+    chatPath: CHAT_HREF,
+    communityPath: COMMUNITY_HREF,
+    ticketsPath: "/app/client/tickets",
+  });
 
   const navItems: SidebarNavItem[] = BASE_NAV.map((item) => {
-    if (item.href === CHAT_HREF && unread > 0)
-      return { ...item, badge: unread };
+    if (item.href === CHAT_HREF && chatUnread > 0)
+      return { ...item, badge: chatUnread };
     if (item.href === COMMUNITY_HREF && communityUnread > 0)
       return { ...item, badge: communityUnread };
     if (item.href === "/app/client/tickets" && ticketUnread > 0)
