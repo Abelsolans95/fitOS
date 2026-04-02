@@ -2,6 +2,7 @@
 
 import { useReducer, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
+import { QUERY_LIMITS } from "@/lib/constants";
 import { toast } from "sonner";
 import type { KnowledgeArticle, KnowledgeCategory } from "./components/types";
 
@@ -99,7 +100,7 @@ export function useClientKnowledgePage() {
         .eq("trainer_id", rel.trainer_id)
         .eq("is_published", true)
         .order("created_at", { ascending: false })
-        .limit(100);
+        .limit(QUERY_LIMITS.KNOWLEDGE_ARTICLES);
 
       if (error) {
         toast.error("Error al cargar artículos");

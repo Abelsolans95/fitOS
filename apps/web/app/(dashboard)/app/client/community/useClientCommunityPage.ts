@@ -2,6 +2,7 @@
 
 import { useReducer, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase";
+import { QUERY_LIMITS } from "@/lib/constants";
 import { toast } from "sonner";
 import type { Community, Post, Comment, CommunityTab } from "./components/types";
 
@@ -215,7 +216,7 @@ export function useClientCommunityPage() {
         .eq("community_id", comm.id)
         .order("is_pinned", { ascending: false })
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(QUERY_LIMITS.COMMUNITY_POSTS);
 
       if (postsErr) {
         toast.error("Error al cargar el feed");
@@ -241,17 +242,29 @@ export function useClientCommunityPage() {
 
       const profileMap = new Map(profilesRes.data?.map((p) => [p.user_id, p]) ?? []);
 
+      // Build lookup maps to avoid O(n*m) filtering
+      const likesPerPost = new Map<string, { count: number; userLiked: boolean }>();
+      for (const l of likesRes.data ?? []) {
+        const entry = likesPerPost.get(l.post_id) ?? { count: 0, userLiked: false };
+        entry.count++;
+        if (l.user_id === user.id) entry.userLiked = true;
+        likesPerPost.set(l.post_id, entry);
+      }
+      const commentsPerPost = new Map<string, number>();
+      for (const c of commentsRes.data ?? []) {
+        commentsPerPost.set(c.post_id, (commentsPerPost.get(c.post_id) ?? 0) + 1);
+      }
+
       const enriched: Post[] = rawPosts.map((p) => {
         const profile = profileMap.get(p.author_id);
-        const postLikes = likesRes.data?.filter((l) => l.post_id === p.id) ?? [];
-        const postComments = commentsRes.data?.filter((c) => c.post_id === p.id) ?? [];
+        const likeInfo = likesPerPost.get(p.id);
         return {
           ...p,
           author_name: profile?.role === "trainer" ? (profile.business_name ?? profile.full_name ?? "Coach") : (profile?.full_name ?? "Cliente"),
           author_role: (profile?.role ?? "client") as "trainer" | "client",
-          likes_count: postLikes.length,
-          comments_count: postComments.length,
-          user_has_liked: postLikes.some((l) => l.user_id === user.id),
+          likes_count: likeInfo?.count ?? 0,
+          comments_count: commentsPerPost.get(p.id) ?? 0,
+          user_has_liked: likeInfo?.userLiked ?? false,
         };
       });
 
@@ -353,7 +366,7 @@ export function useClientCommunityPage() {
       .select("id, post_id, parent_id, author_id, content, created_at")
       .eq("post_id", postId)
       .order("created_at", { ascending: true })
-      .limit(500);
+      .limit(QUERY_LIMITS.COMMUNITY_COMMENTS);
 
     if (error) { toast.error("Error al cargar comentarios"); console.error("[ClientCommunity] comments:", error); dispatch({ type: "SET_LOADING_COMMENTS", payload: { postId, loading: false } }); return; }
 
@@ -367,18 +380,27 @@ export function useClientCommunityPage() {
     ]);
 
     const profileMap = new Map((profilesRes.data ?? []).map((p) => [p.user_id, p]));
-    const commentLikes = commentLikesRes.data ?? [];
+
+    // Build lookup map for comment likes to avoid O(n*m)
+    const commentLikeMap = new Map<string, { count: number; coachLiked: boolean; userLiked: boolean }>();
+    for (const l of commentLikesRes.data ?? []) {
+      const entry = commentLikeMap.get(l.comment_id) ?? { count: 0, coachLiked: false, userLiked: false };
+      entry.count++;
+      if (l.is_coach) entry.coachLiked = true;
+      if (l.user_id === state.userId) entry.userLiked = true;
+      commentLikeMap.set(l.comment_id, entry);
+    }
 
     const enrichedFlat: Comment[] = allComments.map((c) => {
       const profile = profileMap.get(c.author_id);
-      const thisLikes = commentLikes.filter((l) => l.comment_id === c.id);
+      const likeInfo = commentLikeMap.get(c.id);
       return {
         ...c,
         author_name: profile?.role === "trainer" ? (profile.business_name ?? profile.full_name ?? "Coach") : (profile?.full_name ?? "Yo"),
         author_role: (profile?.role ?? "client") as "trainer" | "client",
-        likes_count: thisLikes.length,
-        coach_liked: thisLikes.some((l) => l.is_coach),
-        user_has_liked: thisLikes.some((l) => l.user_id === state.userId),
+        likes_count: likeInfo?.count ?? 0,
+        coach_liked: likeInfo?.coachLiked ?? false,
+        user_has_liked: likeInfo?.userLiked ?? false,
         replies: [],
       };
     });
