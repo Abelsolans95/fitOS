@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
     const { data: tc, error: tcErr } = await adminSupabase
       .from("trainer_clients")
-      .select("*")
+      .select("trainer_id, client_id, status")
       .eq("client_id", user.id);
 
     if (tcErr) {

@@ -51,7 +51,7 @@ function ClientDetailPageInner() {
           await Promise.all([
             supabase
               .from("profiles")
-              .select("user_id, full_name, email, goal, bio, height, weight, food_preferences, avatar_url")
+              .select("user_id, full_name, goal, bio, height, weight, food_preferences, avatar_url")
               .eq("user_id", clientId)
               .single(),
             supabase

@@ -903,7 +903,7 @@ export function useNutritionPage() {
         allUserIds.length > 0
           ? await supabase
               .from("profiles")
-              .select("user_id, full_name, email, food_preferences")
+              .select("user_id, full_name, food_preferences")
               .in("user_id", allUserIds)
           : { data: [], error: null };
 
@@ -931,7 +931,7 @@ export function useNutritionPage() {
         return {
           client_id,
           full_name: p?.full_name ?? null,
-          email: p?.email ?? null,
+          email: null,
           food_preferences: p?.food_preferences ?? null,
         };
       });

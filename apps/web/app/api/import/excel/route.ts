@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import Anthropic from "@anthropic-ai/sdk";
 import ExcelJS from "exceljs";
+import { validateExcelMagicBytes } from "@/lib/file-validation";
+import { uploadLimiter, getClientIdentifier } from "@/lib/rate-limit";
 
 /** Column detected by AI analysis */
 interface DetectedColumn {
@@ -58,6 +60,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Solo entrenadores" }, { status: 403 });
   }
 
+  // SECURITY: Rate limiting (10 uploads/min)
+  const { success: rateLimitOk } = uploadLimiter.check(getClientIdentifier(request, user.id));
+  if (!rateLimitOk) {
+    return NextResponse.json({ error: "Demasiadas subidas. Espera un momento." }, { status: 429 });
+  }
+
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
   const formData = await request.formData();
@@ -96,6 +104,14 @@ export async function POST(request: NextRequest) {
 
   // Parse Excel with ExcelJS
   const buffer = await file.arrayBuffer();
+
+  // SECURITY: Validate magic bytes to prevent disguised files
+  if (!validateExcelMagicBytes(buffer)) {
+    return NextResponse.json(
+      { error: "El archivo no es un Excel válido" },
+      { status: 400 }
+    );
+  }
   const workbook = new ExcelJS.Workbook();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await workbook.xlsx.load(buffer as any);

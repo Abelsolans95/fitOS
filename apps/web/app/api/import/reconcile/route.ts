@@ -96,6 +96,17 @@ export async function POST(request: NextRequest) {
     })
   );
 
+  // SECURITY: verify import belongs to this trainer before updating
+  const { data: importRec } = await supabase
+    .from("excel_imports")
+    .select("trainer_id")
+    .eq("id", import_id)
+    .single();
+
+  if (!importRec || importRec.trainer_id !== user.id) {
+    return NextResponse.json({ error: "Import no autorizado" }, { status: 403 });
+  }
+
   // Update import record status
   const { error: updateError } = await supabase
     .from("excel_imports")

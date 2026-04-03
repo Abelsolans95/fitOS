@@ -1,10 +1,23 @@
 import { TrainerSidebar } from "@/components/layout/TrainerSidebar";
+import { createClient } from "@/lib/supabase-server";
+import { redirect } from "next/navigation";
 
-export default function TrainerLayout({
+export default async function TrainerLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // SECURITY: Server-side role verification as defense-in-depth
+  // Middleware already checks role, but this prevents access if middleware is bypassed
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  if (user.user_metadata?.role !== "trainer") {
+    redirect("/app/client/dashboard");
+  }
+
   return (
     <div className="relative min-h-screen bg-[#0A0A0F] text-white">
       {/* ── Premium Ambient Background ── */}

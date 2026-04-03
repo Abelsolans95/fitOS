@@ -21,7 +21,8 @@ Este archivo contiene TODO lo necesario para continuar el desarrollo: reglas, cr
 - **Fase 8 (01/04/2026):** Métricas de ejercicio ✅ — Stress Index (auto-calculado), Ratio Estímulo-Fatiga (SFR, input cliente 1-5), RPE por serie (condicional, solo si trainer configura `target_rpe`), gráficas de progresión por ejercicio para el trainer. Columnas RIR/RPE dinámicas. Migración 037. Web + mobile. `recharts` para charts.
 - **Code Quality Review (30/03/2026):** Fragmentación completa ✅ — todas las páginas >300 líneas fragmentadas en `components/`. Error handling Patrón C aplicado ✅ — todas las queries con `error` destructurado. Performance ✅ — `select("*")` eliminados, `.limit()` en tablas crecientes, `Promise.all` para queries independientes. `React.memo` en componentes hoja.
 - **Auditoría de Permisos (30/03/2026):** Arquitectura de permisos verificada y corregida ✅ — middleware sólido, RLS correcto en 19 tablas, 3 fixes de seguridad aplicados, `AuthContext` mobile preparado para rol Admin.
-- **Auditoría de Seguridad OWASP (03/04/2026):** Pentesting completo ✅ — 16 vulnerabilidades identificadas y corregidas. Migración 040. RLS endurecido (trainer_clients validation en appointments/health_logs/workout_sessions). Protección anti role-escalation (trigger en auth.users). CHECK constraints en weight_log (stress_index ≤ 50000). Input validation bounds en useActiveTraining.ts. Auth añadido a /api/validate-promo. Validación de propiedad de promo code en /api/complete-registration. Incremento atómico vía DB function. Open redirect fix en OAuth Google. Storage buckets restringidos por carpeta. Next.js actualizado (5 CVEs parcheados). npm audit fix. Solo queda: xlsx sin fix (SheetJS abandonado, evaluar migración a exceljs).
+- **Auditoría de Seguridad OWASP Fase 1 (03/04/2026):** Pentesting completo ✅ — 16 vulnerabilidades identificadas y corregidas. Migración 040. RLS endurecido, anti role-escalation, CHECK constraints, Open redirect fix, Storage uploads restringidos. Next.js actualizado. xlsx→exceljs.
+- **Seguridad Fase 2 — Enterprise Grade (03/04/2026):** 15 puntos implementados ✅ — Security headers (CSP, HSTS, X-Frame-Options, Permissions-Policy) en `next.config.ts`. Rate limiting (`lib/rate-limit.ts`). Input sanitization (`lib/sanitize.ts`). CSRF protection (`lib/csrf.ts`). Structured logging (`lib/logger.ts`). Magic bytes validation (`lib/file-validation.ts`). PII eliminado de 5 queries (email ya no se envía al frontend innecesariamente). Storage SELECT policies restrictivas (ticket-images, knowledge-images validan ownership). Tabla `audit_logs` con función `log_audit_event()`. Ownership validation en import routes (service_role). Server Component layouts con verificación de rol. Toast error para session_id inválido. Migración 041.
 - **`@fitos/theme` (30/03/2026):** Paquete compartido creado ✅ — `packages/theme/src/index.ts` es la única fuente de verdad para colores, spacing y radius. Mobile re-exporta desde ahí. Script `npm run sync-theme` regenera el bloque `@theme` de `globals.css`. Metro `watchFolders` configurado.
 - **Mapa anatómico con imágenes reales (31/03/2026):** Reemplazo del mapa SVG puro por imágenes anatómicas reales con overlay SVG interactivo ✅ — 4 imágenes (hombre/mujer × frontal/posterior), zonas definidas en `packages/shared/src/anatomy/zones.ts`, campo `gender` añadido a `profiles` (migración 036), toggle de género en UI cliente. Web + mobile.
 - **Fase 9 (01/04/2026):** Sistema de Consultas/Tickets ✅ — Cliente envía dudas categorizadas (Nutrición, Rutina, Lesión, General) al trainer. Trainer gestiona inbox con filtros de estado/categoría/búsqueda, responde en hilo conversacional, y marca como resuelta. Realtime. Badges de no leídos en ambos sidebars. Migración 038. Web trainer + web cliente + mobile. Fix post-deploy (02/04): política RLS `trainer_replies_update_read` para permitir al trainer marcar replies de clientes como leídas; acciones de reducer `MARK_TICKET_READ` e `INCREMENT_UNREAD` para evitar stale closures; reset de badge en sidebar via `usePathname`.
@@ -411,6 +412,17 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 150. **SECURITY DEFINER functions DEBEN incluir `SET search_path`** — Toda función SQL con `SECURITY DEFINER` debe incluir `SET search_path = public` para prevenir ataques de search_path hijacking. Corregido en `increment_article_view()` y `prevent_role_change()` (migración 040).
 151. **`xlsx` (SheetJS) reemplazado por `exceljs`** — La community edition de SheetJS tenía Prototype Pollution y ReDoS sin parche. Migrado a `exceljs` (activamente mantenido, 0 vulnerabilidades). Archivos migrados: `lib/excel-parser.ts`, `app/api/import/excel/route.ts`, `lib/excel-parser.test.ts`. API equivalente: `new ExcelJS.Workbook()` + `workbook.xlsx.load(buffer)` + `worksheet.eachRow()`. `parseExcelBuffer()` ahora es `async` (retorna `Promise<ParseResult>`). Tests actualizados: `makeWorkbookBuffer()` usa `wb.xlsx.writeBuffer()` (async). La funcionalidad de import Excel para trainers no cambia.
 152. **No interpolar variables de usuario en filtros PostgREST** — En vez de `.or(\`field.eq.${userInput}\`)` con template literal, usar concatenación con `encodeURIComponent`: `.or("field.eq." + encodeURIComponent(value))`. Aunque PostgREST parametriza internamente, la interpolación directa es un anti-patrón que facilita errores si se replica con inputs no controlados.
+153. **Security headers obligatorios en `next.config.ts`** — CSP, X-Frame-Options (DENY), X-Content-Type-Options (nosniff), HSTS, Referrer-Policy, Permissions-Policy. Configurados en `async headers()`. CSP permite: self, unsafe-inline (Next.js lo necesita), Supabase domains, YouTube/Vimeo para embeds. `frame-ancestors 'none'` previene clickjacking. No modificar sin revisar impacto.
+154. **Rate limiting obligatorio en API routes sensibles** — `lib/rate-limit.ts` exporta `apiLimiter` (60/min), `authLimiter` (10/min), `uploadLimiter` (10/min). Uso: `const { success } = limiter.check(getClientIdentifier(req, userId)); if (!success) return 429;`. Aplicado en: `validate-promo`, `import/excel`. Aplicar en cualquier endpoint nuevo que acepte input del usuario o haga writes a DB.
+155. **Sanitizar TODOS los inputs de texto antes de guardar en DB** — `lib/sanitize.ts` exporta: `sanitizeText(input, maxLength)` para campos largos (notas, descripciones), `sanitizeName(input, maxLength)` para campos cortos (nombres, títulos), `sanitizeEmail(input)`. Strip HTML tags, null bytes, control characters. Aplicar en API routes y hooks de guardado. React auto-escapa en JSX, pero los datos podrían renderizarse fuera de React (emails, exports, webhooks).
+156. **CSRF validation en API routes de mutación** — `lib/csrf.ts` exporta `validateCsrf(request)`. Verifica header `Origin` o `Referer` contra whitelist. Aplicar en todo endpoint POST/PUT/DELETE. `NEXT_PUBLIC_APP_URL` en .env para producción. GET/HEAD/OPTIONS son exempt.
+157. **No enviar PII innecesario al frontend** — Los `.select()` de Supabase DEBEN incluir solo las columnas necesarias para la vista actual. `email` del cliente NO debe enviarse al frontend del trainer a menos que exista una sección de contacto explícita. `select("*")` está PROHIBIDO — usar columnas explícitas siempre. Corregido en: `trainer/clients`, `trainer/clients/[id]`, `trainer/nutrition`, `trainer/routines`, `api/client-trainer`.
+158. **Verificar magic bytes en file uploads** — `lib/file-validation.ts` exporta `validateImageMagicBytes(buffer)` y `validateExcelMagicBytes(buffer)`. Verificar ANTES de procesar el archivo. Un `.exe` renombrado a `.jpg` no pasará la validación de magic bytes. Aplicado en `api/import/excel`. Aplicar en cualquier endpoint de upload nuevo.
+159. **Structured logging con `lib/logger.ts`** — Exporta `logger.info()`, `logger.warn()`, `logger.error()`, `logger.security()`. Output JSON para parsing por log aggregators (Sentry, Datadog, Vercel Logs). Usar `logger.security()` para: intentos IDOR bloqueados, rate limits alcanzados, role escalation intentada, session_id inválido. Todos los `console.error` nuevos deben migrar a `logger.error()` progresivamente.
+160. **Tabla `audit_logs` para auditoría de acciones críticas** — Migración 041. Campos: `user_id`, `action`, `resource_type`, `resource_id`, `target_user_id`, `metadata` (JSONB), `ip_address`. Función `log_audit_event()` SECURITY DEFINER para inserción desde API routes. Acciones a loguear: acceso a datos de salud, modificación de rutina/menú, lesión grave reportada, login, cambio de perfil, import Excel. RLS: usuario solo lee sus propios logs.
+161. **Ownership validation obligatoria con service_role** — Toda API route que usa `supabaseAdmin` (service_role) y acepta un resource ID del request body DEBE verificar que el recurso pertenece al usuario autenticado ANTES de operar. `service_role` bypasea RLS — la validación explícita es la ÚNICA protección. Patrón: `const { data } = await supabaseAdmin.from("tabla").select("owner_field").eq("id", resourceId).single(); if (data?.owner !== user.id) return 403;`. Corregido en: `import/create-exercises`, `import/reconcile`.
+162. **Layouts de trainer/client son async Server Components con auth check** — `app/(dashboard)/app/trainer/layout.tsx` y `client/layout.tsx` verifican `supabase.auth.getUser()` + `user.user_metadata.role` y redirigen si no coincide. Esto es defense-in-depth sobre el middleware. Si el middleware es bypaseado (cache poisoning, CDN bug), los layouts bloquean el acceso.
+163. **Toast de error para resource IDs inválidos en URL params** — Si un `session_id`, `ticket_id`, `article_id` o similar viene de `searchParams` y la query devuelve vacío (RLS bloqueó o no existe), mostrar `toast.error("Recurso no encontrado")` en vez de fallar silenciosamente. El usuario debe saber que algo falló. Corregido en: `routine/active/page.tsx`.
 
 ---
 
@@ -574,7 +586,12 @@ fitOS/
 │   │   │   ├── excel-parser.ts + .test.ts
 │   │   │   ├── email-notifications.ts + .test.ts
 │   │   │   ├── google-calendar.ts + .test.ts
-│   │   │   └── onboarding-templates.ts  ← plantilla 5 secciones onboarding
+│   │   │   ├── onboarding-templates.ts  ← plantilla 5 secciones onboarding
+│   │   │   ├── sanitize.ts             ← stripHtml, sanitizeText, sanitizeName, sanitizeEmail
+│   │   │   ├── rate-limit.ts           ← createRateLimiter, apiLimiter, authLimiter, uploadLimiter
+│   │   │   ├── csrf.ts                 ← validateCsrf (Origin/Referer whitelist)
+│   │   │   ├── logger.ts              ← structured JSON logging (info/warn/error/security)
+│   │   │   └── file-validation.ts      ← validateImageMagicBytes, validateExcelMagicBytes
 │   │   ├── hooks/useChat.ts
 │   │   ├── middleware.ts
 │   │   └── vitest.config.ts
@@ -610,7 +627,8 @@ fitOS/
         ├── 037_exercise_metrics.sql
         ├── 038_support_tickets.sql
         ├── 039_knowledge_articles.sql
-        └── 040_security_hardening.sql
+        ├── 040_security_hardening.sql
+        └── 041_security_hardening_phase2.sql
 ```
 
 ---
@@ -633,7 +651,7 @@ fitOS/
 | Fase 8 — Métricas ejercicio (SFR + Stress Index + Charts) | ✅ Completo | Migración 037 aplicada |
 | Fase 9 — Consultas/Tickets | ✅ Completo | Migración 038 aplicada + política `trainer_replies_update_read` |
 | Fase 10 — Base de Conocimiento / FAQ | ✅ Completo | Migración 039 pendiente aplicar |
-| Auditoría Seguridad OWASP | ✅ Completo | Migración 040 aplicada. 16 vulns corregidas. xlsx→exceljs |
+| Auditoría Seguridad OWASP (Fase 1+2) | ✅ Completo | Migraciones 040+041. 16+15 vulns corregidas. Enterprise security |
 | Gamificación | ❌ Sin UI | Tablas existen, falta interfaz |
 | Stripe + suscripciones | ❌ Sin implementar | |
 | Push notifications | ❌ Sin implementar | |
@@ -644,6 +662,7 @@ fitOS/
 |--------|-----------|----------------|
 | Ejecutar migración 039_knowledge_articles.sql | 🔴 Alta | Base de Conocimiento / FAQ (tabla + funciones + RLS + storage) |
 | ~~Ejecutar migración 040_security_hardening.sql~~ | ✅ Aplicada | RLS endurecido, CHECK constraints, trigger anti-escalation, storage policies, atomic promo increment |
+| Ejecutar migración 041_security_hardening_phase2.sql | 🔴 Alta | Storage SELECT restrictivos, tabla audit_logs, función log_audit_event() |
 | Ejecutar política RLS `trainer_replies_update_read` | 🔴 Alta | Trainer pueda marcar replies de clientes como leídas |
 | `ANTHROPIC_API_KEY` en Supabase secrets | 🟠 Alta | Edge Functions IA (ahora mock) |
 | Verificar dominio en Resend + `RESEND_API_KEY` | 🟠 Alta | Emails confirmación citas |
@@ -807,3 +826,10 @@ supabase functions deploy analyze-onboarding-form
 | 74 | Storage | Buckets de imágenes sin restricción de carpeta | Cualquier usuario autenticado podía subir a cualquier carpeta en community-images/ticket-images/knowledge-images. Fix: política `(storage.foldername(name))[1] = auth.uid()::text`. Regla 149 |
 | 75 | DB | SECURITY DEFINER sin SET search_path | `increment_article_view()` corría con privilegios elevados sin fijar search_path. Vulnerable a search_path hijacking. Fix: añadido `SET search_path = public`. Regla 150 |
 | 76 | Deps | `xlsx` (SheetJS) abandonado con 2 CVEs sin fix | Prototype Pollution + ReDoS. Migrado a `exceljs`. `parseExcelBuffer()` ahora es async. Tests usan `wb.xlsx.writeBuffer()` en vez de `XLSX.write()`. Regla 151 |
+| 77 | Headers | Sin security headers en producción | `next.config.ts` estaba vacío. Sin CSP, X-Frame-Options, HSTS. Fix: security headers en `async headers()`. Regla 153 |
+| 78 | API | Sin rate limiting — brute force posible | Cualquier endpoint bombardeable sin límite. Fix: `lib/rate-limit.ts` con limiters pre-configurados. Regla 154 |
+| 79 | PII | Email del cliente enviado innecesariamente al frontend | 4 queries de trainer incluían `email` sin necesidad. Fix: eliminado de `.select()`. Regla 157 |
+| 80 | API | `select("*")` en client-trainer route | Enviaba todas las columnas de `trainer_clients` al frontend. Fix: `select("trainer_id, client_id, status")`. Regla 157 |
+| 81 | API | `import_id` no validado con service_role | `create-exercises` actualizaba `excel_imports` sin verificar ownership. service_role bypasea RLS. Fix: query de ownership antes de update. Regla 161 |
+| 82 | UX | `session_id` inválido en URL falla silenciosamente | Si RLS bloquea la query, el usuario no ve error. Fix: toast.error() cuando session_id no resuelve. Regla 163 |
+| 83 | Storage | SELECT policies de buckets demasiado permisivas | Cualquier usuario autenticado podía descargar cualquier imagen. Fix: validar ownership o trainer_clients relationship en SELECT. Migración 041 |

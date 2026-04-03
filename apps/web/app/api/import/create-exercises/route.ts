@@ -113,8 +113,18 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 3. Update import record
+  // 3. Update import record — SECURITY: verify ownership before using service_role
   if (import_id && decisions) {
+    const { data: importRec, error: importCheckErr } = await supabaseAdmin
+      .from("excel_imports")
+      .select("trainer_id")
+      .eq("id", import_id)
+      .single();
+
+    if (importCheckErr || !importRec || importRec.trainer_id !== user.id) {
+      return NextResponse.json({ error: "Import no autorizado" }, { status: 403 });
+    }
+
     await supabaseAdmin
       .from("excel_imports")
       .update({

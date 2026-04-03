@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase-server";
+import { authLimiter, getClientIdentifier } from "@/lib/rate-limit";
+import { validateCsrf } from "@/lib/csrf";
+import { sanitizeName } from "@/lib/sanitize";
 
 export async function POST(req: Request) {
+  // SECURITY: CSRF check
+  if (!validateCsrf(req)) {
+    return NextResponse.json({ valid: false, error: "Forbidden" }, { status: 403 });
+  }
+
   // SECURITY: Verify authentication before any DB access
   const supabaseAuth = await createServerClient();
   const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
@@ -10,9 +18,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ valid: false, error: "No autenticado" }, { status: 401 });
   }
 
-  const { code } = await req.json().catch(() => ({ code: "" }));
+  // SECURITY: Rate limiting (10 req/min for auth-adjacent endpoints)
+  const { success } = authLimiter.check(getClientIdentifier(req, user.id));
+  if (!success) {
+    return NextResponse.json({ valid: false, error: "Demasiadas peticiones. Espera un momento." }, { status: 429 });
+  }
 
-  if (!code || typeof code !== "string" || code.trim().length < 3) {
+  const { code } = await req.json().catch(() => ({ code: "" }));
+  // Sanitize input
+  const cleanCode = sanitizeName(typeof code === "string" ? code : "", 50);
+
+  if (!cleanCode || cleanCode.length < 3) {
     return NextResponse.json({ valid: false, error: "Codigo no valido" }, { status: 400 });
   }
 
@@ -24,7 +40,7 @@ export async function POST(req: Request) {
   const { data, error: qErr } = await supabase
     .from("trainer_promo_codes")
     .select("id, trainer_id, code, is_active, max_uses, current_uses, expires_at")
-    .eq("code", code.toUpperCase().trim())
+    .eq("code", cleanCode.toUpperCase())
     .eq("is_active", true)
     .single();
 
