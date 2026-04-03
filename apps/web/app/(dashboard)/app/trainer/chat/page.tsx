@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
+import { QUERY_LIMITS } from "@/lib/constants";
 
 interface ChatThread {
   client_id: string;
@@ -45,7 +46,7 @@ export default function TrainerChatPage() {
       .select("client_id, sender_id, content, read_at, created_at")
       .eq("trainer_id", user.id)
       .order("created_at", { ascending: false })
-      .limit(500);
+      .limit(QUERY_LIMITS.MESSAGES);
 
     if (msgErr) { console.error("[TrainerChat] Error cargando mensajes:", msgErr); setLoading(false); return; }
     if (!messages?.length) { setLoading(false); return; }
@@ -96,12 +97,19 @@ export default function TrainerChatPage() {
     fetchThreads();
 
     const supabase = createClient();
-    const channel = supabase
-      .channel("trainer-chat-list")
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, fetchThreads)
-      .subscribe();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
 
-    return () => { supabase.removeChannel(channel); };
+    const setupRealtime = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      channel = supabase
+        .channel("trainer-chat-list")
+        .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `trainer_id=eq.${user.id}` }, fetchThreads)
+        .subscribe();
+    };
+    setupRealtime();
+
+    return () => { if (channel) supabase.removeChannel(channel); };
   }, [fetchThreads]);
 
   const totalUnread = threads.reduce((sum, t) => sum + t.unread_count, 0);

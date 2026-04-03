@@ -81,7 +81,8 @@ export async function POST(request: NextRequest) {
   const { error: updateError } = await supabase
     .from("excel_imports")
     .update({ status: "mapped" })
-    .eq("id", import_id);
+    .eq("id", import_id)
+    .eq("trainer_id", user.id);
 
   if (updateError) {
     console.error("[import/reconcile] Error updating excel_imports:", updateError);

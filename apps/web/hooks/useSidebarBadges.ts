@@ -174,9 +174,9 @@ export function useSidebarBadges({
       if (role === "trainer") {
         channel = supabase
           .channel("trainer-sidebar-unread")
-          .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, fetchChatUnread)
-          .on("postgres_changes", { event: "INSERT", schema: "public", table: "community_posts" }, fetchCommunityUnread)
-          .on("postgres_changes", { event: "INSERT", schema: "public", table: "support_tickets" }, fetchTicketUnread)
+          .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `trainer_id=eq.${userId}` }, fetchChatUnread)
+          .on("postgres_changes", { event: "INSERT", schema: "public", table: "community_posts", ...(communityId ? { filter: `community_id=eq.${communityId}` } : {}) }, fetchCommunityUnread)
+          .on("postgres_changes", { event: "INSERT", schema: "public", table: "support_tickets", filter: `trainer_id=eq.${userId}` }, fetchTicketUnread)
           .on("postgres_changes", { event: "INSERT", schema: "public", table: "ticket_replies" }, fetchTicketUnread)
           .subscribe();
       } else {

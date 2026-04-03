@@ -49,10 +49,12 @@ export default function AppointmentsScreen() {
       if (!user) { setLoading(false); return; }
       setClientId(user.id);
 
-      const { data: rel, error: relErr } = await supabase
-        .from("trainer_clients").select("trainer_id")
-        .eq("client_id", user.id).eq("status", "active").single();
+      const [relRes, _] = await Promise.all([
+        supabase.from("trainer_clients").select("trainer_id").eq("client_id", user.id).eq("status", "active").single(),
+        fetchAppointments(),
+      ]);
 
+      const { data: rel, error: relErr } = relRes;
       if (relErr) {
         console.error("[AppointmentsScreen] Error cargando relación trainer:", relErr); // No bloqueante
       }
@@ -68,7 +70,6 @@ export default function AppointmentsScreen() {
         setTrainer(profile as TrainerInfo | null);
       }
 
-      await fetchAppointments();
       setLoading(false);
     };
     init();

@@ -229,7 +229,8 @@ IMPORTANTE:
       .single();
 
     if (insertError) {
-      return errorResponse("Error guardando importación: " + insertError.message, 500);
+      console.error("[import/excel] Error guardando importación:", insertError);
+      return errorResponse("Error guardando importación", 500);
     }
 
     return NextResponse.json({
