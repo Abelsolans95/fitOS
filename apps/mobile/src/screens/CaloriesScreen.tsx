@@ -112,7 +112,7 @@ export default function CaloriesScreen() {
       if (error) throw error;
 
       if (data && data.foods) {
-        await supabase.from("food_log").insert({
+        const { error: insertError } = await supabase.from("food_log").insert({
           client_id: user!.id,
           meal_type: selectedMealType,
           foods: data.foods,
@@ -123,6 +123,11 @@ export default function CaloriesScreen() {
           source: "ai_vision",
           ai_raw: data,
         });
+        if (insertError) {
+          console.error("[CaloriesScreen] Error guardando registro:", insertError);
+          Alert.alert("Error", "No se pudo guardar el registro de comida");
+          return;
+        }
 
         await loadTodayLogs();
         Alert.alert("Analizado", `${data.foods.length} alimentos detectados (${Math.round(data.total_kcal)} kcal)`);

@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     const dbResult = await requireDbRole(user.id, "trainer");
     if (dbResult instanceof NextResponse) return dbResult;
 
-    await supabase
+    const { error: updateError } = await supabase
       .from("profiles")
       .update({
         google_calendar_tokens: {
@@ -43,6 +43,14 @@ export async function GET(request: Request) {
         },
       })
       .eq("user_id", user.id);
+
+    if (updateError) {
+      console.error("[GoogleOAuth] Error saving tokens:", updateError);
+      const returnTo = state || "/app/client/calendar";
+      return NextResponse.redirect(
+        new URL(`${returnTo}?google_error=token_save_failed`, request.url)
+      );
+    }
 
     const returnTo = state || "/app/client/calendar";
     return NextResponse.redirect(

@@ -21,6 +21,11 @@ export async function POST(request: NextRequest) {
       return errorResponse("Missing required fields", 400);
     }
 
+    const validRoles = ["client", "trainer"];
+    if (!validRoles.includes(role)) {
+      return errorResponse("Rol no válido", 400);
+    }
+
     // Use service_role key to bypass RLS
     const supabase = createAdminClient();
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducer, useCallback, useEffect, useMemo, type Dispatch } from "react";
+import { useReducer, useCallback, useEffect, useMemo, useRef, type Dispatch } from "react";
 import { createClient } from "@/lib/supabase";
 import { toast } from "sonner";
 
@@ -319,18 +319,26 @@ export function useNutritionPage() {
 
   /* ── Sub-hooks (receive trainerId + reloadData once available) ── */
 
-  const foodLib = useFoodLibrary(pageState.trainerId, () => loadData());
+  const loadDataRef = useRef<() => Promise<void>>(async () => {});
+  const foodLib = useFoodLibrary(pageState.trainerId, () => loadDataRef.current());
   const hideCreator = useCallback(() => {
     pageDispatch({ type: "HIDE_CREATOR" });
   }, []);
+
+  // Refs to break circular dependency: loadData needs sub-hook methods,
+  // but sub-hooks receive () => loadData() as a callback.
+  const foodLibRef = useRef(foodLib);
+  foodLibRef.current = foodLib;
+  const menuCrRef = useRef<typeof menuCr>(null!);
 
   const menuCr = useMenuCreator(
     pageState.trainerId,
     pageState.clients,
     foodLib.state.foods,
-    () => loadData(),
+    () => loadDataRef.current(),
     hideCreator
   );
+  menuCrRef.current = menuCr;
 
   /* ── Load data ── */
 
@@ -437,13 +445,15 @@ export function useNutritionPage() {
         clients: normalizedClients,
       });
 
-      // Seed sub-hooks with initial data
-      foodLib.setInitialFoods((foodsRes.data as FoodItem[]) ?? []);
-      menuCr.setSavedMenus((savedMenusRes.data as SavedMenuTemplate[]) ?? []);
+      // Seed sub-hooks with initial data (via refs to avoid circular deps)
+      foodLibRef.current.setInitialFoods((foodsRes.data as FoodItem[]) ?? []);
+      menuCrRef.current.setSavedMenus((savedMenusRes.data as SavedMenuTemplate[]) ?? []);
     } catch {
       pageDispatch({ type: "SET_ERROR", error: "Error inesperado al cargar los datos." });
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
+
+  loadDataRef.current = loadData;
 
   useEffect(() => {
     loadData();

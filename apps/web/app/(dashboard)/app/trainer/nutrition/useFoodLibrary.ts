@@ -208,7 +208,7 @@ export function useFoodLibrary(trainerId: string, reloadData: () => void) {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [state.libSearch, trainerId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state.libSearch, trainerId, loadLibFoods]);
 
   /* ── Computed ── */
 

@@ -8,6 +8,13 @@ export async function POST(request: NextRequest) {
 
   const { exercises, linked, import_id, decisions } = await request.json();
 
+  if (exercises && !Array.isArray(exercises)) {
+    return NextResponse.json({ error: "exercises debe ser un array" }, { status: 400 });
+  }
+  if (import_id && typeof import_id !== "string") {
+    return NextResponse.json({ error: "import_id debe ser un string" }, { status: 400 });
+  }
+
   const created: { name: string; id: string }[] = [];
   const errors: { name: string; error: string }[] = [];
 
@@ -91,13 +98,16 @@ export async function POST(request: NextRequest) {
 
   // 3. Update import record
   if (import_id && decisions) {
-    await supabaseAdmin
+    const { error: importUpdateError } = await supabaseAdmin
       .from("excel_imports")
       .update({
         mapping_decisions: decisions,
         status: "imported",
       })
       .eq("id", import_id);
+    if (importUpdateError) {
+      console.error("[create-exercises] Error actualizando excel_imports:", importUpdateError);
+    }
   }
 
   return NextResponse.json({

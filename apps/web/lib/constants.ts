@@ -23,6 +23,10 @@ export const QUERY_LIMITS = {
   /** Knowledge articles per page */
   KNOWLEDGE_ARTICLES: 100,
   /** Food log — filtered by day, no hard limit needed */
+  /** Calendar entries per month (workout logs, food logs) */
+  CALENDAR_ENTRIES: 200,
+  /** Body metrics for calendar view */
+  CALENDAR_BODY_METRICS: 100,
   /** Exercises per page in library browser */
   EXERCISES_PAGE: 50,
 } as const;

@@ -74,9 +74,14 @@ export function buildCommentTree<T extends TreeComment & { replies: T[] }>(
 
   const roots: T[] = [];
   flatComments.forEach((c) => {
-    if (c.parent_id && map.has(c.parent_id)) {
-      const parent = map.get(c.parent_id)!;
-      parent.replies = [...parent.replies, c];
+    if (c.parent_id) {
+      const parent = map.get(c.parent_id);
+      if (parent) {
+        parent.replies = [...parent.replies, c];
+      } else {
+        // Parent was deleted but orphan comment remains — treat as root
+        roots.push(c);
+      }
     } else {
       roots.push(c);
     }

@@ -225,7 +225,7 @@ export function useSidebarBadges({
     return () => {
       if (channel) supabase.removeChannel(channel);
     };
-  }, [role]);
+  }, [role, chatPath, communityPath, ticketsPath]);
 
   return { chatUnread, communityUnread, ticketUnread };
 }

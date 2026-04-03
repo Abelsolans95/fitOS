@@ -162,7 +162,8 @@ export default function ChatScreen() {
   }, [messages.length]);
 
   useEffect(() => {
-    setTimeout(scrollToBottom, 100);
+    const timer = setTimeout(scrollToBottom, 100);
+    return () => clearTimeout(timer);
   }, [scrollToBottom]);
 
   const handleSend = async () => {
@@ -170,12 +171,16 @@ export default function ChatScreen() {
     if (!text || sending || !trainerId || !user) return;
     setSending(true);
     setInput("");
-    await supabase.from("messages").insert({
+    const { error: sendError } = await supabase.from("messages").insert({
       trainer_id: trainerId,
       client_id: user.id,
       sender_id: user.id,
       content: text,
     });
+    if (sendError) {
+      console.error("[ChatScreen] Error enviando mensaje:", sendError);
+      Alert.alert("Error", "No se pudo enviar el mensaje");
+    }
     setSending(false);
   };
 
