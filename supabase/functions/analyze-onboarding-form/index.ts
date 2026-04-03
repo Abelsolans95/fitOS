@@ -5,7 +5,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { authenticateRequest, validateBodySize, corsHeaders } from "../_shared/auth.ts";
+import { authenticateRequest, validateBodySize, sanitizeForPrompt, getCorsHeaders, corsHeaders } from "../_shared/auth.ts";
 
 /** Groups flat fields by section for structured prompt */
 function groupFieldsBySection(
@@ -52,9 +52,19 @@ serve(async (req: Request) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  const headers = getCorsHeaders(req);
+
   try {
     // SECURITY: Verify JWT and get authenticated user
     const { user, supabase } = await authenticateRequest(req);
+
+    // SECURITY: Only trainers can analyze onboarding forms
+    if (user.role !== "trainer") {
+      return new Response(
+        JSON.stringify({ error: "Solo entrenadores" }),
+        { status: 403, headers: { ...headers, "Content-Type": "application/json" } }
+      );
+    }
 
     // SECURITY: Limit body size
     const bodyText = await validateBodySize(req);
@@ -63,7 +73,30 @@ serve(async (req: Request) => {
     if (!client_id || !response_id) {
       return new Response(
         JSON.stringify({ error: "client_id and response_id are required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...headers, "Content-Type": "application/json" } }
+      );
+    }
+
+    // SECURITY: Validate types
+    if (typeof client_id !== "string" || typeof response_id !== "string") {
+      return new Response(
+        JSON.stringify({ error: "Parametros invalidos" }),
+        { status: 400, headers: { ...headers, "Content-Type": "application/json" } }
+      );
+    }
+
+    // SECURITY: Verify IDOR — trainer must manage this client
+    const { data: tcCheck } = await supabase
+      .from("trainer_clients")
+      .select("client_id")
+      .eq("trainer_id", user.id)
+      .eq("client_id", client_id)
+      .maybeSingle();
+
+    if (!tcCheck) {
+      return new Response(
+        JSON.stringify({ error: "Cliente no autorizado" }),
+        { status: 403, headers: { ...headers, "Content-Type": "application/json" } }
       );
     }
 
@@ -77,7 +110,7 @@ serve(async (req: Request) => {
     if (fetchError || !onboardingResponse) {
       return new Response(
         JSON.stringify({ error: "Respuesta de onboarding no encontrada" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 404, headers: { ...headers, "Content-Type": "application/json" } }
       );
     }
 
@@ -97,7 +130,7 @@ serve(async (req: Request) => {
           message: "Configura la API key de Anthropic para analisis con IA.",
           mock: true,
         }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { headers: { ...headers, "Content-Type": "application/json" } }
       );
     }
 
@@ -136,18 +169,25 @@ serve(async (req: Request) => {
       if (parts.length) foodPrefsStr = parts.join(". ");
     }
 
+    // SECURITY: Sanitize all user-controlled inputs before prompt interpolation
+    const safeName = sanitizeForPrompt(profile?.full_name || "No especificado", 100);
+    const safeGoal = sanitizeForPrompt(profile?.goal || "No especificado", 200);
+    const safeFoodPrefs = sanitizeForPrompt(foodPrefsStr, 500);
+    const safeTitle = sanitizeForPrompt(onboardingResponse.onboarding_forms?.title || "Onboarding", 200);
+    const safeQaContext = sanitizeForPrompt(qaContext, 8000);
+
     const prompt = `Eres un entrenador personal y nutricionista experto. Analiza las respuestas del formulario de onboarding de un nuevo cliente y proporciona un informe estructurado.
 
 **Datos del cliente:**
-- Nombre: ${profile?.full_name || "No especificado"}
-- Objetivo: ${profile?.goal || "No especificado"}
+- Nombre: ${safeName}
+- Objetivo: ${safeGoal}
 - Peso: ${profile?.weight || "No especificado"} kg
 - Altura: ${profile?.height || "No especificado"} cm
-- Preferencias alimenticias: ${foodPrefsStr}
+- Preferencias alimenticias: ${safeFoodPrefs}
 
-**Respuestas del formulario "${onboardingResponse.onboarding_forms?.title || "Onboarding"}":**
+**Respuestas del formulario "${safeTitle}":**
 
-${qaContext}
+${safeQaContext}
 
 **Analiza TODAS las secciones del formulario (historial medico, deportivo, experiencias, estado actual, objetivos y cualquier otra seccion presente). Genera un informe completo en JSON:**
 {
@@ -196,12 +236,13 @@ ${qaContext}
       .eq("id", response_id);
 
     return new Response(JSON.stringify(analysis), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...headers, "Content-Type": "application/json" },
     });
   } catch (error) {
+    if (error instanceof Response) throw error;
     return new Response(
-      JSON.stringify({ error: "Error al analizar el formulario", details: String(error) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: "Error al analizar el formulario" }),
+      { status: 500, headers: { ...headers, "Content-Type": "application/json" } }
     );
   }
 });

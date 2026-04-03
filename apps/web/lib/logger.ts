@@ -4,10 +4,12 @@
  * Outputs JSON-formatted logs for easy parsing by log aggregators
  * (Sentry, Datadog, Vercel Logs, etc.).
  *
+ * PII-sensitive keys are automatically redacted.
+ *
  * Usage:
  *   logger.info("User login", { userId: "abc", ip: "1.2.3.4" });
  *   logger.warn("Rate limit near", { userId: "abc", remaining: 2 });
- *   logger.error("DB query failed", { table: "profiles", error: err.message });
+ *   logger.error("DB query failed", { table: "profiles" });
  *   logger.security("IDOR attempt blocked", { userId: "abc", targetResource: "routine-xyz" });
  */
 
@@ -20,15 +22,48 @@ interface LogEntry {
   context?: Record<string, unknown>;
 }
 
+// Keys that should never appear in logs
+const SENSITIVE_KEYS = new Set([
+  "password", "passwd", "secret", "token", "apikey", "api_key",
+  "authorization", "cookie", "session", "credit_card", "ssn",
+  "access_token", "refresh_token", "private_key", "service_role",
+]);
+
+/** Redact sensitive fields from context objects (shallow + 1 level deep). */
+function redactSensitive(context: Record<string, unknown>): Record<string, unknown> {
+  const redacted: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(context)) {
+    if (SENSITIVE_KEYS.has(key.toLowerCase())) {
+      redacted[key] = "[REDACTED]";
+    } else if (value && typeof value === "object" && !Array.isArray(value)) {
+      // Redact one level deep
+      const nested: Record<string, unknown> = {};
+      for (const [nk, nv] of Object.entries(value as Record<string, unknown>)) {
+        nested[nk] = SENSITIVE_KEYS.has(nk.toLowerCase()) ? "[REDACTED]" : nv;
+      }
+      redacted[key] = nested;
+    } else {
+      redacted[key] = value;
+    }
+  }
+  return redacted;
+}
+
 function log(level: LogLevel, message: string, context?: Record<string, unknown>) {
   const entry: LogEntry = {
     level,
     message,
     timestamp: new Date().toISOString(),
-    ...(context ? { context } : {}),
+    ...(context ? { context: redactSensitive(context) } : {}),
   };
 
-  const output = JSON.stringify(entry);
+  // Safe stringify — handle circular references
+  let output: string;
+  try {
+    output = JSON.stringify(entry);
+  } catch {
+    output = JSON.stringify({ level, message, timestamp: entry.timestamp, context: "[serialization error]" });
+  }
 
   switch (level) {
     case "error":

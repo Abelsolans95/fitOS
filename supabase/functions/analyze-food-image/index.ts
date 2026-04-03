@@ -4,7 +4,7 @@
 // Body: { image_base64: string, meal_type?: string }
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { authenticateRequest, validateBodySize, sanitizeForPrompt, corsHeaders } from "../_shared/auth.ts";
+import { authenticateRequest, validateBodySize, sanitizeForPrompt, getCorsHeaders, corsHeaders } from "../_shared/auth.ts";
 
 interface FoodEstimate {
   name: string;
@@ -32,6 +32,8 @@ serve(async (req: Request) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  const headers = getCorsHeaders(req);
+
   try {
     // SECURITY: Authenticate user (was missing entirely before)
     await authenticateRequest(req);
@@ -43,7 +45,7 @@ serve(async (req: Request) => {
     if (!image_base64) {
       return new Response(
         JSON.stringify({ error: "image_base64 is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...headers, "Content-Type": "application/json" } }
       );
     }
 
@@ -51,7 +53,7 @@ serve(async (req: Request) => {
     if (image_base64.length > 7_000_000) {
       return new Response(
         JSON.stringify({ error: "Imagen demasiado grande (max 5MB)" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...headers, "Content-Type": "application/json" } }
       );
     }
 
@@ -99,7 +101,7 @@ serve(async (req: Request) => {
       };
 
       return new Response(JSON.stringify(mockResponse), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...headers, "Content-Type": "application/json" },
       });
     }
 
@@ -153,12 +155,13 @@ Responde SOLO con JSON válido (sin markdown):
     const parsed: AnalysisResponse = JSON.parse(textContent);
 
     return new Response(JSON.stringify(parsed), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...headers, "Content-Type": "application/json" },
     });
   } catch (error) {
+    if (error instanceof Response) throw error;
     return new Response(
       JSON.stringify({ error: "Error al analizar la imagen" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...headers, "Content-Type": "application/json" } }
     );
   }
 });

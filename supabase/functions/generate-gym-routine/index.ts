@@ -4,17 +4,26 @@
 // Body: { client_id, goal, duration_months, days_per_week, equipment?, level? }
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { authenticateRequest, validateBodySize, sanitizeForPrompt, corsHeaders } from "../_shared/auth.ts";
+import { authenticateRequest, validateBodySize, sanitizeForPrompt, getCorsHeaders, corsHeaders } from "../_shared/auth.ts";
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  const headers = getCorsHeaders(req);
+
   try {
     // SECURITY: Verify JWT and get authenticated user
     const { user, supabase } = await authenticateRequest(req);
+
+    // SECURITY: Only trainers can generate routines
+    if (user.role !== "trainer") {
+      return new Response(
+        JSON.stringify({ error: "Solo entrenadores" }),
+        { status: 403, headers: { ...headers, "Content-Type": "application/json" } }
+      );
+    }
 
     // SECURITY: Limit body size
     const bodyText = await validateBodySize(req);
@@ -24,23 +33,45 @@ serve(async (req: Request) => {
     if (!client_id || !goal) {
       return new Response(
         JSON.stringify({ error: "client_id and goal are required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...headers, "Content-Type": "application/json" } }
       );
     }
 
-    // Obtener perfil del cliente
+    // SECURITY: Validate types
+    if (typeof client_id !== "string" || typeof goal !== "string") {
+      return new Response(
+        JSON.stringify({ error: "Parametros invalidos" }),
+        { status: 400, headers: { ...headers, "Content-Type": "application/json" } }
+      );
+    }
+
+    // SECURITY: Verify IDOR — trainer must manage this client
+    const { data: tcCheck } = await supabase
+      .from("trainer_clients")
+      .select("client_id")
+      .eq("trainer_id", user.id)
+      .eq("client_id", client_id)
+      .maybeSingle();
+
+    if (!tcCheck) {
+      return new Response(
+        JSON.stringify({ error: "Cliente no autorizado" }),
+        { status: 403, headers: { ...headers, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Get client profile — correct column names (Rule 12)
     const { data: profile } = await supabase
       .from("profiles")
-      .select("full_name, goal, weight_kg, height_cm")
+      .select("full_name, goal, weight, height")
       .eq("user_id", client_id)
       .single();
 
-    // Obtener ejercicios disponibles
-    const { data: { user } } = await supabase.auth.getUser();
+    // Get available exercises — correct table name (Rule 21)
     const { data: exercises } = await supabase
-      .from("exercises")
-      .select("name, category, primary_muscles, equipment, difficulty")
-      .or(`trainer_id.eq.${user?.id},is_global.eq.true`)
+      .from("trainer_exercise_library")
+      .select("name, category")
+      .or("trainer_id.eq." + encodeURIComponent(user.id) + ",is_global.eq.true")
       .limit(100);
 
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
@@ -52,28 +83,36 @@ serve(async (req: Request) => {
           message: "Configura la API key de Anthropic para generar rutinas con IA.",
           mock: true,
         }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { headers: { ...headers, "Content-Type": "application/json" } }
       );
     }
 
-    const prompt = `Eres un entrenador personal certificado con especialización en ${goal}. Diseña una rutina de entrenamiento para:
+    // SECURITY: Sanitize all user-controlled inputs before prompt interpolation
+    const safeGoal = sanitizeForPrompt(goal, 200);
+    const safeLevel = sanitizeForPrompt(level || "intermedio", 100);
+    const safeEquipment = sanitizeForPrompt(equipment || "gimnasio completo", 200);
+    const safeName = sanitizeForPrompt(profile?.full_name || "Cliente", 100);
+    const safeDuration = Math.min(Math.max(Number(duration_months) || 3, 1), 24);
+    const safeDays = Math.min(Math.max(Number(days_per_week) || 4, 1), 7);
 
-Cliente: ${profile?.full_name || "Cliente"}
-Objetivo: ${goal}
-Nivel: ${level || "intermedio"}
-Peso: ${profile?.weight_kg || "no especificado"} kg
-Duración: ${duration_months || 3} meses
-Días por semana: ${days_per_week || 4}
-Equipamiento disponible: ${equipment || "gimnasio completo"}
+    const prompt = `Eres un entrenador personal certificado con especialización en ${safeGoal}. Diseña una rutina de entrenamiento para:
+
+Cliente: ${safeName}
+Objetivo: ${safeGoal}
+Nivel: ${safeLevel}
+Peso: ${profile?.weight || "no especificado"} kg
+Duración: ${safeDuration} meses
+Días por semana: ${safeDays}
+Equipamiento disponible: ${safeEquipment}
 
 Ejercicios disponibles:
-${exercises?.map((e) => `- ${e.name} (${e.category}, ${(e.primary_muscles || []).join(", ")})`).join("\n") || "Usar ejercicios estándar"}
+${exercises?.map((e) => `- ${e.name} (${e.category || "general"})`).join("\n") || "Usar ejercicios estándar"}
 
 Genera la rutina completa en JSON:
 {
   "title": "nombre de la rutina",
-  "goal": "${goal}",
-  "duration_months": ${duration_months || 3},
+  "goal": "${safeGoal}",
+  "duration_months": ${safeDuration},
   "days": {
     "lunes": {
       "focus": "grupo muscular principal",
@@ -107,12 +146,14 @@ Genera la rutina completa en JSON:
     const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { raw: textContent };
 
     return new Response(JSON.stringify(parsed), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...headers, "Content-Type": "application/json" },
     });
   } catch (error) {
+    // Don't leak error details — only if it's already a Response (from auth), rethrow
+    if (error instanceof Response) throw error;
     return new Response(
-      JSON.stringify({ error: "Error al generar la rutina", details: String(error) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: "Error al generar la rutina" }),
+      { status: 500, headers: { ...headers, "Content-Type": "application/json" } }
     );
   }
 });

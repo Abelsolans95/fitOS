@@ -1,15 +1,22 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import { getGoogleAuthUrl } from "@/lib/google-calendar";
+import { apiLimiter, getClientIdentifier } from "@/lib/rate-limit";
 
 // GET /api/auth/google — Redirige al flujo OAuth de Google (solo trainers)
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
+
+    // SECURITY: Rate limiting
+    const { success } = apiLimiter.check(getClientIdentifier(request, user.id));
+    if (!success) {
+      return NextResponse.json({ error: "Demasiadas peticiones" }, { status: 429 });
     }
 
     // Google Calendar sync is trainer-only
@@ -26,9 +33,9 @@ export async function GET(request: Request) {
 
     const authUrl = getGoogleAuthUrl(returnTo);
     return NextResponse.redirect(authUrl);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
-      { error: "Google Calendar no configurado. Añade NEXT_PUBLIC_GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET." },
+      { error: "Google Calendar no configurado" },
       { status: 500 }
     );
   }

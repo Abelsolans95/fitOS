@@ -18,8 +18,8 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      // Next.js requires unsafe-inline for styles and unsafe-eval for dev; in prod unsafe-eval is not needed but Next.js HMR uses it
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      // Next.js requires unsafe-inline for styles; unsafe-eval only for dev HMR
+      `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
       "style-src 'self' 'unsafe-inline'",
       // Allow images from Supabase storage, data URIs (inline SVG), and blob (community images)
       "img-src 'self' blob: data: https://*.supabase.co",

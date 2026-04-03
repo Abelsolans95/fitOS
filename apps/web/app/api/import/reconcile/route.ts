@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import { validateCsrf } from "@/lib/csrf";
+import { apiLimiter, getClientIdentifier } from "@/lib/rate-limit";
+
+const MAX_EXERCISE_NAMES = 200;
 
 interface SimilarExerciseMatch {
   id: string;
@@ -22,6 +25,12 @@ export async function POST(request: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  }
+
+  // SECURITY: Rate limiting
+  const { success } = apiLimiter.check(getClientIdentifier(request, user.id));
+  if (!success) {
+    return NextResponse.json({ error: "Demasiadas peticiones" }, { status: 429 });
   }
 
   // Verify trainer role
@@ -47,6 +56,10 @@ export async function POST(request: NextRequest) {
   }
   if (!Array.isArray(exercise_names) || exercise_names.length === 0) {
     return NextResponse.json({ error: "exercise_names debe ser un array no vacío" }, { status: 400 });
+  }
+  // SECURITY: Cap array size to prevent DoS via mass RPC calls
+  if (exercise_names.length > MAX_EXERCISE_NAMES) {
+    return NextResponse.json({ error: `Máximo ${MAX_EXERCISE_NAMES} ejercicios por reconciliación` }, { status: 400 });
   }
   if (exercise_names.some((n: unknown) => typeof n !== "string")) {
     return NextResponse.json({ error: "exercise_names debe contener solo strings" }, { status: 400 });

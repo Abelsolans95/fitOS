@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createAuthClient } from "@/lib/supabase-server";
 import { validateCsrf } from "@/lib/csrf";
+import { apiLimiter, getClientIdentifier } from "@/lib/rate-limit";
+import { sanitizeName } from "@/lib/sanitize";
 
 export async function POST(request: NextRequest) {
   // SECURITY: CSRF protection
@@ -17,6 +19,12 @@ export async function POST(request: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  }
+
+  // SECURITY: Rate limiting
+  const { success } = apiLimiter.check(getClientIdentifier(request, user.id));
+  if (!success) {
+    return NextResponse.json({ error: "Demasiadas peticiones" }, { status: 429 });
   }
 
   // Verify trainer role (use auth client — no need for admin yet)
@@ -48,15 +56,15 @@ export async function POST(request: NextRequest) {
         .from("trainer_exercise_library")
         .insert({
           trainer_id: user.id,
-          name: ex.name,
+          name: sanitizeName(ex.name, 200),
           is_global: false,
-          category: ex.category || null,
+          category: ex.category ? sanitizeName(ex.category, 100) : null,
         })
         .select("id, name")
         .single();
 
       if (error) {
-        errors.push({ name: ex.name, error: error.message });
+        errors.push({ name: ex.name, error: "Error al crear ejercicio" });
       } else if (data) {
         created.push({ name: data.name, id: data.id });
       }
@@ -69,7 +77,7 @@ export async function POST(request: NextRequest) {
   if (linked && Array.isArray(linked)) {
     for (const link of linked) {
       // link = { global_exercise_id, trainer_exercise_name }
-      const trainerName = link.trainer_exercise_name || "";
+      const trainerName = sanitizeName(link.trainer_exercise_name || "", 200);
 
       // Check if trainer already has a private exercise with this exact name
       const { data: existing } = await supabaseAdmin
@@ -112,7 +120,7 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (cloneErr) {
-        errors.push({ name: trainerName, error: cloneErr.message });
+        errors.push({ name: trainerName, error: "Error al enlazar ejercicio" });
       } else if (cloned) {
         linkedResults.push({ name: cloned.name, id: cloned.id });
       }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase-server";
 import { createClient } from "@supabase/supabase-js";
 import { validateCsrf } from "@/lib/csrf";
+import { apiLimiter, getClientIdentifier } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,6 +17,12 @@ export async function POST(request: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // SECURITY: Rate limiting
+    const { success } = apiLimiter.check(getClientIdentifier(request, user.id));
+    if (!success) {
+      return NextResponse.json({ error: "Demasiadas peticiones" }, { status: 429 });
     }
 
     // Only clients can activate themselves
@@ -54,9 +61,9 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Unexpected error" },
+      { error: "Error inesperado" },
       { status: 500 }
     );
   }

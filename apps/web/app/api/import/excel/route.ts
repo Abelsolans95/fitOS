@@ -287,8 +287,9 @@ IMPORTANTE:
       .single();
 
     if (insertError) {
+      console.error("[import/excel] Error guardando importación");
       return NextResponse.json(
-        { error: "Error guardando importación: " + insertError.message },
+        { error: "Error guardando importación" },
         { status: 500 }
       );
     }
@@ -305,11 +306,9 @@ IMPORTANTE:
         ...s.ai_analysis,
       })),
     });
-  } catch (err: unknown) {
-    const errorMessage =
-      err instanceof Error ? err.message : "Error desconocido";
+  } catch {
     return NextResponse.json(
-      { error: "Error al analizar con IA: " + errorMessage },
+      { error: "Error al procesar el archivo Excel" },
       { status: 500 }
     );
   }

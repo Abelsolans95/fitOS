@@ -4,17 +4,26 @@
 // Body: { client_id, target_kcal, meals_per_day, period, food_preferences?, restrictions? }
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { authenticateRequest, validateBodySize, sanitizeForPrompt, corsHeaders } from "../_shared/auth.ts";
+import { authenticateRequest, validateBodySize, sanitizeForPrompt, getCorsHeaders, corsHeaders } from "../_shared/auth.ts";
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  const headers = getCorsHeaders(req);
+
   try {
     // SECURITY: Verify JWT and get authenticated user
     const { user, supabase } = await authenticateRequest(req);
+
+    // SECURITY: Only trainers can generate meal plans
+    if (user.role !== "trainer") {
+      return new Response(
+        JSON.stringify({ error: "Solo entrenadores" }),
+        { status: 403, headers: { ...headers, "Content-Type": "application/json" } }
+      );
+    }
 
     // SECURITY: Limit body size
     const bodyText = await validateBodySize(req);
@@ -24,23 +33,45 @@ serve(async (req: Request) => {
     if (!client_id || !target_kcal) {
       return new Response(
         JSON.stringify({ error: "client_id and target_kcal are required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...headers, "Content-Type": "application/json" } }
       );
     }
 
-    // Obtener perfil del cliente
+    // SECURITY: Validate types
+    if (typeof client_id !== "string") {
+      return new Response(
+        JSON.stringify({ error: "Parametros invalidos" }),
+        { status: 400, headers: { ...headers, "Content-Type": "application/json" } }
+      );
+    }
+
+    // SECURITY: Verify IDOR — trainer must manage this client
+    const { data: tcCheck } = await supabase
+      .from("trainer_clients")
+      .select("client_id")
+      .eq("trainer_id", user.id)
+      .eq("client_id", client_id)
+      .maybeSingle();
+
+    if (!tcCheck) {
+      return new Response(
+        JSON.stringify({ error: "Cliente no autorizado" }),
+        { status: 403, headers: { ...headers, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Get client profile — correct column names (Rule 12)
     const { data: profile } = await supabase
       .from("profiles")
-      .select("full_name, goal, food_preferences, weight_kg, height_cm")
+      .select("full_name, goal, food_preferences, weight, height")
       .eq("user_id", client_id)
       .single();
 
-    // Obtener biblioteca de alimentos del entrenador
-    const { data: { user } } = await supabase.auth.getUser();
+    // Get trainer's food library
     const { data: foods } = await supabase
       .from("trainer_food_library")
       .select("name, kcal, protein, carbs, fat, fiber, category")
-      .or(`trainer_id.eq.${user?.id},is_global.eq.true`)
+      .or("trainer_id.eq." + encodeURIComponent(user.id) + ",is_global.eq.true")
       .limit(100);
 
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
@@ -52,20 +83,32 @@ serve(async (req: Request) => {
           message: "Configura la API key de Anthropic para generar menús con IA.",
           mock: true,
         }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { headers: { ...headers, "Content-Type": "application/json" } }
       );
     }
 
+    // SECURITY: Sanitize all user-controlled inputs before prompt interpolation
+    const safeName = sanitizeForPrompt(profile?.full_name || "Cliente", 100);
+    const safeGoal = sanitizeForPrompt(profile?.goal || "mantenimiento", 200);
+    const safePreferences = sanitizeForPrompt(
+      food_preferences || (typeof profile?.food_preferences === "string" ? profile.food_preferences : "") || "ninguna especificada",
+      500
+    );
+    const safeRestrictions = sanitizeForPrompt(restrictions || "ninguna", 500);
+    const safeKcal = Math.min(Math.max(Number(target_kcal) || 2000, 500), 10000);
+    const safeMeals = Math.min(Math.max(Number(meals_per_day) || 4, 1), 8);
+    const safePeriod = sanitizeForPrompt(period || "semanal", 50);
+
     const prompt = `Eres un nutricionista deportivo experto. Genera un plan de comidas para:
 
-Cliente: ${profile?.full_name || "Cliente"}
-Objetivo: ${profile?.goal || "mantenimiento"}
-Peso: ${profile?.weight_kg || "no especificado"} kg
-Preferencias alimenticias: ${food_preferences || profile?.food_preferences || "ninguna especificada"}
-Restricciones: ${restrictions || "ninguna"}
-Calorías objetivo: ${target_kcal} kcal/día
-Comidas por día: ${meals_per_day || 4}
-Periodo: ${period || "semanal"}
+Cliente: ${safeName}
+Objetivo: ${safeGoal}
+Peso: ${profile?.weight || "no especificado"} kg
+Preferencias alimenticias: ${safePreferences}
+Restricciones: ${safeRestrictions}
+Calorías objetivo: ${safeKcal} kcal/día
+Comidas por día: ${safeMeals}
+Periodo: ${safePeriod}
 
 Alimentos disponibles en biblioteca:
 ${foods?.map((f) => `- ${f.name} (${f.kcal} kcal, P:${f.protein}g C:${f.carbs}g G:${f.fat}g)`).join("\n") || "Usar alimentos genéricos"}
@@ -106,17 +149,17 @@ Genera un plan completo en JSON:
     const result = await response.json();
     const textContent = result.content?.[0]?.text || "{}";
 
-    // Intentar parsear JSON de la respuesta
     const jsonMatch = textContent.match(/\{[\s\S]*\}/);
     const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { raw: textContent };
 
     return new Response(JSON.stringify(parsed), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...headers, "Content-Type": "application/json" },
     });
   } catch (error) {
+    if (error instanceof Response) throw error;
     return new Response(
-      JSON.stringify({ error: "Error al generar el menú", details: String(error) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: "Error al generar el menú" }),
+      { status: 500, headers: { ...headers, "Content-Type": "application/json" } }
     );
   }
 });

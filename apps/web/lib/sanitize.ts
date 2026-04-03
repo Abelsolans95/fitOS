@@ -8,9 +8,16 @@
  * - SQL-like patterns that could confuse PostgREST filters
  */
 
-/** Strip all HTML tags from a string. Returns plain text. */
+/** Strip all HTML tags from a string. Loops until stable to prevent nested tag bypass. */
 export function stripHtml(input: string): string {
-  return input.replace(/<[^>]*>/g, "");
+  let result = input;
+  let prev = "";
+  // Loop until no more tags are found (prevents `<<b>script>` bypass)
+  while (prev !== result) {
+    prev = result;
+    result = result.replace(/<[^>]*>/g, "");
+  }
+  return result;
 }
 
 /**

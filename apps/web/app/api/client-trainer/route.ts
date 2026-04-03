@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createBrowserClient } from "@/lib/supabase-server";
+import { apiLimiter, getClientIdentifier } from "@/lib/rate-limit";
 
 /**
  * GET /api/client-trainer
@@ -17,8 +18,13 @@ export async function GET(request: NextRequest) {
     } = await serverSupabase.auth.getUser();
 
     if (authErr || !user) {
-      console.error("[client-trainer] Auth error:", authErr?.message);
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
+
+    // SECURITY: Rate limiting
+    const { success } = apiLimiter.check(getClientIdentifier(request, user.id));
+    if (!success) {
+      return NextResponse.json({ error: "Demasiadas peticiones" }, { status: 429 });
     }
 
     // Only clients can query their linked trainer
@@ -38,7 +44,7 @@ export async function GET(request: NextRequest) {
       .eq("client_id", user.id);
 
     if (tcErr) {
-      console.error("[client-trainer] Error al buscar trainer_clients:", tcErr);
+      console.error("[client-trainer] Error al buscar trainer_clients");
       return NextResponse.json(
         { error: "Error al buscar el entrenador vinculado" },
         { status: 500 }
@@ -62,16 +68,16 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (profileErr) {
-      console.error("[client-trainer] Error al obtener perfil del entrenador:", profileErr);
+      console.error("[client-trainer] Error al obtener perfil del entrenador");
     }
 
     return NextResponse.json({
       trainer_id: trainerRow.trainer_id,
       full_name: profile?.business_name || profile?.full_name || "Tu entrenador",
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Error inesperado" },
+      { error: "Error inesperado" },
       { status: 500 }
     );
   }
