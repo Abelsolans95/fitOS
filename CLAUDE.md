@@ -29,6 +29,7 @@ Este archivo contiene TODO lo necesario para continuar el desarrollo: reglas, cr
 - **Auditoría completa (02/04/2026):** Bugs críticos corregidos ✅ — Race condition promo codes (RPC atómico, migración 040), URLs hardcodeadas (env var NEXT_PUBLIC_BASE_URL), Sentry PII desactivado, error handling mobile. Seguridad: validate-promo status codes, Google OAuth role check, sanitización de errores. Performance: .limit(500) en community_comments, Promise.all en tickets. TypeScript: 40+ `any` eliminados en web+mobile. UX: confirmación two-step en deletes de comunidad y alimentos. Tests: 126 tests, 13 archivos, todos pasando.
 - **Code Quality Audit v2 (03/04/2026):** Refactor de arquitectura ✅ — API routes centralizadas (`lib/api-utils.ts`, `lib/supabase-admin.ts`), `QUERY_LIMITS` centralizados (`lib/constants.ts`), sidebar badges extraídos a `useSidebarBadges` hook, community tree utils compartidos (`lib/community-utils.ts`), `timeAgo` centralizado en `lib/utils.ts`, `calculateStressIndex` movido a `@fitos/shared`, `useNutritionPage` dividido en 3 hooks (`useFoodLibrary` + `useMenuCreator` + orquestador), cache TTL en resolvers (`lib/query-cache.ts`), `React.memo` en componentes lista, FlatList optimizados en mobile. 132 tests, 14 archivos, todos pasando.
 - **Code Quality Audit v3 (03/04/2026):** Bugs + seguridad + leaks ✅ — food-resolver hidden fix, OAuth callback error handling, community orphan crash fix, middleware null role, role enum validation, mobile insert error handling, setTimeout cleanup, hook deps fixes (3 eslint-disables eliminados), `any` types eliminados en excel-parser. Tests: 179 tests, 17 archivos, todos pasando.
+- **Audit v4 — Seguridad + Rendimiento + Deuda técnica (03/04/2026):** Seguridad: CORS Edge Functions restrictivo, IDOR fix en reconcile, sanitización errores DB, select("*") eliminado. Rendimiento: filtros trainer_id en Realtime subscriptions, Promise.all en mobile, useMemo en dashboard. Deuda: 9 paquetes/servicios vacíos eliminados, 7 `.limit()` hardcoded → QUERY_LIMITS, 5 `getInitials` + 2 `formatTime` centralizados. 179 tests, 17 archivos, todos pasando.
 
 ---
 
@@ -474,6 +475,24 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 
 170. **`QUERY_LIMITS` para TODA query con `.limit()`** — Ningún `.limit(N)` hardcodeado permitido. Siempre importar de `@/lib/constants`. Si no existe la constante, crearla primero. Constantes añadidas: `CALENDAR_ENTRIES: 200`, `CALENDAR_BODY_METRICS: 100`.
 
+### Reglas de calidad de código (Audit v4, 03/04/2026)
+
+171. **Edge Functions CORS: nunca `Access-Control-Allow-Origin: "*"`** — Usar `Deno.env.get("ALLOWED_ORIGIN") ?? "https://fit-os-web.vercel.app"`. Configurar `ALLOWED_ORIGIN` en Supabase secrets para cada entorno. Un wildcard permite que cualquier web haga requests autenticados en nombre de usuarios logueados.
+
+172. **Realtime subscriptions SIEMPRE con filtro** — Todo `.on("postgres_changes", { ... })` DEBE incluir `filter: "trainer_id=eq.${userId}"` o equivalente. Sin filtro, la suscripción recibe eventos de TODOS los usuarios del sistema, multiplicando carga innecesariamente. Bug encontrado: `useSidebarBadges`, `trainer/chat`, `useTicketsPage` escuchaban todas las filas.
+
+173. **IDOR check obligatorio en updates a tablas compartidas** — Cuando una API route hace `.update().eq("id", bodyId)`, SIEMPRE añadir `.eq("trainer_id", user.id)` o `.eq("client_id", user.id)`. Sin este check, un usuario puede modificar registros de otros. Bug encontrado: `import/reconcile` actualizaba `excel_imports` sin verificar pertenencia.
+
+174. **Nunca concatenar errores de DB en respuestas HTTP** — En API routes, `insertError.message` o `error.message` van SOLO a `console.error`. La respuesta al cliente debe ser un mensaje genérico en español. Bug encontrado: `import/excel` exponía detalles de esquema.
+
+175. **Paquetes monorepo vacíos = eliminar** — Si un paquete en `packages/` o `services/` no tiene código, imports ni tests, eliminarlo. No mantener "placeholders para el futuro". Si se necesita después, se crea. Eliminados: `@fitos/ui`, `@fitos/auth`, `@fitos/ai`, `@fitos/validations`, `@fitos/stripe`, `@fitos/db`, 3 services.
+
+176. **Utility functions: una sola definición en `lib/utils.ts`** — `getInitials`, `formatChatTime`, `formatChatListTime`, `timeAgo` viven en `@/lib/utils`. No redefinir localmente. Si un módulo necesita re-exportar (ej: `shared.tsx`), usar `export { fn } from "@/lib/utils"`.
+
+177. **`useMemo` para arrays estáticos en componentes** — Arrays de configuración (kpiCards, quickActions, tabs) que se crean en cada render deben envolverse en `useMemo`. Si son constantes puras sin deps, moverlos fuera del componente.
+
+178. **Dependencias circulares entre hooks: extraer tipos a archivo separado** — Si `hookA.ts` importa de `hookB.ts` y viceversa, extraer tipos/constantes/helpers compartidos a un archivo `types.ts` o `*-types.ts`. Los hooks importan de ahí. Bug encontrado: `useNutritionPage` ↔ `useMenuCreator` ↔ `useFoodLibrary` causaba "Cannot access 'm' before initialization" en Vercel.
+
 ---
 
 ## Regla de mantenimiento — obligatoria
@@ -884,3 +903,11 @@ supabase functions deploy analyze-onboarding-form
 | 72 | Mobile | setTimeout sin cleanup en useEffect | Todo setTimeout/setInterval DEBE tener clearTimeout/clearInterval en cleanup |
 | 73 | Mobile | insert/update sin error handling en ChatScreen y CaloriesScreen | Toda mutación Supabase en mobile → destructurar error + Alert.alert |
 | 74 | Hooks | eslint-disable en dependency arrays ocultaba stale closures | Prohibido eslint-disable en deps. Usar useRef para romper ciclos |
+| 75 | Security | Edge Functions con CORS `"*"` permitía requests desde cualquier origen | Usar env var `ALLOWED_ORIGIN` con fallback al dominio de producción |
+| 76 | Security | `import/reconcile` actualizaba imports de otros trainers | Añadir `.eq("trainer_id", user.id)` en todo update a tablas compartidas |
+| 77 | API | Error de DB expuesto al cliente en import/excel | Solo `console.error` los detalles — respuesta genérica al usuario |
+| 78 | Perf | Realtime subscriptions sin filtro escuchaban todo el sistema | Siempre añadir `filter: "trainer_id=eq.${id}"` en `.on()` |
+| 79 | Perf | Dashboard recreaba arrays en cada render | Envolver arrays estáticos en `useMemo` |
+| 80 | Deuda | 9 paquetes/servicios vacíos en el monorepo | Eliminar placeholders sin código — crearlos cuando se necesiten |
+| 81 | Deuda | `getInitials` definida 5 veces, `formatTime` 3 veces | Una sola definición en `lib/utils.ts`, importar desde ahí |
+| 82 | Build | Dependencia circular entre hooks causaba "Cannot access 'm'" en Vercel | Extraer tipos compartidos a archivo separado (`nutrition-types.ts`) |
