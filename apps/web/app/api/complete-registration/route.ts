@@ -37,6 +37,33 @@ export async function POST(request: NextRequest) {
 
     // For clients: link to trainer + update promo
     if (role === "client" && trainer_id && promo_code_id) {
+      // SECURITY: Verify trainer exists and has role "trainer"
+      const { data: trainerProfile, error: trainerErr } = await supabase
+        .from("profiles")
+        .select("user_id, role")
+        .eq("user_id", trainer_id)
+        .eq("role", "trainer")
+        .single();
+
+      if (trainerErr || !trainerProfile) {
+        console.error("[complete-registration] Invalid trainer:", trainerErr?.message);
+        return NextResponse.json({ error: "Entrenador no valido" }, { status: 400 });
+      }
+
+      // SECURITY: Verify promo code belongs to the specified trainer
+      const { data: promoCode, error: promoErr } = await supabase
+        .from("trainer_promo_codes")
+        .select("id, trainer_id, is_active")
+        .eq("id", promo_code_id)
+        .eq("trainer_id", trainer_id)
+        .eq("is_active", true)
+        .single();
+
+      if (promoErr || !promoCode) {
+        console.error("[complete-registration] Promo code mismatch:", promoErr?.message);
+        return NextResponse.json({ error: "Codigo promo no valido para este entrenador" }, { status: 400 });
+      }
+
       const { error: tcError } = await supabase.from("trainer_clients").insert({
         trainer_id,
         client_id,
@@ -46,7 +73,7 @@ export async function POST(request: NextRequest) {
 
       if (tcError) {
         console.error("[complete-registration] Insert error:", tcError);
-        return NextResponse.json({ error: tcError.message }, { status: 500 });
+        return NextResponse.json({ error: "Error al vincular con entrenador" }, { status: 500 });
       }
 
       // Store email in profile
@@ -61,27 +88,16 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Increment promo code current_uses
-      const { data: currentCode, error: promoSelectError } = await supabase
-        .from("trainer_promo_codes")
-        .select("current_uses")
-        .eq("id", promo_code_id)
-        .single();
+      // SECURITY: Atomic increment of promo code usage (prevents race condition)
+      const { data: incrementResult, error: incrementErr } = await supabase
+        .rpc("increment_promo_code_usage", { p_promo_code_id: promo_code_id });
 
-      if (promoSelectError) {
-        console.error("[complete-registration] Promo code select error:", promoSelectError);
-        // No bloqueante
-      }
-
-      if (currentCode) {
-        const { error: promoUpdateError } = await supabase
-          .from("trainer_promo_codes")
-          .update({ current_uses: currentCode.current_uses + 1 })
-          .eq("id", promo_code_id);
-        if (promoUpdateError) {
-          console.error("[complete-registration] Promo code update error:", promoUpdateError);
-          // No bloqueante
-        }
+      if (incrementErr) {
+        console.error("[complete-registration] Promo increment error:", incrementErr);
+        // No bloqueante — client is already linked
+      } else if (incrementResult === false) {
+        console.warn("[complete-registration] Promo code limit reached or expired:", promo_code_id);
+        // No bloqueante — client is already linked, but log for monitoring
       }
     }
 

@@ -18,7 +18,11 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const returnTo = searchParams.get("returnTo") || "/app/trainer/appointments";
+    const rawReturnTo = searchParams.get("returnTo") || "/app/trainer/appointments";
+
+    // SECURITY: Whitelist redirect URLs to prevent open redirect
+    const ALLOWED_RETURNS = ["/app/client/calendar", "/app/trainer/appointments", "/app/trainer/settings"];
+    const returnTo = ALLOWED_RETURNS.includes(rawReturnTo) ? rawReturnTo : "/app/trainer/appointments";
 
     const authUrl = getGoogleAuthUrl(returnTo);
     return NextResponse.redirect(authUrl);

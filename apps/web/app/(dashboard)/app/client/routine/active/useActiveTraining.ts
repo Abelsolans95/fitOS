@@ -232,6 +232,24 @@ export function trainingReducer(
 }
 
 /* ────────────────────────────────────────────
+   Validation constants (must match DB CHECK constraints)
+   ──────────────────────────────────────────── */
+
+const MAX_WEIGHT_KG = 1000;
+const MAX_REPS = 200;
+const MAX_STRESS_INDEX = 50000;
+const MIN_STIMULUS = 1;
+const MAX_STIMULUS = 5;
+const MIN_FATIGUE = 1;
+const MAX_FATIGUE = 5;
+
+/** Clamp a numeric value within bounds, returning 0 if invalid */
+function clampPositive(val: number, max: number): number {
+  if (!Number.isFinite(val) || val < 0) return 0;
+  return Math.min(val, max);
+}
+
+/* ────────────────────────────────────────────
    Stress Index calculation
    ──────────────────────────────────────────── */
 
@@ -387,12 +405,13 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
 
       const sets = setsOverride || state.allSets[exIdx] || [];
       const today = new Date().toISOString().split("T")[0];
+      // SECURITY: Clamp values to prevent manipulation via intercepted requests
       const setsData = sets.map((s, i) => ({
         set_number: i + 1,
-        weight_kg: Number(s.weight_kg) || 0,
-        reps_done: Number(s.reps_done) || 0,
-        rir: Number(s.rir) || 0,
-        rpe: Number(s.rpe) || 0,
+        weight_kg: clampPositive(Number(s.weight_kg) || 0, MAX_WEIGHT_KG),
+        reps_done: clampPositive(Number(s.reps_done) || 0, MAX_REPS),
+        rir: clampPositive(Number(s.rir) || 0, 10),
+        rpe: clampPositive(Number(s.rpe) || 0, 10),
         type: i < (ex.sets || 3) ? "main" : "rest_pause",
         completed: s.completed,
       }));
@@ -404,9 +423,14 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
       // Compute average RPE from per-set values
       const rpeValues = setsData.filter((s) => s.rpe > 0 && s.completed).map((s) => s.rpe);
       const exerciseRpeVal = rpeValues.length > 0 ? Math.round(rpeValues.reduce((a, b) => a + b, 0) / rpeValues.length) : null;
-      const stimulusVal = state.exerciseStimulus[exIdx] ?? null;
-      const fatigueVal = state.exerciseFatigue[exIdx] ?? null;
-      const stressIndex = calculateStressIndex(setsData);
+      // SECURITY: Validate stimulus/fatigue within allowed range (DB has CHECK 1-5)
+      const rawStimulus = state.exerciseStimulus[exIdx] ?? null;
+      const rawFatigue = state.exerciseFatigue[exIdx] ?? null;
+      const stimulusVal = rawStimulus !== null && rawStimulus >= MIN_STIMULUS && rawStimulus <= MAX_STIMULUS ? rawStimulus : null;
+      const fatigueVal = rawFatigue !== null && rawFatigue >= MIN_FATIGUE && rawFatigue <= MAX_FATIGUE ? rawFatigue : null;
+      // SECURITY: Cap stress index to DB constraint limit (50000)
+      const rawStressIndex = calculateStressIndex(setsData);
+      const stressIndex = Math.min(rawStressIndex, MAX_STRESS_INDEX);
 
       const supabase = createClient();
 

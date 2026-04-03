@@ -2,6 +2,18 @@ import { NextResponse } from "next/server";
 import { exchangeCodeForTokens } from "@/lib/google-calendar";
 import { createClient } from "@/lib/supabase-server";
 
+// SECURITY: Whitelist of allowed redirect URLs to prevent open redirect attacks
+const ALLOWED_RETURN_URLS = [
+  "/app/client/calendar",
+  "/app/trainer/appointments",
+  "/app/trainer/settings",
+];
+
+function sanitizeReturnUrl(state: string | null): string {
+  if (state && ALLOWED_RETURN_URLS.includes(state)) return state;
+  return "/app/trainer/appointments";
+}
+
 // GET /api/auth/google/callback — Recibe el código de Google y guarda los tokens
 export async function GET(request: Request) {
   try {
@@ -11,7 +23,7 @@ export async function GET(request: Request) {
     const error = searchParams.get("error");
 
     if (error) {
-      const returnTo = state || "/app/client/calendar";
+      const returnTo = sanitizeReturnUrl(state);
       return NextResponse.redirect(
         new URL(`${returnTo}?google_error=${error}`, request.url)
       );
@@ -46,7 +58,7 @@ export async function GET(request: Request) {
         .eq("user_id", user.id);
     }
 
-    const returnTo = state || "/app/client/calendar";
+    const returnTo = sanitizeReturnUrl(state);
     return NextResponse.redirect(
       new URL(`${returnTo}?google_connected=true`, request.url)
     );

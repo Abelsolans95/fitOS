@@ -59,7 +59,7 @@ export async function getResolvedFoods(
     supabase
       .from("trainer_food_library")
       .select("id,name,kcal,protein,carbs,fat,fiber,is_global,trainer_id")
-      .or(`is_global.eq.true,trainer_id.eq.${trainerId}`)
+      .or("is_global.eq.true,trainer_id.eq." + encodeURIComponent(trainerId))
       .order("name"),
     supabase
       .from("trainer_food_overrides")

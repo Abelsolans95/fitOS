@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient } from "@/lib/supabase-server";
 
 export async function POST(req: Request) {
+  // SECURITY: Verify authentication before any DB access
+  const supabaseAuth = await createServerClient();
+  const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+  if (authError || !user) {
+    return NextResponse.json({ valid: false, error: "No autenticado" }, { status: 401 });
+  }
+
   const { code } = await req.json().catch(() => ({ code: "" }));
 
   if (!code || typeof code !== "string" || code.trim().length < 3) {
