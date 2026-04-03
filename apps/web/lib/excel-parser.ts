@@ -434,12 +434,25 @@ export function applyColumnMapping(
     notes?: string;
   }[];
 } {
-  const exercises: any[] = [];
+  interface ParsedExerciseEntry {
+    row_index: number;
+    name?: string;
+    sets?: number;
+    reps?: string;
+    weight_kg?: number;
+    rir?: number;
+    rpe?: number;
+    rest_seconds?: number;
+    day_label?: string;
+    week_number?: number;
+    notes?: string;
+  }
+  const exercises: (ParsedExerciseEntry & { name: string })[] = [];
   const headers = sheet.columns.map((c) => c.header || `col_${c.index}`);
 
   for (let rowIdx = 0; rowIdx < sheet.rows.length; rowIdx++) {
     const row = sheet.rows[rowIdx];
-    const entry: any = { row_index: rowIdx };
+    const entry: ParsedExerciseEntry = { row_index: rowIdx };
 
     for (const [colIdxStr, colType] of Object.entries(mapping)) {
       const colIdx = parseInt(colIdxStr);
@@ -484,7 +497,7 @@ export function applyColumnMapping(
 
     // Only include rows that have at least an exercise name
     if (entry.name) {
-      exercises.push(entry);
+      exercises.push(entry as ParsedExerciseEntry & { name: string });
     }
   }
 
