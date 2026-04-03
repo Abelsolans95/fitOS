@@ -750,9 +750,9 @@ fitOS/
 | `@fitos/theme` | ✅ Completo | paquete compartido, Metro watchFolders |
 | Mapa anatómico con imágenes reales | ✅ Completo | Migración 036 aplicada |
 | Fase 8 — Métricas ejercicio (SFR + Stress Index + Charts) | ✅ Completo | Migración 037 aplicada |
-| Fase 9 — Consultas/Tickets | ✅ Completo | Migración 038 aplicada + política `trainer_replies_update_read` |
-| Fase 10 — Base de Conocimiento / FAQ | ✅ Completo | Migración 039 pendiente aplicar |
-| Auditoría completa (bugs + seguridad + TS + UX + perf) | ✅ Completo | 126 tests pasando, migración 040 pendiente aplicar |
+| Fase 9 — Consultas/Tickets | ✅ Completo | Migración 038 aplicada + política `trainer_replies_update_read` aplicada |
+| Fase 10 — Base de Conocimiento / FAQ | ✅ Completo | Migración 039 aplicada |
+| Auditoría completa (bugs + seguridad + TS + UX + perf) | ✅ Completo | 126 tests, migración 040 aplicada |
 | Code Quality Audit v2 (refactor arquitectura) | ✅ Completo | 132 tests, API utils, cache, hooks compartidos, React.memo |
 | Code Quality Audit v3 (bugs + seguridad + leaks) | ✅ Completo | 179 tests, 4 bugs, 2 security, 3 leaks, 3 hook deps, 47 tests nuevos |
 | Audit v4 (seguridad + rendimiento + deuda) | ✅ Completo | CORS, IDOR, open redirect, 14 subcomponentes, ESLint mobile |
@@ -765,9 +765,6 @@ fitOS/
 
 | Config | Prioridad | Qué desbloquea |
 |--------|-----------|----------------|
-| Ejecutar migración 039_knowledge_articles.sql | 🔴 Alta | Base de Conocimiento / FAQ (tabla + funciones + RLS + storage) |
-| Ejecutar migración 040_atomic_promo_increment.sql | 🔴 Alta | Race condition fix en promo codes (RPC atómico) |
-| Ejecutar política RLS `trainer_replies_update_read` | 🔴 Alta | Trainer pueda marcar replies de clientes como leídas |
 | `ANTHROPIC_API_KEY` en Supabase secrets | 🟠 Alta | Edge Functions IA (ahora mock) |
 | Verificar dominio en Resend + `RESEND_API_KEY` | 🟠 Alta | Emails confirmación citas |
 | OAuth 2.0 Google Calendar | 🟠 Alta | Sync citas → Google Calendar |
