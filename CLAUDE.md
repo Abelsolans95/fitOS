@@ -409,7 +409,7 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 148. **Validación de bounds en cliente ANTES del upsert** — `useActiveTraining.ts` valida: weight_kg ≤ 1000, reps ≤ 200, stress_index ≤ 50000, stimulus/fatigue 1-5. Usar `clampPositive()` para sanear valores. La validación de cliente es UX (feedback inmediato); la validación de DB (CHECK) es seguridad (última defensa). Ambas son necesarias.
 149. **Storage buckets: uploads restringidos a carpeta del usuario** — Las políticas de INSERT en `storage.objects` para `community-images`, `ticket-images` y `knowledge-images` verifican `(storage.foldername(name))[1] = auth.uid()::text`. Impide que un usuario suba archivos a la carpeta de otro. Al subir imágenes desde el frontend, usar path `${userId}/filename.ext`.
 150. **SECURITY DEFINER functions DEBEN incluir `SET search_path`** — Toda función SQL con `SECURITY DEFINER` debe incluir `SET search_path = public` para prevenir ataques de search_path hijacking. Corregido en `increment_article_view()` y `prevent_role_change()` (migración 040).
-151. **`xlsx` (SheetJS) tiene vulnerabilidades sin fix** — La community edition está abandonada. Prototype Pollution (GHSA-4r6h-8v6p-xvw6) y ReDoS (GHSA-5pgg-2g8v-p4x9) sin parche. Mitigación actual: la ruta de import Excel está protegida por auth + role trainer. A largo plazo: evaluar migración a `exceljs`. No es urgente porque solo trainers autenticados pueden subir Excel.
+151. **`xlsx` (SheetJS) reemplazado por `exceljs`** — La community edition de SheetJS tenía Prototype Pollution y ReDoS sin parche. Migrado a `exceljs` (activamente mantenido, 0 vulnerabilidades). Archivos migrados: `lib/excel-parser.ts`, `app/api/import/excel/route.ts`, `lib/excel-parser.test.ts`. API equivalente: `new ExcelJS.Workbook()` + `workbook.xlsx.load(buffer)` + `worksheet.eachRow()`. `parseExcelBuffer()` ahora es `async` (retorna `Promise<ParseResult>`). Tests actualizados: `makeWorkbookBuffer()` usa `wb.xlsx.writeBuffer()` (async). La funcionalidad de import Excel para trainers no cambia.
 152. **No interpolar variables de usuario en filtros PostgREST** — En vez de `.or(\`field.eq.${userInput}\`)` con template literal, usar concatenación con `encodeURIComponent`: `.or("field.eq." + encodeURIComponent(value))`. Aunque PostgREST parametriza internamente, la interpolación directa es un anti-patrón que facilita errores si se replica con inputs no controlados.
 
 ---
@@ -633,7 +633,7 @@ fitOS/
 | Fase 8 — Métricas ejercicio (SFR + Stress Index + Charts) | ✅ Completo | Migración 037 aplicada |
 | Fase 9 — Consultas/Tickets | ✅ Completo | Migración 038 aplicada + política `trainer_replies_update_read` |
 | Fase 10 — Base de Conocimiento / FAQ | ✅ Completo | Migración 039 pendiente aplicar |
-| Auditoría Seguridad OWASP | ✅ Completo | Migración 040 pendiente aplicar. 16 vulns corregidas |
+| Auditoría Seguridad OWASP | ✅ Completo | Migración 040 aplicada. 16 vulns corregidas. xlsx→exceljs |
 | Gamificación | ❌ Sin UI | Tablas existen, falta interfaz |
 | Stripe + suscripciones | ❌ Sin implementar | |
 | Push notifications | ❌ Sin implementar | |
@@ -643,7 +643,7 @@ fitOS/
 | Config | Prioridad | Qué desbloquea |
 |--------|-----------|----------------|
 | Ejecutar migración 039_knowledge_articles.sql | 🔴 Alta | Base de Conocimiento / FAQ (tabla + funciones + RLS + storage) |
-| Ejecutar migración 040_security_hardening.sql | 🔴 Alta | RLS endurecido, CHECK constraints, trigger anti-escalation, storage policies, atomic promo increment |
+| ~~Ejecutar migración 040_security_hardening.sql~~ | ✅ Aplicada | RLS endurecido, CHECK constraints, trigger anti-escalation, storage policies, atomic promo increment |
 | Ejecutar política RLS `trainer_replies_update_read` | 🔴 Alta | Trainer pueda marcar replies de clientes como leídas |
 | `ANTHROPIC_API_KEY` en Supabase secrets | 🟠 Alta | Edge Functions IA (ahora mock) |
 | Verificar dominio en Resend + `RESEND_API_KEY` | 🟠 Alta | Emails confirmación citas |
@@ -806,3 +806,4 @@ supabase functions deploy analyze-onboarding-form
 | 73 | DB | `weight_log.stress_index` sin CHECK constraint — valor 999999 aceptado | Columna NUMERIC sin límites permitía valores arbitrarios que corrompían gráficas del trainer. Fix: CHECK `>= 0 AND <= 50000` en migración 040 + validación client-side con `clampPositive()`. Regla 147/148 |
 | 74 | Storage | Buckets de imágenes sin restricción de carpeta | Cualquier usuario autenticado podía subir a cualquier carpeta en community-images/ticket-images/knowledge-images. Fix: política `(storage.foldername(name))[1] = auth.uid()::text`. Regla 149 |
 | 75 | DB | SECURITY DEFINER sin SET search_path | `increment_article_view()` corría con privilegios elevados sin fijar search_path. Vulnerable a search_path hijacking. Fix: añadido `SET search_path = public`. Regla 150 |
+| 76 | Deps | `xlsx` (SheetJS) abandonado con 2 CVEs sin fix | Prototype Pollution + ReDoS. Migrado a `exceljs`. `parseExcelBuffer()` ahora es async. Tests usan `wb.xlsx.writeBuffer()` en vez de `XLSX.write()`. Regla 151 |

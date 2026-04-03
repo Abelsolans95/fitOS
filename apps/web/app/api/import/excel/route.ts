@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import Anthropic from "@anthropic-ai/sdk";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 /** Column detected by AI analysis */
 interface DetectedColumn {
@@ -94,11 +94,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Parse Excel with SheetJS
+  // Parse Excel with ExcelJS
   const buffer = await file.arrayBuffer();
-  const workbook = XLSX.read(buffer, { type: "array" });
+  const workbook = new ExcelJS.Workbook();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await workbook.xlsx.load(buffer as any);
 
-  if (workbook.SheetNames.length === 0) {
+  if (workbook.worksheets.length === 0) {
     return NextResponse.json(
       { error: "El archivo está vacío" },
       { status: 400 }
@@ -109,12 +111,14 @@ export async function POST(request: NextRequest) {
   const sheetsResult: SheetResult[] = [];
 
   try {
-    for (const sheetName of workbook.SheetNames) {
-      const worksheet = workbook.Sheets[sheetName];
-      const rawRows = XLSX.utils.sheet_to_json<(string | number | null)[]>(
-        worksheet,
-        { header: 1, defval: null }
-      );
+    for (const ws of workbook.worksheets) {
+      const sheetName = ws.name;
+      // Convert worksheet to 2D array (equivalent to XLSX.utils.sheet_to_json with header:1)
+      const rawRows: (string | number | null)[][] = [];
+      ws.eachRow({ includeEmpty: false }, (row) => {
+        const vals = row.values as (string | number | null | undefined)[];
+        rawRows.push(vals.slice(1).map((v) => v ?? null));
+      });
 
       if (rawRows.length === 0) continue;
 
