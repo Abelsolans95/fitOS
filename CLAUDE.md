@@ -23,7 +23,7 @@ Este archivo contiene TODO lo necesario para continuar el desarrollo: reglas, cr
 - **Auditoría de Permisos (30/03/2026):** Arquitectura de permisos verificada y corregida ✅ — middleware sólido, RLS correcto en 19 tablas, 3 fixes de seguridad aplicados, `AuthContext` mobile preparado para rol Admin.
 - **Auditoría de Seguridad OWASP Fase 1 (03/04/2026):** Pentesting completo ✅ — 16 vulnerabilidades identificadas y corregidas. Migración 040. RLS endurecido, anti role-escalation, CHECK constraints, Open redirect fix, Storage uploads restringidos. Next.js actualizado. xlsx→exceljs.
 - **Seguridad Fase 2 — Enterprise Grade (03/04/2026):** 15 puntos implementados ✅ — Security headers (CSP, HSTS, X-Frame-Options, Permissions-Policy) en `next.config.ts`. Rate limiting (`lib/rate-limit.ts`). Input sanitization (`lib/sanitize.ts`). CSRF protection (`lib/csrf.ts`). Structured logging (`lib/logger.ts`). Magic bytes validation (`lib/file-validation.ts`). PII eliminado de 5 queries (email ya no se envía al frontend innecesariamente). Storage SELECT policies restrictivas (ticket-images, knowledge-images validan ownership). Tabla `audit_logs` con función `log_audit_event()`. Ownership validation en import routes (service_role). Server Component layouts con verificación de rol. Toast error para session_id inválido. Migración 041.
-- **Seguridad Fase 3 — Auditoría Profunda (03/04/2026):** 16 vulnerabilidades adicionales corregidas ✅ — `complete-registration` ahora verifica sesión del caller (anti-spoofing). Rate limiting en todas las API routes (7 nuevas). Error message leaks eliminados (5 rutas). Edge Functions: `sanitizeForPrompt` aplicado a 3 funciones, columnas DB corregidas (`weight`/`height`), tabla `exercises`→`trainer_exercise_library`, IDOR checks en `client_id`, CORS restringido (no más wildcard `*`), `String(error)` eliminado de catch blocks. `stripHtml` hardened con loop anti-bypass. `unsafe-eval` eliminado de CSP en producción. Logger con redacción automática de PII. Google OAuth callback con auth+role enforcement. Array cap en import/reconcile. Input sanitization en create-exercises. 17 nuevas reglas (180-196). 16 nuevos gotchas (96-111).
+- **Seguridad Fase 3 — Auditoría Profunda (03/04/2026):** 23 vulnerabilidades adicionales corregidas ✅ — `complete-registration` ahora verifica sesión del caller (anti-spoofing). Rate limiting en todas las API routes (7 nuevas). Error message leaks eliminados (5 rutas). Edge Functions: `sanitizeForPrompt` aplicado a 3 funciones, columnas DB corregidas (`weight`/`height`), tabla `exercises`→`trainer_exercise_library`, IDOR checks en `client_id`, CORS restringido (no más wildcard `*`), `String(error)` eliminado de catch blocks. `stripHtml` hardened con loop anti-bypass. `unsafe-eval` eliminado de CSP en producción. Logger con redacción automática de PII. Google OAuth callback con auth+role enforcement. Array cap en import/reconcile. Input sanitization en create-exercises. Migración 043: RLS trainer_clients hardening en 6 tablas (weight_log, user_routines, meal_plans, onboarding_responses, messages, support_tickets), log_audit_event con auth.uid() validation, storage buckets privados, promo code revoke. 24 nuevas reglas (180-203). 23 nuevos gotchas (96-118).
 - **`@fitos/theme` (30/03/2026):** Paquete compartido creado ✅ — `packages/theme/src/index.ts` es la única fuente de verdad para colores, spacing y radius. Mobile re-exporta desde ahí. Script `npm run sync-theme` regenera el bloque `@theme` de `globals.css`. Metro `watchFolders` configurado.
 - **Mapa anatómico con imágenes reales (31/03/2026):** Reemplazo del mapa SVG puro por imágenes anatómicas reales con overlay SVG interactivo ✅ — 4 imágenes (hombre/mujer × frontal/posterior), zonas definidas en `packages/shared/src/anatomy/zones.ts`, campo `gender` añadido a `profiles` (migración 036), toggle de género en UI cliente. Web + mobile.
 - **Fase 9 (01/04/2026):** Sistema de Consultas/Tickets ✅ — Cliente envía dudas categorizadas (Nutrición, Rutina, Lesión, General) al trainer. Trainer gestiona inbox con filtros de estado/categoría/búsqueda, responde en hilo conversacional, y marca como resuelta. Realtime. Badges de no leídos en ambos sidebars. Migración 038. Web trainer + web cliente + mobile. Fix post-deploy (02/04): política RLS `trainer_replies_update_read` para permitir al trainer marcar replies de clientes como leídas; acciones de reducer `MARK_TICKET_READ` e `INCREMENT_UNREAD` para evitar stale closures; reset de badge en sidebar via `usePathname`.
@@ -457,6 +457,13 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 194. **`stripHtml` DEBE ejecutarse en loop hasta estabilizar** — Una sola pasada de `/<[^>]*>/g` no atrapa tags anidados como `<<b>script>alert(1)</script>`. El loop `while (prev !== result)` garantiza que no quedan tags parciales. Corregido en `sanitize.ts` y en `sanitizeForPrompt` de `_shared/auth.ts`.
 195. **`unsafe-eval` PROHIBIDO en CSP de producción** — Next.js producción NO necesita `eval()`. Solo el dev server (HMR) lo requiere. CSP ahora usa `process.env.NODE_ENV === "development"` para incluirlo condicionalmente. `unsafe-eval` en producción permite ejecución de código arbitrario via XSS.
 196. **Logger DEBE redactar campos PII automáticamente** — `lib/logger.ts` ahora tiene `redactSensitive()` que reemplaza valores de keys como `password`, `token`, `secret`, `authorization`, `cookie`, `access_token`, `refresh_token` con `[REDACTED]`. Redacta 1 nivel de profundidad. `JSON.stringify` envuelto en try/catch para manejar referencias circulares.
+197. **Trainer RLS en weight_log, user_routines, meal_plans DEBE validar trainer_clients** — Migración 043 añade `EXISTS (SELECT 1 FROM trainer_clients tc WHERE tc.trainer_id = auth.uid() AND tc.client_id = <tabla>.client_id)` a las políticas trainer de estas tablas. Sin esto, `auth.uid() = trainer_id` permite acceso cruzado entre trainers.
+198. **Trainer RLS en onboarding_responses DEBE validar trainer_clients** — La tabla no tiene `trainer_id` propio; la autorización se basa enteramente en `EXISTS (trainer_clients)`. Migración 043 reemplaza la política anterior.
+199. **Trainer RLS en messages (3 políticas: select/insert/update) DEBE validar trainer_clients** — `trainer_messages_insert` además verifica `sender_id = auth.uid()`. `trainer_messages_update` WITH CHECK solo verifica `trainer_id` (permite actualizar `read_at`). Migración 043.
+200. **Trainer RLS en support_tickets DEBE validar trainer_clients** — Misma lógica que weight_log. Migración 043.
+201. **`log_audit_event()` DEBE validar `p_user_id = auth.uid()`** — Sin esta validación, cualquier usuario autenticado podía loguear eventos como otro usuario (audit log spoofing). Migración 043 añade `RAISE EXCEPTION` si no coinciden.
+202. **Storage buckets `ticket-images` y `knowledge-images` DEBEN ser privados** — Con `public = true`, las URLs de descarga no necesitan token — cualquiera con el path puede descargar. Migración 043 los cambia a `public = false`.
+203. **`increment_promo_code_usage` REVOCADO de public/authenticated** — Solo callable via `service_role` (desde API routes). Previene que un usuario autenticado invoque la función directamente vía `supabase.rpc()`. Migración 043.
 
 ---
 
@@ -669,7 +676,9 @@ fitOS/
         ├── 038_support_tickets.sql
         ├── 039_knowledge_articles.sql
         ├── 040_security_hardening.sql
-        └── 041_security_hardening_phase2.sql
+        ├── 041_security_hardening_phase2.sql
+        ├── 042_ticket_replies_trainer_client_ids.sql
+        └── 043_rls_trainer_clients_hardening.sql
 ```
 
 ---
@@ -704,6 +713,8 @@ fitOS/
 | Ejecutar migración 039_knowledge_articles.sql | 🔴 Alta | Base de Conocimiento / FAQ (tabla + funciones + RLS + storage) |
 | ~~Ejecutar migración 040_security_hardening.sql~~ | ✅ Aplicada | RLS endurecido, CHECK constraints, trigger anti-escalation, storage policies, atomic promo increment |
 | Ejecutar migración 041_security_hardening_phase2.sql | 🔴 Alta | Storage SELECT restrictivos, tabla audit_logs, función log_audit_event() |
+| Ejecutar migración 042_ticket_replies_trainer_client_ids.sql | 🔴 Alta | Columnas trainer_id + client_id en ticket_replies para Realtime filters |
+| Ejecutar migración 043_rls_trainer_clients_hardening.sql | 🔴 Alta | RLS trainer_clients en 6 tablas core, log_audit_event hardened, storage buckets private, promo revoke |
 | Ejecutar política RLS `trainer_replies_update_read` | 🔴 Alta | Trainer pueda marcar replies de clientes como leídas |
 | `ANTHROPIC_API_KEY` en Supabase secrets | 🟠 Alta | Edge Functions IA (ahora mock) |
 | Verificar dominio en Resend + `RESEND_API_KEY` | 🟠 Alta | Emails confirmación citas |
@@ -902,3 +913,10 @@ supabase functions deploy analyze-onboarding-form
 | 109 | Sanitize | `stripHtml` single-pass bypass | `<<b>script>alert(1)</script>` → primera pasada quita `<b>` → queda `<script>`. Fix: loop `while (prev !== result)`. Regla 194 |
 | 110 | CSP | `unsafe-eval` en producción | CSP incluía `'unsafe-eval'` innecesariamente en prod (Next.js solo lo necesita en dev HMR). Permite `eval()` XSS. Fix: condicional por `NODE_ENV`. Regla 195 |
 | 111 | Logger | Sin redacción de PII | `logger.ts` aceptaba cualquier campo sin filtrar. `password`, `token`, `secret` podían loguearse. Fix: `redactSensitive()` con Set de keys prohibidas. Regla 196 |
+| 112 | RLS | weight_log trainer policy sin trainer_clients | `auth.uid() = trainer_id` sin verificar relación activa. Trainer A accede a weight_log de clientes de Trainer B. Fix: migración 043. Regla 197 |
+| 113 | RLS | user_routines trainer policy sin trainer_clients | Mismo problema que weight_log. Trainer podía gestionar rutinas de clientes ajenos. Fix: migración 043. Regla 197 |
+| 114 | RLS | meal_plans trainer policy sin trainer_clients | Mismo problema. Acceso cruzado a planes nutricionales. Fix: migración 043. Regla 197 |
+| 115 | RLS | messages trainer policies sin trainer_clients | 3 políticas (select/insert/update) solo verificaban `trainer_id`. Fix: migración 043. Regla 199 |
+| 116 | DB | `log_audit_event()` sin validar caller | Cualquier usuario autenticado podía insertar audit logs como otro user — audit log spoofing. Fix: `p_user_id != auth.uid()` → RAISE EXCEPTION. Regla 201 |
+| 117 | Storage | `ticket-images` y `knowledge-images` con `public = true` | URLs de descarga accesibles sin token. Fix: `UPDATE storage.buckets SET public = false`. Regla 202 |
+| 118 | DB | `increment_promo_code_usage` callable por authenticated | Cualquier usuario podía invocar via `supabase.rpc()`. Fix: REVOKE de public y authenticated. Regla 203 |
