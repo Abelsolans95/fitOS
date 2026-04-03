@@ -118,7 +118,7 @@ export default function TicketsScreen() {
       if (!user) return;
       channel = supabase
         .channel(`tickets-mobile-${user.id}`)
-        .on("postgres_changes", { event: "INSERT", schema: "public", table: "ticket_replies", filter: `sender_id=neq.${user.id}` },
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "ticket_replies", filter: `client_id=eq.${user.id}` },
           (payload) => {
             const reply = payload.new as TicketReply;
             if (reply.sender_id === user.id) return;
@@ -216,6 +216,8 @@ export default function TicketsScreen() {
       .insert({
         ticket_id: selectedTicketId,
         sender_id: clientId,
+        trainer_id: trainerId,
+        client_id: clientId,
         content: replyContent.trim(),
       })
       .select()

@@ -223,7 +223,7 @@ export function ClientSidebar() {
         )
         .on(
           "postgres_changes",
-          { event: "INSERT", schema: "public", table: "ticket_replies", filter: `sender_id=neq.${clientId}` },
+          { event: "INSERT", schema: "public", table: "ticket_replies", filter: `client_id=eq.${clientId}` },
           (payload) => {
             const reply = payload.new as { sender_id: string };
             if (reply.sender_id !== clientId) {

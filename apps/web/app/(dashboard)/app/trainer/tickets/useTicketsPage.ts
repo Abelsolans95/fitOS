@@ -209,7 +209,7 @@ export function useTicketsPage() {
       )
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "ticket_replies", filter: `sender_id=neq.${state.trainerId}` },
+        { event: "INSERT", schema: "public", table: "ticket_replies", filter: `trainer_id=eq.${state.trainerId}` },
         (payload) => {
           const reply = payload.new as TicketReply;
           if (reply.sender_id === state.trainerId) return;
@@ -285,11 +285,15 @@ export function useTicketsPage() {
     if (!state.replyContent.trim() || !state.selectedTicketId || !state.trainerId) return;
     dispatch({ type: "SET_SENDING", payload: true });
 
+    // Resolve client_id from the selected ticket
+    const selectedTicket = state.tickets.find((t) => t.id === state.selectedTicketId);
     const { data, error } = await supabase
       .from("ticket_replies")
       .insert({
         ticket_id: state.selectedTicketId,
         sender_id: state.trainerId,
+        trainer_id: state.trainerId,
+        client_id: selectedTicket?.client_id ?? null,
         content: state.replyContent.trim(),
       })
       .select()

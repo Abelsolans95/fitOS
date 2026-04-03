@@ -227,7 +227,7 @@ export function TrainerSidebar() {
         .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `trainer_id=eq.${trainerId}` }, fetchUnread)
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "community_posts", ...(commId ? { filter: `community_id=eq.${commId}` } : {}) }, fetchCommunityUnread)
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "support_tickets", filter: `trainer_id=eq.${trainerId}` }, fetchTicketUnread)
-        .on("postgres_changes", { event: "INSERT", schema: "public", table: "ticket_replies" }, fetchTicketUnread)
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "ticket_replies", filter: `trainer_id=eq.${trainerId}` }, fetchTicketUnread)
         .subscribe();
     };
     setup();
