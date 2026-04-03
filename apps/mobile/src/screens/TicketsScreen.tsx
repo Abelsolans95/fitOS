@@ -128,7 +128,7 @@ export default function TicketsScreen() {
             }
             loadTickets(user.id);
           })
-        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "support_tickets" },
+        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "support_tickets", filter: `client_id=eq.${user.id}` },
           () => loadTickets(user.id))
         .subscribe();
     };

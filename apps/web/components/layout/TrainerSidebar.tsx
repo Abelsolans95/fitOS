@@ -208,20 +208,31 @@ export function TrainerSidebar() {
       setTicketUnread((newTickets ?? 0) + (unreadReplies ?? 0));
     };
 
-    fetchUnread();
-    fetchCommunityUnread();
-    fetchTicketUnread();
+    // SECURITY: must resolve trainerId + communityId BEFORE creating Realtime channel
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    const setup = async () => {
+      await fetchUnread();
+      await fetchCommunityUnread();
+      await fetchTicketUnread();
 
-    // Real-time: refresh badges — SECURITY: all listeners MUST have filters scoped to this trainer
-    const channel = supabase
-      .channel(`trainer-sidebar-${trainerId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `trainer_id=eq.${trainerId}` }, fetchUnread)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "community_posts" }, fetchCommunityUnread)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "support_tickets", filter: `trainer_id=eq.${trainerId}` }, fetchTicketUnread)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "ticket_replies" }, fetchTicketUnread)
-      .subscribe();
+      if (!trainerId) return;
 
-    return () => { supabase.removeChannel(channel); };
+      // Get communityId for filtered subscription
+      const { data: comm } = await supabase.from("communities").select("id").eq("coach_id", trainerId).single();
+      const commId = comm?.id;
+
+      // Real-time: ALL listeners scoped to this trainer
+      channel = supabase
+        .channel(`trainer-sidebar-${trainerId}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `trainer_id=eq.${trainerId}` }, fetchUnread)
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "community_posts", ...(commId ? { filter: `community_id=eq.${commId}` } : {}) }, fetchCommunityUnread)
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "support_tickets", filter: `trainer_id=eq.${trainerId}` }, fetchTicketUnread)
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "ticket_replies" }, fetchTicketUnread)
+        .subscribe();
+    };
+    setup();
+
+    return () => { if (channel) supabase.removeChannel(channel); };
   }, []);
 
   const items: SidebarNavItem[] = BASE_NAV_ITEMS.map((item) => {
