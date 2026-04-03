@@ -1,5 +1,6 @@
 import { memo } from "react";
 import type { ExerciseData } from "../active/types";
+import { isAllowedVideoUrl } from "@/lib/url-validation";
 
 interface ExerciseCardProps {
   ex: ExerciseData;
@@ -138,7 +139,7 @@ export const ExerciseCard = memo(function ExerciseCard({ ex, idx, activeWeek, fo
         </div>
       )}
 
-      {ex.video_url && (
+      {ex.video_url && isAllowedVideoUrl(ex.video_url) && (
         <a
           href={ex.video_url}
           target="_blank"

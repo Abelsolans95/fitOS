@@ -45,3 +45,17 @@ export function sanitizeVideoUrl(url: string | null | undefined): string | null 
   if (!trimmed) return null;
   return isAllowedVideoUrl(trimmed) ? trimmed : null;
 }
+
+/**
+ * Validate that a URL uses HTTPS protocol (safe for rendering as href).
+ * Blocks javascript:, data:, file:, and other dangerous schemes.
+ */
+export function isSafeHttpsUrl(url: string): boolean {
+  if (!url || typeof url !== "string") return false;
+  try {
+    const parsed = new URL(url.trim());
+    return parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}

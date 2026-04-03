@@ -2,6 +2,7 @@
 
 import type { Appointment, ClientOption } from "./types";
 import { SESSION_TYPES, STATUS_STYLES, formatDateTime, formatDuration } from "./shared";
+import { isSafeHttpsUrl } from "@/lib/url-validation";
 
 // ── Appointment Card ─────────────────────────────────────────────────────────
 
@@ -51,7 +52,7 @@ function AppointmentCard({
             {appt.location}
           </span>
         )}
-        {appt.meeting_url && (
+        {appt.meeting_url && isSafeHttpsUrl(appt.meeting_url) && (
           <a
             href={appt.meeting_url}
             target="_blank"
