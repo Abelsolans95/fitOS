@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { type RoutineTemplate, formatDate } from "../types";
 
 interface RoutineListProps {
@@ -7,7 +8,7 @@ interface RoutineListProps {
   onNewRoutine: () => void;
 }
 
-export default function RoutineList({ templates, onNewRoutine }: RoutineListProps) {
+const RoutineList = memo(function RoutineList({ templates, onNewRoutine }: RoutineListProps) {
   return (
     <>
       <style>{`
@@ -98,4 +99,6 @@ export default function RoutineList({ templates, onNewRoutine }: RoutineListProp
       </div>
     </>
   );
-}
+});
+
+export default RoutineList;

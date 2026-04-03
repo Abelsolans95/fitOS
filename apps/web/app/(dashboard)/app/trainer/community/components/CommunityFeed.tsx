@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { memo, useState, useEffect, useCallback } from "react";
 import type { CommunityPost, CommunityComment } from "./types";
 
 interface CommunityFeedProps {
@@ -94,7 +94,7 @@ interface PostCardProps {
   onTogglePin: (id: string, pinned: boolean) => void;
 }
 
-function PostCard({
+const PostCard = memo(function PostCard({
   post, userId, isExpanded, comments, loadingComments, newCommentText,
   replyingTo, replyText,
   onToggleLike, onExpand, onLoadComments, onSetNewComment, onAddComment,
@@ -202,7 +202,7 @@ function PostCard({
       )}
     </div>
   );
-}
+});
 
 // ── Comment Item (recursive for replies) ──
 interface CommentItemProps {
