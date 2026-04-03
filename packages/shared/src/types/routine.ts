@@ -89,15 +89,19 @@ export interface SetEntry {
   completed: boolean;
 }
 
+export interface SavedSetData {
+  set_number: number;
+  weight_kg: number;
+  reps_done: number;
+  type: string;
+  completed?: boolean;
+  rir?: number | string;
+  rpe?: number | string;
+}
+
 export interface SavedLogEntry {
   exercise_name: string;
-  sets_data: {
-    set_number: number;
-    weight_kg: number;
-    reps_done: number;
-    type: string;
-    completed?: boolean;
-  }[];
+  sets_data: SavedSetData[];
   client_notes: string | null;
 }
 

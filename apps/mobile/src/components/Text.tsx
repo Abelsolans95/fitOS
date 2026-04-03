@@ -1,5 +1,5 @@
 import React from "react";
-import { Text as RNText, TextProps, StyleSheet } from "react-native";
+import { Text as RNText, TextProps, TextStyle, StyleSheet } from "react-native";
 import { fonts } from "../theme";
 
 export interface CustomTextProps extends TextProps {
@@ -7,7 +7,7 @@ export interface CustomTextProps extends TextProps {
 }
 
 export function Text({ style, variant = "body", ...props }: CustomTextProps) {
-  let mappedStyle: any = { fontFamily: fonts.regular };
+  let mappedStyle: TextStyle = { fontFamily: fonts.regular };
 
   // Note: we let explicit weights pass through dynamically, but in RN, 
   // setting fontWeight alongside a modern custom font might cause issues unless

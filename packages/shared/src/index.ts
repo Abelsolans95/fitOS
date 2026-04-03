@@ -12,6 +12,7 @@ export type {
   PreviousSet,
   PreviousLog,
   SetEntry,
+  SavedSetData,
   SavedLogEntry,
   Phase,
   SummaryExerciseResult,

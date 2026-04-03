@@ -8,6 +8,7 @@ import type {
   PreviousLog,
   PreviousSet,
   SetEntry,
+  SavedSetData,
   SavedLogEntry,
   Phase,
   SummaryData,
@@ -706,8 +707,7 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
           (l) => l.exercise_name === ex.name
         );
         if (savedLog && savedLog.sets_data) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          initial[idx] = savedLog.sets_data.map((s: any) => ({
+          initial[idx] = savedLog.sets_data.map((s: SavedSetData) => ({
             weight_kg: String(s.weight_kg),
             reps_done: String(s.reps_done),
             rir: String(s.rir ?? ex.rir ?? ""),
