@@ -28,6 +28,7 @@ Este archivo contiene TODO lo necesario para continuar el desarrollo: reglas, cr
 - **Fase 10 (02/04/2026):** Base de Conocimiento / FAQ ✅ — Trainer escribe artículos FAQ categorizados (Nutrición, Rutina, Lesión, Técnica, Suplementación, General) con texto + video URL. Cliente busca/filtra artículos antes de preguntar. Integración bidireccional con Consultas: convertir ticket resuelto en artículo, sugerir artículos relevantes al crear ticket (debounced search). Vista contador incrementada via SECURITY DEFINER. Full-text search PostgreSQL (español). Migración 039. Web trainer + web cliente + mobile. Tipos compartidos en `@fitos/shared`.
 - **Auditoría completa (02/04/2026):** Bugs críticos corregidos ✅ — Race condition promo codes (RPC atómico, migración 040), URLs hardcodeadas (env var NEXT_PUBLIC_BASE_URL), Sentry PII desactivado, error handling mobile. Seguridad: validate-promo status codes, Google OAuth role check, sanitización de errores. Performance: .limit(500) en community_comments, Promise.all en tickets. TypeScript: 40+ `any` eliminados en web+mobile. UX: confirmación two-step en deletes de comunidad y alimentos. Tests: 126 tests, 13 archivos, todos pasando.
 - **Code Quality Audit v2 (03/04/2026):** Refactor de arquitectura ✅ — API routes centralizadas (`lib/api-utils.ts`, `lib/supabase-admin.ts`), `QUERY_LIMITS` centralizados (`lib/constants.ts`), sidebar badges extraídos a `useSidebarBadges` hook, community tree utils compartidos (`lib/community-utils.ts`), `timeAgo` centralizado en `lib/utils.ts`, `calculateStressIndex` movido a `@fitos/shared`, `useNutritionPage` dividido en 3 hooks (`useFoodLibrary` + `useMenuCreator` + orquestador), cache TTL en resolvers (`lib/query-cache.ts`), `React.memo` en componentes lista, FlatList optimizados en mobile. 132 tests, 14 archivos, todos pasando.
+- **Code Quality Audit v3 (03/04/2026):** Bugs + seguridad + leaks ✅ — food-resolver hidden fix, OAuth callback error handling, community orphan crash fix, middleware null role, role enum validation, mobile insert error handling, setTimeout cleanup, hook deps fixes (3 eslint-disables eliminados), `any` types eliminados en excel-parser. Tests: 179 tests, 17 archivos, todos pasando.
 
 ---
 
@@ -440,6 +441,39 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 
 160. **Tests: actualizar al refactorizar API routes** — Al migrar una API route a `api-utils`, los tests deben mockear `@/lib/api-utils` (no `@supabase/supabase-js` ni `@/lib/supabase-server` directamente). Patrón: `vi.mock("@/lib/api-utils", () => ({ requireAuthWithRole: vi.fn(), ... }))`. Ver `activate-client/route.test.ts` como referencia.
 
+### Reglas de calidad de código (Code Quality Audit v3, 03/04/2026)
+
+161. **Paridad resolver exercise ↔ food obligatoria** — Todo cambio en `exercise-resolver.ts` debe verificarse en `food-resolver.ts` y viceversa. Ambos resolvers siguen el mismo patrón three-layer. Bug encontrado: exercise-resolver filtraba `hidden=true` pero food-resolver no. Regla: al añadir un filtro/feature en un resolver, aplicar en ambos.
+
+162. **Toda query Supabase en API routes DEBE destructurar error — sin excepciones** — Incluso las queries "secundarias" como updates de tokens o cambios de estado. Bug encontrado: `profiles.update()` en Google OAuth callback no destructuraba error → tokens no se guardaban pero usuario veía éxito. No existe query Supabase "segura de ignorar" en API routes.
+
+163. **Non-null assertions (`!`) prohibidas en datos de DB** — Nunca usar `map.get(id)!` ni `data!.field` con datos que vienen de la base de datos. Los datos pueden ser inconsistentes (filas huérfanas, deletes parciales). Usar optional chaining + fallback. Bug encontrado: `buildCommentTree` crasheaba con comentarios huérfanos.
+
+164. **Middleware DEBE manejar role null/undefined explícitamente** — Si `user_metadata.role` no existe o es null, redirigir a `/login`, no asumir un rol por defecto. Esto cubre metadata corrupta, migraciones parciales, o usuarios creados manualmente sin role.
+
+165. **Validar enums de body en API routes de registro** — Campos como `role`, `status`, `category` que vienen del body del request DEBEN validarse contra valores permitidos antes de insertar en DB. Nunca confiar en el frontend para enviar valores válidos. Patrón: `const validRoles = ["client", "trainer"]; if (!validRoles.includes(role)) return errorResponse("...", 400);`
+
+166. **setTimeout/setInterval SIEMPRE con cleanup en useEffect** — Todo `setTimeout` o `setInterval` dentro de un `useEffect` DEBE tener su `clearTimeout`/`clearInterval` en la función de cleanup. Bug encontrado: `setTimeout(scrollToBottom, 100)` en ChatScreen se ejecutaba post-unmount. Patrón:
+    ```ts
+    useEffect(() => {
+      const timer = setTimeout(fn, ms);
+      return () => clearTimeout(timer);
+    }, [deps]);
+    ```
+
+167. **Supabase `.insert()` y `.update()` en mobile SIEMPRE con error handling** — En React Native, toda mutación Supabase debe destructurar error y mostrar `Alert.alert` si falla. Bug encontrado: ChatScreen y CaloriesScreen hacían inserts sin verificar resultado. El usuario no sabía que el mensaje/alimento no se había guardado.
+
+168. **eslint-disable en dependency arrays PROHIBIDO** — Nunca usar `// eslint-disable-next-line react-hooks/exhaustive-deps`. Si la regla se queja, el código tiene un problema real: o falta un dep, o hay una referencia inestable. Fix correcto: `useRef` para romper ciclos, `useCallback` para estabilizar funciones, o añadir el dep faltante. Bugs encontrados: stale closures en useFoodLibrary y useNutritionPage.
+
+169. **`useRef` para callbacks pasadas a sub-hooks** — Cuando un hook padre pasa un callback a un sub-hook y ese callback depende del estado del padre (creando dependencia circular), usar `useRef` para romper el ciclo:
+    ```ts
+    const loadDataRef = useRef(loadData);
+    loadDataRef.current = loadData; // actualizar en cada render
+    const subHook = useSubHook(() => loadDataRef.current()); // callback estable
+    ```
+
+170. **`QUERY_LIMITS` para TODA query con `.limit()`** — Ningún `.limit(N)` hardcodeado permitido. Siempre importar de `@/lib/constants`. Si no existe la constante, crearla primero. Constantes añadidas: `CALENDAR_ENTRIES: 200`, `CALENDAR_BODY_METRICS: 100`.
+
 ---
 
 ## Regla de mantenimiento — obligatoria
@@ -678,6 +712,7 @@ fitOS/
 | Fase 10 — Base de Conocimiento / FAQ | ✅ Completo | Migración 039 pendiente aplicar |
 | Auditoría completa (bugs + seguridad + TS + UX + perf) | ✅ Completo | 126 tests pasando, migración 040 pendiente aplicar |
 | Code Quality Audit v2 (refactor arquitectura) | ✅ Completo | 132 tests, API utils, cache, hooks compartidos, React.memo |
+| Code Quality Audit v3 (bugs + seguridad + leaks) | ✅ Completo | 179 tests, 4 bugs, 2 security, 3 leaks, 3 hook deps, 47 tests nuevos |
 | Gamificación | ❌ Sin UI | Tablas existen, falta interfaz |
 | Stripe + suscripciones | ❌ Sin implementar | |
 | Push notifications | ❌ Sin implementar | |
@@ -841,3 +876,11 @@ supabase functions deploy analyze-onboarding-form
 | 64 | Web | `totalSets` sumaba `sets + rest_pause_sets` duplicando count | En modo "different", `sets` ya incluye derivadas tras `CR_ADD_DERIVATIVE_SET`. Cambiado a solo `sum(ex.sets)` |
 | 65 | Web+Mobile | `weekly_config.sets_detail` ignorado en modo "equal" | El código cliente solo leía `sets_detail` cuando `mode === "different"`. Ahora verifica `wk?.sets_detail?.length > 0` independientemente del modo. Afecta: `initializeSets`, `resumeFromSession`, `getTrainerConfig`, `ExerciseCard` pre-training, mobile `initSets`/`resumeSession` |
 | 66 | RLS | `trainer_replies_all` WITH CHECK bloquea UPDATE de `read_at` en replies de clientes | La política `FOR ALL` tenía `sender_id = auth.uid()` en WITH CHECK. Cuando el trainer actualiza `read_at` en una reply del cliente, `sender_id` ≠ trainer → UPDATE rechazado silenciosamente. Fix: política `trainer_replies_update_read` separada sin check de `sender_id`. Regla: en políticas FOR ALL, verificar que WITH CHECK no bloquee UPDATEs legítimos sobre filas de otros usuarios |
+| 67 | Resolver | food-resolver no filtraba `hidden=true` | Paridad exercise↔food resolver obligatoria. Al añadir filtro en uno, verificar el otro |
+| 68 | API | Google OAuth callback no destructuraba error en profiles.update | TODA query Supabase en API routes debe destructurar error — sin excepciones |
+| 69 | Web | `buildCommentTree` crasheaba con comentarios huérfanos | Nunca usar `map.get(id)!` con datos de DB. Siempre null check + fallback |
+| 70 | Auth | Middleware asumía role siempre existe | Si `user_metadata.role` es null → redirect a `/login`, no asumir rol |
+| 71 | API | `complete-registration` aceptaba cualquier role | Validar enums del body contra valores permitidos antes de insertar |
+| 72 | Mobile | setTimeout sin cleanup en useEffect | Todo setTimeout/setInterval DEBE tener clearTimeout/clearInterval en cleanup |
+| 73 | Mobile | insert/update sin error handling en ChatScreen y CaloriesScreen | Toda mutación Supabase en mobile → destructurar error + Alert.alert |
+| 74 | Hooks | eslint-disable en dependency arrays ocultaba stale closures | Prohibido eslint-disable en deps. Usar useRef para romper ciclos |
