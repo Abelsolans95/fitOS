@@ -195,7 +195,7 @@ export default function ChatScreen() {
     listItems.push({ type: "message", data: msg });
   }
 
-  const renderItem = ({ item }: { item: ListItem }) => {
+  const renderItem = useCallback(({ item }: { item: ListItem }) => {
     if (item.type === "separator") {
       return (
         <View style={styles.separator}>
@@ -231,7 +231,7 @@ export default function ChatScreen() {
         </View>
       </View>
     );
-  };
+  }, [user?.id, trainer?.full_name]);
 
   if (loading) {
     return (
@@ -278,6 +278,9 @@ export default function ChatScreen() {
             item.type === "separator" ? `sep-${item.day}` : item.data.id ?? String(index)
           }
           renderItem={renderItem}
+          maxToRenderPerBatch={15}
+          windowSize={10}
+          removeClippedSubviews={Platform.OS === "android"}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>

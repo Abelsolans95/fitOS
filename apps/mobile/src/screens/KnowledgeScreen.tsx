@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet,
-  ActivityIndicator, FlatList, Linking,
+  ActivityIndicator, FlatList, Linking, Platform,
 } from "react-native";
 import { supabase } from "../lib/supabase";
 import { colors, spacing, radius, fonts } from "../theme";
@@ -17,6 +17,19 @@ const CATEGORY_COLORS: Record<KnowledgeCategory, string> = {
   tecnica: colors.orange,
   suplementacion: colors.violet,
   general: colors.muted,
+};
+
+const articleKeyExtractor = (item: KnowledgeArticle) => item.id;
+
+const timeAgo = (dateStr: string): string => {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "ahora";
+  if (mins < 60) return `${mins}m`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  return `${days}d`;
 };
 
 type ScreenView = "list" | "detail";
@@ -84,18 +97,31 @@ export default function KnowledgeScreen() {
   });
 
   // ── Helpers ──
-  const selectedArticle = articles.find((a) => a.id === selectedArticleId);
+  const renderArticleItem = useCallback(({ item }: { item: KnowledgeArticle }) => (
+    <TouchableOpacity style={s.articleListCard} onPress={() => handleSelectArticle(item.id)}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        <View style={[s.badge, { backgroundColor: `${CATEGORY_COLORS[item.category]}20` }]}>
+          <Text style={[s.badgeText, { color: CATEGORY_COLORS[item.category] }]}>
+            {KNOWLEDGE_CATEGORIES.find((c) => c.value === item.category)?.label}
+          </Text>
+        </View>
+        {item.video_url && (
+          <View style={[s.badge, { backgroundColor: `${colors.cyan}20` }]}>
+            <Text style={[s.badgeText, { color: colors.cyan }]}>Video</Text>
+          </View>
+        )}
+      </View>
+      <Text style={s.listTitle} numberOfLines={2}>{item.title}</Text>
+      <Text style={s.listContent} numberOfLines={3}>{item.content}</Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 }}>
+        <Text style={s.timeText}>{timeAgo(item.created_at)}</Text>
+        <Text style={s.timeText}>{"\u00B7"}</Text>
+        <Text style={s.timeText}>{item.view_count} vistas</Text>
+      </View>
+    </TouchableOpacity>
+  ), [handleSelectArticle]);
 
-  const timeAgo = (dateStr: string): string => {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return "ahora";
-    if (mins < 60) return `${mins}m`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h`;
-    const days = Math.floor(hours / 24);
-    return `${days}d`;
-  };
+  const selectedArticle = articles.find((a) => a.id === selectedArticleId);
 
   // ── Loading ──
   if (loading) {
@@ -211,31 +237,12 @@ export default function KnowledgeScreen() {
       ) : (
         <FlatList
           data={filteredArticles}
-          keyExtractor={(item) => item.id}
+          keyExtractor={articleKeyExtractor}
           contentContainerStyle={{ padding: spacing.md }}
-          renderItem={({ item }) => (
-            <TouchableOpacity style={s.articleListCard} onPress={() => handleSelectArticle(item.id)}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                <View style={[s.badge, { backgroundColor: `${CATEGORY_COLORS[item.category]}20` }]}>
-                  <Text style={[s.badgeText, { color: CATEGORY_COLORS[item.category] }]}>
-                    {KNOWLEDGE_CATEGORIES.find((c) => c.value === item.category)?.label}
-                  </Text>
-                </View>
-                {item.video_url && (
-                  <View style={[s.badge, { backgroundColor: `${colors.cyan}20` }]}>
-                    <Text style={[s.badgeText, { color: colors.cyan }]}>Video</Text>
-                  </View>
-                )}
-              </View>
-              <Text style={s.listTitle} numberOfLines={2}>{item.title}</Text>
-              <Text style={s.listContent} numberOfLines={3}>{item.content}</Text>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 }}>
-                <Text style={s.timeText}>{timeAgo(item.created_at)}</Text>
-                <Text style={s.timeText}>{"\u00B7"}</Text>
-                <Text style={s.timeText}>{item.view_count} vistas</Text>
-              </View>
-            </TouchableOpacity>
-          )}
+          renderItem={renderArticleItem}
+          maxToRenderPerBatch={15}
+          windowSize={10}
+          removeClippedSubviews={Platform.OS === "android"}
         />
       )}
     </View>

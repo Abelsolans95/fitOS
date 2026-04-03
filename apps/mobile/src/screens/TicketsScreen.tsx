@@ -29,6 +29,19 @@ const STATUS_LABELS: Record<TicketStatus, string> = {
   resolved: "Resuelta",
 };
 
+const ticketKeyExtractor = (item: SupportTicket) => item.id;
+
+const timeAgo = (dateStr: string): string => {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "ahora";
+  if (mins < 60) return `${mins}m`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  return `${days}d`;
+};
+
 type ScreenView = "list" | "create" | "detail";
 
 export default function TicketsScreen() {
@@ -237,16 +250,36 @@ export default function TicketsScreen() {
   // ── Helpers ──
   const selectedTicket = tickets.find((t) => t.id === selectedTicketId);
 
-  const timeAgo = (dateStr: string): string => {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return "ahora";
-    if (mins < 60) return `${mins}m`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h`;
-    const days = Math.floor(hours / 24);
-    return `${days}d`;
-  };
+  const renderTicketItem = useCallback(({ item }: { item: SupportTicket }) => (
+    <TouchableOpacity style={s.ticketCard} onPress={() => openTicket(item.id)}>
+      <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
+        <View style={{ flex: 1, marginRight: 12 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Text style={s.ticketSubject} numberOfLines={1}>{item.subject}</Text>
+            {(item.unread_count ?? 0) > 0 && (
+              <View style={s.unreadBadge}>
+                <Text style={s.unreadText}>{item.unread_count}</Text>
+              </View>
+            )}
+          </View>
+          <Text style={s.ticketDesc} numberOfLines={2}>{item.description}</Text>
+        </View>
+        <View style={{ alignItems: "flex-end", gap: 4 }}>
+          <View style={[s.badge, { backgroundColor: `${CATEGORY_COLORS[item.category]}20` }]}>
+            <Text style={[s.badgeText, { color: CATEGORY_COLORS[item.category] }]}>
+              {TICKET_CATEGORIES.find((c) => c.value === item.category)?.label}
+            </Text>
+          </View>
+          <View style={[s.badge, { backgroundColor: `${STATUS_COLORS[item.status]}20` }]}>
+            <Text style={[s.badgeText, { color: STATUS_COLORS[item.status] }]}>
+              {STATUS_LABELS[item.status]}
+            </Text>
+          </View>
+          <Text style={s.timeText}>{timeAgo(item.created_at)}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  ), [openTicket]);
 
   // ── Loading ──
   if (loading) {
@@ -442,38 +475,12 @@ export default function TicketsScreen() {
       ) : (
         <FlatList
           data={tickets}
-          keyExtractor={(item) => item.id}
+          keyExtractor={ticketKeyExtractor}
           contentContainerStyle={{ padding: spacing.md }}
-          renderItem={({ item }) => (
-            <TouchableOpacity style={s.ticketCard} onPress={() => openTicket(item.id)}>
-              <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
-                <View style={{ flex: 1, marginRight: 12 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                    <Text style={s.ticketSubject} numberOfLines={1}>{item.subject}</Text>
-                    {(item.unread_count ?? 0) > 0 && (
-                      <View style={s.unreadBadge}>
-                        <Text style={s.unreadText}>{item.unread_count}</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={s.ticketDesc} numberOfLines={2}>{item.description}</Text>
-                </View>
-                <View style={{ alignItems: "flex-end", gap: 4 }}>
-                  <View style={[s.badge, { backgroundColor: `${CATEGORY_COLORS[item.category]}20` }]}>
-                    <Text style={[s.badgeText, { color: CATEGORY_COLORS[item.category] }]}>
-                      {TICKET_CATEGORIES.find((c) => c.value === item.category)?.label}
-                    </Text>
-                  </View>
-                  <View style={[s.badge, { backgroundColor: `${STATUS_COLORS[item.status]}20` }]}>
-                    <Text style={[s.badgeText, { color: STATUS_COLORS[item.status] }]}>
-                      {STATUS_LABELS[item.status]}
-                    </Text>
-                  </View>
-                  <Text style={s.timeText}>{timeAgo(item.created_at)}</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          )}
+          renderItem={renderTicketItem}
+          maxToRenderPerBatch={15}
+          windowSize={10}
+          removeClippedSubviews={Platform.OS === "android"}
         />
       )}
     </View>
