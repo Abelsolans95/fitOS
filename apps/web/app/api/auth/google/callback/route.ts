@@ -10,8 +10,11 @@ export async function GET(request: Request) {
     const state = searchParams.get("state");
     const error = searchParams.get("error");
 
+    // Validate returnTo against allowed paths to prevent open redirect
+    const allowedPaths = ["/app/trainer/appointments", "/app/trainer/settings", "/app/client/calendar"];
+    const returnTo = (state && allowedPaths.includes(state)) ? state : "/app/trainer/appointments";
+
     if (error) {
-      const returnTo = state || "/app/client/calendar";
       return NextResponse.redirect(
         new URL(`${returnTo}?google_error=${error}`, request.url)
       );
@@ -46,20 +49,18 @@ export async function GET(request: Request) {
 
     if (updateError) {
       console.error("[GoogleOAuth] Error saving tokens:", updateError);
-      const returnTo = state || "/app/client/calendar";
       return NextResponse.redirect(
         new URL(`${returnTo}?google_error=token_save_failed`, request.url)
       );
     }
 
-    const returnTo = state || "/app/client/calendar";
     return NextResponse.redirect(
       new URL(`${returnTo}?google_connected=true`, request.url)
     );
-  } catch (error) {
-    console.error("[GoogleOAuth] Callback error:", error);
+  } catch {
+    console.error("[GoogleOAuth] Callback error");
     return NextResponse.redirect(
-      new URL("/app/client/calendar?google_error=token_exchange_failed", request.url)
+      new URL("/app/trainer/appointments?google_error=token_exchange_failed", request.url)
     );
   }
 }
