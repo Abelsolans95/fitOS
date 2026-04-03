@@ -423,6 +423,12 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 161. **Ownership validation obligatoria con service_role** — Toda API route que usa `supabaseAdmin` (service_role) y acepta un resource ID del request body DEBE verificar que el recurso pertenece al usuario autenticado ANTES de operar. `service_role` bypasea RLS — la validación explícita es la ÚNICA protección. Patrón: `const { data } = await supabaseAdmin.from("tabla").select("owner_field").eq("id", resourceId).single(); if (data?.owner !== user.id) return 403;`. Corregido en: `import/create-exercises`, `import/reconcile`.
 162. **Layouts de trainer/client son async Server Components con auth check** — `app/(dashboard)/app/trainer/layout.tsx` y `client/layout.tsx` verifican `supabase.auth.getUser()` + `user.user_metadata.role` y redirigen si no coincide. Esto es defense-in-depth sobre el middleware. Si el middleware es bypaseado (cache poisoning, CDN bug), los layouts bloquean el acceso.
 163. **Toast de error para resource IDs inválidos en URL params** — Si un `session_id`, `ticket_id`, `article_id` o similar viene de `searchParams` y la query devuelve vacío (RLS bloqueó o no existe), mostrar `toast.error("Recurso no encontrado")` en vez de fallar silenciosamente. El usuario debe saber que algo falló. Corregido en: `routine/active/page.tsx`.
+164. **Realtime subscriptions DEBEN tener filtros scoped al usuario** — NUNCA suscribirse a una tabla sin filtro (`.on("postgres_changes", { table: "messages" }, ...)`). Siempre incluir `filter: \`campo=eq.${userId}\``. Los filtros de Realtime NO son un boundary de seguridad (pueden bypasearse), pero reducen el broadcast innecesario. La verdadera protección es RLS en la tabla. Si una tabla no tiene columna directa para filtrar (ej: `ticket_replies` no tiene `trainer_id`), usar `filter: \`sender_id=neq.${userId}\`` para minimizar exposición. Corregido en: `TrainerSidebar`, `ClientSidebar`, `trainer/chat`, `useTicketsPage`, `useClientTicketsPage`, mobile `TicketsScreen`.
+165. **Edge Functions DEBEN verificar JWT con `getUser()`** — El header `authorization` solo demuestra que alguien envió un token. Hay que llamar `supabase.auth.getUser()` para verificar que es válido. Función compartida `_shared/auth.ts` con `authenticateRequest(req)` que retorna `{ user, supabase }` o lanza Response 401. Aplicar en TODAS las Edge Functions. `analyze-food-image` no tenía auth alguno — corregido.
+166. **Edge Functions: body size limit obligatorio** — `validateBodySize(req, maxBytes)` en `_shared/auth.ts`. Default 1MB. `analyze-food-image` usa 7MB (base64 images). Previene JSONB bombs y DoS por payload gigante.
+167. **Edge Functions: sanitizar inputs para prompts de IA** — `sanitizeForPrompt(input, maxLength)` strip HTML y control chars antes de interpolar en prompts de Claude. Previene prompt injection. No confiar en inputs del usuario como parte del prompt sin sanear.
+168. **Video URLs: whitelist de dominios** — `lib/url-validation.ts` exporta `isAllowedVideoUrl(url)` y `sanitizeVideoUrl(url)`. Solo permite YouTube y Vimeo sobre HTTPS. Previene SSRF si el server alguna vez hace fetch de video URLs. Aplicar al guardar `video_url` en `knowledge_articles` y `trainer_exercise_library`.
+169. **Nunca usar `export const revalidate` en páginas con datos de usuario** — Next.js cacheará la respuesta y la servirá a otros usuarios (cache poisoning). Las páginas de dashboard NUNCA deben tener `revalidate`. Solo es seguro en páginas públicas (landing, pricing). Si necesitas ISR, usar `revalidateTag()` con tags por usuario.
 
 ---
 
@@ -591,7 +597,8 @@ fitOS/
 │   │   │   ├── rate-limit.ts           ← createRateLimiter, apiLimiter, authLimiter, uploadLimiter
 │   │   │   ├── csrf.ts                 ← validateCsrf (Origin/Referer whitelist)
 │   │   │   ├── logger.ts              ← structured JSON logging (info/warn/error/security)
-│   │   │   └── file-validation.ts      ← validateImageMagicBytes, validateExcelMagicBytes
+│   │   │   ├── file-validation.ts      ← validateImageMagicBytes, validateExcelMagicBytes
+│   │   │   └── url-validation.ts       ← isAllowedVideoUrl, sanitizeVideoUrl (SSRF prevention)
 │   │   ├── hooks/useChat.ts
 │   │   ├── middleware.ts
 │   │   └── vitest.config.ts
@@ -614,6 +621,12 @@ fitOS/
 │       ├── metro.config.js                      ← watchFolders apunta a ../../packages
 │       └── tsconfig.json                        ← paths: @fitos/theme
 └── supabase/
+    ├── functions/
+    │   ├── _shared/auth.ts             ← authenticateRequest, validateBodySize, sanitizeForPrompt
+    │   ├── analyze-food-image/         ← Claude Vision: imagen → macros
+    │   ├── analyze-onboarding-form/    ← Claude: respuestas → informe
+    │   ├── generate-gym-routine/       ← Claude: objetivo → rutina
+    │   └── generate-meal-plan/         ← Claude: datos → plan nutricional
     └── migrations/
         ├── 001–028 (schema base, auth, ejercicios, alimentos, Excel import)
         ├── 029_chat_messages.sql
@@ -833,3 +846,7 @@ supabase functions deploy analyze-onboarding-form
 | 81 | API | `import_id` no validado con service_role | `create-exercises` actualizaba `excel_imports` sin verificar ownership. service_role bypasea RLS. Fix: query de ownership antes de update. Regla 161 |
 | 82 | UX | `session_id` inválido en URL falla silenciosamente | Si RLS bloquea la query, el usuario no ve error. Fix: toast.error() cuando session_id no resuelve. Regla 163 |
 | 83 | Storage | SELECT policies de buckets demasiado permisivas | Cualquier usuario autenticado podía descargar cualquier imagen. Fix: validar ownership o trainer_clients relationship en SELECT. Migración 041 |
+| 84 | Realtime | Subscriptions sin filtro — broadcast global | `TrainerSidebar` escuchaba TODOS los mensajes/tickets/posts sin filtro. `trainer/chat` escuchaba TODOS los mensajes. Cualquier usuario autenticado recibía datos de otros trainers/clientes en tiempo real. Fix: añadir `filter` a todas las suscripciones scoped al usuario. Regla 164 |
+| 85 | Edge | `analyze-food-image` sin autenticación | CERO verificación JWT. Cualquiera con la URL consumía créditos de Anthropic sin autenticarse. Fix: `authenticateRequest(req)` con `_shared/auth.ts`. Regla 165 |
+| 86 | Edge | Edge Functions sin body size limit | Payload de 50MB aceptado sin límite. Podía causar OOM en Deno. Fix: `validateBodySize(req, maxBytes)`. Regla 166 |
+| 87 | Edge | Prompt injection via inputs del usuario | `meal_type`, `goal`, `equipment`, respuestas de onboarding interpoladas directamente en prompts de Claude. Fix: `sanitizeForPrompt()`. Regla 167 |

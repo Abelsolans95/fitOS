@@ -209,7 +209,7 @@ export function useTicketsPage() {
       )
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "ticket_replies" },
+        { event: "INSERT", schema: "public", table: "ticket_replies", filter: `sender_id=neq.${state.trainerId}` },
         (payload) => {
           const reply = payload.new as TicketReply;
           if (reply.sender_id === state.trainerId) return;

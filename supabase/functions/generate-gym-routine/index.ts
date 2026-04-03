@@ -5,12 +5,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { authenticateRequest, validateBodySize, sanitizeForPrompt, corsHeaders } from "../_shared/auth.ts";
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -18,22 +13,13 @@ serve(async (req: Request) => {
   }
 
   try {
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Authorization required" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    // SECURITY: Verify JWT and get authenticated user
+    const { user, supabase } = await authenticateRequest(req);
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { authorization: authHeader } } }
-    );
-
+    // SECURITY: Limit body size
+    const bodyText = await validateBodySize(req);
     const { client_id, goal, duration_months, days_per_week, equipment, level } =
-      await req.json();
+      JSON.parse(bodyText);
 
     if (!client_id || !goal) {
       return new Response(

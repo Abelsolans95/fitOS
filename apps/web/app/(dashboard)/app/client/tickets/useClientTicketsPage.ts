@@ -195,7 +195,7 @@ export function useClientTicketsPage() {
       .channel(`client-tickets-rt-${state.clientId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "ticket_replies" },
+        { event: "INSERT", schema: "public", table: "ticket_replies", filter: `sender_id=neq.${state.clientId}` },
         (payload) => {
           const reply = payload.new as TicketReply;
           if (reply.sender_id === state.clientId) return;

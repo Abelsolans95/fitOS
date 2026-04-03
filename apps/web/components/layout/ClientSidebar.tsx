@@ -214,7 +214,7 @@ export function ClientSidebar() {
         )
         .on(
           "postgres_changes",
-          { event: "INSERT", schema: "public", table: "community_posts" },
+          { event: "INSERT", schema: "public", table: "community_posts", ...(communityId ? { filter: `community_id=eq.${communityId}` } : {}) },
           (payload) => {
             if (communityId && payload.new.community_id === communityId && payload.new.author_id !== clientId) {
               setCommunityUnread((n) => n + 1);
@@ -223,7 +223,7 @@ export function ClientSidebar() {
         )
         .on(
           "postgres_changes",
-          { event: "INSERT", schema: "public", table: "ticket_replies" },
+          { event: "INSERT", schema: "public", table: "ticket_replies", filter: `sender_id=neq.${clientId}` },
           (payload) => {
             const reply = payload.new as { sender_id: string };
             if (reply.sender_id !== clientId) {
