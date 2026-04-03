@@ -329,7 +329,7 @@ export function useNutritionPage() {
   // but sub-hooks receive () => loadData() as a callback.
   const foodLibRef = useRef(foodLib);
   foodLibRef.current = foodLib;
-  const menuCrRef = useRef<typeof menuCr>(null!);
+  const menuCrRef = useRef<ReturnType<typeof useMenuCreator>>(null!);
 
   const menuCr = useMenuCreator(
     pageState.trainerId,
