@@ -75,9 +75,11 @@ export async function getResolvedFoods(
     overrideMap.set(ov.food_id, ov);
   }
 
-  return (foodsRes.data ?? []).map((food) => {
+  const result: ResolvedFood[] = [];
+  for (const food of foodsRes.data ?? []) {
     const override = overrideMap.get(food.id);
-    return {
+    if (override?.hidden) continue;
+    result.push({
       id: food.id,
       name: override?.custom_name ?? food.name,
       kcal: override?.custom_kcal ?? food.kcal,
@@ -89,8 +91,9 @@ export async function getResolvedFoods(
       is_overridden: !!override,
       override_id: override?.id ?? null,
       notes: override?.custom_notes ?? null,
-    };
-  });
+    });
+  }
+  return result;
 }
 
 /**
