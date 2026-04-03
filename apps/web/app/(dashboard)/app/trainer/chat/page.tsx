@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { QUERY_LIMITS } from "@/lib/constants";
+import { getInitials, formatChatListTime } from "@/lib/utils";
 
 interface ChatThread {
   client_id: string;
@@ -11,22 +12,6 @@ interface ChatThread {
   last_message: string;
   last_message_at: string;
   unread_count: number;
-}
-
-function getInitials(name: string | null) {
-  if (!name) return "?";
-  return name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
-}
-
-function formatTime(iso: string) {
-  const date = new Date(iso);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
-  if (diffDays === 1) return "Ayer";
-  if (diffDays < 7) return date.toLocaleDateString("es-ES", { weekday: "short" });
-  return date.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
 }
 
 export default function TrainerChatPage() {
@@ -197,7 +182,7 @@ export default function TrainerChatPage() {
                       thread.unread_count > 0 ? "text-[#00E5FF]" : "text-[#5A5A72]"
                     }`}
                   >
-                    {formatTime(thread.last_message_at)}
+                    {formatChatListTime(thread.last_message_at)}
                   </span>
                 </div>
                 <p

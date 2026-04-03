@@ -2,6 +2,7 @@
 
 import { useReducer, useCallback, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase";
+import { QUERY_LIMITS } from "@/lib/constants";
 import { toast } from "sonner";
 import type { ExerciseData, DayData, PreviousSet, PreviousLog } from "./active/types";
 
@@ -315,7 +316,7 @@ export function useClientRoutine() {
               .select("exercise_name, session_date, sets_data")
               .eq("client_id", user.id)
               .order("session_date", { ascending: false })
-              .limit(200),
+              .limit(QUERY_LIMITS.WEIGHT_LOG),
           ]);
 
           if (doneRes.error) {
@@ -688,7 +689,7 @@ export function useClientRoutine() {
         .select("exercise_name, session_date, sets_data")
         .eq("client_id", state.userId)
         .order("session_date", { ascending: false })
-        .limit(200);
+        .limit(QUERY_LIMITS.WEIGHT_LOG);
       if (reloadErr) {
         console.error(
           "[ClientRoutine] Error al recargar historial:",

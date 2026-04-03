@@ -29,4 +29,12 @@ export const QUERY_LIMITS = {
   CALENDAR_BODY_METRICS: 100,
   /** Exercises per page in library browser */
   EXERCISES_PAGE: 50,
+  /** Workout sessions per client history (trainer view) */
+  WORKOUT_SESSIONS: 20,
+  /** Dashboard calendar/food log recent entries */
+  DASHBOARD_RECENT: 30,
+  /** Ticket replies when building article from ticket */
+  TICKET_REPLIES_PREVIEW: 50,
+  /** Knowledge article suggestions in ticket creation */
+  KNOWLEDGE_SUGGESTIONS: 3,
 } as const;

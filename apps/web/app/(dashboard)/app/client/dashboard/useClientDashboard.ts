@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase";
+import { QUERY_LIMITS } from "@/lib/constants";
 
 export interface TodayPlan {
   workout: { name: string; details: string } | null;
@@ -71,7 +72,7 @@ export function useClientDashboard() {
             .eq("user_id", user.id).gte("date", startOfWeekStr).lte("date", todayStr),
           supabase.from("user_calendar").select("date, completed")
             .eq("user_id", user.id).eq("activity_type", "workout")
-            .order("date", { ascending: false }).limit(30),
+            .order("date", { ascending: false }).limit(QUERY_LIMITS.DASHBOARD_RECENT),
           supabase.from("user_calendar").select("date, activity_details")
             .eq("user_id", user.id).eq("activity_type", "workout").eq("completed", false)
             .gt("date", todayStr).order("date", { ascending: true }).limit(1),
