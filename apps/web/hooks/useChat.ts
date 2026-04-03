@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase";
+import { QUERY_LIMITS } from "@/lib/constants";
 import type { Message } from "@fitos/shared";
 
 export type { Message };
@@ -66,7 +67,7 @@ export function useChat() {
         supabase.from("messages")
           .select("id, trainer_id, client_id, sender_id, content, read_at, created_at")
           .eq("trainer_id", tid).eq("client_id", user.id)
-          .order("created_at", { ascending: true }).limit(500),
+          .order("created_at", { ascending: true }).limit(QUERY_LIMITS.MESSAGES),
       ]);
 
       if (trainerRes.error) {
@@ -126,7 +127,7 @@ export function useChat() {
     const { data: fresh, error: freshErr } = await supabase
       .from("messages").select("id,trainer_id,client_id,sender_id,content,read_at,created_at")
       .eq("trainer_id", trainerIdRef.current).eq("client_id", clientIdRef.current)
-      .order("created_at", { ascending: true }).limit(100);
+      .order("created_at", { ascending: true }).limit(QUERY_LIMITS.MESSAGES);
     if (freshErr) { console.error("[useChat] Error refrescando:", freshErr); } // No bloqueante
 
     if (fresh) setMessages(fresh as Message[]);

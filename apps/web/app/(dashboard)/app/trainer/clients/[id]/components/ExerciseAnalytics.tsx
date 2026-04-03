@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, memo } from "react";
 import { createClient } from "@/lib/supabase";
 import { toast } from "sonner";
+import { QUERY_LIMITS } from "@/lib/constants";
 import {
   LineChart,
   Line,
@@ -94,7 +95,7 @@ export const ExerciseAnalytics = memo(function ExerciseAnalytics({
         .select("exercise_name, session_date, total_volume_kg, stress_index, stimulus_rating, fatigue_rating, sets_data")
         .eq("client_id", clientId)
         .order("session_date", { ascending: true })
-        .limit(500);
+        .limit(QUERY_LIMITS.WEIGHT_LOG_ANALYTICS);
 
       if (error) {
         toast.error("Error cargando métricas de ejercicios");

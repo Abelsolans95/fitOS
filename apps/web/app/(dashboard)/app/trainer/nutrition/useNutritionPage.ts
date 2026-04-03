@@ -3,6 +3,7 @@
 import { useReducer, useCallback, useEffect, useMemo, useRef, type Dispatch } from "react";
 import { createClient } from "@/lib/supabase";
 import { toast } from "sonner";
+import { QUERY_LIMITS } from "@/lib/constants";
 
 import { useFoodLibrary, type FoodLibraryAction } from "./useFoodLibrary";
 import { useMenuCreator, type MenuCreatorAction, menuCreatorInitialState } from "./useMenuCreator";
@@ -197,7 +198,7 @@ export function useNutritionPage() {
           .select("id,name,kcal,protein,carbs,fat,fiber,is_global,trainer_id,category")
           .or(`trainer_id.eq.${user.id},is_global.eq.true`)
           .order("name")
-          .limit(50),
+          .limit(QUERY_LIMITS.EXERCISES_PAGE),
         supabase
           .from("saved_menu_templates")
           .select("id, name, config, created_at")

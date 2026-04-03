@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase";
 import { toast } from "sonner";
+import { QUERY_LIMITS } from "@/lib/constants";
 import { Message } from "./types";
 
 export function TabChat({
@@ -31,7 +32,7 @@ export function TabChat({
         .eq("trainer_id", trainerId)
         .eq("client_id", clientId)
         .order("created_at", { ascending: true })
-        .limit(500);
+        .limit(QUERY_LIMITS.MESSAGES);
       if (msgsError) {
         toast.error("Error al cargar los mensajes");
         console.error("[TabChat] Error cargando mensajes:", msgsError);

@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { toast } from "sonner";
+import { QUERY_LIMITS } from "@/lib/constants";
 import type { ExerciseData, PreviousLog, SavedLogEntry } from "./types";
 import { useActiveTraining } from "./useActiveTraining";
 import { RestTimer } from "./components/RestTimer";
@@ -65,7 +66,7 @@ function ActiveTrainingPage() {
 
       const { data: logs, error: logsError } = await supabase.from("weight_log")
         .select("exercise_name, session_date, sets_data")
-        .eq("client_id", user.id).order("session_date", { ascending: false }).limit(200);
+        .eq("client_id", user.id).order("session_date", { ascending: false }).limit(QUERY_LIMITS.WEIGHT_LOG);
       if (logsError) {
         console.error("[RoutineActive] Error cargando logs anteriores:", logsError);
         // No bloqueante — continuamos sin datos anteriores
