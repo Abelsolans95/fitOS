@@ -3,6 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Platform,
 } from "react-native";
 import { supabase } from "../lib/supabase";
+import { QUERY_LIMITS } from "../lib/constants";
 import { colors, spacing, radius, shadows, fonts } from "../theme";
 import { AppointmentCard } from "./appointments/AppointmentCard";
 import { RequestModal } from "./appointments/RequestModal";
@@ -33,7 +34,7 @@ export default function AppointmentsScreen() {
       .gte("starts_at", pastDate.toISOString())
       .lte("starts_at", futureDate.toISOString())
       .order("starts_at", { ascending: true })
-      .limit(200);
+      .limit(QUERY_LIMITS.APPOINTMENTS);
 
     if (apptErr) {
       console.error("[AppointmentsScreen] Error cargando citas:", apptErr);

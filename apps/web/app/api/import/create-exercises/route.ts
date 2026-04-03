@@ -49,13 +49,14 @@ export async function POST(request: NextRequest) {
       const trainerName = link.trainer_exercise_name || "";
 
       // Check if trainer already has a private exercise with this exact name
-      const { data: existing } = await supabaseAdmin
+      const { data: existing, error: existingErr } = await supabaseAdmin
         .from("trainer_exercise_library")
         .select("id, name")
         .eq("trainer_id", user.id)
         .eq("is_global", false)
         .ilike("name", trainerName)
         .maybeSingle();
+      if (existingErr) { console.error("[create-exercises] Error checking existing:", existingErr); }
 
       if (existing) {
         // Already exists as private — no action needed
@@ -64,11 +65,12 @@ export async function POST(request: NextRequest) {
       }
 
       // Check if the matched exercise name is identical (case-insensitive) to trainer's name
-      const { data: matchedEx } = await supabaseAdmin
+      const { data: matchedEx, error: matchedErr } = await supabaseAdmin
         .from("trainer_exercise_library")
         .select("id, name, category")
         .eq("id", link.global_exercise_id)
         .single();
+      if (matchedErr) { console.error("[create-exercises] Error fetching matched exercise:", matchedErr); }
 
       if (matchedEx && matchedEx.name.toLowerCase() === trainerName.toLowerCase()) {
         // Same name — global is already visible, no clone needed

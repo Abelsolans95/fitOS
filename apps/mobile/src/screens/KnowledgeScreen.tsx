@@ -4,6 +4,7 @@ import {
   ActivityIndicator, FlatList, Linking, Platform,
 } from "react-native";
 import { supabase } from "../lib/supabase";
+import { QUERY_LIMITS } from "../lib/constants";
 import { colors, spacing, radius, fonts } from "../theme";
 import type { KnowledgeCategory, KnowledgeArticle } from "@fitos/shared";
 import { KNOWLEDGE_CATEGORIES } from "@fitos/shared";
@@ -62,7 +63,7 @@ export default function KnowledgeScreen() {
       .eq("trainer_id", rel.trainer_id)
       .eq("is_published", true)
       .order("created_at", { ascending: false })
-      .limit(100);
+      .limit(QUERY_LIMITS.KNOWLEDGE_ARTICLES);
 
     if (error) {
       console.error("[KnowledgeScreen] Error loading articles:", error);

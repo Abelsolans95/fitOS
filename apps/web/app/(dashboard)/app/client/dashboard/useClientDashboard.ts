@@ -84,7 +84,7 @@ export function useClientDashboard() {
 
         if (weekRes.data && weekRes.data.length > 0) {
           const completed = weekRes.data.filter((e: { completed: boolean }) => e.completed).length;
-          setWeeklyStats((prev) => ({ ...prev, adherence: Math.round((completed / weekRes.data!.length) * 100) }));
+          setWeeklyStats((prev) => ({ ...prev, adherence: Math.round((completed / (weekRes.data?.length || 1)) * 100) }));
         }
 
         if (recentRes.data) {
@@ -109,8 +109,7 @@ export function useClientDashboard() {
     };
 
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // mount-only: load creates its own supabase client inside
 
   return { clientName, todayPlan, weeklyStats, loading, error };
 }

@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, type DimensionValue } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { colors, spacing } from "../../theme";
 import { formatTime, getScheme } from "./constants";
@@ -92,7 +92,7 @@ export function ActiveTraining({
         <LinearGradient
           colors={[colors.cyan, colors.violet]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-          style={[st.progressFill, { width: `${((currentExIdx + (allCurrentDone ? 1 : 0)) / totalExercises) * 100}%` as any }]}
+          style={[st.progressFill, { width: `${((currentExIdx + (allCurrentDone ? 1 : 0)) / totalExercises) * 100}%` as DimensionValue }]}
         />
       </View>
 

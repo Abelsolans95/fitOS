@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { trainingReducer, initialState, type TrainingState } from "./useActiveTraining";
+import { trainingReducer, initialState, type TrainingState } from "./active-training-reducer";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

@@ -47,7 +47,8 @@ export default function TrainerChatPage() {
         });
       } else {
         if (!msg.read_at && msg.sender_id !== user.id) {
-          clientMap.get(msg.client_id)!.unread_count++;
+          const entry = clientMap.get(msg.client_id);
+          if (entry) entry.unread_count++;
         }
       }
     }

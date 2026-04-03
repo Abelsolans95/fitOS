@@ -30,6 +30,7 @@ Este archivo contiene TODO lo necesario para continuar el desarrollo: reglas, cr
 - **Code Quality Audit v2 (03/04/2026):** Refactor de arquitectura ✅ — API routes centralizadas (`lib/api-utils.ts`, `lib/supabase-admin.ts`), `QUERY_LIMITS` centralizados (`lib/constants.ts`), sidebar badges extraídos a `useSidebarBadges` hook, community tree utils compartidos (`lib/community-utils.ts`), `timeAgo` centralizado en `lib/utils.ts`, `calculateStressIndex` movido a `@fitos/shared`, `useNutritionPage` dividido en 3 hooks (`useFoodLibrary` + `useMenuCreator` + orquestador), cache TTL en resolvers (`lib/query-cache.ts`), `React.memo` en componentes lista, FlatList optimizados en mobile. 132 tests, 14 archivos, todos pasando.
 - **Code Quality Audit v3 (03/04/2026):** Bugs + seguridad + leaks ✅ — food-resolver hidden fix, OAuth callback error handling, community orphan crash fix, middleware null role, role enum validation, mobile insert error handling, setTimeout cleanup, hook deps fixes (3 eslint-disables eliminados), `any` types eliminados en excel-parser. Tests: 179 tests, 17 archivos, todos pasando.
 - **Audit v4 — Seguridad + Rendimiento + Deuda técnica (03/04/2026):** Seguridad: CORS Edge Functions restrictivo, IDOR fix en reconcile, open redirect fix, sanitización errores DB, select("*") eliminado. Rendimiento: filtros trainer_id en Realtime subscriptions, Promise.all en mobile, useMemo en dashboard. Deuda: 9 paquetes/servicios vacíos eliminados, `.limit()` hardcoded → QUERY_LIMITS (0 restantes), 5 `getInitials` + 2 `formatTime` centralizados. Type safety: 5 `as any` producción eliminados, `SetsDataEntry` movido a `@fitos/shared`. Fragmentación: `DaySchedule.tsx` (952→450), `MenuCreator.tsx` (810→350), `OnboardingScreen.tsx` (871→400) — 14 subcomponentes extraídos. ESLint mobile configurado. 205 tests, 18 archivos, todos pasando.
+- **Audit v5 — Refactor profundo de código (03/04/2026):** Mobile `QUERY_LIMITS` centralizado (`apps/mobile/src/lib/constants.ts`). 6 `eslint-disable react-hooks/exhaustive-deps` eliminados (useRef pattern). 2 `as any` → `as DimensionValue`. 2 non-null assertions eliminados. 3 Pattern C fixes. **9 ficheros >500 líneas refactorizados:** `useRoutinesPage` (921→333, reducer+helpers extraídos), `useActiveTraining` (792→422, reducer+helpers extraídos), `useClientRoutine` (738→440, reducer+helpers extraídos), `page.tsx` landing (700→49, 12 componentes extraídos), `useMenuCreator` (677→235, reducer+helpers extraídos), `useCommunityPage` (618→418, reducer extraído), mobile `useRoutineScreen` (634→398, helpers+db extraídos), mobile `TicketsScreen` (601→242, 3 subcomponentes), mobile `ChatScreen` (563→274, 4 subcomponentes+hook). 205 tests, 18 archivos, todos pasando.
 
 ---
 
@@ -153,11 +154,11 @@ Este archivo contiene TODO lo necesario para continuar el desarrollo: reglas, cr
       if (profileErr) { console.error("[Context] Error cargando perfil:", profileErr); } // No bloqueante
       ```
     - **Cómo distinguir bloqueante vs no bloqueante:** si el error impide mostrar la funcionalidad principal de la página → bloqueante (toast + return). Si es un dato secundario de enriquecimiento → no bloqueante (solo log).
-    - **Auditoría completada el 30/03/2026:** Patrón C aplicado a todas las queries del proyecto. Archivos corregidos: `trainer/settings`, `trainer/chat`, `trainer/clients`, `client/dashboard`, `client/meals`, `client/chat`, `client/appointments`, `BookAppointmentModal`.
+    - Patrón C ya aplicado a todas las queries del proyecto (auditoría 30/03/2026).
 
 54. **Usar `??` (no `||`) para merges de override** — `||` trata `""`, `0` y `false` como falsy, descartando overrides legítimos. Siempre usar nullish coalescing `??` al fusionar campos de override con valores originales. Ejemplo: `override?.custom_name ?? ex.name`.
 55. **Toda API route de importación debe verificar rol trainer** — No basta con verificar autenticación. Endpoints de Excel import, reconciliation, etc. deben consultar `profiles.role` y retornar 403 si no es `trainer`.
-56. **Nunca inicializar clientes de API externos a nivel de módulo en API routes** — Igual que la regla 40 para Supabase, `new Anthropic(...)`, `new Resend(...)`, etc. deben crearse dentro del handler, no fuera. Vercel evalúa módulos durante el build sin env vars.
+56. **Nunca inicializar clientes de API externos a nivel de módulo en API routes** — Igual que Regla 40 pero para `new Anthropic(...)`, `new Resend(...)`, etc.
 57. **Fragmentar DURANTE la creación, no después** — La Regla 50 se aplica al momento de escribir código nuevo, no como refactor posterior. Si una página va a tener modal + calendario + lista + filtros, crear los componentes separados desde el inicio. Nunca generar un archivo de >300 líneas para "fragmentar después". Ejemplo: `appointments/page.tsx` se creó con 1187 líneas y tuvo que ser fragmentado después en 5 componentes.
 58. **Tests obligatorios al crear módulos de lógica (`lib/*.ts`)** — Todo archivo en `lib/` que contenga lógica pura DEBE tener su `*.test.ts` creado en la misma sesión. No esperar a un code review. Mínimo: happy path + 1 edge case + 1 error case. Framework: Vitest (ver Regla 52). Archivos de referencia: `exercise-resolver.test.ts` (mocks Supabase), `excel-parser.test.ts` (buffers XLSX en memoria), `email-notifications.test.ts` (stub con vi.stubEnv).
 59. **Verificar estado actual antes de reportar issues** — Antes de crear un ticket de fix o proponer un cambio, leer el archivo y verificar que el problema realmente existe en el código actual. Un code review que genera trabajo innecesario (3 fixes que ya estaban correctos) es peor que no hacer code review. Leer primero, opinar después.
@@ -473,7 +474,7 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
     const subHook = useSubHook(() => loadDataRef.current()); // callback estable
     ```
 
-170. **`QUERY_LIMITS` para TODA query con `.limit()`** — Ningún `.limit(N)` hardcodeado permitido. Siempre importar de `@/lib/constants`. Si no existe la constante, crearla primero. Constantes añadidas: `CALENDAR_ENTRIES: 200`, `CALENDAR_BODY_METRICS: 100`.
+170. **`QUERY_LIMITS` para TODA query con `.limit()`** — Ver Regla 150. Aplica en web y mobile (Regla 179).
 
 ### Reglas de calidad de código (Audit v4, 03/04/2026)
 
@@ -483,7 +484,7 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 
 173. **IDOR check obligatorio en updates a tablas compartidas** — Cuando una API route hace `.update().eq("id", bodyId)`, SIEMPRE añadir `.eq("trainer_id", user.id)` o `.eq("client_id", user.id)`. Sin este check, un usuario puede modificar registros de otros. Bug encontrado: `import/reconcile` actualizaba `excel_imports` sin verificar pertenencia.
 
-174. **Nunca concatenar errores de DB en respuestas HTTP** — En API routes, `insertError.message` o `error.message` van SOLO a `console.error`. La respuesta al cliente debe ser un mensaje genérico en español. Bug encontrado: `import/excel` exponía detalles de esquema.
+174. **Nunca concatenar errores de DB en respuestas HTTP** — Ver Regla 147. Bug encontrado: `import/excel` exponía detalles de esquema.
 
 175. **Paquetes monorepo vacíos = eliminar** — Si un paquete en `packages/` o `services/` no tiene código, imports ni tests, eliminarlo. No mantener "placeholders para el futuro". Si se necesita después, se crea. Eliminados: `@fitos/ui`, `@fitos/auth`, `@fitos/ai`, `@fitos/validations`, `@fitos/stripe`, `@fitos/db`, 3 services.
 
@@ -492,6 +493,22 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 177. **`useMemo` para arrays estáticos en componentes** — Arrays de configuración (kpiCards, quickActions, tabs) que se crean en cada render deben envolverse en `useMemo`. Si son constantes puras sin deps, moverlos fuera del componente.
 
 178. **Dependencias circulares entre hooks: extraer tipos a archivo separado** — Si `hookA.ts` importa de `hookB.ts` y viceversa, extraer tipos/constantes/helpers compartidos a un archivo `types.ts` o `*-types.ts`. Los hooks importan de ahí. Bug encontrado: `useNutritionPage` ↔ `useMenuCreator` ↔ `useFoodLibrary` causaba "Cannot access 'm' before initialization" en Vercel.
+
+### Reglas de calidad de código (Audit v5, 03/04/2026)
+
+179. **`QUERY_LIMITS` en mobile centralizado** — `apps/mobile/src/lib/constants.ts` contiene los mismos límites que `apps/web/lib/constants.ts`. Todo `.limit(N)` en mobile debe importar de aquí. Al añadir un nuevo límite, añadirlo en AMBOS archivos.
+
+180. **Reducers extraídos a fichero propio** — Hooks complejos con `useReducer` deben tener el reducer, tipos de acción y estado inicial en un fichero `*-reducer.ts` junto al hook. El hook importa y re-exporta para backward compatibility. Ficheros de referencia: `routines-reducer.ts`, `active-training-reducer.ts`, `client-routine-reducer.ts`, `menu-creator-reducer.ts`, `community-reducer.ts`.
+
+181. **Helpers puros extraídos a fichero propio** — Funciones puras (sin hooks, sin side effects, sin Supabase) deben vivir en `*-helpers.ts` junto al hook. Esto incluye: serialización de datos para save, inicialización de sets, resolución de weekly_config, transformación de datos. Ficheros de referencia: `routines-helpers.ts`, `active-training-helpers.ts`, `client-routine-helpers.ts`, `menu-creator-helpers.ts`, mobile `routine-helpers.ts`.
+
+182. **Landing page fragmentada en componentes** — `apps/web/app/page.tsx` es un composer de ~50 líneas. Los componentes viven en `app/components/landing/`: `HeroSection`, `FeaturesSection`, `PricingSection`, `CTASection`, `NavBar`, `Footer`, `TestimonialsSection`, `HowItWorksSection`, `PhotoBreakSection`, `TickerBar`, `Icons`, `LandingStyles`. No añadir secciones directamente en page.tsx.
+
+183. **Mobile: subcomponentes de pantalla en subdirectorio** — Pantallas complejas (>400 líneas) deben extraer subcomponentes a un subdirectorio con el nombre de la pantalla. Ejemplos: `screens/chat/` (MessageBubble, ChatInput, useChat, types), `screens/tickets/` (TicketList, CreateTicket, TicketThread, types), `screens/routine/` (routine-helpers, routine-db). La pantalla principal queda como orquestador.
+
+184. **Mobile DB operations en fichero separado** — Operaciones Supabase de mobile que no necesitan hooks pueden extraerse a `*-db.ts`. Ejemplo: `screens/routine/routine-db.ts` con `savePartialProgress`, `finalizeSession`, `createWorkoutSession`. El hook las llama dentro de `useCallback`.
+
+185. **`as DimensionValue` en React Native, no `as any`** — Para porcentajes como `width: '90%'` en React Native, usar `as DimensionValue` de `react-native` en vez de `as any`. Import: `import { DimensionValue } from 'react-native'`.
 
 ---
 
@@ -507,7 +524,7 @@ Qué actualizar:
 
 **Documentar errores no es opcional.** Un error no documentado es un error que se repetirá.
 
-**Paridad web ↔ mobile es obligatoria.** Cualquier funcionalidad nueva o corrección de error debe aplicarse en web (`apps/web`) Y en mobile (`apps/mobile`).
+**Paridad web ↔ mobile es obligatoria** (ver Regla 11).
 
 **Especificaciones del producto:** `especificaciones.md` (especialmente Cap. 3 arquitectura y Cap. 4 base de datos).
 
@@ -574,7 +591,8 @@ fitOS/
 │   │   ├── app/
 │   │   │   ├── layout.tsx                           ← dark mode hardcodeado
 │   │   │   ├── globals.css                          ← @theme con marcadores fitos-theme-*
-│   │   │   ├── page.tsx                             ← landing pública
+│   │   │   ├── page.tsx                             ← landing (49 líneas, composer)
+│   │   │   ├── components/landing/                  ← 12 componentes: Hero/Features/Pricing/CTA/Nav/Footer/etc.
 │   │   │   ├── (auth)/
 │   │   │   │   ├── login/page.tsx
 │   │   │   │   ├── register/page.tsx
@@ -595,18 +613,19 @@ fitOS/
 │   │   │   │       │   ├── clients/[id]/components/ ← TabPerfil/Progreso/Rutina/Menu/Formulario/Chat/Salud/ExerciseAnalytics
 │   │   │   │       │   ├── exercises/page.tsx
 │   │   │   │       │   ├── routines/page.tsx        ← orquestador
-│   │   │   │       │   ├── routines/useRoutinesPage.ts
+│   │   │   │       │   ├── routines/useRoutinesPage.ts ← hook (333 líneas)
+│   │   │   │       │   ├── routines/routines-reducer.ts + routines-helpers.ts
 │   │   │   │       │   ├── routines/components/
 │   │   │   │       │   ├── nutrition/page.tsx       ← orquestador
 │   │   │   │       │   ├── nutrition/useNutritionPage.ts  ← orquestador (usa useFoodLibrary + useMenuCreator)
 │   │   │   │       │   ├── nutrition/useFoodLibrary.ts   ← CRUD alimentos, búsqueda, paginación
-│   │   │   │       │   ├── nutrition/useMenuCreator.ts   ← estado del planificador de menú
+│   │   │   │       │   ├── nutrition/useMenuCreator.ts (235 líneas) + menu-creator-reducer.ts + menu-creator-helpers.ts
 │   │   │   │       │   ├── import/page.tsx          ← wizard Excel 4 pasos
 │   │   │   │       │   ├── forms/page.tsx
 │   │   │   │       │   ├── appointments/page.tsx    ← orquestador
 │   │   │   │       │   ├── appointments/components/ ← types/shared/CreateModal/Calendar/List
 │   │   │   │       │   ├── community/page.tsx       ← orquestador
-│   │   │   │       │   ├── community/useCommunityPage.ts
+│   │   │   │       │   ├── community/useCommunityPage.ts + community-reducer.ts
 │   │   │   │       │   ├── community/components/
 │   │   │   │       │   ├── tickets/page.tsx         ← orquestador master-detail
 │   │   │   │       │   ├── tickets/useTicketsPage.ts
@@ -621,8 +640,9 @@ fitOS/
 │   │   │   │       │   ├── dashboard/page.tsx
 │   │   │   │       │   ├── calories/page.tsx        ← AI Vision tracker
 │   │   │   │       │   ├── routine/page.tsx
+│   │   │   │       │   ├── routine/useClientRoutine.ts (440 líneas) + client-routine-reducer.ts + client-routine-helpers.ts
 │   │   │   │       │   ├── routine/active/page.tsx  ← Suspense wrapper
-│   │   │   │       │   ├── routine/active/useActiveTraining.ts
+│   │   │   │       │   ├── routine/active/useActiveTraining.ts (422 líneas) + active-training-reducer.ts + active-training-helpers.ts
 │   │   │   │       │   ├── routine/active/components/ ← ExerciseCard/RestTimer/RPESelector/SFRSelector/SummaryView
 │   │   │   │       │   ├── meals/page.tsx
 │   │   │   │       │   ├── calendar/page.tsx
@@ -680,13 +700,16 @@ fitOS/
 │       ├── src/
 │       │   ├── theme.ts                         ← re-exporta @fitos/theme + shadows local
 │       │   ├── contexts/AuthContext.tsx
-│       │   ├── lib/supabase.ts + widget-data.ts + widget-sync.ts
+│       │   ├── lib/supabase.ts + widget-data.ts + widget-sync.ts + constants.ts
+│       │   ├── hooks/useSupabaseQuery.ts + useDashboardData.ts
 │       │   ├── screens/
 │       │   │   ├── LoginScreen.tsx + OnboardingScreen.tsx
 │       │   │   ├── DashboardScreen.tsx + CaloriesScreen.tsx
-│       │   │   ├── RoutineScreen.tsx + MealsScreen.tsx
-│       │   │   ├── ProgressScreen.tsx + ChatScreen.tsx
-│       │   │   ├── HealthScreen.tsx + AppointmentsScreen.tsx + TicketsScreen.tsx + KnowledgeScreen.tsx
+│       │   │   ├── routine/RoutineScreen.tsx + useRoutineScreen.ts (398) + routine-helpers.ts + routine-db.ts
+│       │   │   ├── chat/ChatScreen.tsx (274) + MessageBubble.tsx + ChatInput.tsx + useChat.ts
+│       │   │   ├── tickets/TicketsScreen.tsx (242) + TicketList.tsx + CreateTicket.tsx + TicketThread.tsx
+│       │   │   ├── MealsScreen.tsx + ProgressScreen.tsx
+│       │   │   ├── HealthScreen.tsx + AppointmentsScreen.tsx + KnowledgeScreen.tsx
 │       │   └── widgets/
 │       │       ├── TodayWorkoutWidget.tsx       ← Android JSX (sin hooks)
 │       │       └── widget-task-handler.tsx
@@ -732,6 +755,8 @@ fitOS/
 | Auditoría completa (bugs + seguridad + TS + UX + perf) | ✅ Completo | 126 tests pasando, migración 040 pendiente aplicar |
 | Code Quality Audit v2 (refactor arquitectura) | ✅ Completo | 132 tests, API utils, cache, hooks compartidos, React.memo |
 | Code Quality Audit v3 (bugs + seguridad + leaks) | ✅ Completo | 179 tests, 4 bugs, 2 security, 3 leaks, 3 hook deps, 47 tests nuevos |
+| Audit v4 (seguridad + rendimiento + deuda) | ✅ Completo | CORS, IDOR, open redirect, 14 subcomponentes, ESLint mobile |
+| Audit v5 (refactor profundo) | ✅ Completo | 9 ficheros refactorizados, 0 eslint-disable, mobile QUERY_LIMITS |
 | Gamificación | ❌ Sin UI | Tablas existen, falta interfaz |
 | Stripe + suscripciones | ❌ Sin implementar | |
 | Push notifications | ❌ Sin implementar | |

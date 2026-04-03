@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect, useCallback } from "react";
+import { Suspense, useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -29,6 +29,8 @@ function ActiveTrainingPage() {
 
   const t = useActiveTraining({ exercises, previousLogs, userId, routineId, trainerId, routineTitle, day, week });
   const { state } = t;
+  const tRef = useRef(t);
+  tRef.current = t;
 
   useEffect(() => {
     const load = async () => {
@@ -89,17 +91,16 @@ function ActiveTrainingPage() {
             console.error("[RoutineActive] Error cargando sets guardados:", slError);
             // No bloqueante
           }
-          t.resumeFromSession({
+          tRef.current.resumeFromSession({
             sessionId: es.id, sessionCreatedAt: es.created_at,
             sessionLogs: (sl ?? []) as SavedLogEntry[], exercises: dayEx, previousLogs: pl,
           });
           return;
         }
       }
-      t.initializeSets(dayEx);
+      tRef.current.initializeSets(dayEx);
     };
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [routineId, day, resumeSessionId]);
 
   const handleFinalize = useCallback(async () => {
