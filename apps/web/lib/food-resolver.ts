@@ -9,6 +9,7 @@
  */
 
 import { SupabaseClient } from "@supabase/supabase-js";
+import { getCached, setCache, invalidateCache } from "./query-cache";
 
 /** Row shape from trainer_food_overrides */
 interface TrainerFoodOverride {
@@ -55,6 +56,10 @@ export async function getResolvedFoods(
   supabase: SupabaseClient,
   trainerId: string
 ): Promise<ResolvedFood[]> {
+  const cacheKey = `foods:${trainerId}`;
+  const cached = getCached<ResolvedFood[]>(cacheKey);
+  if (cached) return cached;
+
   const [foodsRes, overridesRes] = await Promise.all([
     supabase
       .from("trainer_food_library")
@@ -75,7 +80,7 @@ export async function getResolvedFoods(
     overrideMap.set(ov.food_id, ov);
   }
 
-  return (foodsRes.data ?? []).map((food) => {
+  const result: ResolvedFood[] = (foodsRes.data ?? []).map((food) => {
     const override = overrideMap.get(food.id);
     return {
       id: food.id,
@@ -91,6 +96,8 @@ export async function getResolvedFoods(
       notes: override?.custom_notes ?? null,
     };
   });
+  setCache(cacheKey, result);
+  return result;
 }
 
 /**
@@ -145,5 +152,6 @@ export async function upsertFoodOverride(
     .single();
 
   if (error) throw error;
+  invalidateCache(`foods:${trainerId}`);
   return data;
 }

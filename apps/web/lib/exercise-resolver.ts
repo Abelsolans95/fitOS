@@ -11,6 +11,7 @@
  */
 
 import { SupabaseClient } from "@supabase/supabase-js";
+import { getCached, setCache, invalidateCache } from "./query-cache";
 
 /** Row shape from trainer_exercise_library */
 interface TrainerExerciseLibraryRow {
@@ -76,6 +77,10 @@ export async function getResolvedExercises(
   supabase: SupabaseClient,
   trainerId: string
 ): Promise<ResolvedExercise[]> {
+  const cacheKey = `exercises:${trainerId}`;
+  const cached = getCached<ResolvedExercise[]>(cacheKey);
+  if (cached) return cached;
+
   // Fetch all visible exercises and overrides in parallel
   const [exercisesRes, overridesRes] = await Promise.all([
     supabase
@@ -122,6 +127,7 @@ export async function getResolvedExercises(
       aliases: ex.aliases ?? [],
     });
   }
+  setCache(cacheKey, result);
   return result;
 }
 
@@ -220,5 +226,6 @@ export async function upsertExerciseOverride(
     .single();
 
   if (error) throw error;
+  invalidateCache(`exercises:${trainerId}`);
   return data;
 }
