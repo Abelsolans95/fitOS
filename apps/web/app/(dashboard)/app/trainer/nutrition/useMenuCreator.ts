@@ -15,7 +15,7 @@ import {
   type WeekTarget,
   type SavedMenuTemplate,
   type MealPlanRow,
-} from "./useNutritionPage";
+} from "./nutrition-types";
 
 /* ────────────────────────────────────────────
    Constants (local)

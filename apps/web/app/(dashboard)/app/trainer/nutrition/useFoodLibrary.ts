@@ -3,7 +3,7 @@
 import { useReducer, useCallback, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase";
 import { toast } from "sonner";
-import type { FoodItem } from "./useNutritionPage";
+import type { FoodItem } from "./nutrition-types";
 
 /* ────────────────────────────────────────────
    State
