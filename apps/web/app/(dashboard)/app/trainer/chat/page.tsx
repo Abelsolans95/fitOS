@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
+import { QUERY_LIMITS } from "@/lib/constants";
+import { getInitials, formatChatListTime } from "@/lib/utils";
 
 interface ChatThread {
   client_id: string;
@@ -10,22 +12,6 @@ interface ChatThread {
   last_message: string;
   last_message_at: string;
   unread_count: number;
-}
-
-function getInitials(name: string | null) {
-  if (!name) return "?";
-  return name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
-}
-
-function formatTime(iso: string) {
-  const date = new Date(iso);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
-  if (diffDays === 1) return "Ayer";
-  if (diffDays < 7) return date.toLocaleDateString("es-ES", { weekday: "short" });
-  return date.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
 }
 
 export default function TrainerChatPage() {
@@ -45,7 +31,7 @@ export default function TrainerChatPage() {
       .select("client_id, sender_id, content, read_at, created_at")
       .eq("trainer_id", user.id)
       .order("created_at", { ascending: false })
-      .limit(500);
+      .limit(QUERY_LIMITS.MESSAGES);
 
     if (msgErr) { console.error("[TrainerChat] Error cargando mensajes:", msgErr); setLoading(false); return; }
     if (!messages?.length) { setLoading(false); return; }
@@ -61,7 +47,8 @@ export default function TrainerChatPage() {
         });
       } else {
         if (!msg.read_at && msg.sender_id !== user.id) {
-          clientMap.get(msg.client_id)!.unread_count++;
+          const entry = clientMap.get(msg.client_id);
+          if (entry) entry.unread_count++;
         }
       }
     }
@@ -96,12 +83,19 @@ export default function TrainerChatPage() {
     fetchThreads();
 
     const supabase = createClient();
-    const channel = supabase
-      .channel("trainer-chat-list")
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, fetchThreads)
-      .subscribe();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
 
-    return () => { supabase.removeChannel(channel); };
+    const setupRealtime = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      channel = supabase
+        .channel("trainer-chat-list")
+        .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `trainer_id=eq.${user.id}` }, fetchThreads)
+        .subscribe();
+    };
+    setupRealtime();
+
+    return () => { if (channel) supabase.removeChannel(channel); };
   }, [fetchThreads]);
 
   const totalUnread = threads.reduce((sum, t) => sum + t.unread_count, 0);
@@ -189,7 +183,7 @@ export default function TrainerChatPage() {
                       thread.unread_count > 0 ? "text-[#00E5FF]" : "text-[#5A5A72]"
                     }`}
                   >
-                    {formatTime(thread.last_message_at)}
+                    {formatChatListTime(thread.last_message_at)}
                   </span>
                 </div>
                 <p

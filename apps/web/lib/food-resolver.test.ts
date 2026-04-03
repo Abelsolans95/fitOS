@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { getResolvedFoods, searchSimilarFoods } from "./food-resolver";
+import { invalidateCache } from "./query-cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 // ---------------------------------------------------------------------------
@@ -107,6 +108,7 @@ const TRAINER_ID = "trainer-1";
 // ---------------------------------------------------------------------------
 
 describe("getResolvedFoods", () => {
+  beforeEach(() => { invalidateCache(); });
   // 1. Layer A — global foods only
   it("returns global foods with is_overridden=false", async () => {
     const supabase = createMockSupabase(

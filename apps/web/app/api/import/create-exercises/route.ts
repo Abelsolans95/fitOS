@@ -1,36 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { createClient as createAuthClient } from "@/lib/supabase-server";
+import { requireAuthWithRole } from "@/lib/api-utils";
 
 export async function POST(request: NextRequest) {
-  // Verify auth first
-  const authClient = await createAuthClient();
-  const {
-    data: { user },
-  } = await authClient.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
-
-  // Verify trainer role (use auth client — no need for admin yet)
-  const { data: profile, error: profileErr } = await authClient
-    .from("profiles")
-    .select("role")
-    .eq("user_id", user.id)
-    .single();
-
-  if (profileErr || profile?.role !== "trainer") {
-    return NextResponse.json({ error: "Solo entrenadores" }, { status: 403 });
-  }
-
-  // Admin client initialized after auth+role check (Rule 94)
-  const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const result = await requireAuthWithRole("trainer");
+  if (result instanceof NextResponse) return result;
+  const { user, admin: supabaseAdmin } = result;
 
   const { exercises, linked, import_id, decisions } = await request.json();
+
+  if (exercises && !Array.isArray(exercises)) {
+    return NextResponse.json({ error: "exercises debe ser un array" }, { status: 400 });
+  }
+  if (import_id && typeof import_id !== "string") {
+    return NextResponse.json({ error: "import_id debe ser un string" }, { status: 400 });
+  }
 
   const created: { name: string; id: string }[] = [];
   const errors: { name: string; error: string }[] = [];
@@ -66,13 +49,14 @@ export async function POST(request: NextRequest) {
       const trainerName = link.trainer_exercise_name || "";
 
       // Check if trainer already has a private exercise with this exact name
-      const { data: existing } = await supabaseAdmin
+      const { data: existing, error: existingErr } = await supabaseAdmin
         .from("trainer_exercise_library")
         .select("id, name")
         .eq("trainer_id", user.id)
         .eq("is_global", false)
         .ilike("name", trainerName)
         .maybeSingle();
+      if (existingErr) { console.error("[create-exercises] Error checking existing:", existingErr); }
 
       if (existing) {
         // Already exists as private — no action needed
@@ -81,11 +65,12 @@ export async function POST(request: NextRequest) {
       }
 
       // Check if the matched exercise name is identical (case-insensitive) to trainer's name
-      const { data: matchedEx } = await supabaseAdmin
+      const { data: matchedEx, error: matchedErr } = await supabaseAdmin
         .from("trainer_exercise_library")
         .select("id, name, category")
         .eq("id", link.global_exercise_id)
         .single();
+      if (matchedErr) { console.error("[create-exercises] Error fetching matched exercise:", matchedErr); }
 
       if (matchedEx && matchedEx.name.toLowerCase() === trainerName.toLowerCase()) {
         // Same name — global is already visible, no clone needed
@@ -115,13 +100,16 @@ export async function POST(request: NextRequest) {
 
   // 3. Update import record
   if (import_id && decisions) {
-    await supabaseAdmin
+    const { error: importUpdateError } = await supabaseAdmin
       .from("excel_imports")
       .update({
         mapping_decisions: decisions,
         status: "imported",
       })
       .eq("id", import_id);
+    if (importUpdateError) {
+      console.error("[create-exercises] Error actualizando excel_imports:", importUpdateError);
+    }
   }
 
   return NextResponse.json({

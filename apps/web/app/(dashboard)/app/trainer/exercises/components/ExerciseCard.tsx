@@ -1,10 +1,11 @@
 "use client";
 
+import { memo } from "react";
 import { Exercise } from "./types";
 import { PlayIcon, PencilIcon, TrashIcon } from "./Icons";
 import { CategoryBadge, OwnershipBadge } from "./Shared";
 
-export function ExerciseCard({
+export const ExerciseCard = memo(function ExerciseCard({
   exercise,
   onEdit,
   onDelete,
@@ -85,4 +86,4 @@ export function ExerciseCard({
       )}
     </div>
   );
-}
+});

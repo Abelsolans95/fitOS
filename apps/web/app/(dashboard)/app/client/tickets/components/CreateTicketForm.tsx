@@ -2,6 +2,7 @@
 
 import { memo, useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
+import { QUERY_LIMITS } from "@/lib/constants";
 import type { TicketCategory } from "./types";
 import { TICKET_CATEGORIES } from "./types";
 import type { KnowledgeArticle } from "@fitos/shared";
@@ -62,7 +63,7 @@ export const CreateTicketForm = memo(function CreateTicketForm({
       .eq("trainer_id", trainerId)
       .eq("is_published", true)
       .ilike("title", `%${query}%`)
-      .limit(3);
+      .limit(QUERY_LIMITS.KNOWLEDGE_SUGGESTIONS);
     setSuggestions((data as KnowledgeArticle[]) ?? []);
   }, [supabase, trainerId]);
 

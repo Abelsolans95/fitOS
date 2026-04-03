@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Spotlight, SpotlightCard } from "@/components/ui/spotlight";
 import { type FormField } from "@/components/onboarding/FormFieldEditor";
@@ -12,7 +12,9 @@ import { StepPromoCode } from "./components/StepPromoCode";
 
 export default function TrainerOnboardingPage() {
   const router = useRouter();
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const routerRef = useRef(router);
+  routerRef.current = router;
 
   // Global state
   const [currentStep, setCurrentStep] = useState(0);
@@ -43,9 +45,9 @@ export default function TrainerOnboardingPage() {
     async function fetchUser() {
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await supabaseRef.current.auth.getUser();
       if (!user) {
-        router.push("/login");
+        routerRef.current.push("/login");
         return;
       }
       setUserId(user.id);
@@ -54,7 +56,6 @@ export default function TrainerOnboardingPage() {
       );
     }
     fetchUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* ---------------------------------------------------------------- */
@@ -69,7 +70,7 @@ export default function TrainerOnboardingPage() {
     setLoading(true);
 
     try {
-      const { error: upsertError } = await supabase
+      const { error: upsertError } = await supabaseRef.current
         .from("profiles")
         .upsert(
           {
@@ -84,8 +85,8 @@ export default function TrainerOnboardingPage() {
 
       if (upsertError) throw upsertError;
       setCurrentStep(1);
-    } catch (err: any) {
-      setError(err?.message || "Error al guardar el perfil. Intenta de nuevo.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error al guardar el perfil. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -103,7 +104,7 @@ export default function TrainerOnboardingPage() {
     setLoading(true);
 
     try {
-      const { error: insertError } = await supabase
+      const { error: insertError } = await supabaseRef.current
         .from("onboarding_forms")
         .insert({
           trainer_id: userId,
@@ -115,9 +116,9 @@ export default function TrainerOnboardingPage() {
 
       if (insertError) throw insertError;
       setCurrentStep(2);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(
-        err?.message || "Error al guardar el formulario. Intenta de nuevo."
+        err instanceof Error ? err.message : "Error al guardar el formulario. Intenta de nuevo."
       );
     } finally {
       setLoading(false);
@@ -128,18 +129,28 @@ export default function TrainerOnboardingPage() {
   /*  Step 2 — Generate promo code                                     */
   /* ---------------------------------------------------------------- */
 
+  // Refs to read current state values in the promo-code effect without adding them as deps
+  const businessNameRef = useRef(businessName);
+  businessNameRef.current = businessName;
+  const userNameRef = useRef(userName);
+  userNameRef.current = userName;
+  const userIdRef = useRef(userId);
+  userIdRef.current = userId;
+  const promoCodeRef = useRef(promoCode);
+  promoCodeRef.current = promoCode;
+
   // Automatically generate the code when entering step 2
   useEffect(() => {
-    if (currentStep !== 2 || promoCode) return;
+    if (currentStep !== 2 || promoCodeRef.current) return;
 
     async function generateCode() {
       setLoading(true);
       setError(null);
 
       try {
-        const trainerName = businessName || userName || "trainer";
+        const trainerName = businessNameRef.current || userNameRef.current || "trainer";
 
-        const { data, error: rpcError } = await supabase.rpc(
+        const { data, error: rpcError } = await supabaseRef.current.rpc(
           "generate_promo_code",
           { trainer_name: trainerName }
         );
@@ -150,15 +161,15 @@ export default function TrainerOnboardingPage() {
         setPromoCode(code);
 
         // Insert into trainer_promo_codes table
-        await supabase.from("trainer_promo_codes").insert({
-          trainer_id: userId,
+        await supabaseRef.current.from("trainer_promo_codes").insert({
+          trainer_id: userIdRef.current,
           code,
           is_active: true,
           current_uses: 0,
         });
-      } catch (err: any) {
+      } catch (err: unknown) {
         setError(
-          err?.message ||
+          err instanceof Error ? err.message :
             "Error al generar el codigo promocional. Intenta de nuevo."
         );
       } finally {
@@ -167,7 +178,6 @@ export default function TrainerOnboardingPage() {
     }
 
     generateCode();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep]);
 
   const copyCode = async () => {
@@ -192,7 +202,7 @@ export default function TrainerOnboardingPage() {
   const handleSkip = async () => {
     setLoading(true);
     try {
-      await supabase.auth.updateUser({
+      await supabaseRef.current.auth.updateUser({
         data: { onboarding_completed: true },
       });
     } catch {
@@ -205,7 +215,7 @@ export default function TrainerOnboardingPage() {
     setLoading(true);
     // Mark the profile as onboarding_completed
     try {
-      await supabase.auth.updateUser({
+      await supabaseRef.current.auth.updateUser({
         data: { onboarding_completed: true },
       });
     } catch {

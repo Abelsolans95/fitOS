@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useState, useEffect, useCallback } from "react";
 import type { CommunityPost, CommunityComment } from "./types";
 
 interface CommunityFeedProps {
@@ -93,7 +94,7 @@ interface PostCardProps {
   onTogglePin: (id: string, pinned: boolean) => void;
 }
 
-function PostCard({
+const PostCard = memo(function PostCard({
   post, userId, isExpanded, comments, loadingComments, newCommentText,
   replyingTo, replyText,
   onToggleLike, onExpand, onLoadComments, onSetNewComment, onAddComment,
@@ -102,6 +103,13 @@ function PostCard({
 }: PostCardProps) {
   const isAuthor = post.author_id === userId;
   const isTrainerPost = post.author_role === "trainer";
+  const [confirmDeletePost, setConfirmDeletePost] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!confirmDeletePost) return;
+    const timer = setTimeout(() => setConfirmDeletePost(null), 3000);
+    return () => clearTimeout(timer);
+  }, [confirmDeletePost]);
 
   const handleExpandToggle = () => {
     if (isExpanded) { onExpand(null); } else { onExpand(post.id); if (!comments.length) onLoadComments(post.id); }
@@ -135,8 +143,20 @@ function PostCard({
             <button onClick={() => onTogglePin(post.id, post.is_pinned)} className={`rounded-lg p-1.5 text-xs transition-colors ${post.is_pinned ? "text-[#7C3AED]" : "text-[#5A5A72] hover:text-[#7C3AED]"}`} title={post.is_pinned ? "Desfijar" : "Fijar"}>
               <svg className="h-4 w-4" fill={post.is_pinned ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" /></svg>
             </button>
-            <button onClick={() => onDeletePost(post.id)} className="rounded-lg p-1.5 text-[#5A5A72] transition-colors hover:text-[#FF1744]" title="Eliminar">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
+            <button
+              onClick={() => {
+                if (confirmDeletePost === post.id) { onDeletePost(post.id); setConfirmDeletePost(null); }
+                else { setConfirmDeletePost(post.id); }
+              }}
+              onBlur={() => setConfirmDeletePost(null)}
+              className={`rounded-lg p-1.5 transition-colors ${confirmDeletePost === post.id ? "text-[#FF1744]" : "text-[#5A5A72] hover:text-[#FF1744]"}`}
+              title={confirmDeletePost === post.id ? "Confirmar eliminacion" : "Eliminar"}
+            >
+              {confirmDeletePost === post.id ? (
+                <span className="text-[10px] font-semibold">Eliminar?</span>
+              ) : (
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
+              )}
             </button>
           </div>
         )}
@@ -182,7 +202,7 @@ function PostCard({
       )}
     </div>
   );
-}
+});
 
 // ── Comment Item (recursive for replies) ──
 interface CommentItemProps {
@@ -205,6 +225,13 @@ function CommentItem({ comment, postId, userId, depth, replyingTo, replyText, on
   const isReplying = replyingTo === comment.id;
   const currentReplyText = replyText[comment.id] ?? "";
   const maxDepth = 2;
+  const [confirmDeleteComment, setConfirmDeleteComment] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!confirmDeleteComment) return;
+    const timer = setTimeout(() => setConfirmDeleteComment(null), 3000);
+    return () => clearTimeout(timer);
+  }, [confirmDeleteComment]);
 
   return (
     <div className={depth > 0 ? "ml-6 border-l border-white/[0.04] pl-3" : ""}>
@@ -240,7 +267,16 @@ function CommentItem({ comment, postId, userId, depth, replyingTo, replyText, on
               <button onClick={() => onSetReplyingTo(postId, isReplying ? null : comment.id)} className={`text-[10px] font-medium transition-all ${isReplying ? "text-[#00E5FF]" : "text-[#5A5A72] hover:text-white"}`}>Responder</button>
             )}
             {isOwn && (
-              <button onClick={() => onDeleteComment(postId, comment.id)} className="text-[10px] text-[#5A5A72] transition-colors hover:text-[#FF1744]">Eliminar</button>
+              <button
+                onClick={() => {
+                  if (confirmDeleteComment === comment.id) { onDeleteComment(postId, comment.id); setConfirmDeleteComment(null); }
+                  else { setConfirmDeleteComment(comment.id); }
+                }}
+                onBlur={() => setConfirmDeleteComment(null)}
+                className={`text-[10px] transition-colors ${confirmDeleteComment === comment.id ? "font-semibold text-[#FF1744]" : "text-[#5A5A72] hover:text-[#FF1744]"}`}
+              >
+                {confirmDeleteComment === comment.id ? "Confirmar?" : "Eliminar"}
+              </button>
             )}
           </div>
           {isReplying && (

@@ -1,16 +1,6 @@
 import { memo, useRef, useEffect } from "react";
 import type { Message, TrainerInfo } from "@/hooks/useChat";
-
-function getInitials(name: string | null) {
-  if (!name) return "??";
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return name.slice(0, 2).toUpperCase();
-}
-
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
-}
+import { getInitials, formatChatTime } from "@/lib/utils";
 
 function formatDay(iso: string) {
   return new Date(iso).toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
@@ -81,7 +71,7 @@ export const MessageList = memo(function MessageList({ messages, clientId, clien
                   <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.content}</p>
                   <div className={`mt-1 flex items-center gap-1 ${isClient ? "justify-end" : "justify-start"}`}>
                     <p className="text-[10px] text-[#5A5A72]">
-                      {isOptimistic ? "Enviando…" : formatTime(msg.created_at)}
+                      {isOptimistic ? "Enviando…" : formatChatTime(msg.created_at)}
                     </p>
                     {isClient && !isOptimistic && (
                       <svg className={`h-3 w-3 ${msg.read_at ? "text-[#7C3AED]" : "text-[#5A5A72]"}`} fill="currentColor" viewBox="0 0 24 24">

@@ -22,7 +22,7 @@ export default function ForgotPasswordPage() {
     const redirectTo =
       typeof window !== "undefined"
         ? `${window.location.origin}/auth/callback?next=/reset-password`
-        : "https://fitos-web.vercel.app/auth/callback?next=/reset-password";
+        : `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://fit-os-web.vercel.app"}/auth/callback?next=/reset-password`;
 
     const { error: authError } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo,

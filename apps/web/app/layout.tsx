@@ -29,7 +29,7 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-const BASE_URL = "https://fit-os-web.vercel.app";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://fit-os-web.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),

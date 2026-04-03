@@ -141,8 +141,7 @@ function MiniChart({
                 fill={`url(#mini-gradient-${metricKey})`}
                 animationDuration={1000}
                 dot={false}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                activeDot={{ r: 4, fill: "#0E0E18", stroke: config.color, strokeWidth: 2 } as any}
+                activeDot={{ r: 4, fill: "#0E0E18", stroke: config.color, strokeWidth: 2 }}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -333,10 +332,8 @@ export function MetricChart({
                     animationDuration={1500}
                     animationEasing="ease-out"
                     filter="url(#neonGlow)"
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    activeDot={{ r: 6, fill: "#0E0E18", stroke: selectedConfig.color, strokeWidth: 3, style: { filter: `drop-shadow(0 0 8px ${selectedConfig.color}90)` } } as any}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    dot={{ r: 4, fill: "#0A0A0F", stroke: selectedConfig.color, strokeWidth: 2, strokeOpacity: 0.8 } as any}
+                    activeDot={{ r: 6, fill: "#0E0E18", stroke: selectedConfig.color, strokeWidth: 3, style: { filter: `drop-shadow(0 0 8px ${selectedConfig.color}90)` } }}
+                    dot={{ r: 4, fill: "#0A0A0F", stroke: selectedConfig.color, strokeWidth: 2, strokeOpacity: 0.8 }}
                   />
                 </AreaChart>
               </ResponsiveContainer>

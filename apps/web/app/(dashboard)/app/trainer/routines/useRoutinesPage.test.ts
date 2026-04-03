@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { routinesReducer, initialRoutinesState, type RoutinesState } from "./useRoutinesPage";
+import { routinesReducer, initialRoutinesState, type RoutinesState } from "./routines-reducer";
 import type { ExerciseItem } from "./types";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

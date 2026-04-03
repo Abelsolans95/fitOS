@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase";
+import { QUERY_LIMITS } from "@/lib/constants";
 import { useKnowledgePage } from "./useKnowledgePage";
 import { ArticleList } from "./components/ArticleList";
 import { ArticleEditor } from "./components/ArticleEditor";
@@ -46,7 +47,7 @@ function KnowledgePageInner() {
           .select("content, sender_id")
           .eq("ticket_id", fromTicket)
           .order("created_at", { ascending: true })
-          .limit(50),
+          .limit(QUERY_LIMITS.TICKET_REPLIES_PREVIEW),
       ]);
 
       // Build content from ticket description + trainer replies

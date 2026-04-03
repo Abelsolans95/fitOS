@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { exchangeCodeForTokens } from "@/lib/google-calendar";
-import { createClient } from "@/lib/supabase-server";
+import { requireAuth, requireDbRole, errorResponse } from "@/lib/api-utils";
 
 // GET /api/auth/google/callback — Recibe el código de Google y guarda los tokens
 export async function GET(request: Request) {
@@ -10,50 +10,57 @@ export async function GET(request: Request) {
     const state = searchParams.get("state");
     const error = searchParams.get("error");
 
+    // Validate returnTo against allowed paths to prevent open redirect
+    const allowedPaths = ["/app/trainer/appointments", "/app/trainer/settings", "/app/client/calendar"];
+    const returnTo = (state && allowedPaths.includes(state)) ? state : "/app/trainer/appointments";
+
     if (error) {
-      const returnTo = state || "/app/client/calendar";
       return NextResponse.redirect(
         new URL(`${returnTo}?google_error=${error}`, request.url)
       );
     }
 
     if (!code) {
-      return NextResponse.json(
-        { error: "No authorization code received" },
-        { status: 400 }
-      );
+      return errorResponse("No authorization code received", 400);
     }
 
     // Intercambiar código por tokens
     const tokens = await exchangeCodeForTokens(code);
 
-    // Guardar tokens en el perfil del usuario (en Supabase)
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    // Verify authentication
+    const authResult = await requireAuth();
+    if (authResult instanceof NextResponse) return authResult;
+    const { user, supabase } = authResult;
 
-    if (user) {
-      await supabase
-        .from("profiles")
-        .update({
-          google_calendar_tokens: {
-            access_token: tokens.access_token,
-            refresh_token: tokens.refresh_token,
-            expires_at: Date.now() + tokens.expires_in * 1000,
-          },
-        })
-        .eq("user_id", user.id);
+    // Only trainers can connect Google Calendar (DB role check)
+    const dbResult = await requireDbRole(user.id, "trainer");
+    if (dbResult instanceof NextResponse) return dbResult;
+
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({
+        google_calendar_tokens: {
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+          expires_at: Date.now() + tokens.expires_in * 1000,
+        },
+      })
+      .eq("user_id", user.id);
+
+    if (updateError) {
+      console.error("[GoogleOAuth] Error saving tokens:", updateError);
+      return NextResponse.redirect(
+        new URL(`${returnTo}?google_error=token_save_failed`, request.url)
+      );
     }
 
-    const returnTo = state || "/app/client/calendar";
     return NextResponse.redirect(
       new URL(`${returnTo}?google_connected=true`, request.url)
     );
-  } catch (error) {
-    console.error("[GoogleOAuth] Callback error:", error);
+  } catch {
+    console.error("[GoogleOAuth] Callback error");
     return NextResponse.redirect(
-      new URL("/app/client/calendar?google_error=token_exchange_failed", request.url)
+      new URL("/app/trainer/appointments?google_error=token_exchange_failed", request.url)
     );
   }
 }

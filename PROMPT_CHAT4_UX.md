@@ -43,3 +43,35 @@ Auditoria de experiencia de usuario en toda la web.
 ## Reglas
 
 Commitea y pushea despues de cada grupo de cambios.
+
+---
+
+## Resumen de ejecucion (02/04/2026)
+
+### Confirmaciones destructivas (Regla 99)
+| Componente | Accion | Estado |
+|-----------|--------|--------|
+| Trainer CommunityFeed — eliminar post | ✅ Añadido two-step confirmation |
+| Trainer CommunityFeed — eliminar comentario | ✅ Añadido two-step confirmation |
+| Client CommunityFeed — eliminar post | ✅ Añadido two-step confirmation |
+| Client CommunityFeed — eliminar comentario | ✅ Añadido two-step confirmation |
+| Nutrition FoodLibraryTab — eliminar alimento | ✅ Añadido two-step confirmation |
+| Exercises page — eliminar ejercicio | ✅ Ya tenia DeleteConfirmModal |
+| Appointments — cancelar cita | ✅ Ya tenia confirmXxxId pattern |
+
+### Loading states
+- Ya existen `loading.tsx` en: `(dashboard)/`, `trainer/`, `client/`
+- Las paginas individuales usan loading state interno con spinner (patron correcto para client components)
+- Los layout-level loading.tsx cubren la navegacion entre secciones
+
+### Mensajes de error
+- Todos los toast.error estan en español
+- Los mensajes son descriptivos ("Error al cargar consultas", "No se pudo guardar la rutina")
+- No se encontraron mensajes tecnicos expuestos al usuario (ya sanitizado en security audit)
+
+### Textos en ingles
+- No se encontraron textos en ingles visibles al usuario en el dashboard
+- La app esta 100% en español
+
+### Estados vacios
+- Todas las listas principales tienen empty states con mensaje + CTA

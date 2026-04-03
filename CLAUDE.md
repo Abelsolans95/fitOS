@@ -13,7 +13,7 @@ Este archivo contiene TODO lo necesario para continuar el desarrollo: reglas, cr
 - **Rediseño UI:** Completado — estética premium en app completa (landing, paneles trainer/cliente con *glassmorphism*, app mobile brutalista)
 - **Fase 2 (parcial, 23/03/2026):** Chat interno trainer↔cliente ✅ | Calendario de citas ✅ (migración 030 pendiente aplicar) | Google Calendar sync ⏳ (pendiente OAuth) | Emails Resend ⏳ (pendiente dominio)
 - **Fase 3 (parcial, 23/03/2026):** Widget iOS y Android ✅ (ver entrenamiento del día sin abrir la app)
-- **Fase 4 (parcial, 26/03/2026):** Sistema de lesiones/molestias ✅ — mapa anatómico SVG interactivo, reportes coach/client, Realtime sync
+- **Fase 4 (parcial, 26/03/2026):** Sistema de lesiones/molestias ✅ — mapa anatómico con imágenes reales + overlay SVG, reportes coach/client, Realtime sync
 - **Fase 5 (parcial, 26/03/2026):** Plantillas de rutina ✅ — guardar/cargar configuraciones de ejercicios reutilizables por trainer
 - **Fase 6 (parcial, 28/03/2026):** Rediseño planificador de menú ✅ — selección de días con fechas reales, semanas de mesociclo, % macros, panel flotante de info nutricional en tiempo real
 - **Fase 6 ampliada (29/03/2026):** Menús guardados ✅ — guardar/cargar configuraciones de menú reutilizables (tabla `saved_menu_templates`, migración 033). Navegación semanal mejorada ✅ — botones semana anterior/siguiente en la parte inferior del planificador. DarkSelect ✅ — todos los `<select>` nativos reemplazados por componente custom dark.
@@ -26,6 +26,11 @@ Este archivo contiene TODO lo necesario para continuar el desarrollo: reglas, cr
 - **Fase 9 (01/04/2026):** Sistema de Consultas/Tickets ✅ — Cliente envía dudas categorizadas (Nutrición, Rutina, Lesión, General) al trainer. Trainer gestiona inbox con filtros de estado/categoría/búsqueda, responde en hilo conversacional, y marca como resuelta. Realtime. Badges de no leídos en ambos sidebars. Migración 038. Web trainer + web cliente + mobile. Fix post-deploy (02/04): política RLS `trainer_replies_update_read` para permitir al trainer marcar replies de clientes como leídas; acciones de reducer `MARK_TICKET_READ` e `INCREMENT_UNREAD` para evitar stale closures; reset de badge en sidebar via `usePathname`.
 - **Onboarding con secciones (01/04/2026):** Formulario de onboarding extendido con secciones opcionales ✅ — 5 secciones predefinidas (historial medico, deportivo, experiencias, estado actual, objetivos) que el trainer puede activar/desactivar. Cliente ve wizard multi-paso (1 seccion = 1 step). Plantilla cargable con un click. AI edge function actualizada para analisis por seccion. Sin migracion DB (todo en JSONB existente). Web + mobile.
 - **Fase 10 (02/04/2026):** Base de Conocimiento / FAQ ✅ — Trainer escribe artículos FAQ categorizados (Nutrición, Rutina, Lesión, Técnica, Suplementación, General) con texto + video URL. Cliente busca/filtra artículos antes de preguntar. Integración bidireccional con Consultas: convertir ticket resuelto en artículo, sugerir artículos relevantes al crear ticket (debounced search). Vista contador incrementada via SECURITY DEFINER. Full-text search PostgreSQL (español). Migración 039. Web trainer + web cliente + mobile. Tipos compartidos en `@fitos/shared`.
+- **Auditoría completa (02/04/2026):** Bugs críticos corregidos ✅ — Race condition promo codes (RPC atómico, migración 040), URLs hardcodeadas (env var NEXT_PUBLIC_BASE_URL), Sentry PII desactivado, error handling mobile. Seguridad: validate-promo status codes, Google OAuth role check, sanitización de errores. Performance: .limit(500) en community_comments, Promise.all en tickets. TypeScript: 40+ `any` eliminados en web+mobile. UX: confirmación two-step en deletes de comunidad y alimentos. Tests: 126 tests, 13 archivos, todos pasando.
+- **Code Quality Audit v2 (03/04/2026):** Refactor de arquitectura ✅ — API routes centralizadas (`lib/api-utils.ts`, `lib/supabase-admin.ts`), `QUERY_LIMITS` centralizados (`lib/constants.ts`), sidebar badges extraídos a `useSidebarBadges` hook, community tree utils compartidos (`lib/community-utils.ts`), `timeAgo` centralizado en `lib/utils.ts`, `calculateStressIndex` movido a `@fitos/shared`, `useNutritionPage` dividido en 3 hooks (`useFoodLibrary` + `useMenuCreator` + orquestador), cache TTL en resolvers (`lib/query-cache.ts`), `React.memo` en componentes lista, FlatList optimizados en mobile. 132 tests, 14 archivos, todos pasando.
+- **Code Quality Audit v3 (03/04/2026):** Bugs + seguridad + leaks ✅ — food-resolver hidden fix, OAuth callback error handling, community orphan crash fix, middleware null role, role enum validation, mobile insert error handling, setTimeout cleanup, hook deps fixes (3 eslint-disables eliminados), `any` types eliminados en excel-parser. Tests: 179 tests, 17 archivos, todos pasando.
+- **Audit v4 — Seguridad + Rendimiento + Deuda técnica (03/04/2026):** Seguridad: CORS Edge Functions restrictivo, IDOR fix en reconcile, open redirect fix, sanitización errores DB, select("*") eliminado. Rendimiento: filtros trainer_id en Realtime subscriptions, Promise.all en mobile, useMemo en dashboard. Deuda: 9 paquetes/servicios vacíos eliminados, `.limit()` hardcoded → QUERY_LIMITS (0 restantes), 5 `getInitials` + 2 `formatTime` centralizados. Type safety: 5 `as any` producción eliminados, `SetsDataEntry` movido a `@fitos/shared`. Fragmentación: `DaySchedule.tsx` (952→450), `MenuCreator.tsx` (810→350), `OnboardingScreen.tsx` (871→400) — 14 subcomponentes extraídos. ESLint mobile configurado. 205 tests, 18 archivos, todos pasando.
+- **Audit v5 — Refactor profundo de código (03/04/2026):** Mobile `QUERY_LIMITS` centralizado (`apps/mobile/src/lib/constants.ts`). 6 `eslint-disable react-hooks/exhaustive-deps` eliminados (useRef pattern). 2 `as any` → `as DimensionValue`. 2 non-null assertions eliminados. 3 Pattern C fixes. **9 ficheros >500 líneas refactorizados:** `useRoutinesPage` (921→333, reducer+helpers extraídos), `useActiveTraining` (792→422, reducer+helpers extraídos), `useClientRoutine` (738→440, reducer+helpers extraídos), `page.tsx` landing (700→49, 12 componentes extraídos), `useMenuCreator` (677→235, reducer+helpers extraídos), `useCommunityPage` (618→418, reducer extraído), mobile `useRoutineScreen` (634→398, helpers+db extraídos), mobile `TicketsScreen` (601→242, 3 subcomponentes), mobile `ChatScreen` (563→274, 4 subcomponentes+hook). 205 tests, 18 archivos, todos pasando.
 
 ---
 
@@ -149,11 +154,11 @@ Este archivo contiene TODO lo necesario para continuar el desarrollo: reglas, cr
       if (profileErr) { console.error("[Context] Error cargando perfil:", profileErr); } // No bloqueante
       ```
     - **Cómo distinguir bloqueante vs no bloqueante:** si el error impide mostrar la funcionalidad principal de la página → bloqueante (toast + return). Si es un dato secundario de enriquecimiento → no bloqueante (solo log).
-    - **Auditoría completada el 30/03/2026:** Patrón C aplicado a todas las queries del proyecto. Archivos corregidos: `trainer/settings`, `trainer/chat`, `trainer/clients`, `client/dashboard`, `client/meals`, `client/chat`, `client/appointments`, `BookAppointmentModal`.
+    - Patrón C ya aplicado a todas las queries del proyecto (auditoría 30/03/2026).
 
 54. **Usar `??` (no `||`) para merges de override** — `||` trata `""`, `0` y `false` como falsy, descartando overrides legítimos. Siempre usar nullish coalescing `??` al fusionar campos de override con valores originales. Ejemplo: `override?.custom_name ?? ex.name`.
 55. **Toda API route de importación debe verificar rol trainer** — No basta con verificar autenticación. Endpoints de Excel import, reconciliation, etc. deben consultar `profiles.role` y retornar 403 si no es `trainer`.
-56. **Nunca inicializar clientes de API externos a nivel de módulo en API routes** — Igual que la regla 40 para Supabase, `new Anthropic(...)`, `new Resend(...)`, etc. deben crearse dentro del handler, no fuera. Vercel evalúa módulos durante el build sin env vars.
+56. **Nunca inicializar clientes de API externos a nivel de módulo en API routes** — Igual que Regla 40 pero para `new Anthropic(...)`, `new Resend(...)`, etc.
 57. **Fragmentar DURANTE la creación, no después** — La Regla 50 se aplica al momento de escribir código nuevo, no como refactor posterior. Si una página va a tener modal + calendario + lista + filtros, crear los componentes separados desde el inicio. Nunca generar un archivo de >300 líneas para "fragmentar después". Ejemplo: `appointments/page.tsx` se creó con 1187 líneas y tuvo que ser fragmentado después en 5 componentes.
 58. **Tests obligatorios al crear módulos de lógica (`lib/*.ts`)** — Todo archivo en `lib/` que contenga lógica pura DEBE tener su `*.test.ts` creado en la misma sesión. No esperar a un code review. Mínimo: happy path + 1 edge case + 1 error case. Framework: Vitest (ver Regla 52). Archivos de referencia: `exercise-resolver.test.ts` (mocks Supabase), `excel-parser.test.ts` (buffers XLSX en memoria), `email-notifications.test.ts` (stub con vi.stubEnv).
 59. **Verificar estado actual antes de reportar issues** — Antes de crear un ticket de fix o proponer un cambio, leer el archivo y verificar que el problema realmente existe en el código actual. Un code review que genera trabajo innecesario (3 fixes que ya estaban correctos) es peor que no hacer code review. Leer primero, opinar después.
@@ -398,6 +403,112 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 138. **Tipos compartidos de conocimiento en `@fitos/shared`** — `KnowledgeCategory` (6 valores), `KnowledgeArticle` interface, `KNOWLEDGE_CATEGORIES` array con labels e iconos. Exportados desde `packages/shared/src/types/knowledge.ts`.
 139. **Integración Consultas ↔ Conocimiento** — Bidireccional: (1) Trainer puede convertir ticket resuelto en artículo via botón "Convertir en artículo" en `TicketDetail.tsx` → navega a `/app/trainer/knowledge?from_ticket=&title=&category=`. (2) Cliente ve artículos sugeridos al crear ticket: debounced search (400ms, 3+ chars) en `CreateTicketForm.tsx` busca por título con ILIKE. Click en sugerencia navega a `/app/client/knowledge?article=<id>`.
 140. **Conocimiento: trainer CRUD, cliente browse** — Web trainer: `/app/trainer/knowledge` con `useKnowledgePage.ts` (useReducer, 12 acciones), `components/ArticleList.tsx` + `ArticleEditor.tsx`. Stats cards (total, publicados, vistas). Filtros por categoría, estado publicado, búsqueda. Web cliente: `/app/client/knowledge` con `useClientKnowledgePage.ts`, grid de artículos con filtro de categoría y búsqueda. `ArticleDetail.tsx` con embed YouTube + link video + imagen. Mobile: `KnowledgeScreen.tsx` con list/detail views. Tab "Conocimiento" entre Salud y Consultas en bottom nav (icono libro). Sidebar web: entre Consultas y Chat.
+141. **Incremento atómico de promo codes** — Migración 040. Función PostgreSQL `increment_promo_code_uses(p_promo_code_id UUID)` con `SECURITY DEFINER`. `complete-registration/route.ts` usa `supabase.rpc("increment_promo_code_uses", {...})` en vez del patrón read-then-write. Elimina race condition cuando dos clientes se registran simultáneamente con el mismo código.
+142. **`NEXT_PUBLIC_BASE_URL` para URLs de metadata** — `layout.tsx`, `page.tsx` y `forgot-password/page.tsx` usan `process.env.NEXT_PUBLIC_BASE_URL` con fallback a `https://fit-os-web.vercel.app`. Añadir a `.env.local` y Vercel cuando se tenga dominio propio.
+143. **Sentry `sendDefaultPii: false`** — Desactivado en `apps/mobile/App.tsx` para cumplimiento GDPR. No enviar IPs, emails ni cookies a Sentry sin consentimiento explícito del usuario.
+144. **`.env.example` en ambas apps** — `apps/web/.env.example` y `apps/mobile/.env.example` documentan todas las variables requeridas y opcionales. `.gitignore` de web tiene `!.env.example` para permitir su tracking en git.
+145. **`validate-promo` es intencionalmente público** — Esta ruta se llama durante el registro antes de que el usuario esté autenticado. No requiere auth, pero DEBE retornar `{ status: 400 }` en errores (no 200).
+146. **Google OAuth solo para trainers** — `auth/google/callback/route.ts` verifica `profiles.role === "trainer"` antes de guardar tokens. Retorna 403 si el usuario no es trainer.
+147. **Nunca exponer mensajes de error de DB al cliente** — En API routes, usar mensajes genéricos en español en las respuestas JSON. Los detalles del error van a `console.error` únicamente. Ejemplo: `{ error: "Error al vincular con el entrenador" }` en vez de `{ error: tcError.message }`.
+
+### Reglas de calidad de código (Code Quality Audit v2, 03/04/2026)
+
+148. **API routes: usar `lib/api-utils.ts` para auth/role/error** — No duplicar lógica de auth en cada route. Funciones disponibles: `requireAuth()`, `requireAuthWithRole(role)` (retorna `{ user, supabase, admin }`), `requireDbRole(userId, role)`, `requireMetadataRole(user, role)`, `successResponse(data, status)`, `errorResponse(message, status)`, `parseJsonBody<T>(request)`. Todas retornan `NextResponse` directamente en caso de error. Ver `activate-client/route.ts` como referencia minimal.
+
+149. **`lib/supabase-admin.ts` para service_role client** — Nunca crear `createClient(url, serviceKey)` inline en API routes. Importar `createAdminClient()` de `@/lib/supabase-admin`. Un solo punto de cambio. Regla 40 sigue vigente (crear dentro del handler, no a nivel módulo) — `requireAuthWithRole` ya lo hace automáticamente.
+
+150. **`QUERY_LIMITS` centralizados en `lib/constants.ts`** — Todo `.limit(N)` en queries Supabase debe usar una constante de `QUERY_LIMITS`, no un número mágico. Constantes disponibles: `MESSAGES`, `APPOINTMENTS`, `COMMUNITY_POSTS`, `COMMUNITY_COMMENTS`, `WEIGHT_LOG`, `WEIGHT_LOG_ANALYTICS`, `BODY_METRICS`, `TICKETS`, `TICKET_REPLIES`, `KNOWLEDGE_ARTICLES`, `EXERCISES_PAGE`. Al añadir una tabla paginable nueva, añadir su límite aquí.
+
+151. **Map lookups en lugar de O(n×m) `.filter()` en enrichment** — Cuando se enriquecen N items con datos de M items (ej: posts + profiles), NO hacer `.filter()` dentro de un `.map()`. Crear un `Map<string, T>` primero y hacer `.get(id)` en O(1). Patrón:
+    ```ts
+    const profileMap = new Map(profiles.map(p => [p.user_id, p]));
+    const enriched = posts.map(p => ({ ...p, author: profileMap.get(p.user_id) }));
+    ```
+
+152. **`useSidebarBadges` hook para badges de sidebar** — Toda lógica de badges Realtime (chat, comunidad, tickets) vive en `hooks/useSidebarBadges.ts`. Acepta `role`, `chatPath`, `communityPath`, `ticketsPath`. Retorna `{ chatUnread, communityUnread, ticketUnread }`. TrainerSidebar y ClientSidebar lo importan. No duplicar lógica de Realtime en cada sidebar.
+
+153. **Utilidades de comunidad compartidas en `lib/community-utils.ts`** — Funciones genéricas tipadas para manipular árboles de comentarios: `updateCommentInTree<T>`, `removeCommentFromTree<T>`, `addReplyToTree<T>`, `buildCommentTree<T>`, `buildCountMap<T>`, `resolveAuthorName`. Tanto `useCommunityPage` (trainer) como `useClientCommunityPage` (cliente) importan de aquí. No duplicar lógica de árboles.
+
+154. **`timeAgo()` centralizada en `lib/utils.ts`** — Función única para "hace 5 min", "hace 2h", etc. No redefinir localmente. Los `shared.tsx` de tickets y knowledge re-exportan desde `@/lib/utils`.
+
+155. **Lógica de negocio compartida en `@fitos/shared`** — Funciones puras que se usan en web Y mobile deben vivir en `packages/shared/`. Ejemplo: `calculateStressIndex` en `packages/shared/src/routine-logic/stress-index.ts`. Web y mobile importan de `@fitos/shared`. No duplicar la misma fórmula en ambas plataformas.
+
+156. **`React.memo` obligatorio en componentes de lista** — Componentes que se renderizan dentro de `.map()` o `FlatList` y reciben props estables deben estar envueltos en `memo()`. Patrón: `export const Foo = memo(function Foo(props: FooProps) { ... })`. Función nombrada dentro de memo para stack traces legibles. Ya aplicado en: `ExerciseCard`, `CommunityFeed` PostCard, `RoutineList`.
+
+157. **FlatList mobile: props de rendimiento obligatorias** — Todo `<FlatList>` en mobile debe incluir: `maxToRenderPerBatch={10}`, `windowSize={5}`, `removeClippedSubviews={true}` (o `{Platform.OS === 'android'}` si hay problemas en iOS). `renderItem` debe ser `useCallback` estable. `keyExtractor` debe ser función estable. Ya aplicado en: ChatScreen, TicketsScreen, KnowledgeScreen.
+
+158. **Hooks complejos: dividir en sub-hooks especializados** — Un `useReducer` hook con >800 líneas debe dividirse en sub-hooks independientes, cada uno con su propio reducer y estado. El hook principal actúa como orquestador: compone el estado final con `useMemo` y crea un `dispatch` combinado que rutea acciones al sub-hook correcto por prefijo. Ejemplo: `useNutritionPage` orquesta `useFoodLibrary` (LIB_*) + `useMenuCreator` (CR_*) + page reducer.
+
+159. **Cache TTL para resolvers en `lib/query-cache.ts`** — Los resolvers de ejercicios y alimentos usan cache in-memory con TTL de 5 minutos (`getCached`, `setCache`, `invalidateCache`). Key pattern: `exercises:{trainerId}`, `foods:{trainerId}`. Cache se invalida automáticamente en operaciones de escritura (`upsertExerciseOverride`, `upsertFoodOverride`). Evita queries redundantes cuando se navega entre pestañas.
+
+160. **Tests: actualizar al refactorizar API routes** — Al migrar una API route a `api-utils`, los tests deben mockear `@/lib/api-utils` (no `@supabase/supabase-js` ni `@/lib/supabase-server` directamente). Patrón: `vi.mock("@/lib/api-utils", () => ({ requireAuthWithRole: vi.fn(), ... }))`. Ver `activate-client/route.test.ts` como referencia.
+
+### Reglas de calidad de código (Code Quality Audit v3, 03/04/2026)
+
+161. **Paridad resolver exercise ↔ food obligatoria** — Todo cambio en `exercise-resolver.ts` debe verificarse en `food-resolver.ts` y viceversa. Ambos resolvers siguen el mismo patrón three-layer. Bug encontrado: exercise-resolver filtraba `hidden=true` pero food-resolver no. Regla: al añadir un filtro/feature en un resolver, aplicar en ambos.
+
+162. **Toda query Supabase en API routes DEBE destructurar error — sin excepciones** — Incluso las queries "secundarias" como updates de tokens o cambios de estado. Bug encontrado: `profiles.update()` en Google OAuth callback no destructuraba error → tokens no se guardaban pero usuario veía éxito. No existe query Supabase "segura de ignorar" en API routes.
+
+163. **Non-null assertions (`!`) prohibidas en datos de DB** — Nunca usar `map.get(id)!` ni `data!.field` con datos que vienen de la base de datos. Los datos pueden ser inconsistentes (filas huérfanas, deletes parciales). Usar optional chaining + fallback. Bug encontrado: `buildCommentTree` crasheaba con comentarios huérfanos.
+
+164. **Middleware DEBE manejar role null/undefined explícitamente** — Si `user_metadata.role` no existe o es null, redirigir a `/login`, no asumir un rol por defecto. Esto cubre metadata corrupta, migraciones parciales, o usuarios creados manualmente sin role.
+
+165. **Validar enums de body en API routes de registro** — Campos como `role`, `status`, `category` que vienen del body del request DEBEN validarse contra valores permitidos antes de insertar en DB. Nunca confiar en el frontend para enviar valores válidos. Patrón: `const validRoles = ["client", "trainer"]; if (!validRoles.includes(role)) return errorResponse("...", 400);`
+
+166. **setTimeout/setInterval SIEMPRE con cleanup en useEffect** — Todo `setTimeout` o `setInterval` dentro de un `useEffect` DEBE tener su `clearTimeout`/`clearInterval` en la función de cleanup. Bug encontrado: `setTimeout(scrollToBottom, 100)` en ChatScreen se ejecutaba post-unmount. Patrón:
+    ```ts
+    useEffect(() => {
+      const timer = setTimeout(fn, ms);
+      return () => clearTimeout(timer);
+    }, [deps]);
+    ```
+
+167. **Supabase `.insert()` y `.update()` en mobile SIEMPRE con error handling** — En React Native, toda mutación Supabase debe destructurar error y mostrar `Alert.alert` si falla. Bug encontrado: ChatScreen y CaloriesScreen hacían inserts sin verificar resultado. El usuario no sabía que el mensaje/alimento no se había guardado.
+
+168. **eslint-disable en dependency arrays PROHIBIDO** — Nunca usar `// eslint-disable-next-line react-hooks/exhaustive-deps`. Si la regla se queja, el código tiene un problema real: o falta un dep, o hay una referencia inestable. Fix correcto: `useRef` para romper ciclos, `useCallback` para estabilizar funciones, o añadir el dep faltante. Bugs encontrados: stale closures en useFoodLibrary y useNutritionPage.
+
+169. **`useRef` para callbacks pasadas a sub-hooks** — Cuando un hook padre pasa un callback a un sub-hook y ese callback depende del estado del padre (creando dependencia circular), usar `useRef` para romper el ciclo:
+    ```ts
+    const loadDataRef = useRef(loadData);
+    loadDataRef.current = loadData; // actualizar en cada render
+    const subHook = useSubHook(() => loadDataRef.current()); // callback estable
+    ```
+
+170. **`QUERY_LIMITS` para TODA query con `.limit()`** — Ver Regla 150. Aplica en web y mobile (Regla 179).
+
+### Reglas de calidad de código (Audit v4, 03/04/2026)
+
+171. **Edge Functions CORS: nunca `Access-Control-Allow-Origin: "*"`** — Usar `Deno.env.get("ALLOWED_ORIGIN") ?? "https://fit-os-web.vercel.app"`. Configurar `ALLOWED_ORIGIN` en Supabase secrets para cada entorno. Un wildcard permite que cualquier web haga requests autenticados en nombre de usuarios logueados.
+
+172. **Realtime subscriptions SIEMPRE con filtro** — Todo `.on("postgres_changes", { ... })` DEBE incluir `filter: "trainer_id=eq.${userId}"` o equivalente. Sin filtro, la suscripción recibe eventos de TODOS los usuarios del sistema, multiplicando carga innecesariamente. Bug encontrado: `useSidebarBadges`, `trainer/chat`, `useTicketsPage` escuchaban todas las filas.
+
+173. **IDOR check obligatorio en updates a tablas compartidas** — Cuando una API route hace `.update().eq("id", bodyId)`, SIEMPRE añadir `.eq("trainer_id", user.id)` o `.eq("client_id", user.id)`. Sin este check, un usuario puede modificar registros de otros. Bug encontrado: `import/reconcile` actualizaba `excel_imports` sin verificar pertenencia.
+
+174. **Nunca concatenar errores de DB en respuestas HTTP** — Ver Regla 147. Bug encontrado: `import/excel` exponía detalles de esquema.
+
+175. **Paquetes monorepo vacíos = eliminar** — Si un paquete en `packages/` o `services/` no tiene código, imports ni tests, eliminarlo. No mantener "placeholders para el futuro". Si se necesita después, se crea. Eliminados: `@fitos/ui`, `@fitos/auth`, `@fitos/ai`, `@fitos/validations`, `@fitos/stripe`, `@fitos/db`, 3 services.
+
+176. **Utility functions: una sola definición en `lib/utils.ts`** — `getInitials`, `formatChatTime`, `formatChatListTime`, `timeAgo` viven en `@/lib/utils`. No redefinir localmente. Si un módulo necesita re-exportar (ej: `shared.tsx`), usar `export { fn } from "@/lib/utils"`.
+
+177. **`useMemo` para arrays estáticos en componentes** — Arrays de configuración (kpiCards, quickActions, tabs) que se crean en cada render deben envolverse en `useMemo`. Si son constantes puras sin deps, moverlos fuera del componente.
+
+178. **Dependencias circulares entre hooks: extraer tipos a archivo separado** — Si `hookA.ts` importa de `hookB.ts` y viceversa, extraer tipos/constantes/helpers compartidos a un archivo `types.ts` o `*-types.ts`. Los hooks importan de ahí. Bug encontrado: `useNutritionPage` ↔ `useMenuCreator` ↔ `useFoodLibrary` causaba "Cannot access 'm' before initialization" en Vercel.
+
+### Reglas de calidad de código (Audit v5, 03/04/2026)
+
+179. **`QUERY_LIMITS` en mobile centralizado** — `apps/mobile/src/lib/constants.ts` contiene los mismos límites que `apps/web/lib/constants.ts`. Todo `.limit(N)` en mobile debe importar de aquí. Al añadir un nuevo límite, añadirlo en AMBOS archivos.
+
+180. **Reducers extraídos a fichero propio** — Hooks complejos con `useReducer` deben tener el reducer, tipos de acción y estado inicial en un fichero `*-reducer.ts` junto al hook. El hook importa y re-exporta para backward compatibility. Ficheros de referencia: `routines-reducer.ts`, `active-training-reducer.ts`, `client-routine-reducer.ts`, `menu-creator-reducer.ts`, `community-reducer.ts`.
+
+181. **Helpers puros extraídos a fichero propio** — Funciones puras (sin hooks, sin side effects, sin Supabase) deben vivir en `*-helpers.ts` junto al hook. Esto incluye: serialización de datos para save, inicialización de sets, resolución de weekly_config, transformación de datos. Ficheros de referencia: `routines-helpers.ts`, `active-training-helpers.ts`, `client-routine-helpers.ts`, `menu-creator-helpers.ts`, mobile `routine-helpers.ts`.
+
+182. **Landing page fragmentada en componentes** — `apps/web/app/page.tsx` es un composer de ~50 líneas. Los componentes viven en `app/components/landing/`: `HeroSection`, `FeaturesSection`, `PricingSection`, `CTASection`, `NavBar`, `Footer`, `TestimonialsSection`, `HowItWorksSection`, `PhotoBreakSection`, `TickerBar`, `Icons`, `LandingStyles`. No añadir secciones directamente en page.tsx.
+
+183. **Mobile: subcomponentes de pantalla en subdirectorio** — Pantallas complejas (>400 líneas) deben extraer subcomponentes a un subdirectorio con el nombre de la pantalla. Ejemplos: `screens/chat/` (MessageBubble, ChatInput, useChat, types), `screens/tickets/` (TicketList, CreateTicket, TicketThread, types), `screens/routine/` (routine-helpers, routine-db). La pantalla principal queda como orquestador.
+
+184. **Mobile DB operations en fichero separado** — Operaciones Supabase de mobile que no necesitan hooks pueden extraerse a `*-db.ts`. Ejemplo: `screens/routine/routine-db.ts` con `savePartialProgress`, `finalizeSession`, `createWorkoutSession`. El hook las llama dentro de `useCallback`.
+
+185. **`as DimensionValue` en React Native, no `as any`** — Para porcentajes como `width: '90%'` en React Native, usar `as DimensionValue` de `react-native` en vez de `as any`. Import: `import { DimensionValue } from 'react-native'`.
 
 ---
 
@@ -413,7 +524,7 @@ Qué actualizar:
 
 **Documentar errores no es opcional.** Un error no documentado es un error que se repetirá.
 
-**Paridad web ↔ mobile es obligatoria.** Cualquier funcionalidad nueva o corrección de error debe aplicarse en web (`apps/web`) Y en mobile (`apps/mobile`).
+**Paridad web ↔ mobile es obligatoria** (ver Regla 11).
 
 **Especificaciones del producto:** `especificaciones.md` (especialmente Cap. 3 arquitectura y Cap. 4 base de datos).
 
@@ -470,6 +581,7 @@ fitOS/
 │       │   ├── index.ts          ← barrel export de tipos, zonas, utils, onboarding
 │       │   ├── anatomy/zones.ts  ← MUSCLE_ZONES, ZONE_LABELS, ANATOMY_VIEWBOX
 │       │   ├── onboarding/index.ts ← groupFieldsBySection, getEnabledSections
+│       │   ├── routine-logic/    ← calculateStressIndex (shared web+mobile)
 │       │   ├── types/            ← health, routine, appointments, community, messages, knowledge
 │       │   ├── data/days.ts
 │       │   └── utils/time.ts
@@ -479,10 +591,12 @@ fitOS/
 │   │   ├── app/
 │   │   │   ├── layout.tsx                           ← dark mode hardcodeado
 │   │   │   ├── globals.css                          ← @theme con marcadores fitos-theme-*
-│   │   │   ├── page.tsx                             ← landing pública
+│   │   │   ├── page.tsx                             ← landing (49 líneas, composer)
+│   │   │   ├── components/landing/                  ← 12 componentes: Hero/Features/Pricing/CTA/Nav/Footer/etc.
 │   │   │   ├── (auth)/
 │   │   │   │   ├── login/page.tsx
 │   │   │   │   ├── register/page.tsx
+│   │   │   │   ├── forgot-password/page.tsx
 │   │   │   │   └── onboarding/
 │   │   │   │       ├── trainer/page.tsx             ← wizard 3 pasos
 │   │   │   │       └── client/page.tsx              ← wizard 2 pasos
@@ -499,16 +613,19 @@ fitOS/
 │   │   │   │       │   ├── clients/[id]/components/ ← TabPerfil/Progreso/Rutina/Menu/Formulario/Chat/Salud/ExerciseAnalytics
 │   │   │   │       │   ├── exercises/page.tsx
 │   │   │   │       │   ├── routines/page.tsx        ← orquestador
-│   │   │   │       │   ├── routines/useRoutinesPage.ts
+│   │   │   │       │   ├── routines/useRoutinesPage.ts ← hook (333 líneas)
+│   │   │   │       │   ├── routines/routines-reducer.ts + routines-helpers.ts
 │   │   │   │       │   ├── routines/components/
 │   │   │   │       │   ├── nutrition/page.tsx       ← orquestador
-│   │   │   │       │   ├── nutrition/useNutritionPage.ts
+│   │   │   │       │   ├── nutrition/useNutritionPage.ts  ← orquestador (usa useFoodLibrary + useMenuCreator)
+│   │   │   │       │   ├── nutrition/useFoodLibrary.ts   ← CRUD alimentos, búsqueda, paginación
+│   │   │   │       │   ├── nutrition/useMenuCreator.ts (235 líneas) + menu-creator-reducer.ts + menu-creator-helpers.ts
 │   │   │   │       │   ├── import/page.tsx          ← wizard Excel 4 pasos
 │   │   │   │       │   ├── forms/page.tsx
 │   │   │   │       │   ├── appointments/page.tsx    ← orquestador
 │   │   │   │       │   ├── appointments/components/ ← types/shared/CreateModal/Calendar/List
 │   │   │   │       │   ├── community/page.tsx       ← orquestador
-│   │   │   │       │   ├── community/useCommunityPage.ts
+│   │   │   │       │   ├── community/useCommunityPage.ts + community-reducer.ts
 │   │   │   │       │   ├── community/components/
 │   │   │   │       │   ├── tickets/page.tsx         ← orquestador master-detail
 │   │   │   │       │   ├── tickets/useTicketsPage.ts
@@ -523,8 +640,9 @@ fitOS/
 │   │   │   │       │   ├── dashboard/page.tsx
 │   │   │   │       │   ├── calories/page.tsx        ← AI Vision tracker
 │   │   │   │       │   ├── routine/page.tsx
+│   │   │   │       │   ├── routine/useClientRoutine.ts (440 líneas) + client-routine-reducer.ts + client-routine-helpers.ts
 │   │   │   │       │   ├── routine/active/page.tsx  ← Suspense wrapper
-│   │   │   │       │   ├── routine/active/useActiveTraining.ts
+│   │   │   │       │   ├── routine/active/useActiveTraining.ts (422 líneas) + active-training-reducer.ts + active-training-helpers.ts
 │   │   │   │       │   ├── routine/active/components/ ← ExerciseCard/RestTimer/RPESelector/SFRSelector/SummaryView
 │   │   │   │       │   ├── meals/page.tsx
 │   │   │   │       │   ├── calendar/page.tsx
@@ -548,7 +666,10 @@ fitOS/
 │   │   │   │   ├── import/excel/route.ts
 │   │   │   │   ├── import/create-exercises/route.ts
 │   │   │   │   ├── import/reconcile/route.ts
-│   │   │   │   └── complete-registration/route.ts
+│   │   │   │   ├── complete-registration/route.ts
+│   │   │   │   ├── activate-client/route.ts
+│   │   │   │   ├── client-trainer/route.ts
+│   │   │   │   └── validate-promo/route.ts
 │   │   │   └── components/
 │   │   │       ├── layout/TrainerSidebar.tsx + ClientSidebar.tsx
 │   │   │       ├── ui/DarkSelect.tsx
@@ -556,13 +677,21 @@ fitOS/
 │   │   ├── public/assets/anatomy/              ← 4 imágenes anatómicas (front/back × male/female)
 │   │   ├── lib/
 │   │   │   ├── supabase.ts + supabase-server.ts
-│   │   │   ├── exercise-resolver.ts + .test.ts
-│   │   │   ├── food-resolver.ts + .test.ts
+│   │   │   ├── supabase-admin.ts             ← createAdminClient() centralizado
+│   │   │   ├── api-utils.ts                  ← requireAuth, requireAuthWithRole, errorResponse...
+│   │   │   ├── constants.ts                  ← QUERY_LIMITS centralizado
+│   │   │   ├── query-cache.ts + .test.ts     ← TTL cache para resolvers
+│   │   │   ├── community-utils.ts            ← tree manipulation genérico para comentarios
+│   │   │   ├── exercise-resolver.ts + .test.ts  ← usa query-cache
+│   │   │   ├── food-resolver.ts + .test.ts      ← usa query-cache
 │   │   │   ├── excel-parser.ts + .test.ts
 │   │   │   ├── email-notifications.ts + .test.ts
 │   │   │   ├── google-calendar.ts + .test.ts
 │   │   │   └── onboarding-templates.ts  ← plantilla 5 secciones onboarding
-│   │   ├── hooks/useChat.ts
+│   │   ├── hooks/
+│   │   │   ├── useChat.ts
+│   │   │   └── useSidebarBadges.ts           ← badges Realtime para ambos sidebars
+│   │   ├── .env.example                        ← variables de entorno documentadas
 │   │   ├── middleware.ts
 │   │   └── vitest.config.ts
 │   └── mobile/
@@ -571,13 +700,16 @@ fitOS/
 │       ├── src/
 │       │   ├── theme.ts                         ← re-exporta @fitos/theme + shadows local
 │       │   ├── contexts/AuthContext.tsx
-│       │   ├── lib/supabase.ts + widget-data.ts + widget-sync.ts
+│       │   ├── lib/supabase.ts + widget-data.ts + widget-sync.ts + constants.ts
+│       │   ├── hooks/useSupabaseQuery.ts + useDashboardData.ts
 │       │   ├── screens/
 │       │   │   ├── LoginScreen.tsx + OnboardingScreen.tsx
 │       │   │   ├── DashboardScreen.tsx + CaloriesScreen.tsx
-│       │   │   ├── RoutineScreen.tsx + MealsScreen.tsx
-│       │   │   ├── ProgressScreen.tsx + ChatScreen.tsx
-│       │   │   ├── HealthScreen.tsx + AppointmentsScreen.tsx + TicketsScreen.tsx + KnowledgeScreen.tsx
+│       │   │   ├── routine/RoutineScreen.tsx + useRoutineScreen.ts (398) + routine-helpers.ts + routine-db.ts
+│       │   │   ├── chat/ChatScreen.tsx (274) + MessageBubble.tsx + ChatInput.tsx + useChat.ts
+│       │   │   ├── tickets/TicketsScreen.tsx (242) + TicketList.tsx + CreateTicket.tsx + TicketThread.tsx
+│       │   │   ├── MealsScreen.tsx + ProgressScreen.tsx
+│       │   │   ├── HealthScreen.tsx + AppointmentsScreen.tsx + KnowledgeScreen.tsx
 │       │   └── widgets/
 │       │       ├── TodayWorkoutWidget.tsx       ← Android JSX (sin hooks)
 │       │       └── widget-task-handler.tsx
@@ -596,7 +728,8 @@ fitOS/
         ├── 036_add_gender_to_profiles.sql
         ├── 037_exercise_metrics.sql
         ├── 038_support_tickets.sql
-        └── 039_knowledge_articles.sql
+        ├── 039_knowledge_articles.sql
+        └── 040_atomic_promo_increment.sql
 ```
 
 ---
@@ -617,8 +750,13 @@ fitOS/
 | `@fitos/theme` | ✅ Completo | paquete compartido, Metro watchFolders |
 | Mapa anatómico con imágenes reales | ✅ Completo | Migración 036 aplicada |
 | Fase 8 — Métricas ejercicio (SFR + Stress Index + Charts) | ✅ Completo | Migración 037 aplicada |
-| Fase 9 — Consultas/Tickets | ✅ Completo | Migración 038 aplicada + política `trainer_replies_update_read` |
-| Fase 10 — Base de Conocimiento / FAQ | ✅ Completo | Migración 039 pendiente aplicar |
+| Fase 9 — Consultas/Tickets | ✅ Completo | Migración 038 aplicada + política `trainer_replies_update_read` aplicada |
+| Fase 10 — Base de Conocimiento / FAQ | ✅ Completo | Migración 039 aplicada |
+| Auditoría completa (bugs + seguridad + TS + UX + perf) | ✅ Completo | 126 tests, migración 040 aplicada |
+| Code Quality Audit v2 (refactor arquitectura) | ✅ Completo | 132 tests, API utils, cache, hooks compartidos, React.memo |
+| Code Quality Audit v3 (bugs + seguridad + leaks) | ✅ Completo | 179 tests, 4 bugs, 2 security, 3 leaks, 3 hook deps, 47 tests nuevos |
+| Audit v4 (seguridad + rendimiento + deuda) | ✅ Completo | CORS, IDOR, open redirect, 14 subcomponentes, ESLint mobile |
+| Audit v5 (refactor profundo) | ✅ Completo | 9 ficheros refactorizados, 0 eslint-disable, mobile QUERY_LIMITS |
 | Gamificación | ❌ Sin UI | Tablas existen, falta interfaz |
 | Stripe + suscripciones | ❌ Sin implementar | |
 | Push notifications | ❌ Sin implementar | |
@@ -627,8 +765,6 @@ fitOS/
 
 | Config | Prioridad | Qué desbloquea |
 |--------|-----------|----------------|
-| Ejecutar migración 039_knowledge_articles.sql | 🔴 Alta | Base de Conocimiento / FAQ (tabla + funciones + RLS + storage) |
-| Ejecutar política RLS `trainer_replies_update_read` | 🔴 Alta | Trainer pueda marcar replies de clientes como leídas |
 | `ANTHROPIC_API_KEY` en Supabase secrets | 🟠 Alta | Edge Functions IA (ahora mock) |
 | Verificar dominio en Resend + `RESEND_API_KEY` | 🟠 Alta | Emails confirmación citas |
 | OAuth 2.0 Google Calendar | 🟠 Alta | Sync citas → Google Calendar |
@@ -781,3 +917,19 @@ supabase functions deploy analyze-onboarding-form
 | 64 | Web | `totalSets` sumaba `sets + rest_pause_sets` duplicando count | En modo "different", `sets` ya incluye derivadas tras `CR_ADD_DERIVATIVE_SET`. Cambiado a solo `sum(ex.sets)` |
 | 65 | Web+Mobile | `weekly_config.sets_detail` ignorado en modo "equal" | El código cliente solo leía `sets_detail` cuando `mode === "different"`. Ahora verifica `wk?.sets_detail?.length > 0` independientemente del modo. Afecta: `initializeSets`, `resumeFromSession`, `getTrainerConfig`, `ExerciseCard` pre-training, mobile `initSets`/`resumeSession` |
 | 66 | RLS | `trainer_replies_all` WITH CHECK bloquea UPDATE de `read_at` en replies de clientes | La política `FOR ALL` tenía `sender_id = auth.uid()` en WITH CHECK. Cuando el trainer actualiza `read_at` en una reply del cliente, `sender_id` ≠ trainer → UPDATE rechazado silenciosamente. Fix: política `trainer_replies_update_read` separada sin check de `sender_id`. Regla: en políticas FOR ALL, verificar que WITH CHECK no bloquee UPDATEs legítimos sobre filas de otros usuarios |
+| 67 | Resolver | food-resolver no filtraba `hidden=true` | Paridad exercise↔food resolver obligatoria. Al añadir filtro en uno, verificar el otro |
+| 68 | API | Google OAuth callback no destructuraba error en profiles.update | TODA query Supabase en API routes debe destructurar error — sin excepciones |
+| 69 | Web | `buildCommentTree` crasheaba con comentarios huérfanos | Nunca usar `map.get(id)!` con datos de DB. Siempre null check + fallback |
+| 70 | Auth | Middleware asumía role siempre existe | Si `user_metadata.role` es null → redirect a `/login`, no asumir rol |
+| 71 | API | `complete-registration` aceptaba cualquier role | Validar enums del body contra valores permitidos antes de insertar |
+| 72 | Mobile | setTimeout sin cleanup en useEffect | Todo setTimeout/setInterval DEBE tener clearTimeout/clearInterval en cleanup |
+| 73 | Mobile | insert/update sin error handling en ChatScreen y CaloriesScreen | Toda mutación Supabase en mobile → destructurar error + Alert.alert |
+| 74 | Hooks | eslint-disable en dependency arrays ocultaba stale closures | Prohibido eslint-disable en deps. Usar useRef para romper ciclos |
+| 75 | Security | Edge Functions con CORS `"*"` permitía requests desde cualquier origen | Usar env var `ALLOWED_ORIGIN` con fallback al dominio de producción |
+| 76 | Security | `import/reconcile` actualizaba imports de otros trainers | Añadir `.eq("trainer_id", user.id)` en todo update a tablas compartidas |
+| 77 | API | Error de DB expuesto al cliente en import/excel | Solo `console.error` los detalles — respuesta genérica al usuario |
+| 78 | Perf | Realtime subscriptions sin filtro escuchaban todo el sistema | Siempre añadir `filter: "trainer_id=eq.${id}"` en `.on()` |
+| 79 | Perf | Dashboard recreaba arrays en cada render | Envolver arrays estáticos en `useMemo` |
+| 80 | Deuda | 9 paquetes/servicios vacíos en el monorepo | Eliminar placeholders sin código — crearlos cuando se necesiten |
+| 81 | Deuda | `getInitials` definida 5 veces, `formatTime` 3 veces | Una sola definición en `lib/utils.ts`, importar desde ahí |
+| 82 | Build | Dependencia circular entre hooks causaba "Cannot access 'm'" en Vercel | Extraer tipos compartidos a archivo separado (`nutrition-types.ts`) |

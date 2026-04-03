@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase-server";
+import { requireAuthWithRole, errorResponse } from "@/lib/api-utils";
 import Anthropic from "@anthropic-ai/sdk";
 import * as XLSX from "xlsx";
 
@@ -38,25 +38,9 @@ interface SheetResult {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
-
-  // Verify trainer role
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("user_id", user.id)
-    .single();
-
-  if (profile?.role !== "trainer") {
-    return NextResponse.json({ error: "Solo entrenadores" }, { status: 403 });
-  }
+  const result = await requireAuthWithRole("trainer");
+  if (result instanceof NextResponse) return result;
+  const { user, supabase } = result;
 
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -64,10 +48,7 @@ export async function POST(request: NextRequest) {
   const file = formData.get("file") as File | null;
 
   if (!file) {
-    return NextResponse.json(
-      { error: "No se recibió archivo" },
-      { status: 400 }
-    );
+    return errorResponse("No se recibió archivo", 400);
   }
 
   // Validate file type
@@ -80,18 +61,12 @@ export async function POST(request: NextRequest) {
     !validTypes.includes(file.type) &&
     !file.name.match(/\.(xlsx|xls|csv)$/i)
   ) {
-    return NextResponse.json(
-      { error: "Formato no soportado. Usa .xlsx, .xls o .csv" },
-      { status: 400 }
-    );
+    return errorResponse("Formato no soportado. Usa .xlsx, .xls o .csv", 400);
   }
 
   // Max 5MB
   if (file.size > 5 * 1024 * 1024) {
-    return NextResponse.json(
-      { error: "Archivo demasiado grande (máx. 5MB)" },
-      { status: 400 }
-    );
+    return errorResponse("Archivo demasiado grande (máx. 5MB)", 400);
   }
 
   // Parse Excel with SheetJS
@@ -99,10 +74,7 @@ export async function POST(request: NextRequest) {
   const workbook = XLSX.read(buffer, { type: "array" });
 
   if (workbook.SheetNames.length === 0) {
-    return NextResponse.json(
-      { error: "El archivo está vacío" },
-      { status: 400 }
-    );
+    return errorResponse("El archivo está vacío", 400);
   }
 
   // Process ALL sheets
@@ -238,10 +210,7 @@ IMPORTANTE:
     }
 
     if (sheetsResult.length === 0) {
-      return NextResponse.json(
-        { error: "No se pudo analizar ninguna hoja del Excel" },
-        { status: 400 }
-      );
+      return errorResponse("No se pudo analizar ninguna hoja del Excel", 400);
     }
 
     // Save first sheet to excel_imports for audit trail
@@ -260,10 +229,8 @@ IMPORTANTE:
       .single();
 
     if (insertError) {
-      return NextResponse.json(
-        { error: "Error guardando importación: " + insertError.message },
-        { status: 500 }
-      );
+      console.error("[import/excel] Error guardando importación:", insertError);
+      return errorResponse("Error guardando importación", 500);
     }
 
     return NextResponse.json({
@@ -281,9 +248,6 @@ IMPORTANTE:
   } catch (err: unknown) {
     const errorMessage =
       err instanceof Error ? err.message : "Error desconocido";
-    return NextResponse.json(
-      { error: "Error al analizar con IA: " + errorMessage },
-      { status: 500 }
-    );
+    return errorResponse("Error al analizar con IA: " + errorMessage, 500);
   }
 }

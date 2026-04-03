@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, StyleSheet, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, StyleSheet, Alert, type DimensionValue } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { supabase } from "../../lib/supabase";
 import { colors, spacing, radius, fonts } from "../../theme";
@@ -130,7 +130,7 @@ export function ReportModal({ visible, muscleId, existing, trainerId, clientId, 
 
 const st = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.7)", justifyContent: "flex-end" },
-  container: { backgroundColor: colors.surface, borderTopLeftRadius: radius.xxl, borderTopRightRadius: radius.xxl, padding: spacing.xl, maxHeight: "85%" as any },
+  container: { backgroundColor: colors.surface, borderTopLeftRadius: radius.xxl, borderTopRightRadius: radius.xxl, padding: spacing.xl, maxHeight: "85%" as DimensionValue },
   header: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginBottom: spacing.xl },
   muscleIcon: { width: 40, height: 40, borderRadius: radius.md, backgroundColor: colors.redDim, alignItems: "center", justifyContent: "center" },
   muscleTitle: { fontSize: 16, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white },

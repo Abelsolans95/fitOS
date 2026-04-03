@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase-admin";
 
 export async function POST(req: Request) {
   const { code } = await req.json().catch(() => ({ code: "" }));
@@ -8,10 +8,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ valid: false, error: "Codigo no valido" }, { status: 400 });
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const supabase = createAdminClient();
 
   const { data, error: qErr } = await supabase
     .from("trainer_promo_codes")
@@ -21,15 +18,15 @@ export async function POST(req: Request) {
     .single();
 
   if (qErr || !data) {
-    return NextResponse.json({ valid: false, error: "Codigo no valido o inactivo" });
+    return NextResponse.json({ valid: false, error: "Codigo no valido o inactivo" }, { status: 400 });
   }
 
   if (data.max_uses !== null && data.current_uses >= data.max_uses) {
-    return NextResponse.json({ valid: false, error: "Este codigo ha alcanzado su limite de usos" });
+    return NextResponse.json({ valid: false, error: "Este codigo ha alcanzado su limite de usos" }, { status: 400 });
   }
 
   if (data.expires_at && new Date(data.expires_at) < new Date()) {
-    return NextResponse.json({ valid: false, error: "Este codigo ha expirado" });
+    return NextResponse.json({ valid: false, error: "Este codigo ha expirado" }, { status: 400 });
   }
 
   const { data: profile, error: profileErr } = await supabase

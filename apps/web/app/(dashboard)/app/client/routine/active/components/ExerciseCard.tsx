@@ -74,9 +74,9 @@ export function ExerciseCard({
     (exercise.sets_config ?? []).some((sc) => (sc.rir ?? 0) > 0) ||
     Object.values(exercise.weekly_config ?? {}).some((wc) => (wc.rir ?? 0) > 0);
   const showRpe = (exercise.target_rpe != null && exercise.target_rpe > 0) ||
-    (exercise.sets_config ?? []).some((sc) => (sc as any).target_rpe > 0) ||
+    (exercise.sets_config ?? []).some((sc) => (sc.target_rpe ?? 0) > 0) ||
     Object.values(exercise.weekly_config ?? {}).some((wc) =>
-      (wc.target_rpe ?? 0) > 0 || (wc.sets_detail ?? []).some((sd) => ((sd as any).target_rpe ?? 0) > 0)
+      (wc.target_rpe ?? 0) > 0 || (wc.sets_detail ?? []).some((sd) => ((sd.target_rpe ?? 0) > 0))
     );
 
   // Dynamic grid template
@@ -241,7 +241,7 @@ export function ExerciseCard({
           const prevSet = previousSets[setIdx];
           const isCurrent = setIdx === currentSetIdx;
           const cfg = getTrainerConfig(setIdx);
-          const cfgType = (cfg as any).set_type || "normal";
+          const cfgType = cfg.set_type || "normal";
           const isRP = cfgType === "rest_pause";
           const isDS = cfgType === "drop_set";
           const isDeriv = isRP || isDS;
@@ -249,7 +249,7 @@ export function ExerciseCard({
           let normalNum = 0;
           if (!isDeriv) {
             for (let k = 0; k <= setIdx; k++) {
-              const t = (getTrainerConfig(k) as any).set_type || "normal";
+              const t = getTrainerConfig(k).set_type || "normal";
               if (t === "normal") normalNum++;
             }
           }
@@ -346,7 +346,7 @@ export function ExerciseCard({
                     onSetValueChange(setIdx, "rpe", e.target.value)
                   }
                   disabled={set.completed}
-                  placeholder={String((cfg as any).target_rpe ?? exercise.target_rpe ?? "")}
+                  placeholder={String(cfg.target_rpe ?? exercise.target_rpe ?? "")}
                   className="h-11 w-full rounded-lg border border-[#FF9100]/20 bg-[#FF9100]/[0.04] px-1 text-center text-base font-semibold tabular-nums text-[#FF9100] placeholder:text-[#FF9100]/30 outline-none transition-colors focus:border-[#FF9100]/50 disabled:opacity-40"
                 />
               )}

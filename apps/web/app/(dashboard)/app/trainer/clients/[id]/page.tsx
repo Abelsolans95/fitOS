@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase";
+import { QUERY_LIMITS } from "@/lib/constants";
 
 import { TabKey, ClientProfile, TrainerClientRow, BodyMetric, UserRoutine, MealPlan, OnboardingResponse } from "./components/types";
 import { TABS, GOAL_LABELS, getInitials, formatDate, StatusBadge } from "./components/shared";
@@ -65,7 +66,7 @@ function ClientDetailPageInner() {
               .select("id, recorded_at, body_weight_kg, body_fat_pct, muscle_mass_kg, chest_cm, waist_cm, hips_cm, right_arm_cm, right_thigh_cm, notes")
               .eq("client_id", clientId)
               .order("recorded_at", { ascending: true })
-              .limit(100),
+              .limit(QUERY_LIMITS.CALENDAR_BODY_METRICS),
             supabase
               .from("user_routines")
               .select("id, title, is_active, created_at")

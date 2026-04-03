@@ -3,6 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Platform,
 } from "react-native";
 import { supabase } from "../lib/supabase";
+import { QUERY_LIMITS } from "../lib/constants";
 import { colors, spacing, radius, shadows, fonts } from "../theme";
 import { AppointmentCard } from "./appointments/AppointmentCard";
 import { RequestModal } from "./appointments/RequestModal";
@@ -33,7 +34,7 @@ export default function AppointmentsScreen() {
       .gte("starts_at", pastDate.toISOString())
       .lte("starts_at", futureDate.toISOString())
       .order("starts_at", { ascending: true })
-      .limit(200);
+      .limit(QUERY_LIMITS.APPOINTMENTS);
 
     if (apptErr) {
       console.error("[AppointmentsScreen] Error cargando citas:", apptErr);
@@ -49,19 +50,27 @@ export default function AppointmentsScreen() {
       if (!user) { setLoading(false); return; }
       setClientId(user.id);
 
-      const { data: rel } = await supabase
-        .from("trainer_clients").select("trainer_id")
-        .eq("client_id", user.id).eq("status", "active").single();
+      const [relRes, _] = await Promise.all([
+        supabase.from("trainer_clients").select("trainer_id").eq("client_id", user.id).eq("status", "active").single(),
+        fetchAppointments(),
+      ]);
+
+      const { data: rel, error: relErr } = relRes;
+      if (relErr) {
+        console.error("[AppointmentsScreen] Error cargando relación trainer:", relErr); // No bloqueante
+      }
 
       if (rel) {
         setTrainerId(rel.trainer_id as string);
-        const { data: profile } = await supabase
+        const { data: profile, error: profileErr } = await supabase
           .from("profiles").select("user_id, full_name")
           .eq("user_id", rel.trainer_id).single();
+        if (profileErr) {
+          console.error("[AppointmentsScreen] Error cargando perfil trainer:", profileErr); // No bloqueante
+        }
         setTrainer(profile as TrainerInfo | null);
       }
 
-      await fetchAppointments();
       setLoading(false);
     };
     init();
@@ -90,8 +99,13 @@ export default function AppointmentsScreen() {
         text: "Sí, cancelar", style: "destructive",
         onPress: async () => {
           setCancelling(id);
-          await supabase.from("appointments").update({ status: "cancelled", cancelled_by: clientId }).eq("id", id);
-          await fetchAppointments();
+          const { error: cancelErr } = await supabase.from("appointments").update({ status: "cancelled", cancelled_by: clientId }).eq("id", id);
+          if (cancelErr) {
+            console.error("[AppointmentsScreen] Error cancelando cita:", cancelErr);
+            Alert.alert("Error", "No se pudo cancelar la cita. Inténtalo de nuevo.");
+          } else {
+            await fetchAppointments();
+          }
           setCancelling(null);
         },
       },

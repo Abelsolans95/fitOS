@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase";
+import { QUERY_LIMITS } from "@/lib/constants";
 import { UserRoutine, WorkoutSession, WeightLogEntry } from "./types";
 import { EmptyState, formatDate } from "./shared";
 import { ExerciseAnalytics } from "./ExerciseAnalytics";
@@ -39,13 +40,13 @@ export function TabRutina({
           .eq("client_id", clientId)
           .eq("status", "completed")
           .order("completed_at", { ascending: false })
-          .limit(20),
+          .limit(QUERY_LIMITS.WORKOUT_SESSIONS),
         supabase
           .from("weight_log")
           .select("id, exercise_name, sets_data, total_volume_kg, client_notes, session_id")
           .eq("client_id", clientId)
           .order("session_date", { ascending: false })
-          .limit(200),
+          .limit(QUERY_LIMITS.WEIGHT_LOG),
       ]);
       if (sessRes.error) {
         toast.error("Error al cargar las sesiones");

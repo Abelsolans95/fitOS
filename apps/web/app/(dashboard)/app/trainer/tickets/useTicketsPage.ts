@@ -2,6 +2,7 @@
 
 import { useReducer, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
+import { QUERY_LIMITS } from "@/lib/constants";
 import { toast } from "sonner";
 import type { SupportTicket, TicketReply, TicketCategory, TicketStatus, TicketTab } from "./components/types";
 
@@ -129,7 +130,7 @@ export function useTicketsPage() {
       .select("id, trainer_id, client_id, category, subject, description, image_url, status, trainer_read_at, created_at, updated_at")
       .eq("trainer_id", trainerId)
       .order("created_at", { ascending: false })
-      .limit(200);
+      .limit(QUERY_LIMITS.TICKETS);
 
     if (error) {
       toast.error("Error al cargar consultas");
@@ -138,28 +139,26 @@ export function useTicketsPage() {
       return;
     }
 
-    // Enrich with client names
+    // Enrich with client names + unread counts in parallel
     const clientIds = [...new Set((tickets ?? []).map((t) => t.client_id))];
+    const [profilesRes, unreadRes] = await Promise.all([
+      clientIds.length > 0
+        ? supabase.from("profiles").select("user_id, full_name").in("user_id", clientIds)
+        : Promise.resolve({ data: null }),
+      supabase
+        .from("ticket_replies")
+        .select("ticket_id")
+        .neq("sender_id", trainerId)
+        .is("read_at", null),
+    ]);
+
     let clientNames: Record<string, string> = {};
-    if (clientIds.length > 0) {
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, full_name")
-        .in("user_id", clientIds);
-      if (profiles) {
-        clientNames = Object.fromEntries(profiles.map((p) => [p.user_id, p.full_name ?? "Cliente"]));
-      }
+    if (profilesRes.data) {
+      clientNames = Object.fromEntries(profilesRes.data.map((p: { user_id: string; full_name: string | null }) => [p.user_id, p.full_name ?? "Cliente"]));
     }
 
-    // Enrich with unread counts (replies from clients that trainer hasn't marked read)
-    const { data: unreadData } = await supabase
-      .from("ticket_replies")
-      .select("ticket_id")
-      .neq("sender_id", trainerId)
-      .is("read_at", null);
-
     const unreadMap: Record<string, number> = {};
-    (unreadData ?? []).forEach((r) => {
+    (unreadRes.data ?? []).forEach((r: { ticket_id: string }) => {
       unreadMap[r.ticket_id] = (unreadMap[r.ticket_id] ?? 0) + 1;
     });
 
@@ -235,7 +234,7 @@ export function useTicketsPage() {
       .select("id, ticket_id, sender_id, content, image_url, read_at, created_at")
       .eq("ticket_id", ticketId)
       .order("created_at", { ascending: true })
-      .limit(200);
+      .limit(QUERY_LIMITS.TICKET_REPLIES);
 
     if (error) {
       toast.error("Error al cargar respuestas");

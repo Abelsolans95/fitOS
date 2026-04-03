@@ -9,6 +9,7 @@
  */
 
 import { SupabaseClient } from "@supabase/supabase-js";
+import { getCached, setCache, invalidateCache } from "./query-cache";
 
 /** Row shape from trainer_food_overrides */
 interface TrainerFoodOverride {
@@ -55,6 +56,10 @@ export async function getResolvedFoods(
   supabase: SupabaseClient,
   trainerId: string
 ): Promise<ResolvedFood[]> {
+  const cacheKey = `foods:${trainerId}`;
+  const cached = getCached<ResolvedFood[]>(cacheKey);
+  if (cached) return cached;
+
   const [foodsRes, overridesRes] = await Promise.all([
     supabase
       .from("trainer_food_library")
@@ -75,9 +80,12 @@ export async function getResolvedFoods(
     overrideMap.set(ov.food_id, ov);
   }
 
-  return (foodsRes.data ?? []).map((food) => {
+  const result: ResolvedFood[] = [];
+  for (const food of (foodsRes.data ?? [])) {
     const override = overrideMap.get(food.id);
-    return {
+    // Layer C: hidden=true means the trainer has explicitly hidden this global food
+    if (override?.hidden) continue;
+    result.push({
       id: food.id,
       name: override?.custom_name ?? food.name,
       kcal: override?.custom_kcal ?? food.kcal,
@@ -89,8 +97,10 @@ export async function getResolvedFoods(
       is_overridden: !!override,
       override_id: override?.id ?? null,
       notes: override?.custom_notes ?? null,
-    };
-  });
+    });
+  }
+  setCache(cacheKey, result);
+  return result;
 }
 
 /**
@@ -145,5 +155,6 @@ export async function upsertFoodOverride(
     .single();
 
   if (error) throw error;
+  invalidateCache(`foods:${trainerId}`);
   return data;
 }

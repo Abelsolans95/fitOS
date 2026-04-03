@@ -3,259 +3,25 @@
 import { useReducer, useCallback, useRef, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase";
 import { toast } from "sonner";
-import type {
-  ExerciseData,
-  PreviousLog,
-  PreviousSet,
-  SetEntry,
-  SavedLogEntry,
-  Phase,
-  SummaryData,
-  SummaryExerciseResult,
-} from "./types";
-import { calculateProgress } from "./types";
+import type { ExerciseData, PreviousLog, SetEntry, SavedLogEntry } from "./types";
+import { calculateStressIndex } from "@fitos/shared";
 
-/* ────────────────────────────────────────────
-   State
-   ──────────────────────────────────────────── */
+/* ── Reducer (extracted) ── */
+export { trainingReducer, initialState } from "./active-training-reducer";
+export type { TrainingState, TrainingAction } from "./active-training-reducer";
+import { trainingReducer, initialState } from "./active-training-reducer";
 
-export interface TrainingState {
-  phase: Phase;
-  currentExIdx: number;
-  allSets: Record<number, SetEntry[]>;
-  savedExercises: number[];
-  exerciseNotes: Record<number, string>;
-  exerciseRpe: Record<number, string>;
-  exerciseStimulus: Record<number, number>;
-  exerciseFatigue: Record<number, number>;
-  rpeGlobal: number;
-  restTime: number;
-  restTotal: number;
-  elapsed: number;
-  sessionStart: number;
-  sessionId: string | null;
-}
-
-export const initialState: TrainingState = {
-  phase: "loading",
-  currentExIdx: 0,
-  allSets: {},
-  savedExercises: [],
-  exerciseNotes: {},
-  exerciseRpe: {},
-  exerciseStimulus: {},
-  exerciseFatigue: {},
-  rpeGlobal: 7,
-  restTime: 0,
-  restTotal: 0,
-  elapsed: 0,
-  sessionStart: 0,
-  sessionId: null,
-};
-
-/* ────────────────────────────────────────────
-   Actions
-   ──────────────────────────────────────────── */
-
-export type TrainingAction =
-  | { type: "INIT_SETS"; sets: Record<number, SetEntry[]> }
-  | {
-      type: "RESUME";
-      currentExIdx: number;
-      sets: Record<number, SetEntry[]>;
-      savedExercises: number[];
-      notes: Record<number, string>;
-      sessionId: string;
-      sessionStart: number;
-      elapsed: number;
-    }
-  | { type: "START_TRAINING"; sessionId: string; sessionStart: number }
-  | { type: "NEXT_EXERCISE" }
-  | { type: "PREV_EXERCISE" }
-  | {
-      type: "COMPLETE_SET";
-      exIdx: number;
-      setIdx: number;
-      restSeconds: number;
-    }
-  | { type: "MARK_SAVED"; exIdx: number }
-  | { type: "SET_NOTES"; exIdx: number; notes: string }
-  | { type: "SET_EXERCISE_RPE"; exIdx: number; value: string }
-  | { type: "SET_STIMULUS"; exIdx: number; value: number }
-  | { type: "SET_FATIGUE"; exIdx: number; value: number }
-  | { type: "SET_RPE"; value: number }
-  | {
-      type: "UPDATE_SET_VALUE";
-      exIdx: number;
-      setIdx: number;
-      field: "weight_kg" | "reps_done" | "rir" | "rpe";
-      value: string;
-    }
-  | { type: "SKIP_REST" }
-  | { type: "TICK_REST" }
-  | { type: "TICK_ELAPSED" }
-  | { type: "SET_PHASE"; phase: Phase }
-  | { type: "RESET" };
-
-/* ────────────────────────────────────────────
-   Reducer
-   ──────────────────────────────────────────── */
-
-export function trainingReducer(
-  state: TrainingState,
-  action: TrainingAction
-): TrainingState {
-  switch (action.type) {
-    case "INIT_SETS":
-      return { ...state, allSets: action.sets, phase: "ready" };
-
-    case "RESUME":
-      return {
-        ...state,
-        currentExIdx: action.currentExIdx,
-        allSets: action.sets,
-        savedExercises: action.savedExercises,
-        exerciseNotes: action.notes,
-        sessionId: action.sessionId,
-        sessionStart: action.sessionStart,
-        elapsed: action.elapsed,
-        phase: "training",
-      };
-
-    case "START_TRAINING":
-      return {
-        ...state,
-        phase: "training",
-        sessionId: action.sessionId,
-        sessionStart: action.sessionStart,
-      };
-
-    case "NEXT_EXERCISE":
-      return {
-        ...state,
-        currentExIdx: state.currentExIdx + 1,
-        phase: "training",
-      };
-
-    case "PREV_EXERCISE":
-      return {
-        ...state,
-        currentExIdx: Math.max(0, state.currentExIdx - 1),
-        phase: "training",
-      };
-
-    case "COMPLETE_SET": {
-      const sets = [...(state.allSets[action.exIdx] || [])];
-      if (!sets[action.setIdx] || sets[action.setIdx].completed) return state;
-      sets[action.setIdx] = { ...sets[action.setIdx], completed: true };
-      const allDone = sets.every((s) => s.completed);
-      return {
-        ...state,
-        allSets: { ...state.allSets, [action.exIdx]: sets },
-        phase: allDone ? "sfr" : "rest",
-        restTime: allDone ? state.restTime : action.restSeconds,
-        restTotal: allDone ? state.restTotal : action.restSeconds,
-      };
-    }
-
-    case "MARK_SAVED": {
-      if (state.savedExercises.includes(action.exIdx)) return state;
-      return {
-        ...state,
-        savedExercises: [...state.savedExercises, action.exIdx],
-      };
-    }
-
-    case "SET_EXERCISE_RPE":
-      return {
-        ...state,
-        exerciseRpe: { ...state.exerciseRpe, [action.exIdx]: action.value },
-      };
-
-    case "SET_STIMULUS":
-      return {
-        ...state,
-        exerciseStimulus: { ...state.exerciseStimulus, [action.exIdx]: action.value },
-      };
-
-    case "SET_FATIGUE":
-      return {
-        ...state,
-        exerciseFatigue: { ...state.exerciseFatigue, [action.exIdx]: action.value },
-      };
-
-    case "SET_NOTES":
-      return {
-        ...state,
-        exerciseNotes: {
-          ...state.exerciseNotes,
-          [action.exIdx]: action.notes,
-        },
-      };
-
-    case "SET_RPE":
-      return { ...state, rpeGlobal: action.value };
-
-    case "UPDATE_SET_VALUE": {
-      const sets = [...(state.allSets[action.exIdx] || [])];
-      sets[action.setIdx] = {
-        ...sets[action.setIdx],
-        [action.field]: action.value,
-      };
-      return {
-        ...state,
-        allSets: { ...state.allSets, [action.exIdx]: sets },
-      };
-    }
-
-    case "SKIP_REST":
-      return { ...state, phase: "training", restTime: 0 };
-
-    case "TICK_REST": {
-      const next = state.restTime - 1;
-      if (next <= 0) return { ...state, restTime: 0, phase: "training" };
-      return { ...state, restTime: next };
-    }
-
-    case "TICK_ELAPSED":
-      return { ...state, elapsed: state.elapsed + 1 };
-
-    case "SET_PHASE":
-      return { ...state, phase: action.phase };
-
-    case "RESET":
-      return initialState;
-
-    default:
-      return state;
-  }
-}
-
-/* ────────────────────────────────────────────
-   Stress Index calculation
-   ──────────────────────────────────────────── */
-
-/** RIR → intensity factor (0 = failure = 1.0, 5+ = 0.75) */
-function rirToIntensityFactor(rir: number): number {
-  if (rir <= 0) return 1.0;
-  if (rir === 1) return 0.95;
-  if (rir === 2) return 0.90;
-  if (rir === 3) return 0.85;
-  if (rir === 4) return 0.80;
-  return 0.75;
-}
-
-/** Calculate stress index from sets data: sum(weight × reps × intensityFactor) */
-export function calculateStressIndex(
-  sets: { weight_kg: number; reps_done: number; rir: number; completed: boolean }[]
-): number {
-  let stress = 0;
-  for (const s of sets) {
-    if (!s.completed) continue;
-    stress += s.weight_kg * s.reps_done * rirToIntensityFactor(s.rir);
-  }
-  return Math.round(stress * 100) / 100;
-}
+/* ── Helpers (extracted) ── */
+import {
+  initializeSetsFromExercises,
+  resumeSetsFromSession,
+  buildSetsData,
+  computeAverageRpe,
+  computeTotalVolume,
+  computeSessionTotals,
+  buildSummaryData,
+  findPreviousSets,
+} from "./active-training-helpers";
 
 /* ────────────────────────────────────────────
    Hook
@@ -322,10 +88,7 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
   const currentEx = exercises[state.currentExIdx] || null;
 
   const getPreviousForExercise = useCallback(
-    (name: string): PreviousSet[] => {
-      const log = previousLogs.find((l) => l.exercise_name === name);
-      return (log?.sets_data as PreviousSet[]) || [];
-    },
+    (name: string) => findPreviousSets(previousLogs, name),
     [previousLogs]
   );
 
@@ -339,43 +102,10 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
     (state.allSets[state.currentExIdx]?.length || 0) > 0;
   const isLastExercise = state.currentExIdx >= totalExercises - 1;
 
-  const summaryData = useMemo((): SummaryData => {
-    let totalVolume = 0;
-    let totalSetsCount = 0;
-    const exerciseResults: SummaryExerciseResult[] = [];
-
-    exercises.forEach((ex, idx) => {
-      const sets = state.allSets[idx] || [];
-      const prev = getPreviousForExercise(ex.name);
-
-      for (const s of sets) {
-        totalVolume +=
-          (Number(s.weight_kg) || 0) * (Number(s.reps_done) || 0);
-        if (s.completed) totalSetsCount++;
-      }
-
-      const currentData = sets
-        .filter((s) => s.completed)
-        .map((s) => ({
-          weight: Number(s.weight_kg) || 0,
-          reps: Number(s.reps_done) || 0,
-        }));
-      const prevData = prev.map((s) => ({
-        weight: s.weight_kg,
-        reps: s.reps_done,
-      }));
-
-      exerciseResults.push({
-        name: ex.name,
-        sets,
-        previous: prev,
-        progress: calculateProgress(currentData, prevData),
-        notes: state.exerciseNotes[idx]?.trim() || null,
-      });
-    });
-
-    return { totalVolume, totalSetsCount, exerciseResults };
-  }, [exercises, state.allSets, getPreviousForExercise, state.exerciseNotes]);
+  const summaryData = useMemo(
+    () => buildSummaryData(exercises, state.allSets, state.exerciseNotes, getPreviousForExercise),
+    [exercises, state.allSets, state.exerciseNotes, getPreviousForExercise]
+  );
 
   /* ── DB: Save partial progress (with 1 retry) ── */
 
@@ -385,25 +115,12 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
       const ex = exercises[exIdx];
       if (!ex) return;
 
-      const sets = setsOverride || state.allSets[exIdx] || [];
+      const sets = setsOverride ?? state.allSets[exIdx] ?? [];
       const today = new Date().toISOString().split("T")[0];
-      const setsData = sets.map((s, i) => ({
-        set_number: i + 1,
-        weight_kg: Number(s.weight_kg) || 0,
-        reps_done: Number(s.reps_done) || 0,
-        rir: Number(s.rir) || 0,
-        rpe: Number(s.rpe) || 0,
-        type: i < (ex.sets || 3) ? "main" : "rest_pause",
-        completed: s.completed,
-      }));
-      const totalVolume = setsData.reduce(
-        (sum, s) => sum + s.weight_kg * s.reps_done,
-        0
-      );
+      const setsData = buildSetsData(sets, ex.sets || 3);
+      const totalVolume = computeTotalVolume(setsData);
       const notes = state.exerciseNotes[exIdx]?.trim() || null;
-      // Compute average RPE from per-set values
-      const rpeValues = setsData.filter((s) => s.rpe > 0 && s.completed).map((s) => s.rpe);
-      const exerciseRpeVal = rpeValues.length > 0 ? Math.round(rpeValues.reduce((a, b) => a + b, 0) / rpeValues.length) : null;
+      const exerciseRpeVal = computeAverageRpe(setsData);
       const stimulusVal = state.exerciseStimulus[exIdx] ?? null;
       const fatigueVal = state.exerciseFatigue[exIdx] ?? null;
       const stressIndex = calculateStressIndex(setsData);
@@ -463,7 +180,7 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
         routine_id: routineId,
         trainer_id: trainerId,
         session_date: new Date().toISOString().split("T")[0],
-        day_label: currentEx?.day_label || day,
+        day_label: currentEx?.day_label ?? day,
         week_number: week,
         mode: "active",
         status: "in_progress",
@@ -510,14 +227,7 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
       updatedSets[setIdx] = { ...updatedSets[setIdx], completed: true };
       await savePartialProgress(state.currentExIdx, updatedSets);
     },
-    [
-      currentEx,
-      userId,
-      state.sessionId,
-      state.allSets,
-      state.currentExIdx,
-      savePartialProgress,
-    ]
+    [currentEx, userId, state.sessionId, state.allSets, state.currentExIdx, savePartialProgress]
   );
 
   /* ── Save exercise log (final save) ── */
@@ -553,13 +263,7 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
     if (state.currentExIdx < totalExercises - 1) {
       dispatch({ type: "NEXT_EXERCISE" });
     }
-  }, [
-    state.currentExIdx,
-    state.allSets,
-    state.savedExercises,
-    totalExercises,
-    saveExerciseLog,
-  ]);
+  }, [state.currentExIdx, state.allSets, state.savedExercises, totalExercises, saveExerciseLog]);
 
   /* ── Navigate prev ── */
 
@@ -597,16 +301,7 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
 
     const supabase = createClient();
     const duration = Math.floor((Date.now() - state.sessionStart) / 1000);
-
-    let totalVolume = 0;
-    let totalSetsCount = 0;
-    for (const sets of Object.values(state.allSets)) {
-      for (const s of sets) {
-        totalVolume +=
-          (Number(s.weight_kg) || 0) * (Number(s.reps_done) || 0);
-        if (s.completed) totalSetsCount++;
-      }
-    }
+    const { totalVolume, totalSetsCount } = computeSessionTotals(state.allSets);
 
     const { error: sessionError } = await supabase
       .from("workout_sessions")
@@ -659,39 +354,14 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
     toast.success("Sesión completada");
     dispatch({ type: "SET_PHASE", phase: "summary" });
     return true;
-  }, [
-    state.sessionId,
-    userId,
-    state.sessionStart,
-    state.allSets,
-    totalExercises,
-    state.rpeGlobal,
-    routineTitle,
-    day,
-  ]);
+  }, [state.sessionId, userId, state.sessionStart, state.allSets, totalExercises, state.rpeGlobal, routineTitle, day]);
 
   /* ── Initialize sets (normal start) ── */
 
   const initializeSets = useCallback(
     (exs: ExerciseData[]) => {
-      const initial: Record<number, SetEntry[]> = {};
-      exs.forEach((ex, idx) => {
-        // Check weekly_config sets_detail first (works for both equal and different modes)
-        const wkDetail = ex.weekly_config?.[week]?.sets_detail;
-        const totalSetsCount = wkDetail?.length
-          ? wkDetail.length
-          : ex.mode === "different" && ex.sets_config?.length
-            ? ex.sets_config.length
-            : (ex.sets || 3) + (ex.rest_pause_sets || 0);
-        initial[idx] = Array.from({ length: totalSetsCount }, () => ({
-          weight_kg: "",
-          reps_done: "",
-          rir: "",
-          rpe: "",
-          completed: false,
-        }));
-      });
-      dispatch({ type: "INIT_SETS", sets: initial });
+      const sets = initializeSetsFromExercises(exs, week);
+      dispatch({ type: "INIT_SETS", sets });
     },
     [week]
   );
@@ -706,81 +376,22 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
       exercises: ExerciseData[];
       previousLogs: PreviousLog[];
     }) => {
-      const {
-        sessionId: sid,
-        sessionCreatedAt,
-        sessionLogs,
-        exercises: exs,
-      } = data;
-      const initial: Record<number, SetEntry[]> = {};
-      const restoredNotes: Record<number, string> = {};
-      const alreadySaved: number[] = [];
-
-      exs.forEach((ex, idx) => {
-        const wkDetail = ex.weekly_config?.[week]?.sets_detail;
-        const totalSetsCount = wkDetail?.length
-          ? wkDetail.length
-          : (ex.sets || 3) + (ex.rest_pause_sets || 0);
-        const savedLog = sessionLogs.find(
-          (l) => l.exercise_name === ex.name
-        );
-        if (savedLog && savedLog.sets_data) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          initial[idx] = savedLog.sets_data.map((s: any) => ({
-            weight_kg: String(s.weight_kg),
-            reps_done: String(s.reps_done),
-            rir: String(s.rir ?? ex.rir ?? ""),
-            rpe: String(s.rpe ?? ""),
-            completed: s.completed !== false,
-          }));
-          const allSetsDone = initial[idx].every((s) => s.completed);
-          if (allSetsDone) alreadySaved.push(idx);
-          // Pad if exercise has more sets than saved
-          while (initial[idx].length < totalSetsCount) {
-            initial[idx].push({
-              weight_kg: "",
-              reps_done: "",
-              rir: "",
-              rpe: "",
-              completed: false,
-            });
-          }
-          if (savedLog.client_notes) {
-            restoredNotes[idx] = savedLog.client_notes;
-          }
-        } else {
-          initial[idx] = Array.from({ length: totalSetsCount }, () => {
-            return {
-              weight_kg: "",
-              reps_done: "",
-              rir: "",
-              rpe: "",
-              completed: false,
-            };
-          });
-        }
-      });
-
-      // Jump to first exercise with incomplete sets
-      const firstIncomplete = exs.findIndex((_, idx) => {
-        const sets = initial[idx] || [];
-        return sets.some((s) => !s.completed);
-      });
-
+      const { sessionId: sid, sessionCreatedAt, sessionLogs, exercises: exs } = data;
+      const result = resumeSetsFromSession(exs, sessionLogs, week);
       const startTime = new Date(sessionCreatedAt).getTime();
 
       dispatch({
         type: "RESUME",
-        currentExIdx: firstIncomplete >= 0 ? firstIncomplete : 0,
-        sets: initial,
-        savedExercises: alreadySaved,
-        notes: restoredNotes,
+        currentExIdx: result.firstIncompleteIdx,
+        sets: result.sets,
+        savedExercises: result.savedExercises,
+        notes: result.notes,
         sessionId: sid,
         sessionStart: startTime,
         elapsed: Math.floor((Date.now() - startTime) / 1000),
       });
     },
-    []
+    [week]
   );
 
   return {

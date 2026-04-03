@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { useUser } from "@/lib/hooks/useUser";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { User } from "@supabase/supabase-js";
 import { KPICard } from "./components/KPICard";
 import { RecentActivity } from "./components/RecentActivity";
@@ -104,19 +104,19 @@ export default function TrainerDashboardPage() {
 
   const firstName = trainerName.split(" ")[0] || "Entrenador";
 
-  const kpiCards = [
+  const kpiCards = useMemo(() => [
     { label: "Clientes activos", value: kpis.activeClients, color: "#00E5FF", bg: "rgba(0,229,255,0.06)", border: "rgba(0,229,255,0.14)", icon: <IcUsers />, href: "/app/trainer/clients", hint: "Ver todos" },
     { label: "Formularios", value: kpis.pendingForms, color: "#FF9100", bg: "rgba(255,145,0,0.06)", border: "rgba(255,145,0,0.14)", icon: <IcForms />, href: "/app/trainer/forms", hint: "Ver todos" },
     { label: "Rutinas activas", value: kpis.activeRoutines, color: "#7C3AED", bg: "rgba(124,58,237,0.06)", border: "rgba(124,58,237,0.14)", icon: <IcZap />, href: "/app/trainer/routines", hint: "Gestionar" },
     { label: "Menús activos", value: kpis.activeMealPlans, color: "#00C853", bg: "rgba(0,200,83,0.06)", border: "rgba(0,200,83,0.14)", icon: <IcFood />, href: "/app/trainer/nutrition", hint: "Gestionar" },
-  ];
+  ], [kpis.activeClients, kpis.pendingForms, kpis.activeRoutines, kpis.activeMealPlans]);
 
-  const quickActions = [
+  const quickActions = useMemo(() => [
     { label: "Nueva rutina con IA", sub: "Genera en segundos", href: "/app/trainer/routines", color: "#7C3AED", icon: <IcZap />, primary: true },
     { label: "Nuevo menú", sub: "Plan nutricional", href: "/app/trainer/nutrition", color: "#00C853", icon: <IcFood />, primary: false },
     { label: "Añadir cliente", sub: "Onboarding rápido", href: "/app/trainer/clients", color: "#00E5FF", icon: <IcUsers />, primary: false },
     { label: "Crear formulario", sub: "Personalizar preguntas", href: "/app/trainer/forms", color: "#FF9100", icon: <IcForms />, primary: false },
-  ];
+  ], []);
 
   const tips = [
     { text: "Usa la IA para generar rutinas de hipertrofia en menos de 10 segundos.", accent: "#00E5FF" },

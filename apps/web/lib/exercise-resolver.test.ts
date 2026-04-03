@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { getResolvedExercises, resolveExercise } from "./exercise-resolver";
+import { invalidateCache } from "./query-cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 // ---------------------------------------------------------------------------
@@ -123,6 +124,7 @@ const TRAINER_ID = "trainer-1";
 // ---------------------------------------------------------------------------
 
 describe("getResolvedExercises", () => {
+  beforeEach(() => { invalidateCache(); });
   // 1. Layer A — global exercises only
   it("returns global exercises (Layer A) with is_overridden=false", async () => {
     const supabase = createMockSupabase(

@@ -37,7 +37,7 @@ import KnowledgeScreen from "./src/screens/KnowledgeScreen";
 
 Sentry.init({
   dsn: "https://c8918d35c078388eb3680a7ac3fdbe2a@o4511044389240832.ingest.de.sentry.io/4511047824506960",
-  sendDefaultPii: true,
+  sendDefaultPii: false, // Disabled for GDPR compliance — no PII sent to Sentry
   enableLogs: true,
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1,

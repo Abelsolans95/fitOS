@@ -12,6 +12,7 @@ export type {
   PreviousSet,
   PreviousLog,
   SetEntry,
+  SavedSetData,
   SavedLogEntry,
   Phase,
   SummaryExerciseResult,
@@ -70,6 +71,10 @@ export {
 // Onboarding
 export type { SectionGroup } from "./onboarding";
 export { groupFieldsBySection, getEnabledSections } from "./onboarding";
+
+// Routine logic
+export type { StressIndexSet } from "./routine-logic";
+export { calculateStressIndex } from "./routine-logic";
 
 // Utils
 export { formatTime } from "./utils/time";

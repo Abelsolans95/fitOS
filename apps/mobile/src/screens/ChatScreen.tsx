@@ -1,237 +1,67 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
-  TextInput,
-  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
   SafeAreaView,
-  Alert,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
-import { colors, spacing, radius , fonts} from "../theme";
-
-interface Message {
-  id: string;
-  trainer_id: string;
-  client_id: string;
-  sender_id: string;
-  content: string;
-  read_at: string | null;
-  created_at: string;
-}
-
-interface TrainerInfo {
-  user_id: string;
-  full_name: string | null;
-}
-
-function getInitials(name: string | null): string {
-  if (!name) return "??";
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return name.slice(0, 2).toUpperCase();
-}
-
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
-}
-
-function formatDay(iso: string): string {
-  return new Date(iso).toLocaleDateString("es-ES", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-}
+import { colors, spacing, radius, fonts } from "../theme";
+import { useChat } from "./chat/useChat";
+import { MessageBubble } from "./chat/MessageBubble";
+import { ChatInput } from "./chat/ChatInput";
+import { ListItem, getInitials } from "./chat/types";
 
 export default function ChatScreen() {
   const { user } = useAuth();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [trainer, setTrainer] = useState<TrainerInfo | null>(null);
-  const [trainerId, setTrainerId] = useState<string | null>(null);
-  const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const flatListRef = useRef<FlatList>(null);
+  const {
+    trainer,
+    input,
+    setInput,
+    sending,
+    loading,
+    error,
+    listItems,
+    flatListRef,
+    scrollToBottom,
+    handleSend,
+  } = useChat({ userId: user?.id });
 
-  useEffect(() => {
-    if (!user) return;
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-
-    const init = async () => {
-      // Find trainer
-      const { data: rel, error: relErr } = await supabase
-        .from("trainer_clients")
-        .select("trainer_id")
-        .eq("client_id", user.id)
-        .eq("status", "active")
-        .single();
-
-      if (relErr || !rel) {
-        setError("No tienes un entrenador asignado.");
-        setLoading(false);
-        return;
+  const renderItem = useCallback(
+    ({ item }: { item: ListItem }) => {
+      if (item.type === "separator") {
+        return (
+          <View style={styles.separator}>
+            <View style={styles.separatorLine} />
+            <Text style={styles.separatorText}>{item.label}</Text>
+            <View style={styles.separatorLine} />
+          </View>
+        );
       }
 
-      const tid = rel.trainer_id as string;
-      setTrainerId(tid);
-
-      // Get trainer profile
-      const { data: tp, error: tpError } = await supabase
-        .from("profiles")
-        .select("user_id, full_name")
-        .eq("user_id", tid)
-        .single();
-      if (tpError) {
-        console.error("[ChatScreen] Error cargando perfil trainer:", tpError);
-        Alert.alert("Error", "No se pudo cargar el perfil del entrenador");
-        setLoading(false);
-        return;
-      }
-      setTrainer(tp as TrainerInfo | null);
-
-      // Load messages
-      const { data: msgs, error: msgsError } = await supabase
-        .from("messages")
-        .select("id, trainer_id, client_id, sender_id, content, read_at, created_at")
-        .eq("trainer_id", tid)
-        .eq("client_id", user.id)
-        .order("created_at", { ascending: true })
-        .limit(100);
-      if (msgsError) {
-        console.error("[ChatScreen] Error cargando mensajes:", msgsError);
-        Alert.alert("Error", "No se pudieron cargar los mensajes");
-      }
-      setMessages((msgs as Message[]) ?? []);
-      setLoading(false);
-
-      // Mark trainer messages as read
-      await supabase
-        .from("messages")
-        .update({ read_at: new Date().toISOString() })
-        .eq("trainer_id", tid)
-        .eq("client_id", user.id)
-        .eq("sender_id", tid)
-        .is("read_at", null);
-
-      // Realtime subscription
-      channel = supabase
-        .channel(`chat:${tid}:${user.id}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "messages",
-            filter: `client_id=eq.${user.id}`,
-          },
-          (payload) => {
-            const msg = payload.new as Message;
-            setMessages((prev) => {
-              if (prev.find((m) => m.id === msg.id)) return prev;
-              return [...prev, msg];
-            });
-            if (msg.sender_id === tid) {
-              supabase
-                .from("messages")
-                .update({ read_at: new Date().toISOString() })
-                .eq("id", msg.id)
-                .then(() => {});
-            }
-          }
-        )
-        .subscribe();
-    };
-
-    init();
-    return () => { if (channel) supabase.removeChannel(channel); };
-  }, [user]);
-
-  const scrollToBottom = useCallback(() => {
-    if (messages.length > 0) {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }
-  }, [messages.length]);
-
-  useEffect(() => {
-    setTimeout(scrollToBottom, 100);
-  }, [scrollToBottom]);
-
-  const handleSend = async () => {
-    const text = input.trim();
-    if (!text || sending || !trainerId || !user) return;
-    setSending(true);
-    setInput("");
-    await supabase.from("messages").insert({
-      trainer_id: trainerId,
-      client_id: user.id,
-      sender_id: user.id,
-      content: text,
-    });
-    setSending(false);
-  };
-
-  // Group messages by day for separators
-  type ListItem =
-    | { type: "separator"; day: string; label: string }
-    | { type: "message"; data: Message };
-
-  const listItems: ListItem[] = [];
-  let lastDay = "";
-  for (const msg of messages) {
-    const day = new Date(msg.created_at).toDateString();
-    if (day !== lastDay) {
-      listItems.push({ type: "separator", day, label: formatDay(msg.created_at) });
-      lastDay = day;
-    }
-    listItems.push({ type: "message", data: msg });
-  }
-
-  const renderItem = ({ item }: { item: ListItem }) => {
-    if (item.type === "separator") {
       return (
-        <View style={styles.separator}>
-          <View style={styles.separatorLine} />
-          <Text style={styles.separatorText}>{item.label}</Text>
-          <View style={styles.separatorLine} />
-        </View>
+        <MessageBubble
+          message={item.data}
+          isClient={item.data.sender_id === user?.id}
+          trainerName={trainer?.full_name ?? null}
+        />
       );
-    }
+    },
+    [user?.id, trainer?.full_name]
+  );
 
-    const msg = item.data;
-    const isClient = msg.sender_id === user?.id;
-    return (
-      <View style={[styles.msgRow, isClient ? styles.msgRowRight : styles.msgRowLeft]}>
-        {!isClient && (
-          <View style={styles.avatarSmall}>
-            <Text style={styles.avatarSmallText}>{getInitials(trainer?.full_name ?? null)}</Text>
-          </View>
-        )}
-        <View style={[styles.bubble, isClient ? styles.bubbleClient : styles.bubbleTrainer]}>
-          <Text style={styles.bubbleText}>{msg.content}</Text>
-          <View style={[styles.bubbleMeta, isClient ? { justifyContent: "flex-end" } : { justifyContent: "flex-start" }]}>
-            <Text style={styles.bubbleTime}>{formatTime(msg.created_at)}</Text>
-            {isClient && (
-              <Svg width={12} height={12} viewBox="0 0 24 24" style={{ marginLeft: 3 }}>
-                <Path
-                  d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"
-                  fill={msg.read_at ? colors.violet : colors.dimmed}
-                />
-              </Svg>
-            )}
-          </View>
-        </View>
-      </View>
-    );
-  };
+  const keyExtractor = useCallback(
+    (item: ListItem, index: number) =>
+      item.type === "separator"
+        ? `sep-${item.day}`
+        : item.data.id ?? String(index),
+    []
+  );
 
   if (loading) {
     return (
@@ -256,11 +86,15 @@ export default function ChatScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerAvatar}>
-          <Text style={styles.headerAvatarText}>{getInitials(trainer?.full_name ?? null)}</Text>
+          <Text style={styles.headerAvatarText}>
+            {getInitials(trainer?.full_name ?? null)}
+          </Text>
         </View>
         <View style={styles.headerInfo}>
-          <Text style={styles.headerName}>{trainer?.full_name ?? "Tu entrenador"}</Text>
-          <Text style={styles.headerSub}>Conversación privada</Text>
+          <Text style={styles.headerName}>
+            {trainer?.full_name ?? "Tu entrenador"}
+          </Text>
+          <Text style={styles.headerSub}>Conversacion privada</Text>
         </View>
         <View style={styles.onlineDot} />
       </View>
@@ -274,10 +108,11 @@ export default function ChatScreen() {
         <FlatList
           ref={flatListRef}
           data={listItems}
-          keyExtractor={(item, index) =>
-            item.type === "separator" ? `sep-${item.day}` : item.data.id ?? String(index)
-          }
+          keyExtractor={keyExtractor}
           renderItem={renderItem}
+          maxToRenderPerBatch={15}
+          windowSize={10}
+          removeClippedSubviews={Platform.OS === "android"}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
@@ -292,42 +127,22 @@ export default function ChatScreen() {
                   />
                 </Svg>
               </View>
-              <Text style={styles.emptyTitle}>Sin mensajes aún</Text>
-              <Text style={styles.emptySubtitle}>Empieza la conversación con tu entrenador</Text>
+              <Text style={styles.emptyTitle}>Sin mensajes aun</Text>
+              <Text style={styles.emptySubtitle}>
+                Empieza la conversacion con tu entrenador
+              </Text>
             </View>
           }
           onContentSizeChange={scrollToBottom}
         />
 
         {/* Input */}
-        <View style={styles.inputRow}>
-          <TextInput
-            style={styles.input}
-            value={input}
-            onChangeText={setInput}
-            placeholder="Escribe un mensaje…"
-            placeholderTextColor={colors.dimmed}
-            multiline
-            maxLength={2000}
-            returnKeyType="default"
-          />
-          <TouchableOpacity
-            style={[styles.sendBtn, (!input.trim() || sending) && styles.sendBtnDisabled]}
-            onPress={handleSend}
-            disabled={!input.trim() || sending}
-            activeOpacity={0.7}
-          >
-            <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-              <Path
-                d="M6 12L3.269 3.125A59.769 59.769 0 0121.485 12 59.768 59.768 0 013.27 20.875L5.999 12zm0 0h7.5"
-                stroke={colors.bg}
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </Svg>
-          </TouchableOpacity>
-        </View>
+        <ChatInput
+          value={input}
+          onChangeText={setInput}
+          onSend={handleSend}
+          sending={sending}
+        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -429,66 +244,6 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
 
-  // Message bubble
-  msgRow: {
-    flexDirection: "row",
-    marginBottom: 8,
-    alignItems: "flex-end",
-  },
-  msgRowLeft: {
-    justifyContent: "flex-start",
-  },
-  msgRowRight: {
-    justifyContent: "flex-end",
-  },
-  avatarSmall: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: "rgba(0,229,255,0.1)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 6,
-    marginBottom: 2,
-  },
-  avatarSmallText: {
-    color: colors.cyan,
-    fontSize: 9,
-    fontFamily: fonts.bold,
-  },
-  bubble: {
-    maxWidth: "75%",
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  bubbleTrainer: {
-    backgroundColor: "rgba(255,255,255,0.05)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
-    borderBottomLeftRadius: 4,
-  },
-  bubbleClient: {
-    backgroundColor: "rgba(124,58,237,0.15)",
-    borderWidth: 1,
-    borderColor: "rgba(124,58,237,0.25)",
-    borderBottomRightRadius: 4,
-  },
-  bubbleText: {
-    color: colors.white,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  bubbleMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 4,
-  },
-  bubbleTime: {
-    color: colors.dimmed,
-    fontSize: 10,
-  },
-
   // Empty state
   emptyContainer: {
     flex: 1,
@@ -515,41 +270,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: "center",
     paddingHorizontal: spacing.xl,
-  },
-
-  // Input bar
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.06)",
-    backgroundColor: colors.sidebar,
-    gap: spacing.sm,
-  },
-  input: {
-    flex: 1,
-    minHeight: 44,
-    maxHeight: 120,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    backgroundColor: "rgba(255,255,255,0.04)",
-    color: colors.white,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 14,
-  },
-  sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.lg,
-    backgroundColor: colors.violet,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sendBtnDisabled: {
-    opacity: 0.3,
   },
 });

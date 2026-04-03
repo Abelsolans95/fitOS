@@ -1,38 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase-admin";
+import { successResponse, errorResponse, parseJsonBody } from "@/lib/api-utils";
+
+interface CompleteRegistrationBody {
+  trainer_id?: string;
+  client_id: string;
+  promo_code_id?: string;
+  email?: string;
+  role: string;
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const { trainer_id, client_id, promo_code_id, email, role } = await request.json();
+    const body = await parseJsonBody<CompleteRegistrationBody>(request);
+    if (body instanceof NextResponse) return body;
+
+    const { trainer_id, client_id, promo_code_id, email, role } = body;
 
     if (!client_id || !role) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      return errorResponse("Missing required fields", 400);
+    }
+
+    const validRoles = ["client", "trainer"];
+    if (!validRoles.includes(role)) {
+      return errorResponse("Rol no válido", 400);
     }
 
     // Use service_role key to bypass RLS
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = createAdminClient();
 
     // Verify the user actually exists in auth.users (prevents spoofing)
     const { data: authUser, error: authErr } = await supabase.auth.admin.getUserById(client_id);
     if (authErr || !authUser?.user) {
       console.error("[complete-registration] User not found:", authErr?.message);
-      return NextResponse.json({ error: "Usuario no encontrado" }, { status: 403 });
+      return errorResponse("Usuario no encontrado", 403);
     }
 
     // Verify role matches what was set during signUp
     if (authUser.user.user_metadata?.role !== role) {
       console.error("[complete-registration] Role mismatch:", { expected: role, got: authUser.user.user_metadata?.role });
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return errorResponse("Forbidden", 403);
     }
 
     // Insert user_roles record
     const { error: roleError } = await supabase.from("user_roles").insert({ user_id: client_id, role });
     if (roleError) {
       console.error("[complete-registration] Role insert error:", roleError);
-      return NextResponse.json({ error: "Error al asignar rol" }, { status: 500 });
+      return errorResponse("Error al asignar rol", 500);
     }
 
     // For clients: link to trainer + update promo
@@ -46,7 +60,7 @@ export async function POST(request: NextRequest) {
 
       if (tcError) {
         console.error("[complete-registration] Insert error:", tcError);
-        return NextResponse.json({ error: tcError.message }, { status: 500 });
+        return errorResponse("Error al vincular con el entrenador", 500);
       }
 
       // Store email in profile
@@ -61,35 +75,21 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Increment promo code current_uses
-      const { data: currentCode, error: promoSelectError } = await supabase
-        .from("trainer_promo_codes")
-        .select("current_uses")
-        .eq("id", promo_code_id)
-        .single();
-
-      if (promoSelectError) {
-        console.error("[complete-registration] Promo code select error:", promoSelectError);
-        // No bloqueante
-      }
-
-      if (currentCode) {
-        const { error: promoUpdateError } = await supabase
-          .from("trainer_promo_codes")
-          .update({ current_uses: currentCode.current_uses + 1 })
-          .eq("id", promo_code_id);
-        if (promoUpdateError) {
-          console.error("[complete-registration] Promo code update error:", promoUpdateError);
-          // No bloqueante
-        }
+      // Increment promo code current_uses atomically (avoids race condition)
+      const { error: promoRpcError } = await supabase.rpc("increment_promo_code_uses", {
+        p_promo_code_id: promo_code_id,
+      });
+      if (promoRpcError) {
+        console.error("[complete-registration] Promo code increment error:", promoRpcError);
+        // No bloqueante — el registro del cliente ya se completó
       }
     }
 
-    return NextResponse.json({ success: true });
+    return successResponse({ success: true });
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Unexpected error" },
-      { status: 500 }
+    return errorResponse(
+      err instanceof Error ? err.message : "Unexpected error",
+      500
     );
   }
 }

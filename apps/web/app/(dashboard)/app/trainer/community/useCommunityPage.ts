@@ -2,250 +2,88 @@
 
 import { useReducer, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase";
+import { QUERY_LIMITS } from "@/lib/constants";
 import { toast } from "sonner";
-import type { Community, CommunityPost, CommunityComment, CommunityTab } from "./components/types";
-
-// ── State ──
-interface State {
-  loading: boolean;
-  userId: string | null;
-  community: Community | null;
-  posts: CommunityPost[];
-  activeTab: CommunityTab;
-  // Create post
-  newPostTitle: string;
-  newPostContent: string;
-  newPostImage: File | null;
-  newPostImagePreview: string | null;
-  publishing: boolean;
-  // Comments
-  expandedPostId: string | null;
-  comments: Record<string, CommunityComment[]>;
-  loadingComments: Record<string, boolean>;
-  newComment: Record<string, string>;
-  // Replies
-  replyingTo: Record<string, string | null>; // postId → commentId being replied to
-  replyText: Record<string, string>; // commentId → reply text
-  // Settings
-  savingSettings: boolean;
-  settingsName: string;
-  settingsDescription: string;
-  settingsMode: "OPEN" | "READ_ONLY_CLIENTS";
-  settingsActive: boolean;
-}
-
-export const communityInitialState: State = {
-  loading: true,
-  userId: null,
-  community: null,
-  posts: [],
-  activeTab: "feed",
-  newPostTitle: "",
-  newPostContent: "",
-  newPostImage: null,
-  newPostImagePreview: null,
-  publishing: false,
-  expandedPostId: null,
-  comments: {},
-  loadingComments: {},
-  newComment: {},
-  replyingTo: {},
-  replyText: {},
-  savingSettings: false,
-  settingsName: "",
-  settingsDescription: "",
-  settingsMode: "OPEN",
-  settingsActive: true,
-};
-
-// ── Actions ──
-type Action =
-  | { type: "SET_LOADING"; payload: boolean }
-  | { type: "SET_USER_ID"; payload: string }
-  | { type: "SET_COMMUNITY"; payload: Community }
-  | { type: "SET_POSTS"; payload: CommunityPost[] }
-  | { type: "SET_TAB"; payload: CommunityTab }
-  | { type: "SET_NEW_POST_TITLE"; payload: string }
-  | { type: "SET_NEW_POST_CONTENT"; payload: string }
-  | { type: "SET_NEW_POST_IMAGE"; payload: { file: File | null; preview: string | null } }
-  | { type: "SET_PUBLISHING"; payload: boolean }
-  | { type: "ADD_POST"; payload: CommunityPost }
-  | { type: "REMOVE_POST"; payload: string }
-  | { type: "TOGGLE_LIKE"; payload: { postId: string; liked: boolean } }
-  | { type: "SET_EXPANDED_POST"; payload: string | null }
-  | { type: "SET_COMMENTS"; payload: { postId: string; comments: CommunityComment[] } }
-  | { type: "SET_LOADING_COMMENTS"; payload: { postId: string; loading: boolean } }
-  | { type: "SET_NEW_COMMENT"; payload: { postId: string; text: string } }
-  | { type: "ADD_COMMENT"; payload: { postId: string; comment: CommunityComment; parentId: string | null } }
-  | { type: "REMOVE_COMMENT"; payload: { postId: string; commentId: string } }
-  | { type: "SET_REPLYING_TO"; payload: { postId: string; commentId: string | null } }
-  | { type: "SET_REPLY_TEXT"; payload: { commentId: string; text: string } }
-  | { type: "TOGGLE_COMMENT_LIKE"; payload: { postId: string; commentId: string; liked: boolean; isCoach: boolean } }
-  | { type: "SET_SAVING_SETTINGS"; payload: boolean }
-  | { type: "INIT_SETTINGS"; payload: Community }
-  | { type: "SET_SETTINGS_NAME"; payload: string }
-  | { type: "SET_SETTINGS_DESCRIPTION"; payload: string }
-  | { type: "SET_SETTINGS_MODE"; payload: "OPEN" | "READ_ONLY_CLIENTS" }
-  | { type: "SET_SETTINGS_ACTIVE"; payload: boolean }
-  | { type: "TOGGLE_PIN"; payload: string };
-
-// Helper: update comment in nested tree
-function updateCommentInList(comments: CommunityComment[], commentId: string, updater: (c: CommunityComment) => CommunityComment): CommunityComment[] {
-  return comments.map((c) => {
-    if (c.id === commentId) return updater(c);
-    if (c.replies && c.replies.length > 0) {
-      return { ...c, replies: updateCommentInList(c.replies, commentId, updater) };
-    }
-    return c;
-  });
-}
-
-// Helper: remove comment from nested tree
-function removeCommentFromList(comments: CommunityComment[], commentId: string): CommunityComment[] {
-  return comments
-    .filter((c) => c.id !== commentId)
-    .map((c) => {
-      if (c.replies && c.replies.length > 0) {
-        return { ...c, replies: removeCommentFromList(c.replies, commentId) };
-      }
-      return c;
-    });
-}
-
-// Helper: add reply to parent in nested tree
-function addReplyToComment(comments: CommunityComment[], parentId: string, reply: CommunityComment): CommunityComment[] {
-  return comments.map((c) => {
-    if (c.id === parentId) {
-      return { ...c, replies: [...(c.replies ?? []), reply] };
-    }
-    if (c.replies && c.replies.length > 0) {
-      return { ...c, replies: addReplyToComment(c.replies, parentId, reply) };
-    }
-    return c;
-  });
-}
-
-export function communityReducer(state: State, action: Action): State {
-  switch (action.type) {
-    case "SET_LOADING":
-      return { ...state, loading: action.payload };
-    case "SET_USER_ID":
-      return { ...state, userId: action.payload };
-    case "SET_COMMUNITY":
-      return { ...state, community: action.payload };
-    case "SET_POSTS":
-      return { ...state, posts: action.payload };
-    case "SET_TAB":
-      return { ...state, activeTab: action.payload };
-    case "SET_NEW_POST_TITLE":
-      return { ...state, newPostTitle: action.payload };
-    case "SET_NEW_POST_CONTENT":
-      return { ...state, newPostContent: action.payload };
-    case "SET_NEW_POST_IMAGE":
-      return { ...state, newPostImage: action.payload.file, newPostImagePreview: action.payload.preview };
-    case "SET_PUBLISHING":
-      return { ...state, publishing: action.payload };
-    case "ADD_POST":
-      return { ...state, posts: [action.payload, ...state.posts], newPostTitle: "", newPostContent: "", newPostImage: null, newPostImagePreview: null, publishing: false };
-    case "REMOVE_POST":
-      return { ...state, posts: state.posts.filter((p) => p.id !== action.payload) };
-    case "TOGGLE_LIKE":
-      return {
-        ...state,
-        posts: state.posts.map((p) =>
-          p.id === action.payload.postId
-            ? { ...p, user_has_liked: action.payload.liked, likes_count: (p.likes_count ?? 0) + (action.payload.liked ? 1 : -1) }
-            : p
-        ),
-      };
-    case "SET_EXPANDED_POST":
-      return { ...state, expandedPostId: action.payload };
-    case "SET_COMMENTS":
-      return { ...state, comments: { ...state.comments, [action.payload.postId]: action.payload.comments } };
-    case "SET_LOADING_COMMENTS":
-      return { ...state, loadingComments: { ...state.loadingComments, [action.payload.postId]: action.payload.loading } };
-    case "SET_NEW_COMMENT":
-      return { ...state, newComment: { ...state.newComment, [action.payload.postId]: action.payload.text } };
-    case "ADD_COMMENT": {
-      const existing = state.comments[action.payload.postId] ?? [];
-      let updated: CommunityComment[];
-      if (action.payload.parentId) {
-        updated = addReplyToComment(existing, action.payload.parentId, action.payload.comment);
-      } else {
-        updated = [...existing, action.payload.comment];
-      }
-      return {
-        ...state,
-        comments: { ...state.comments, [action.payload.postId]: updated },
-        newComment: action.payload.parentId ? state.newComment : { ...state.newComment, [action.payload.postId]: "" },
-        replyText: action.payload.parentId ? { ...state.replyText, [action.payload.parentId]: "" } : state.replyText,
-        replyingTo: action.payload.parentId ? { ...state.replyingTo, [action.payload.postId]: null } : state.replyingTo,
-        posts: state.posts.map((p) =>
-          p.id === action.payload.postId ? { ...p, comments_count: (p.comments_count ?? 0) + 1 } : p
-        ),
-      };
-    }
-    case "REMOVE_COMMENT": {
-      const existing2 = state.comments[action.payload.postId] ?? [];
-      return {
-        ...state,
-        comments: { ...state.comments, [action.payload.postId]: removeCommentFromList(existing2, action.payload.commentId) },
-        posts: state.posts.map((p) =>
-          p.id === action.payload.postId ? { ...p, comments_count: Math.max(0, (p.comments_count ?? 0) - 1) } : p
-        ),
-      };
-    }
-    case "SET_REPLYING_TO":
-      return { ...state, replyingTo: { ...state.replyingTo, [action.payload.postId]: action.payload.commentId } };
-    case "SET_REPLY_TEXT":
-      return { ...state, replyText: { ...state.replyText, [action.payload.commentId]: action.payload.text } };
-    case "TOGGLE_COMMENT_LIKE": {
-      // Find which postId this comment belongs to and update it
-      const newComments = { ...state.comments };
-      const postId = action.payload.postId;
-      if (newComments[postId]) {
-        newComments[postId] = updateCommentInList(newComments[postId], action.payload.commentId, (c) => ({
-          ...c,
-          user_has_liked: action.payload.liked,
-          likes_count: (c.likes_count ?? 0) + (action.payload.liked ? 1 : -1),
-          coach_liked: action.payload.isCoach ? action.payload.liked : c.coach_liked,
-        }));
-      }
-      return { ...state, comments: newComments };
-    }
-    case "SET_SAVING_SETTINGS":
-      return { ...state, savingSettings: action.payload };
-    case "INIT_SETTINGS":
-      return {
-        ...state,
-        settingsName: action.payload.name,
-        settingsDescription: action.payload.description ?? "",
-        settingsMode: action.payload.mode,
-        settingsActive: action.payload.is_active,
-      };
-    case "SET_SETTINGS_NAME":
-      return { ...state, settingsName: action.payload };
-    case "SET_SETTINGS_DESCRIPTION":
-      return { ...state, settingsDescription: action.payload };
-    case "SET_SETTINGS_MODE":
-      return { ...state, settingsMode: action.payload };
-    case "SET_SETTINGS_ACTIVE":
-      return { ...state, settingsActive: action.payload };
-    case "TOGGLE_PIN":
-      return {
-        ...state,
-        posts: state.posts.map((p) =>
-          p.id === action.payload ? { ...p, is_pinned: !p.is_pinned } : p
-        ),
-      };
-    default:
-      return state;
-  }
-}
+import { buildCommentTree } from "@/lib/community-utils";
+import type { Community, CommunityPost, CommunityComment } from "./components/types";
+import { communityReducer, communityInitialState } from "./community-reducer";
+export { communityInitialState, communityReducer } from "./community-reducer";
+export type { CommunityState, CommunityAction } from "./community-reducer";
 
 export function useCommunityPage() {
   const [state, dispatch] = useReducer(communityReducer, communityInitialState);
   const supabaseRef = useRef(createClient());
+
+  const loadPosts = useCallback(async (communityId: string, userId: string) => {
+    const supabase = supabaseRef.current;
+
+    const { data: posts, error } = await supabase
+      .from("community_posts")
+      .select("id,community_id,author_id,title,content,image_url,is_pinned,created_at,updated_at")
+      .eq("community_id", communityId)
+      .order("is_pinned", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(QUERY_LIMITS.COMMUNITY_POSTS);
+
+    if (error) {
+      toast.error("Error al cargar publicaciones");
+      console.error("[Community] loadPosts:", error);
+      return;
+    }
+
+    if (!posts || posts.length === 0) {
+      dispatch({ type: "SET_POSTS", payload: [] });
+      return;
+    }
+
+    const postIds = posts.map((p) => p.id);
+    const authorIds = [...new Set(posts.map((p) => p.author_id))];
+
+    const [likesRes, commentsRes, profilesRes] = await Promise.all([
+      supabase
+        .from("community_likes")
+        .select("post_id, user_id")
+        .in("post_id", postIds),
+      supabase
+        .from("community_comments")
+        .select("post_id")
+        .in("post_id", postIds),
+      supabase
+        .from("profiles")
+        .select("user_id, full_name, business_name, role")
+        .in("user_id", authorIds),
+    ]);
+
+    const profileMap = new Map(profilesRes.data?.map((p) => [p.user_id, p]) ?? []);
+
+    // Build lookup maps to avoid O(n*m) filtering
+    const likesPerPost = new Map<string, { count: number; userLiked: boolean }>();
+    for (const l of likesRes.data ?? []) {
+      const entry = likesPerPost.get(l.post_id) ?? { count: 0, userLiked: false };
+      entry.count++;
+      if (l.user_id === userId) entry.userLiked = true;
+      likesPerPost.set(l.post_id, entry);
+    }
+    const commentsPerPost = new Map<string, number>();
+    for (const c of commentsRes.data ?? []) {
+      commentsPerPost.set(c.post_id, (commentsPerPost.get(c.post_id) ?? 0) + 1);
+    }
+
+    const enriched: CommunityPost[] = posts.map((p) => {
+      const profile = profileMap.get(p.author_id);
+      const likeInfo = likesPerPost.get(p.id);
+      return {
+        ...p,
+        author_name: profile?.role === "trainer" ? (profile.business_name ?? profile.full_name ?? "Coach") : (profile?.full_name ?? "Cliente"),
+        author_role: profile?.role as "trainer" | "client" | undefined,
+        likes_count: likeInfo?.count ?? 0,
+        comments_count: commentsPerPost.get(p.id) ?? 0,
+        user_has_liked: likeInfo?.userLiked ?? false,
+      };
+    });
+
+    dispatch({ type: "SET_POSTS", payload: enriched });
+  }, []);
 
   // ── Init: load or create community + posts ──
   useEffect(() => {
@@ -289,8 +127,7 @@ export function useCommunityPage() {
       dispatch({ type: "SET_LOADING", payload: false });
     };
     init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadPosts]);
 
   // ── Realtime subscription ──
   useEffect(() => {
@@ -312,69 +149,6 @@ export function useCommunityPage() {
 
     return () => { supabase.removeChannel(channel); };
   }, [state.community, state.userId]);
-
-  const loadPosts = useCallback(async (communityId: string, userId: string) => {
-    const supabase = supabaseRef.current;
-
-    const { data: posts, error } = await supabase
-      .from("community_posts")
-      .select("id,community_id,author_id,title,content,image_url,is_pinned,created_at,updated_at")
-      .eq("community_id", communityId)
-      .order("is_pinned", { ascending: false })
-      .order("created_at", { ascending: false })
-      .limit(50);
-
-    if (error) {
-      toast.error("Error al cargar publicaciones");
-      console.error("[Community] loadPosts:", error);
-      return;
-    }
-
-    if (!posts || posts.length === 0) {
-      dispatch({ type: "SET_POSTS", payload: [] });
-      return;
-    }
-
-    const postIds = posts.map((p) => p.id);
-    const authorIds = [...new Set(posts.map((p) => p.author_id))];
-
-    const [likesRes, commentsRes, profilesRes] = await Promise.all([
-      supabase
-        .from("community_likes")
-        .select("post_id, user_id")
-        .in("post_id", postIds),
-      supabase
-        .from("community_comments")
-        .select("post_id")
-        .in("post_id", postIds),
-      supabase
-        .from("profiles")
-        .select("user_id, full_name, business_name, role")
-        .in("user_id", authorIds),
-    ]);
-
-    const likes = likesRes.data;
-    const comments = commentsRes.data;
-    const profiles = profilesRes.data;
-
-    const profileMap = new Map(profiles?.map((p) => [p.user_id, p]) ?? []);
-
-    const enriched: CommunityPost[] = posts.map((p) => {
-      const profile = profileMap.get(p.author_id);
-      const postLikes = likes?.filter((l) => l.post_id === p.id) ?? [];
-      const postComments = comments?.filter((c) => c.post_id === p.id) ?? [];
-      return {
-        ...p,
-        author_name: profile?.role === "trainer" ? (profile.business_name ?? profile.full_name ?? "Coach") : (profile?.full_name ?? "Cliente"),
-        author_role: profile?.role as "trainer" | "client" | undefined,
-        likes_count: postLikes.length,
-        comments_count: postComments.length,
-        user_has_liked: postLikes.some((l) => l.user_id === userId),
-      };
-    });
-
-    dispatch({ type: "SET_POSTS", payload: enriched });
-  }, []);
 
   // ── Publish post ──
   // ── Mark community as read ──
@@ -464,7 +238,8 @@ export function useCommunityPage() {
       .from("community_comments")
       .select("id,post_id,parent_id,author_id,content,created_at")
       .eq("post_id", postId)
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: true })
+      .limit(QUERY_LIMITS.COMMUNITY_COMMENTS);
 
     if (error) {
       toast.error("Error al cargar comentarios");
@@ -488,36 +263,34 @@ export function useCommunityPage() {
     ]);
 
     const profileMap = new Map((profilesRes.data ?? []).map((p) => [p.user_id, p]));
-    const commentLikes = commentLikesRes.data ?? [];
+
+    // Build lookup map for comment likes to avoid O(n*m)
+    const commentLikeMap = new Map<string, { count: number; coachLiked: boolean; userLiked: boolean }>();
+    for (const l of commentLikesRes.data ?? []) {
+      const entry = commentLikeMap.get(l.comment_id) ?? { count: 0, coachLiked: false, userLiked: false };
+      entry.count++;
+      if (l.is_coach) entry.coachLiked = true;
+      if (l.user_id === userId) entry.userLiked = true;
+      commentLikeMap.set(l.comment_id, entry);
+    }
 
     // Enrich flat list
     const enrichedFlat: CommunityComment[] = allComments.map((c) => {
       const profile = profileMap.get(c.author_id);
-      const thisLikes = commentLikes.filter((l) => l.comment_id === c.id);
+      const likeInfo = commentLikeMap.get(c.id);
       return {
         ...c,
         author_name: profile?.role === "trainer" ? (profile.business_name ?? profile.full_name ?? "Coach") : (profile?.full_name ?? "Cliente"),
         author_role: profile?.role as "trainer" | "client" | undefined,
-        likes_count: thisLikes.length,
-        coach_liked: thisLikes.some((l) => l.is_coach),
-        user_has_liked: thisLikes.some((l) => l.user_id === userId),
+        likes_count: likeInfo?.count ?? 0,
+        coach_liked: likeInfo?.coachLiked ?? false,
+        user_has_liked: likeInfo?.userLiked ?? false,
         replies: [],
       };
     });
 
     // Build tree: group replies under parents
-    const commentMap = new Map<string, CommunityComment>();
-    enrichedFlat.forEach((c) => commentMap.set(c.id, c));
-
-    const rootComments: CommunityComment[] = [];
-    enrichedFlat.forEach((c) => {
-      if (c.parent_id && commentMap.has(c.parent_id)) {
-        const parent = commentMap.get(c.parent_id)!;
-        parent.replies = [...(parent.replies ?? []), c];
-      } else {
-        rootComments.push(c);
-      }
-    });
+    const rootComments = buildCommentTree(enrichedFlat);
 
     dispatch({ type: "SET_COMMENTS", payload: { postId, comments: rootComments } });
     dispatch({ type: "SET_LOADING_COMMENTS", payload: { postId, loading: false } });

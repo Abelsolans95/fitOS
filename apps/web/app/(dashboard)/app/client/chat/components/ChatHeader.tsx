@@ -1,12 +1,6 @@
 import { memo } from "react";
 import type { TrainerInfo } from "@/hooks/useChat";
-
-function getInitials(name: string | null) {
-  if (!name) return "??";
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return name.slice(0, 2).toUpperCase();
-}
+import { getInitials } from "@/lib/utils";
 
 interface Props {
   trainer: TrainerInfo | null;
