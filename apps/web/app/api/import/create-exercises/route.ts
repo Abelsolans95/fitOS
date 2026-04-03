@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createAuthClient } from "@/lib/supabase-server";
+import { validateCsrf } from "@/lib/csrf";
 
 export async function POST(request: NextRequest) {
+  // SECURITY: CSRF protection
+  if (!validateCsrf(request)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   // Verify auth first
   const authClient = await createAuthClient();
   const {

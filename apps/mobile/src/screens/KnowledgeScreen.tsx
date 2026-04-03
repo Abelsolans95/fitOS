@@ -133,8 +133,8 @@ export default function KnowledgeScreen() {
             {/* Title */}
             <Text style={s.articleTitle}>{selectedArticle.title}</Text>
 
-            {/* Video link */}
-            {selectedArticle.video_url && (
+            {/* Video link — SECURITY: only allow YouTube/Vimeo */}
+            {selectedArticle.video_url && /^https:\/\/(www\.)?(youtube\.com|youtu\.be|vimeo\.com|player\.vimeo\.com)/.test(selectedArticle.video_url) && (
               <TouchableOpacity
                 style={s.videoLink}
                 onPress={() => Linking.openURL(selectedArticle.video_url!)}

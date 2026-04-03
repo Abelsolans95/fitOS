@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
+import { validateCsrf } from "@/lib/csrf";
 
 interface SimilarExerciseMatch {
   id: string;
@@ -9,6 +10,11 @@ interface SimilarExerciseMatch {
 }
 
 export async function POST(request: NextRequest) {
+  // SECURITY: CSRF protection
+  if (!validateCsrf(request)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -35,11 +41,15 @@ export async function POST(request: NextRequest) {
     exercise_names: string[];
   };
 
-  if (!import_id || !exercise_names?.length) {
-    return NextResponse.json(
-      { error: "Faltan import_id o exercise_names" },
-      { status: 400 }
-    );
+  // SECURITY: Runtime type validation
+  if (!import_id || typeof import_id !== "string") {
+    return NextResponse.json({ error: "import_id requerido" }, { status: 400 });
+  }
+  if (!Array.isArray(exercise_names) || exercise_names.length === 0) {
+    return NextResponse.json({ error: "exercise_names debe ser un array no vacío" }, { status: 400 });
+  }
+  if (exercise_names.some((n: unknown) => typeof n !== "string")) {
+    return NextResponse.json({ error: "exercise_names debe contener solo strings" }, { status: 400 });
   }
 
   // Search similar exercises for each name

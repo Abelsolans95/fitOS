@@ -398,7 +398,13 @@ export function useCommunityPage() {
     let imageUrl: string | null = null;
 
     if (state.newPostImage) {
-      const ext = state.newPostImage.name.split(".").pop();
+      // SECURITY: Whitelist extensions to prevent SVG XSS and disguised files
+      const ext = state.newPostImage.name.split(".").pop()?.toLowerCase();
+      if (!ext || !["jpg", "jpeg", "png", "webp", "gif"].includes(ext)) {
+        toast.error("Solo se permiten imagenes .jpg, .png, .webp o .gif");
+        dispatch({ type: "SET_PUBLISHING", payload: false });
+        return;
+      }
       const path = `${state.userId}/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage.from("community-images").upload(path, state.newPostImage);
       if (uploadError) {

@@ -1,8 +1,11 @@
 /**
  * Simple in-memory rate limiter for API routes.
  *
- * Works on Vercel Serverless (per-invocation memory) and long-running servers.
- * For true distributed rate limiting (multiple instances), use Upstash Redis.
+ * LIMITATION: In-memory store resets per serverless cold start on Vercel.
+ * This provides protection against rapid bursts within a single instance
+ * but NOT against distributed attacks across multiple cold starts.
+ * For true distributed rate limiting, migrate to Upstash Redis (@upstash/ratelimit).
+ * Current implementation is sufficient for dev and moderate traffic.
  *
  * Usage in API routes:
  *   const limiter = createRateLimiter({ interval: 60_000, maxRequests: 30 });

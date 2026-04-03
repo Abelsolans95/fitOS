@@ -4,6 +4,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import ExcelJS from "exceljs";
 import { validateExcelMagicBytes } from "@/lib/file-validation";
 import { uploadLimiter, getClientIdentifier } from "@/lib/rate-limit";
+import { validateCsrf } from "@/lib/csrf";
+import { sanitizeName } from "@/lib/sanitize";
 
 /** Column detected by AI analysis */
 interface DetectedColumn {
@@ -40,6 +42,11 @@ interface SheetResult {
 }
 
 export async function POST(request: NextRequest) {
+  // SECURITY: CSRF protection
+  if (!validateCsrf(request)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -269,7 +276,7 @@ IMPORTANTE:
       .from("excel_imports")
       .insert({
         trainer_id: user.id,
-        file_name: file.name,
+        file_name: sanitizeName(file.name),
         file_size_bytes: file.size,
         sheet_count: sheetsResult.length,
         detected_columns: sheetsResult[0].columns,
@@ -288,7 +295,7 @@ IMPORTANTE:
 
     return NextResponse.json({
       import_id: importRecord.id,
-      file_name: file.name,
+      file_name: sanitizeName(file.name),
       needs_review: sheetsResult.some((s) =>
         s.columns.some((c) => c.confidence < 0.9)
       ),

@@ -14,8 +14,27 @@
 const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "http://localhost:3001",
-  // Production domains will be added via env var
 ];
+
+/**
+ * Parse origin string to compare strictly.
+ * Uses URL constructor to prevent subdomain bypass (e.g. localhost:3000.evil.com).
+ */
+function isOriginAllowed(origin: string, allowed: string[]): boolean {
+  try {
+    const parsed = new URL(origin);
+    return allowed.some((a) => {
+      try {
+        const allowedParsed = new URL(a);
+        return parsed.origin === allowedParsed.origin;
+      } catch {
+        return false;
+      }
+    });
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Validate CSRF by checking Origin/Referer headers.
@@ -32,21 +51,19 @@ export function validateCsrf(request: Request): boolean {
 
   // Check Origin header first (most reliable)
   if (origin) {
-    return allowed.some((a) => origin === a || origin.startsWith(a));
+    return isOriginAllowed(origin, allowed);
   }
 
   // Fallback to Referer header
   if (referer) {
-    return allowed.some((a) => referer.startsWith(a));
+    return isOriginAllowed(referer, allowed);
   }
 
-  // No Origin or Referer — could be same-origin request from browser (GET)
-  // or a server-to-server call. Block for POST/PUT/DELETE methods.
+  // No Origin or Referer — block state-changing requests
   const method = request.method?.toUpperCase();
   if (method === "GET" || method === "HEAD" || method === "OPTIONS") {
     return true;
   }
 
-  // No origin info for a state-changing request → reject
   return false;
 }
