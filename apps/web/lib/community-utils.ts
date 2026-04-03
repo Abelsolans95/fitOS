@@ -66,18 +66,19 @@ export function addReplyToTree<T extends TreeComment>(
 /**
  * Build a comment tree from a flat list using parent_id relationships.
  */
-export function buildCommentTree<T extends TreeComment & { replies: T[] }>(
+export function buildCommentTree<T extends TreeComment>(
   flatComments: T[]
-): T[] {
-  const map = new Map<string, T>();
-  flatComments.forEach((c) => map.set(c.id, c));
+): (T & { replies: T[] })[] {
+  type Node = T & { replies: T[] };
+  const map = new Map<string, Node>();
+  flatComments.forEach((c) => map.set(c.id, { ...c, replies: [] } as Node));
 
-  const roots: T[] = [];
-  flatComments.forEach((c) => {
+  const roots: Node[] = [];
+  map.forEach((c) => {
     if (c.parent_id) {
       const parent = map.get(c.parent_id);
       if (parent) {
-        parent.replies = [...parent.replies, c];
+        parent.replies.push(c);
       } else {
         // Parent was deleted but orphan comment remains — treat as root
         roots.push(c);
@@ -88,6 +89,7 @@ export function buildCommentTree<T extends TreeComment & { replies: T[] }>(
   });
   return roots;
 }
+
 
 /**
  * Build a Map of counts from an array, grouped by a key field.
