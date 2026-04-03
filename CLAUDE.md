@@ -27,6 +27,7 @@ Este archivo contiene TODO lo necesario para continuar el desarrollo: reglas, cr
 - **Onboarding con secciones (01/04/2026):** Formulario de onboarding extendido con secciones opcionales ✅ — 5 secciones predefinidas (historial medico, deportivo, experiencias, estado actual, objetivos) que el trainer puede activar/desactivar. Cliente ve wizard multi-paso (1 seccion = 1 step). Plantilla cargable con un click. AI edge function actualizada para analisis por seccion. Sin migracion DB (todo en JSONB existente). Web + mobile.
 - **Fase 10 (02/04/2026):** Base de Conocimiento / FAQ ✅ — Trainer escribe artículos FAQ categorizados (Nutrición, Rutina, Lesión, Técnica, Suplementación, General) con texto + video URL. Cliente busca/filtra artículos antes de preguntar. Integración bidireccional con Consultas: convertir ticket resuelto en artículo, sugerir artículos relevantes al crear ticket (debounced search). Vista contador incrementada via SECURITY DEFINER. Full-text search PostgreSQL (español). Migración 039. Web trainer + web cliente + mobile. Tipos compartidos en `@fitos/shared`.
 - **Auditoría completa (02/04/2026):** Bugs críticos corregidos ✅ — Race condition promo codes (RPC atómico, migración 040), URLs hardcodeadas (env var NEXT_PUBLIC_BASE_URL), Sentry PII desactivado, error handling mobile. Seguridad: validate-promo status codes, Google OAuth role check, sanitización de errores. Performance: .limit(500) en community_comments, Promise.all en tickets. TypeScript: 40+ `any` eliminados en web+mobile. UX: confirmación two-step en deletes de comunidad y alimentos. Tests: 126 tests, 13 archivos, todos pasando.
+- **Code Quality Audit v2 (03/04/2026):** Refactor de arquitectura ✅ — API routes centralizadas (`lib/api-utils.ts`, `lib/supabase-admin.ts`), `QUERY_LIMITS` centralizados (`lib/constants.ts`), sidebar badges extraídos a `useSidebarBadges` hook, community tree utils compartidos (`lib/community-utils.ts`), `timeAgo` centralizado en `lib/utils.ts`, `calculateStressIndex` movido a `@fitos/shared`, `useNutritionPage` dividido en 3 hooks (`useFoodLibrary` + `useMenuCreator` + orquestador), cache TTL en resolvers (`lib/query-cache.ts`), `React.memo` en componentes lista, FlatList optimizados en mobile. 132 tests, 14 archivos, todos pasando.
 
 ---
 
@@ -407,6 +408,38 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 146. **Google OAuth solo para trainers** — `auth/google/callback/route.ts` verifica `profiles.role === "trainer"` antes de guardar tokens. Retorna 403 si el usuario no es trainer.
 147. **Nunca exponer mensajes de error de DB al cliente** — En API routes, usar mensajes genéricos en español en las respuestas JSON. Los detalles del error van a `console.error` únicamente. Ejemplo: `{ error: "Error al vincular con el entrenador" }` en vez de `{ error: tcError.message }`.
 
+### Reglas de calidad de código (Code Quality Audit v2, 03/04/2026)
+
+148. **API routes: usar `lib/api-utils.ts` para auth/role/error** — No duplicar lógica de auth en cada route. Funciones disponibles: `requireAuth()`, `requireAuthWithRole(role)` (retorna `{ user, supabase, admin }`), `requireDbRole(userId, role)`, `requireMetadataRole(user, role)`, `successResponse(data, status)`, `errorResponse(message, status)`, `parseJsonBody<T>(request)`. Todas retornan `NextResponse` directamente en caso de error. Ver `activate-client/route.ts` como referencia minimal.
+
+149. **`lib/supabase-admin.ts` para service_role client** — Nunca crear `createClient(url, serviceKey)` inline en API routes. Importar `createAdminClient()` de `@/lib/supabase-admin`. Un solo punto de cambio. Regla 40 sigue vigente (crear dentro del handler, no a nivel módulo) — `requireAuthWithRole` ya lo hace automáticamente.
+
+150. **`QUERY_LIMITS` centralizados en `lib/constants.ts`** — Todo `.limit(N)` en queries Supabase debe usar una constante de `QUERY_LIMITS`, no un número mágico. Constantes disponibles: `MESSAGES`, `APPOINTMENTS`, `COMMUNITY_POSTS`, `COMMUNITY_COMMENTS`, `WEIGHT_LOG`, `WEIGHT_LOG_ANALYTICS`, `BODY_METRICS`, `TICKETS`, `TICKET_REPLIES`, `KNOWLEDGE_ARTICLES`, `EXERCISES_PAGE`. Al añadir una tabla paginable nueva, añadir su límite aquí.
+
+151. **Map lookups en lugar de O(n×m) `.filter()` en enrichment** — Cuando se enriquecen N items con datos de M items (ej: posts + profiles), NO hacer `.filter()` dentro de un `.map()`. Crear un `Map<string, T>` primero y hacer `.get(id)` en O(1). Patrón:
+    ```ts
+    const profileMap = new Map(profiles.map(p => [p.user_id, p]));
+    const enriched = posts.map(p => ({ ...p, author: profileMap.get(p.user_id) }));
+    ```
+
+152. **`useSidebarBadges` hook para badges de sidebar** — Toda lógica de badges Realtime (chat, comunidad, tickets) vive en `hooks/useSidebarBadges.ts`. Acepta `role`, `chatPath`, `communityPath`, `ticketsPath`. Retorna `{ chatUnread, communityUnread, ticketUnread }`. TrainerSidebar y ClientSidebar lo importan. No duplicar lógica de Realtime en cada sidebar.
+
+153. **Utilidades de comunidad compartidas en `lib/community-utils.ts`** — Funciones genéricas tipadas para manipular árboles de comentarios: `updateCommentInTree<T>`, `removeCommentFromTree<T>`, `addReplyToTree<T>`, `buildCommentTree<T>`, `buildCountMap<T>`, `resolveAuthorName`. Tanto `useCommunityPage` (trainer) como `useClientCommunityPage` (cliente) importan de aquí. No duplicar lógica de árboles.
+
+154. **`timeAgo()` centralizada en `lib/utils.ts`** — Función única para "hace 5 min", "hace 2h", etc. No redefinir localmente. Los `shared.tsx` de tickets y knowledge re-exportan desde `@/lib/utils`.
+
+155. **Lógica de negocio compartida en `@fitos/shared`** — Funciones puras que se usan en web Y mobile deben vivir en `packages/shared/`. Ejemplo: `calculateStressIndex` en `packages/shared/src/routine-logic/stress-index.ts`. Web y mobile importan de `@fitos/shared`. No duplicar la misma fórmula en ambas plataformas.
+
+156. **`React.memo` obligatorio en componentes de lista** — Componentes que se renderizan dentro de `.map()` o `FlatList` y reciben props estables deben estar envueltos en `memo()`. Patrón: `export const Foo = memo(function Foo(props: FooProps) { ... })`. Función nombrada dentro de memo para stack traces legibles. Ya aplicado en: `ExerciseCard`, `CommunityFeed` PostCard, `RoutineList`.
+
+157. **FlatList mobile: props de rendimiento obligatorias** — Todo `<FlatList>` en mobile debe incluir: `maxToRenderPerBatch={10}`, `windowSize={5}`, `removeClippedSubviews={true}` (o `{Platform.OS === 'android'}` si hay problemas en iOS). `renderItem` debe ser `useCallback` estable. `keyExtractor` debe ser función estable. Ya aplicado en: ChatScreen, TicketsScreen, KnowledgeScreen.
+
+158. **Hooks complejos: dividir en sub-hooks especializados** — Un `useReducer` hook con >800 líneas debe dividirse en sub-hooks independientes, cada uno con su propio reducer y estado. El hook principal actúa como orquestador: compone el estado final con `useMemo` y crea un `dispatch` combinado que rutea acciones al sub-hook correcto por prefijo. Ejemplo: `useNutritionPage` orquesta `useFoodLibrary` (LIB_*) + `useMenuCreator` (CR_*) + page reducer.
+
+159. **Cache TTL para resolvers en `lib/query-cache.ts`** — Los resolvers de ejercicios y alimentos usan cache in-memory con TTL de 5 minutos (`getCached`, `setCache`, `invalidateCache`). Key pattern: `exercises:{trainerId}`, `foods:{trainerId}`. Cache se invalida automáticamente en operaciones de escritura (`upsertExerciseOverride`, `upsertFoodOverride`). Evita queries redundantes cuando se navega entre pestañas.
+
+160. **Tests: actualizar al refactorizar API routes** — Al migrar una API route a `api-utils`, los tests deben mockear `@/lib/api-utils` (no `@supabase/supabase-js` ni `@/lib/supabase-server` directamente). Patrón: `vi.mock("@/lib/api-utils", () => ({ requireAuthWithRole: vi.fn(), ... }))`. Ver `activate-client/route.test.ts` como referencia.
+
 ---
 
 ## Regla de mantenimiento — obligatoria
@@ -478,6 +511,7 @@ fitOS/
 │       │   ├── index.ts          ← barrel export de tipos, zonas, utils, onboarding
 │       │   ├── anatomy/zones.ts  ← MUSCLE_ZONES, ZONE_LABELS, ANATOMY_VIEWBOX
 │       │   ├── onboarding/index.ts ← groupFieldsBySection, getEnabledSections
+│       │   ├── routine-logic/    ← calculateStressIndex (shared web+mobile)
 │       │   ├── types/            ← health, routine, appointments, community, messages, knowledge
 │       │   ├── data/days.ts
 │       │   └── utils/time.ts
@@ -511,7 +545,9 @@ fitOS/
 │   │   │   │       │   ├── routines/useRoutinesPage.ts
 │   │   │   │       │   ├── routines/components/
 │   │   │   │       │   ├── nutrition/page.tsx       ← orquestador
-│   │   │   │       │   ├── nutrition/useNutritionPage.ts
+│   │   │   │       │   ├── nutrition/useNutritionPage.ts  ← orquestador (usa useFoodLibrary + useMenuCreator)
+│   │   │   │       │   ├── nutrition/useFoodLibrary.ts   ← CRUD alimentos, búsqueda, paginación
+│   │   │   │       │   ├── nutrition/useMenuCreator.ts   ← estado del planificador de menú
 │   │   │   │       │   ├── import/page.tsx          ← wizard Excel 4 pasos
 │   │   │   │       │   ├── forms/page.tsx
 │   │   │   │       │   ├── appointments/page.tsx    ← orquestador
@@ -568,13 +604,20 @@ fitOS/
 │   │   ├── public/assets/anatomy/              ← 4 imágenes anatómicas (front/back × male/female)
 │   │   ├── lib/
 │   │   │   ├── supabase.ts + supabase-server.ts
-│   │   │   ├── exercise-resolver.ts + .test.ts
-│   │   │   ├── food-resolver.ts + .test.ts
+│   │   │   ├── supabase-admin.ts             ← createAdminClient() centralizado
+│   │   │   ├── api-utils.ts                  ← requireAuth, requireAuthWithRole, errorResponse...
+│   │   │   ├── constants.ts                  ← QUERY_LIMITS centralizado
+│   │   │   ├── query-cache.ts + .test.ts     ← TTL cache para resolvers
+│   │   │   ├── community-utils.ts            ← tree manipulation genérico para comentarios
+│   │   │   ├── exercise-resolver.ts + .test.ts  ← usa query-cache
+│   │   │   ├── food-resolver.ts + .test.ts      ← usa query-cache
 │   │   │   ├── excel-parser.ts + .test.ts
 │   │   │   ├── email-notifications.ts + .test.ts
 │   │   │   ├── google-calendar.ts + .test.ts
 │   │   │   └── onboarding-templates.ts  ← plantilla 5 secciones onboarding
-│   │   ├── hooks/useChat.ts
+│   │   ├── hooks/
+│   │   │   ├── useChat.ts
+│   │   │   └── useSidebarBadges.ts           ← badges Realtime para ambos sidebars
 │   │   ├── .env.example                        ← variables de entorno documentadas
 │   │   ├── middleware.ts
 │   │   └── vitest.config.ts
@@ -634,6 +677,7 @@ fitOS/
 | Fase 9 — Consultas/Tickets | ✅ Completo | Migración 038 aplicada + política `trainer_replies_update_read` |
 | Fase 10 — Base de Conocimiento / FAQ | ✅ Completo | Migración 039 pendiente aplicar |
 | Auditoría completa (bugs + seguridad + TS + UX + perf) | ✅ Completo | 126 tests pasando, migración 040 pendiente aplicar |
+| Code Quality Audit v2 (refactor arquitectura) | ✅ Completo | 132 tests, API utils, cache, hooks compartidos, React.memo |
 | Gamificación | ❌ Sin UI | Tablas existen, falta interfaz |
 | Stripe + suscripciones | ❌ Sin implementar | |
 | Push notifications | ❌ Sin implementar | |
