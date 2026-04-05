@@ -41,7 +41,8 @@ export default function TrainerClientsPage() {
     const load = async () => {
       try {
         const supabase = createClient();
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const user = session?.user;
         if (authError || !user) { setError("No se pudo obtener la sesión."); setLoading(false); return; }
 
         const { data: tcRows, error: tcError } = await supabase

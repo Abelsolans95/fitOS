@@ -38,49 +38,54 @@ export default function MealsPage() {
       try {
         const supabase = createClient();
         const {
-          data: { user },
+          data: { session },
           error: authError,
-        } = await supabase.auth.getUser();
+        } = await supabase.auth.getSession();
 
-        if (authError || !user) {
+        if (authError || !session?.user) {
           setError("No se pudo obtener la sesion del usuario.");
           setLoading(false);
           return;
         }
+        const user = session.user;
 
         setUserId(user.id);
 
-        const { data, error: queryError } = await supabase
-          .from("meal_plans")
-          .select("id, title, period, meals_per_day, days, target_kcal, is_active, created_at")
-          .eq("client_id", user.id)
-          .eq("is_active", true)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+        const today = new Date();
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay() + 1);
 
-        if (queryError) {
+        // Meal plan and calendar entries are independent — fetch in parallel
+        const [mealPlanRes, calendarRes] = await Promise.all([
+          supabase
+            .from("meal_plans")
+            .select("id, title, period, meals_per_day, days, target_kcal, is_active, created_at")
+            .eq("client_id", user.id)
+            .eq("is_active", true)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          supabase
+            .from("user_calendar")
+            .select("date, completed, activity_details")
+            .eq("user_id", user.id)
+            .eq("activity_type", "meal")
+            .gte("date", startOfWeek.toISOString().split("T")[0]),
+        ]);
+
+        if (mealPlanRes.error) {
           setError("Error al cargar el menu.");
           setLoading(false);
           return;
         }
 
-        if (data) {
-          const plan = data as MealPlan;
+        if (calendarRes.error) { console.error("[Meals] Error cargando adherencia:", calendarRes.error); } // No bloqueante
+
+        if (mealPlanRes.data) {
+          const plan = mealPlanRes.data as MealPlan;
           setMealPlan(plan);
 
-          const today = new Date();
-          const startOfWeek = new Date(today);
-          startOfWeek.setDate(today.getDate() - today.getDay() + 1);
-
-          const { data: calendarEntries, error: calErr } = await supabase
-            .from("user_calendar")
-            .select("date, completed, activity_details")
-            .eq("user_id", user.id)
-            .eq("activity_type", "meal")
-            .gte("date", startOfWeek.toISOString().split("T")[0]);
-          if (calErr) { console.error("[Meals] Error cargando adherencia:", calErr); } // No bloqueante
-
+          const calendarEntries = calendarRes.data;
           if (calendarEntries) {
             const completed: Record<string, boolean> = {};
             calendarEntries.forEach((entry) => {

@@ -44,8 +44,9 @@ export default function CalendarPage() {
       setLoading(true);
       try {
         const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return;
+        const user = session.user;
 
         const startDate = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`;
         const endDay = getDaysInMonth(currentYear, currentMonth);

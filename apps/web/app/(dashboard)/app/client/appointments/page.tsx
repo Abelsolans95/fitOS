@@ -39,8 +39,9 @@ export default function ClientAppointmentsPage() {
 
   const fetchAppointments = useCallback(async () => {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+    const user = session.user;
 
     const monthAgo = new Date(); monthAgo.setMonth(monthAgo.getMonth() - 1);
     const threeMonthsAhead = new Date(); threeMonthsAhead.setMonth(threeMonthsAhead.getMonth() + 3);
@@ -66,30 +67,35 @@ export default function ClientAppointmentsPage() {
   useEffect(() => {
     const init = async () => {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoading(false); return; }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) { setLoading(false); return; }
+      const user = session.user;
       setClientId(user.id);
 
-      const { data: rel, error: relErr } = await supabase
-        .from("trainer_clients")
-        .select("trainer_id")
-        .eq("client_id", user.id)
-        .eq("status", "active")
-        .single();
-      if (relErr) { console.error("[ClientAppointments] Error cargando relación trainer:", relErr); } // No bloqueante
+      // Trainer relationship and appointments are independent — fetch in parallel
+      const [relResult, _] = await Promise.all([
+        supabase
+          .from("trainer_clients")
+          .select("trainer_id")
+          .eq("client_id", user.id)
+          .eq("status", "active")
+          .single(),
+        fetchAppointments(),
+      ]);
 
-      if (rel) {
-        setTrainerId(rel.trainer_id as string);
+      if (relResult.error) { console.error("[ClientAppointments] Error cargando relación trainer:", relResult.error); } // No bloqueante
+
+      if (relResult.data) {
+        setTrainerId(relResult.data.trainer_id as string);
         const { data: profile, error: profileErr } = await supabase
           .from("profiles")
           .select("user_id, full_name")
-          .eq("user_id", rel.trainer_id)
+          .eq("user_id", relResult.data.trainer_id)
           .single();
         if (profileErr) { console.error("[ClientAppointments] Error cargando perfil trainer:", profileErr); } // No bloqueante
         setTrainer(profile as TrainerInfo | null);
       }
 
-      await fetchAppointments();
       setLoading(false);
     };
 

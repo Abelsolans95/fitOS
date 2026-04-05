@@ -22,9 +22,10 @@ export default function ProgressPage() {
       try {
         const supabase = createClient();
         const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) return;
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session?.user) return;
+        const user = session.user;
         setUserId(user.id);
 
         const { data, error } = await supabase

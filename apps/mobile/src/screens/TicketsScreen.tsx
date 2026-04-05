@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { View, ActivityIndicator, Alert, StyleSheet } from "react-native";
 import { supabase } from "../lib/supabase";
+import { useAuth } from "../contexts/AuthContext";
 import { QUERY_LIMITS } from "../lib/constants";
 import { colors } from "../theme";
 import type { SupportTicket, TicketReply, TicketCategory, ScreenView } from "./tickets/types";
@@ -9,6 +10,7 @@ import CreateTicket from "./tickets/CreateTicket";
 import TicketThread from "./tickets/TicketThread";
 
 export default function TicketsScreen() {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [clientId, setClientId] = useState<string | null>(null);
   const [trainerId, setTrainerId] = useState<string | null>(null);
@@ -63,52 +65,44 @@ export default function TicketsScreen() {
 
   // ── Init ──
   useEffect(() => {
+    if (!user) { setLoading(false); return; }
     const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoading(false); return; }
       setClientId(user.id);
 
-      const { data: rel } = await supabase
-        .from("trainer_clients")
-        .select("trainer_id")
-        .eq("client_id", user.id)
-        .eq("status", "active")
-        .single();
+      const [relResult] = await Promise.all([
+        supabase.from("trainer_clients").select("trainer_id").eq("client_id", user.id).eq("status", "active").single(),
+        loadTickets(user.id),
+      ]);
 
-      if (rel) setTrainerId(rel.trainer_id as string);
-      await loadTickets(user.id);
+      if (relResult.data) setTrainerId(relResult.data.trainer_id as string);
       setLoading(false);
     };
     init();
-  }, [loadTickets]);
+  }, [user?.id, loadTickets]);
 
   // ── Realtime ──
   useEffect(() => {
+    if (!user) return;
     let channel: ReturnType<typeof supabase.channel> | null = null;
-    const setup = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      channel = supabase
-        .channel(`tickets-mobile-${user.id}`)
-        .on("postgres_changes", {
-          event: "INSERT", schema: "public", table: "ticket_replies",
-          filter: `sender_id=neq.${user.id}`,
-        }, (payload) => {
-          const reply = payload.new as TicketReply;
-          if (reply.ticket_id === selectedTicketIdRef.current) {
-            setReplies((prev) => [...prev, { ...reply, sender_role: "trainer" }]);
-          }
-          loadTickets(user.id);
-        })
-        .on("postgres_changes", {
-          event: "UPDATE", schema: "public", table: "support_tickets",
-          filter: `client_id=eq.${user.id}`,
-        }, () => loadTickets(user.id))
-        .subscribe();
-    };
-    setup();
+    channel = supabase
+      .channel(`tickets-mobile-${user.id}`)
+      .on("postgres_changes", {
+        event: "INSERT", schema: "public", table: "ticket_replies",
+        filter: `sender_id=neq.${user.id}`,
+      }, (payload) => {
+        const reply = payload.new as TicketReply;
+        if (reply.ticket_id === selectedTicketIdRef.current) {
+          setReplies((prev) => [...prev, { ...reply, sender_role: "trainer" }]);
+        }
+        loadTickets(user.id);
+      })
+      .on("postgres_changes", {
+        event: "UPDATE", schema: "public", table: "support_tickets",
+        filter: `client_id=eq.${user.id}`,
+      }, () => loadTickets(user.id))
+      .subscribe();
     return () => { if (channel) supabase.removeChannel(channel); };
-  }, [loadTickets]);
+  }, [user?.id, loadTickets]);
 
   // ── Open ticket (load replies) ──
   const openTicket = useCallback(async (ticketId: string) => {

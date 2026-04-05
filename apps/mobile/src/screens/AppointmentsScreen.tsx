@@ -3,6 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Platform,
 } from "react-native";
 import { supabase } from "../lib/supabase";
+import { useAuth } from "../contexts/AuthContext";
 import { QUERY_LIMITS } from "../lib/constants";
 import { colors, spacing, radius, shadows, fonts } from "../theme";
 import { AppointmentCard } from "./appointments/AppointmentCard";
@@ -10,6 +11,7 @@ import { RequestModal } from "./appointments/RequestModal";
 import type { Appointment, TrainerInfo } from "./appointments/types";
 
 export default function AppointmentsScreen() {
+  const { user } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [trainer, setTrainer] = useState<TrainerInfo | null>(null);
   const [clientId, setClientId] = useState<string | null>(null);
@@ -18,9 +20,7 @@ export default function AppointmentsScreen() {
   const [showModal, setShowModal] = useState(false);
   const [cancelling, setCancelling] = useState<string | null>(null);
 
-  const fetchAppointments = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+  const fetchAppointments = useCallback(async (userId: string) => {
     const now = new Date();
     const pastDate = new Date(now);
     pastDate.setMonth(pastDate.getMonth() - 1);
@@ -30,7 +30,7 @@ export default function AppointmentsScreen() {
     const { data, error: apptErr } = await supabase
       .from("appointments")
       .select("id, trainer_id, client_id, title, session_type, starts_at, ends_at, status, notes, location")
-      .eq("client_id", user.id)
+      .eq("client_id", userId)
       .gte("starts_at", pastDate.toISOString())
       .lte("starts_at", futureDate.toISOString())
       .order("starts_at", { ascending: true })
@@ -45,14 +45,13 @@ export default function AppointmentsScreen() {
   }, []);
 
   useEffect(() => {
+    if (!user) { setLoading(false); return; }
     const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoading(false); return; }
       setClientId(user.id);
 
-      const [relRes, _] = await Promise.all([
+      const [relRes] = await Promise.all([
         supabase.from("trainer_clients").select("trainer_id").eq("client_id", user.id).eq("status", "active").single(),
-        fetchAppointments(),
+        fetchAppointments(user.id),
       ]);
 
       const { data: rel, error: relErr } = relRes;
@@ -74,23 +73,19 @@ export default function AppointmentsScreen() {
       setLoading(false);
     };
     init();
-  }, [fetchAppointments]);
+  }, [user?.id, fetchAppointments]);
 
   // Realtime subscription
   useEffect(() => {
+    if (!user) return;
     let channel: ReturnType<typeof supabase.channel> | null = null;
-    const setup = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      channel = supabase
-        .channel(`appointments-mobile-${user.id}`)
-        .on("postgres_changes", { event: "*", schema: "public", table: "appointments", filter: `client_id=eq.${user.id}` },
-          () => fetchAppointments())
-        .subscribe();
-    };
-    setup();
+    channel = supabase
+      .channel(`appointments-mobile-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "appointments", filter: `client_id=eq.${user.id}` },
+        () => fetchAppointments(user.id))
+      .subscribe();
     return () => { if (channel) supabase.removeChannel(channel); };
-  }, [fetchAppointments]);
+  }, [user?.id, fetchAppointments]);
 
   const handleCancel = (id: string) => {
     Alert.alert("Cancelar cita", "¿Seguro que quieres cancelar esta cita?", [
@@ -103,8 +98,8 @@ export default function AppointmentsScreen() {
           if (cancelErr) {
             console.error("[AppointmentsScreen] Error cancelando cita:", cancelErr);
             Alert.alert("Error", "No se pudo cancelar la cita. Inténtalo de nuevo.");
-          } else {
-            await fetchAppointments();
+          } else if (clientId) {
+            await fetchAppointments(clientId);
           }
           setCancelling(null);
         },
@@ -183,7 +178,7 @@ export default function AppointmentsScreen() {
           trainerId={trainerId}
           clientId={clientId}
           onClose={() => setShowModal(false)}
-          onCreated={fetchAppointments}
+          onCreated={() => clientId && fetchAppointments(clientId)}
         />
       )}
     </View>

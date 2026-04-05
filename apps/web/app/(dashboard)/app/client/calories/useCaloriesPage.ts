@@ -59,8 +59,9 @@ export function useCaloriesPage() {
     const init = async () => {
       try {
         const supabase = createClient();
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError || !user) { setError("No se pudo obtener la sesion del usuario."); setLoading(false); return; }
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        if (authError || !session?.user) { setError("No se pudo obtener la sesion del usuario."); setLoading(false); return; }
+        const user = session.user;
         setUserId(user.id);
         await loadTodayLog(user.id);
       } catch { setError("Error al cargar los datos."); }

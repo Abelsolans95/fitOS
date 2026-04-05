@@ -24,7 +24,8 @@ export default function TrainerFormsPage() {
   useEffect(() => {
     const loadForm = async () => {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) return;
       const { data, error: formError } = await supabase
         .from("onboarding_forms").select("id, title, description, fields").eq("trainer_id", user.id)
@@ -42,7 +43,8 @@ export default function TrainerFormsPage() {
   const saveForm = useCallback(async () => {
     setSaving(true);
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) { setSaving(false); return; }
     const formData = { trainer_id: user.id, title, description, fields: JSON.parse(JSON.stringify(fields)) as Record<string, unknown>[], is_active: true };
     if (formId) {

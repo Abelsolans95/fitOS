@@ -318,7 +318,8 @@ export default function ExerciseLibraryTab() {
   const loadExercises = useCallback(async () => {
     try {
       const supabase = createClient();
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      const user = session?.user;
       if (authError || !user) {
         setError("No se pudo obtener la sesión del usuario.");
         setLoading(false);

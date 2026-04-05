@@ -120,7 +120,8 @@ export function useKnowledgePage() {
   // ── Init ──
   useEffect(() => {
     const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) return;
       dispatch({ type: "SET_TRAINER_ID", payload: user.id });
       await loadArticles(user.id);

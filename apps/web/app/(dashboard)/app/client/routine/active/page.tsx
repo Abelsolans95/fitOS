@@ -35,8 +35,9 @@ function ActiveTrainingPage() {
   useEffect(() => {
     const load = async () => {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { toast.error("No autenticado"); return; }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) { toast.error("No autenticado"); return; }
+      const user = session.user;
       setUserId(user.id);
 
       let query = supabase.from("user_routines").select("id, title, trainer_id, exercises")

@@ -26,29 +26,29 @@ export function useClientDashboard() {
     const load = async () => {
       try {
         const supabase = createClient();
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError || !user) { setError("No se pudo obtener la sesion del usuario."); setLoading(false); return; }
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        if (authError || !session?.user) { setError("No se pudo obtener la sesion del usuario."); setLoading(false); return; }
+        const user = session.user;
 
         fetch("/api/activate-client", { method: "POST" }).catch(() => {});
 
         const today = new Date();
         const todayStr = today.toISOString().split("T")[0];
 
-        const { data: profile, error: profileErr } = await supabase
-          .from("profiles").select("full_name").eq("user_id", user.id).single();
-        if (profileErr) { console.error("[useClientDashboard] Error perfil:", profileErr); } // No bloqueante
-
-        setClientName(profile?.full_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "Cliente");
-
-        const [mealPlanRes, calendarRes] = await Promise.all([
+        // Profile, meal plan, and today's calendar are all independent — fetch in parallel
+        const [profileRes, mealPlanRes, calendarRes] = await Promise.all([
+          supabase.from("profiles").select("full_name").eq("user_id", user.id).single(),
           supabase.from("meal_plans").select("id, title").eq("client_id", user.id).eq("is_active", true)
             .order("created_at", { ascending: false }).limit(1).maybeSingle(),
           supabase.from("user_calendar").select("date, completed, activity_type, activity_details")
             .eq("user_id", user.id).eq("date", todayStr),
         ]);
 
+        if (profileRes.error) { console.error("[useClientDashboard] Error perfil:", profileRes.error); } // No bloqueante
         if (mealPlanRes.error) { console.error("[useClientDashboard] Error meal plan:", mealPlanRes.error); } // No bloqueante
         if (calendarRes.error) { console.error("[useClientDashboard] Error calendar:", calendarRes.error); } // No bloqueante
+
+        setClientName(profileRes.data?.full_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "Cliente");
 
         const workoutEntry = calendarRes.data?.find((e: { activity_type: string }) => e.activity_type === "workout");
         const mealEntry = calendarRes.data?.find((e: { activity_type: string }) => e.activity_type === "meal");

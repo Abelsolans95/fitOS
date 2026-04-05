@@ -55,35 +55,25 @@ export function useChat({ userId }: UseChatParams): UseChatReturn {
       const tid = rel.trainer_id as string;
       setTrainerId(tid);
 
-      // Get trainer profile
-      const { data: tp, error: tpError } = await supabase
-        .from("profiles")
-        .select("user_id, full_name")
-        .eq("user_id", tid)
-        .single();
-      if (tpError) {
-        console.error("[useChat] Error cargando perfil trainer:", tpError);
+      // Load trainer profile + messages in parallel (Rule 103)
+      const [profileRes, msgsRes] = await Promise.all([
+        supabase.from("profiles").select("user_id, full_name").eq("user_id", tid).single(),
+        supabase.from("messages").select("id, trainer_id, client_id, sender_id, content, read_at, created_at").eq("trainer_id", tid).eq("client_id", userId).order("created_at", { ascending: true }).limit(QUERY_LIMITS.MESSAGES),
+      ]);
+
+      if (profileRes.error) {
+        console.error("[useChat] Error cargando perfil trainer:", profileRes.error);
         Alert.alert("Error", "No se pudo cargar el perfil del entrenador");
         setLoading(false);
         return;
       }
-      setTrainer(tp as TrainerInfo | null);
+      setTrainer(profileRes.data as TrainerInfo | null);
 
-      // Load messages
-      const { data: msgs, error: msgsError } = await supabase
-        .from("messages")
-        .select(
-          "id, trainer_id, client_id, sender_id, content, read_at, created_at"
-        )
-        .eq("trainer_id", tid)
-        .eq("client_id", userId)
-        .order("created_at", { ascending: true })
-        .limit(QUERY_LIMITS.MESSAGES);
-      if (msgsError) {
-        console.error("[useChat] Error cargando mensajes:", msgsError);
+      if (msgsRes.error) {
+        console.error("[useChat] Error cargando mensajes:", msgsRes.error);
         Alert.alert("Error", "No se pudieron cargar los mensajes");
       }
-      setMessages((msgs as Message[]) ?? []);
+      setMessages((msgsRes.data as Message[]) ?? []);
       setLoading(false);
 
       // Mark trainer messages as read (non-blocking)

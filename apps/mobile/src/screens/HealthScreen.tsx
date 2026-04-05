@@ -100,7 +100,8 @@ export default function HealthScreen() {
       .from("health_logs")
       .select("id, muscle_id, pain_score, incident_type, status, notes, reported_by, created_at, client_id, trainer_id")
       .eq("client_id", user.id)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(100);
 
     if (error) {
       console.error("[HealthScreen] Fetch error:", error);

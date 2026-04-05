@@ -22,7 +22,8 @@ export default function TrainerChatPage() {
 
   const fetchThreads = useCallback(async () => {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) { setLoading(false); return; }
     setTrainerId(user.id);
 
@@ -86,7 +87,8 @@ export default function TrainerChatPage() {
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
     const setupRealtime = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) return;
       channel = supabase
         .channel("trainer-chat-list")

@@ -24,7 +24,8 @@ export default function TrainerSettingsPage() {
     const loadProfile = async () => {
       try {
         const supabase = createClient();
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const user = session?.user;
         if (authError || !user) { setError("No se pudo obtener la sesión del usuario."); setLoading(false); return; }
 
         const [profileRes, promoRes, formRes] = await Promise.all([
@@ -62,7 +63,8 @@ export default function TrainerSettingsPage() {
     setRegenerating(true); setError(null);
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) return;
       const firstName = (user.user_metadata?.full_name || "FITOS").split(" ")[0].toUpperCase().slice(0, 6);
       const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -87,7 +89,8 @@ export default function TrainerSettingsPage() {
     setSaving(true); setError(null); setSuccess(false);
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) { setError("No se pudo obtener la sesión."); setSaving(false); return; }
       const { error: updateError } = await supabase.from("profiles")
         .update({ business_name: businessName || null, specialty: specialty || null, bio: bio || null })

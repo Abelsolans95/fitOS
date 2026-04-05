@@ -35,9 +35,10 @@ export function useRoutinesPage() {
     try {
       const supabase = createClient();
       const {
-        data: { user },
+        data: { session },
         error: authError,
-      } = await supabase.auth.getUser();
+      } = await supabase.auth.getSession();
+      const user = session?.user;
 
       if (authError || !user) {
         dispatch({ type: "SET_ERROR", error: "No se pudo obtener la sesión del usuario." });

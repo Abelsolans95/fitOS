@@ -80,40 +80,25 @@ export default function DashboardScreen() {
   const loadData = async () => {
     if (!user) return;
 
-    const { data: profile, error: profileErr } = await supabase
-      .from("profiles")
-      .select("full_name")
-      .eq("user_id", user.id)
-      .single();
-    if (profileErr) { console.error("[Dashboard] Error cargando perfil:", profileErr); } // No bloqueante
-
-    if (profile) setName(profile.full_name || "");
-
     const today = new Date().toISOString().split("T")[0];
 
-    // Today's food
-    const { data: foodLogs, error: foodErr } = await supabase
-      .from("food_log")
-      .select("total_kcal")
-      .eq("client_id", user.id)
-      .gte("logged_at", today)
-      .lte("logged_at", today + "T23:59:59");
-    if (foodErr) { console.error("[Dashboard] Error cargando food_log:", foodErr); } // No bloqueante
+    // Run all three queries in parallel (Rule 103)
+    const [profileRes, foodRes, workoutRes] = await Promise.all([
+      supabase.from("profiles").select("full_name").eq("user_id", user.id).single(),
+      supabase.from("food_log").select("total_kcal").eq("client_id", user.id).gte("logged_at", today).lte("logged_at", today + "T23:59:59").limit(100),
+      supabase.from("workout_logs").select("id").eq("user_id", user.id).gte("logged_at", today).limit(1),
+    ]);
 
-    const kcalConsumed = foodLogs?.reduce((sum, log) => sum + (log.total_kcal || 0), 0) || 0;
+    if (profileRes.error) { console.error("[Dashboard] Error cargando perfil:", profileRes.error); } // No bloqueante
+    if (profileRes.data) setName(profileRes.data.full_name || "");
 
-    // Today's workout
-    const { data: workouts } = await supabase
-      .from("workout_logs")
-      .select("id")
-      .eq("user_id", user.id)
-      .gte("logged_at", today)
-      .limit(1);
+    if (foodRes.error) { console.error("[Dashboard] Error cargando food_log:", foodRes.error); } // No bloqueante
+    const kcalConsumed = foodRes.data?.reduce((sum, log) => sum + (log.total_kcal || 0), 0) || 0;
 
     setStats((prev) => ({
       ...prev,
       kcalConsumed: Math.round(kcalConsumed),
-      workoutDone: (workouts?.length || 0) > 0,
+      workoutDone: (workoutRes.data?.length || 0) > 0,
     }));
 
     // Sync widget data in background

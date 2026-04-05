@@ -48,8 +48,9 @@ export function useChat() {
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
     const init = async () => {
-      const { data: { user }, error: authErr } = await supabase.auth.getUser();
-      if (authErr || !user) { setError("No se pudo obtener la sesión."); setLoading(false); return; }
+      const { data: { session }, error: authErr } = await supabase.auth.getSession();
+      if (authErr || !session?.user) { setError("No se pudo obtener la sesión."); setLoading(false); return; }
+      const user = session.user;
 
       setClientId(user.id);
       clientIdRef.current = user.id;

@@ -43,14 +43,15 @@ export function useClientRoutine() {
       try {
         const supabase = createClient();
         const {
-          data: { user },
+          data: { session },
           error: authError,
-        } = await supabase.auth.getUser();
+        } = await supabase.auth.getSession();
 
-        if (authError || !user) {
+        if (authError || !session?.user) {
           dispatch({ type: "SET_ERROR", error: "No se pudo obtener la sesión." });
           return;
         }
+        const user = session.user;
 
         // Parallel batch 1: in_progress session + active routine (independent)
         const [pendingRes, routineRes] = await Promise.all([

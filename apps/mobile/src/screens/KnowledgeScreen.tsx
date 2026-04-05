@@ -4,6 +4,7 @@ import {
   ActivityIndicator, FlatList, Linking, Platform,
 } from "react-native";
 import { supabase } from "../lib/supabase";
+import { useAuth } from "../contexts/AuthContext";
 import { QUERY_LIMITS } from "../lib/constants";
 import { colors, spacing, radius, fonts } from "../theme";
 import type { KnowledgeCategory, KnowledgeArticle } from "@fitos/shared";
@@ -36,6 +37,7 @@ const timeAgo = (dateStr: string): string => {
 type ScreenView = "list" | "detail";
 
 export default function KnowledgeScreen() {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [articles, setArticles] = useState<KnowledgeArticle[]>([]);
   const [view, setView] = useState<ScreenView>("list");
@@ -44,38 +46,35 @@ export default function KnowledgeScreen() {
   const [filterCategory, setFilterCategory] = useState<KnowledgeCategory | "all">("all");
 
   // ── Load articles ──
-  const loadArticles = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setLoading(false); return; }
-
-    const { data: rel } = await supabase
-      .from("trainer_clients")
-      .select("trainer_id")
-      .eq("client_id", user.id)
-      .eq("status", "active")
-      .single();
-
-    if (!rel) { setLoading(false); return; }
-
-    const { data, error } = await supabase
-      .from("knowledge_articles")
-      .select("id, trainer_id, title, content, category, image_url, video_url, is_published, view_count, source_ticket_id, created_at, updated_at")
-      .eq("trainer_id", rel.trainer_id)
-      .eq("is_published", true)
-      .order("created_at", { ascending: false })
-      .limit(QUERY_LIMITS.KNOWLEDGE_ARTICLES);
-
-    if (error) {
-      console.error("[KnowledgeScreen] Error loading articles:", error);
-    }
-
-    setArticles((data as KnowledgeArticle[]) ?? []);
-    setLoading(false);
-  }, []);
-
   useEffect(() => {
-    loadArticles();
-  }, [loadArticles]);
+    if (!user) { setLoading(false); return; }
+    const load = async () => {
+      const { data: rel } = await supabase
+        .from("trainer_clients")
+        .select("trainer_id")
+        .eq("client_id", user.id)
+        .eq("status", "active")
+        .single();
+
+      if (!rel) { setLoading(false); return; }
+
+      const { data, error } = await supabase
+        .from("knowledge_articles")
+        .select("id, trainer_id, title, content, category, image_url, video_url, is_published, view_count, source_ticket_id, created_at, updated_at")
+        .eq("trainer_id", rel.trainer_id)
+        .eq("is_published", true)
+        .order("created_at", { ascending: false })
+        .limit(QUERY_LIMITS.KNOWLEDGE_ARTICLES);
+
+      if (error) {
+        console.error("[KnowledgeScreen] Error loading articles:", error);
+      }
+
+      setArticles((data as KnowledgeArticle[]) ?? []);
+      setLoading(false);
+    };
+    load();
+  }, [user?.id]);
 
   // ── Select article ──
   const handleSelectArticle = useCallback((articleId: string) => {

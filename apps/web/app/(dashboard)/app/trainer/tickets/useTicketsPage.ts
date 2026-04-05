@@ -149,7 +149,8 @@ export function useTicketsPage() {
         .from("ticket_replies")
         .select("ticket_id")
         .neq("sender_id", trainerId)
-        .is("read_at", null),
+        .is("read_at", null)
+        .limit(1000),
     ]);
 
     let clientNames: Record<string, string> = {};
@@ -174,7 +175,8 @@ export function useTicketsPage() {
   // ── Init ──
   useEffect(() => {
     const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) return;
       dispatch({ type: "SET_TRAINER_ID", payload: user.id });
       await loadTickets(user.id);

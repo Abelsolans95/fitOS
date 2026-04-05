@@ -32,8 +32,9 @@ export function useClientHealth() {
   useEffect(() => {
     const init = async () => {
       const supabase = createClient();
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) { toast.error("Error de autenticación"); console.error("[useClientHealth] auth:", authError); setLoading(false); return; }
+      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      if (authError || !session?.user) { toast.error("Error de autenticación"); console.error("[useClientHealth] auth:", authError); setLoading(false); return; }
+      const user = session.user;
 
       setClientId(user.id);
 

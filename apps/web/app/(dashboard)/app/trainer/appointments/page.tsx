@@ -21,7 +21,8 @@ export default function TrainerAppointmentsPage() {
 
   const fetchAppointments = useCallback(async () => {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return;
     setTrainerId(user.id);
 
@@ -49,15 +50,22 @@ export default function TrainerAppointmentsPage() {
   useEffect(() => {
     const init = async () => {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) { setLoading(false); return; }
       setTrainerId(user.id);
 
-      const { data: rels, error: relsError } = await supabase
-        .from("trainer_clients")
-        .select("client_id")
-        .eq("trainer_id", user.id)
-        .eq("status", "active");
+      // Fetch clients and appointments in parallel
+      const [relsResult] = await Promise.all([
+        supabase
+          .from("trainer_clients")
+          .select("client_id")
+          .eq("trainer_id", user.id)
+          .eq("status", "active"),
+        fetchAppointments(),
+      ]);
+
+      const { data: rels, error: relsError } = relsResult;
 
       if (relsError) {
         toast.error("Error al cargar los clientes");
@@ -79,7 +87,6 @@ export default function TrainerAppointmentsPage() {
         );
       }
 
-      await fetchAppointments();
       setLoading(false);
     };
 

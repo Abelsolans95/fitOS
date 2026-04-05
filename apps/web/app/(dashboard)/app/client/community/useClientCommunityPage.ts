@@ -165,8 +165,9 @@ export function useClientCommunityPage() {
   useEffect(() => {
     const init = async () => {
       const sb = supabase.current;
-      const { data: { user } } = await sb.auth.getUser();
-      if (!user) { dispatch({ type: "SET_LOADING", payload: false }); return; }
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session?.user) { dispatch({ type: "SET_LOADING", payload: false }); return; }
+      const user = session.user;
       dispatch({ type: "SET_USER_ID", payload: user.id });
 
       const { data: tc, error: tcErr } = await sb

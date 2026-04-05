@@ -89,7 +89,8 @@ export function useCommunityPage() {
   useEffect(() => {
     const init = async () => {
       const supabase = supabaseRef.current;
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) return;
       dispatch({ type: "SET_USER_ID", payload: user.id });
 
