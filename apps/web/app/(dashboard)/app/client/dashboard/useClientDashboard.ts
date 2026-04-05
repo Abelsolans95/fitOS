@@ -34,19 +34,33 @@ export function useClientDashboard() {
 
         const today = new Date();
         const todayStr = today.toISOString().split("T")[0];
+        const startOfWeek = new Date();
+        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() + 1);
+        const startOfWeekStr = startOfWeek.toISOString().split("T")[0];
 
-        // Profile, meal plan, and today's calendar are all independent — fetch in parallel
-        const [profileRes, mealPlanRes, calendarRes] = await Promise.all([
+        // All 6 queries are independent — fetch in a single parallel batch
+        const [profileRes, mealPlanRes, calendarRes, weekRes, recentRes, nextRes] = await Promise.all([
           supabase.from("profiles").select("full_name").eq("user_id", user.id).single(),
           supabase.from("meal_plans").select("id, title").eq("client_id", user.id).eq("is_active", true)
             .order("created_at", { ascending: false }).limit(1).maybeSingle(),
           supabase.from("user_calendar").select("date, completed, activity_type, activity_details")
             .eq("user_id", user.id).eq("date", todayStr),
+          supabase.from("user_calendar").select("date, completed, activity_type")
+            .eq("user_id", user.id).gte("date", startOfWeekStr).lte("date", todayStr),
+          supabase.from("user_calendar").select("date, completed")
+            .eq("user_id", user.id).eq("activity_type", "workout")
+            .order("date", { ascending: false }).limit(QUERY_LIMITS.DASHBOARD_RECENT),
+          supabase.from("user_calendar").select("date, activity_details")
+            .eq("user_id", user.id).eq("activity_type", "workout").eq("completed", false)
+            .gt("date", todayStr).order("date", { ascending: true }).limit(1),
         ]);
 
         if (profileRes.error) { console.error("[useClientDashboard] Error perfil:", profileRes.error); } // No bloqueante
         if (mealPlanRes.error) { console.error("[useClientDashboard] Error meal plan:", mealPlanRes.error); } // No bloqueante
         if (calendarRes.error) { console.error("[useClientDashboard] Error calendar:", calendarRes.error); } // No bloqueante
+        if (weekRes.error) { console.error("[useClientDashboard] Error semana:", weekRes.error); } // No bloqueante
+        if (recentRes.error) { console.error("[useClientDashboard] Error recientes:", recentRes.error); } // No bloqueante
+        if (nextRes.error) { console.error("[useClientDashboard] Error próximo:", nextRes.error); } // No bloqueante
 
         setClientName(profileRes.data?.full_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "Cliente");
 
@@ -61,26 +75,6 @@ export function useClientDashboard() {
             ? { name: mealPlanRes.data.title || "Plan de comidas", details: mealEntry?.completed ? "Completado" : "Pendiente" }
             : null,
         });
-
-        // Weekly stats
-        const startOfWeek = new Date();
-        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() + 1);
-        const startOfWeekStr = startOfWeek.toISOString().split("T")[0];
-
-        const [weekRes, recentRes, nextRes] = await Promise.all([
-          supabase.from("user_calendar").select("date, completed, activity_type")
-            .eq("user_id", user.id).gte("date", startOfWeekStr).lte("date", todayStr),
-          supabase.from("user_calendar").select("date, completed")
-            .eq("user_id", user.id).eq("activity_type", "workout")
-            .order("date", { ascending: false }).limit(QUERY_LIMITS.DASHBOARD_RECENT),
-          supabase.from("user_calendar").select("date, activity_details")
-            .eq("user_id", user.id).eq("activity_type", "workout").eq("completed", false)
-            .gt("date", todayStr).order("date", { ascending: true }).limit(1),
-        ]);
-
-        if (weekRes.error) { console.error("[useClientDashboard] Error semana:", weekRes.error); } // No bloqueante
-        if (recentRes.error) { console.error("[useClientDashboard] Error recientes:", recentRes.error); } // No bloqueante
-        if (nextRes.error) { console.error("[useClientDashboard] Error próximo:", nextRes.error); } // No bloqueante
 
         if (weekRes.data && weekRes.data.length > 0) {
           const completed = weekRes.data.filter((e: { completed: boolean }) => e.completed).length;

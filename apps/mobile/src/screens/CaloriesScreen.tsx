@@ -53,7 +53,8 @@ export default function CaloriesScreen() {
       .eq("client_id", user.id)
       .gte("logged_at", today)
       .lte("logged_at", today + "T23:59:59")
-      .order("logged_at", { ascending: true });
+      .order("logged_at", { ascending: true })
+      .limit(100);
 
     if (error) {
       console.error("[CaloriesScreen] Error cargando registros:", error);

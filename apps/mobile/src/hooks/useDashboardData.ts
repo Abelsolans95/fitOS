@@ -71,7 +71,8 @@ export function useDashboardData(user: User | null): DashboardData {
             .from("food_log")
             .select("calories")
             .eq("client_id", user.id)
-            .eq("date", today),
+            .eq("date", today)
+            .limit(100),
         ]);
 
         if (cancelled) return;
