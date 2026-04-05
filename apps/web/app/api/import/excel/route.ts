@@ -112,8 +112,19 @@ export async function POST(request: NextRequest) {
   // Parse Excel with ExcelJS
   const buffer = await file.arrayBuffer();
 
-  // SECURITY: Validate magic bytes to prevent disguised files
-  if (!validateExcelMagicBytes(buffer)) {
+  // SECURITY: Validate file content based on type
+  const ext = file.name.split(".").pop()?.toLowerCase();
+  if (ext === "csv") {
+    // Validate CSV is text, not binary
+    const textSample = buffer.slice(0, 512);
+    const hasNullByte = new Uint8Array(textSample).some(b => b === 0);
+    if (hasNullByte) {
+      return NextResponse.json(
+        { error: "Archivo CSV inválido (contiene datos binarios)" },
+        { status: 400 }
+      );
+    }
+  } else if (!validateExcelMagicBytes(buffer)) {
     return NextResponse.json(
       { error: "El archivo no es un Excel válido" },
       { status: 400 }
@@ -148,13 +159,15 @@ export async function POST(request: NextRequest) {
       // Send first 40 rows to Haiku for intelligent analysis
       const sampleRows = rawRows.slice(0, 40);
 
-      const message = await anthropic.messages.create({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 2000,
-        messages: [
-          {
-            role: "user",
-            content: `Analiza estas filas de una hoja de Excel de entrenamiento personal llamada "${sheetName}". El Excel puede tener headers en cualquier fila (no necesariamente la primera), celdas combinadas, secciones separadas por fechas, etc.
+      let message;
+      try {
+        message = await anthropic.messages.create({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 2000,
+          messages: [
+            {
+              role: "user",
+              content: `Analiza estas filas de una hoja de Excel de entrenamiento personal llamada "${sheetName}". El Excel puede tener headers en cualquier fila (no necesariamente la primera), celdas combinadas, secciones separadas por fechas, etc.
 
 Necesito que identifiques:
 1. En qué fila están los headers reales (la fila con EJERCICIO, REPS, etc.)
@@ -194,9 +207,13 @@ IMPORTANTE:
 - Las columnas con valores como "3,2,2" son rir (RIR por serie separado por comas)
 - "ACTUAL" es previous_data (datos de sesiones anteriores)
 - Si hay una columna con valores como "pecho", "espalda", "pierna", "bíceps", "fullbody" es exercise_category`,
-          },
-        ],
-      });
+            },
+          ],
+        });
+      } catch {
+        console.error("[import/excel] Anthropic API error for sheet:", sheetName);
+        continue; // Skip this sheet, process remaining
+      }
 
       const firstBlock = message.content[0];
       if (!firstBlock || firstBlock.type !== "text" || !firstBlock.text) {

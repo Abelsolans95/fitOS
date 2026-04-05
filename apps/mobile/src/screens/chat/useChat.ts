@@ -118,7 +118,8 @@ export function useChat({ userId }: UseChatParams): UseChatReturn {
                       readErr
                     );
                   }
-                });
+                })
+                .catch((err) => console.error("[useChat] Error marking as read:", err));
             }
           }
         )

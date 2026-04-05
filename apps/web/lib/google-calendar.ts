@@ -62,8 +62,7 @@ export async function exchangeCodeForTokens(code: string) {
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Google token exchange failed: ${error}`);
+    throw new Error("Google token exchange failed");
   }
 
   return response.json() as Promise<{

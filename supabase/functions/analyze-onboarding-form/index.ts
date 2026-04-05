@@ -103,6 +103,7 @@ Deno.serve(async (req: Request) => {
       .from("onboarding_responses")
       .select("*, onboarding_forms(title, fields)")
       .eq("id", response_id)
+      .eq("client_id", client_id)
       .single();
 
     if (fetchError || !onboardingResponse) {
@@ -128,7 +129,7 @@ Deno.serve(async (req: Request) => {
           message: "Configura la API key de Anthropic para analisis con IA.",
           mock: true,
         }),
-        { headers: { ...headers, "Content-Type": "application/json" } }
+        { status: 503, headers: { ...headers, "Content-Type": "application/json" } }
       );
     }
 

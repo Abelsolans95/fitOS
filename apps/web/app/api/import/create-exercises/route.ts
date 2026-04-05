@@ -46,12 +46,21 @@ export async function POST(request: NextRequest) {
 
   const { exercises, linked, import_id, decisions } = await request.json();
 
+  // SECURITY: Validate array sizes (Rule 184)
+  if (exercises && Array.isArray(exercises) && exercises.length > 500) {
+    return NextResponse.json({ error: "Máximo 500 ejercicios por petición" }, { status: 400 });
+  }
+  if (linked && Array.isArray(linked) && linked.length > 500) {
+    return NextResponse.json({ error: "Máximo 500 enlaces por petición" }, { status: 400 });
+  }
+
   const created: { name: string; id: string }[] = [];
   const errors: { name: string; error: string }[] = [];
 
   // 1. Create new private exercises
   if (exercises && Array.isArray(exercises)) {
     for (const ex of exercises) {
+      if (!ex || typeof ex.name !== "string") continue;
       const { data, error } = await supabaseAdmin
         .from("trainer_exercise_library")
         .insert({
@@ -76,6 +85,7 @@ export async function POST(request: NextRequest) {
   const linkedResults: { name: string; id: string }[] = [];
   if (linked && Array.isArray(linked)) {
     for (const link of linked) {
+      if (!link || typeof link.trainer_exercise_name !== "string") continue;
       // link = { global_exercise_id, trainer_exercise_name }
       const trainerName = sanitizeName(link.trainer_exercise_name || "", 200);
 
@@ -129,6 +139,10 @@ export async function POST(request: NextRequest) {
 
   // 3. Update import record — SECURITY: verify ownership before using service_role
   if (import_id && decisions) {
+    // SECURITY: Validate decisions is a plain object and not too large
+    if (typeof decisions !== "object" || Array.isArray(decisions) || JSON.stringify(decisions).length > 50000) {
+      return NextResponse.json({ error: "Formato de decisiones inválido" }, { status: 400 });
+    }
     const { data: importRec, error: importCheckErr } = await supabaseAdmin
       .from("excel_imports")
       .select("trainer_id")

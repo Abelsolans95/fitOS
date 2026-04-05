@@ -82,7 +82,7 @@ Deno.serve(async (req: Request) => {
           message: "Configura la API key de Anthropic para generar menús con IA.",
           mock: true,
         }),
-        { headers: { ...headers, "Content-Type": "application/json" } }
+        { status: 503, headers: { ...headers, "Content-Type": "application/json" } }
       );
     }
 

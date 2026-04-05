@@ -16,14 +16,16 @@ function getCorsOrigin(req: Request): string {
   const origin = req.headers.get("origin") || "";
   if (ALLOWED_ORIGINS.includes(origin)) return origin;
   // Fallback: allow if origin matches Vercel preview deploys
-  if (origin.endsWith(".vercel.app")) return origin;
-  return ALLOWED_ORIGINS[0];
+  // Only allow our own Vercel preview deploys (project-specific)
+  if (origin.endsWith(".vercel.app") && origin.includes("fitos")) return origin;
+  return ""; // Block requests from unknown origins
 }
 
 export function getCorsHeaders(req: Request) {
   return {
     "Access-Control-Allow-Origin": getCorsOrigin(req),
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
   };
 }
 
@@ -114,6 +116,10 @@ export function sanitizeForPrompt(input: string, maxLength = 2000): string {
   clean = clean.replace(/<\/?assistant>/gi, "");
   // Remove Unicode RTL override and other bidi control chars
   clean = clean.replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069]/g, "");
+  // Remove bracket-notation prompt delimiters
+  clean = clean.replace(/\[\/?(SYSTEM|USER|ASSISTANT|INST)\]/gi, "");
+  // Remove markdown code fence injections that could confuse parsing
+  clean = clean.replace(/```[\s\S]{0,20}(system|instruction|prompt)/gi, "```");
   return clean.trim().slice(0, maxLength);
 }
 

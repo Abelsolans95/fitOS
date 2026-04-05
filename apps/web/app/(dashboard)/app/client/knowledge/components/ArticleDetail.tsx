@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import Image from "next/image";
 import type { KnowledgeArticle } from "./types";
 import { CategoryBadge, timeAgo } from "./shared";
 import { isAllowedVideoUrl } from "@/lib/url-validation";
@@ -78,11 +79,13 @@ export const ArticleDetail = memo(function ArticleDetail({ article, onBack }: Ar
 
         {/* Image */}
         {article.image_url && (
-          <div className="relative mb-6 overflow-hidden rounded-xl">
-            <img
+          <div className="relative mb-6 h-64 overflow-hidden rounded-xl">
+            <Image
               src={article.image_url}
               alt={article.title}
-              className="w-full object-cover"
+              fill
+              sizes="(max-width: 768px) 100vw, 640px"
+              className="object-cover"
             />
           </div>
         )}

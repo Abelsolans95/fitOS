@@ -100,6 +100,7 @@ Deno.serve(async (req: Request) => {
       };
 
       return new Response(JSON.stringify(mockResponse), {
+        status: 503,
         headers: { ...headers, "Content-Type": "application/json" },
       });
     }
@@ -151,7 +152,15 @@ Responde SOLO con JSON válido (sin markdown):
 
     const result = await response.json();
     const textContent = result.content?.[0]?.text || "{}";
-    const parsed: AnalysisResponse = JSON.parse(textContent);
+    let parsed: AnalysisResponse;
+    try {
+      parsed = JSON.parse(textContent);
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Error al procesar respuesta de IA" }),
+        { status: 500, headers: { ...headers, "Content-Type": "application/json" } }
+      );
+    }
 
     return new Response(JSON.stringify(parsed), {
       headers: { ...headers, "Content-Type": "application/json" },
