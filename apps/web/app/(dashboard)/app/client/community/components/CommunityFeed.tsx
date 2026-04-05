@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import Image from "next/image";
 import type { Post, Comment } from "./types";
 
 function getTimeAgo(dateStr: string): string {
@@ -187,8 +188,8 @@ export const CommunityFeed = memo(function CommunityFeed({
             <p className={`${post.title ? "mt-1" : "mt-3"} whitespace-pre-wrap text-sm leading-relaxed text-[#E0E0E8]`}>{post.content}</p>
 
             {post.image_url && (
-              <div className="mt-3 overflow-hidden rounded-xl border border-white/[0.04]">
-                <img src={post.image_url} alt="" className="w-full object-cover" style={{ maxHeight: 400 }} />
+              <div className="relative mt-3 overflow-hidden rounded-xl border border-white/[0.04]" style={{ maxHeight: 400 }}>
+                <Image src={post.image_url} alt="" fill sizes="(max-width: 768px) 100vw, 640px" className="object-cover" />
               </div>
             )}
 

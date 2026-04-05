@@ -9,7 +9,7 @@ const CATEGORIES = ["Todos", "Desayuno", "Almuerzo", "Comida", "Merienda", "Cena
 type NutritionHook = ReturnType<typeof useNutritionPage>;
 
 export function FoodLibraryTab({ n }: { n: NutritionHook }) {
-  const { state, dispatch, filteredFoods, handleSaveFood, handleDeleteFood } = n;
+  const { state, dispatch, filteredFoods, handleSaveFood, handleDeleteFood, loadMoreFoods } = n;
 
   return (
     <div className="space-y-5">
@@ -153,6 +153,27 @@ export function FoodLibraryTab({ n }: { n: NutritionHook }) {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Load more */}
+      {state.libHasMore && !state.libSearch.trim() && (
+        <div className="flex justify-center pt-2">
+          <button
+            type="button"
+            onClick={loadMoreFoods}
+            disabled={state.libLoadingMore}
+            className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-[#12121A] px-6 py-2.5 text-[13px] font-semibold text-[#8B8BA3] transition-all hover:border-[#00E5FF]/30 hover:text-white disabled:opacity-50"
+          >
+            {state.libLoadingMore ? (
+              <>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#00E5FF]/20 border-t-[#00E5FF]" />
+                Cargando...
+              </>
+            ) : (
+              "Cargar más alimentos"
+            )}
+          </button>
         </div>
       )}
     </div>

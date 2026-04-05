@@ -51,7 +51,7 @@ function ClientDetailPageInner() {
           await Promise.all([
             supabase
               .from("profiles")
-              .select("user_id, full_name, email, goal, bio, height, weight, food_preferences, avatar_url")
+              .select("user_id, full_name, goal, bio, height, weight, food_preferences, avatar_url")
               .eq("user_id", clientId)
               .single(),
             supabase
@@ -194,7 +194,6 @@ function ClientDetailPageInner() {
               <StatusBadge status={clientRelation.status} />
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[#8B8BA3]">
-              <span>{profile.email ?? "Sin email"}</span>
               {profile.goal && (
                 <>
                   <span className="hidden sm:inline">|</span>

@@ -2,6 +2,18 @@ import { NextResponse } from "next/server";
 import { exchangeCodeForTokens } from "@/lib/google-calendar";
 import { createClient } from "@/lib/supabase-server";
 
+// SECURITY: Whitelist of allowed redirect URLs to prevent open redirect attacks
+const ALLOWED_RETURN_URLS = [
+  "/app/client/calendar",
+  "/app/trainer/appointments",
+  "/app/trainer/settings",
+];
+
+function sanitizeReturnUrl(state: string | null): string {
+  if (state && ALLOWED_RETURN_URLS.includes(state)) return state;
+  return "/app/trainer/appointments";
+}
+
 // GET /api/auth/google/callback — Recibe el código de Google y guarda los tokens
 export async function GET(request: Request) {
   try {
@@ -11,9 +23,9 @@ export async function GET(request: Request) {
     const error = searchParams.get("error");
 
     if (error) {
-      const returnTo = state || "/app/client/calendar";
+      const returnTo = sanitizeReturnUrl(state);
       return NextResponse.redirect(
-        new URL(`${returnTo}?google_error=${error}`, request.url)
+        new URL(`${returnTo}?google_error=${encodeURIComponent(error)}`, request.url)
       );
     }
 
@@ -24,36 +36,44 @@ export async function GET(request: Request) {
       );
     }
 
-    // Intercambiar código por tokens
-    const tokens = await exchangeCodeForTokens(code);
-
-    // Guardar tokens en el perfil del usuario (en Supabase)
+    // SECURITY: Verify caller is authenticated BEFORE exchanging tokens
     const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (user) {
-      await supabase
-        .from("profiles")
-        .update({
-          google_calendar_tokens: {
-            access_token: tokens.access_token,
-            refresh_token: tokens.refresh_token,
-            expires_at: Date.now() + tokens.expires_in * 1000,
-          },
-        })
-        .eq("user_id", user.id);
+    if (!user) {
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
 
-    const returnTo = state || "/app/client/calendar";
+    // SECURITY: Only trainers can complete Google Calendar OAuth
+    if (user.user_metadata?.role !== "trainer") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Exchange code for tokens only AFTER verifying auth + role
+    const tokens = await exchangeCodeForTokens(code);
+
+    // Save tokens to the authenticated trainer's profile
+    await supabase
+      .from("profiles")
+      .update({
+        google_calendar_tokens: {
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+          expires_at: Date.now() + tokens.expires_in * 1000,
+        },
+      })
+      .eq("user_id", user.id);
+
+    const returnTo = sanitizeReturnUrl(state);
     return NextResponse.redirect(
       new URL(`${returnTo}?google_connected=true`, request.url)
     );
-  } catch (error) {
-    console.error("[GoogleOAuth] Callback error:", error);
+  } catch {
+    console.error("[GoogleOAuth] Callback error");
     return NextResponse.redirect(
-      new URL("/app/client/calendar?google_error=token_exchange_failed", request.url)
+      new URL("/app/trainer/appointments?google_error=token_exchange_failed", request.url)
     );
   }
 }

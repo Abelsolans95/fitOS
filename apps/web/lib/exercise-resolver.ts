@@ -81,7 +81,7 @@ export async function getResolvedExercises(
     supabase
       .from("trainer_exercise_library")
       .select("id,name,description,video_url,video_thumbnail_url,muscle_groups,secondary_muscles,equipment_needed,category,difficulty,is_global,trainer_id,aliases")
-      .or(`is_global.eq.true,trainer_id.eq.${trainerId}`)
+      .or("is_global.eq.true,trainer_id.eq." + encodeURIComponent(trainerId))
       .order("name"),
     supabase
       .from("trainer_exercise_overrides")

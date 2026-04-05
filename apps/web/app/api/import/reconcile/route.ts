@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
+import { validateCsrf } from "@/lib/csrf";
+import { apiLimiter, getClientIdentifier } from "@/lib/rate-limit";
+
+const MAX_EXERCISE_NAMES = 200;
 
 interface SimilarExerciseMatch {
   id: string;
@@ -9,6 +13,11 @@ interface SimilarExerciseMatch {
 }
 
 export async function POST(request: NextRequest) {
+  // SECURITY: CSRF protection
+  if (!validateCsrf(request)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -16,6 +25,12 @@ export async function POST(request: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  }
+
+  // SECURITY: Rate limiting
+  const { success } = apiLimiter.check(getClientIdentifier(request, user.id));
+  if (!success) {
+    return NextResponse.json({ error: "Demasiadas peticiones" }, { status: 429 });
   }
 
   // Verify trainer role
@@ -35,11 +50,19 @@ export async function POST(request: NextRequest) {
     exercise_names: string[];
   };
 
-  if (!import_id || !exercise_names?.length) {
-    return NextResponse.json(
-      { error: "Faltan import_id o exercise_names" },
-      { status: 400 }
-    );
+  // SECURITY: Runtime type validation
+  if (!import_id || typeof import_id !== "string") {
+    return NextResponse.json({ error: "import_id requerido" }, { status: 400 });
+  }
+  if (!Array.isArray(exercise_names) || exercise_names.length === 0) {
+    return NextResponse.json({ error: "exercise_names debe ser un array no vacío" }, { status: 400 });
+  }
+  // SECURITY: Cap array size to prevent DoS via mass RPC calls
+  if (exercise_names.length > MAX_EXERCISE_NAMES) {
+    return NextResponse.json({ error: `Máximo ${MAX_EXERCISE_NAMES} ejercicios por reconciliación` }, { status: 400 });
+  }
+  if (exercise_names.some((n: unknown) => typeof n !== "string")) {
+    return NextResponse.json({ error: "exercise_names debe contener solo strings" }, { status: 400 });
   }
 
   // Search similar exercises for each name
@@ -95,6 +118,17 @@ export async function POST(request: NextRequest) {
       };
     })
   );
+
+  // SECURITY: verify import belongs to this trainer before updating
+  const { data: importRec } = await supabase
+    .from("excel_imports")
+    .select("trainer_id")
+    .eq("id", import_id)
+    .single();
+
+  if (!importRec || importRec.trainer_id !== user.id) {
+    return NextResponse.json({ error: "Import no autorizado" }, { status: 403 });
+  }
 
   // Update import record status
   const { error: updateError } = await supabase

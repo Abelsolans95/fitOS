@@ -29,6 +29,15 @@ vi.mock("@/lib/supabase-server", () => ({
 }));
 
 // ---------------------------------------------------------------------------
+// Mock @/lib/rate-limit
+// ---------------------------------------------------------------------------
+
+vi.mock("@/lib/rate-limit", () => ({
+  apiLimiter: { check: vi.fn(() => ({ success: true })) },
+  getClientIdentifier: vi.fn(() => "test-id"),
+}));
+
+// ---------------------------------------------------------------------------
 // Import the route AFTER mocks are set up
 // ---------------------------------------------------------------------------
 
@@ -59,7 +68,9 @@ function createChain(result: { data: unknown; error: unknown }) {
 // ---------------------------------------------------------------------------
 
 function makeRequest() {
-  return {} as unknown as Request;
+  return {
+    headers: new Headers({ origin: "http://localhost:3000" }),
+  } as unknown as Request;
 }
 
 // ---------------------------------------------------------------------------
@@ -82,7 +93,7 @@ describe("GET /api/client-trainer", () => {
   it("returns trainer_id and full_name for an authenticated client", async () => {
     // Auth: user exists
     mockGetUser.mockResolvedValue({
-      data: { user: { id: USER_ID } },
+      data: { user: { id: USER_ID, user_metadata: { role: "client" } } },
       error: null,
     });
 
@@ -132,7 +143,7 @@ describe("GET /api/client-trainer", () => {
   // 3. No trainer linked → 404
   it("returns 404 when no trainer is linked to the client", async () => {
     mockGetUser.mockResolvedValue({
-      data: { user: { id: USER_ID } },
+      data: { user: { id: USER_ID, user_metadata: { role: "client" } } },
       error: null,
     });
 
@@ -149,7 +160,7 @@ describe("GET /api/client-trainer", () => {
   // 4. trainer_clients query error → 500
   it("returns 500 when trainer_clients query errors", async () => {
     mockGetUser.mockResolvedValue({
-      data: { user: { id: USER_ID } },
+      data: { user: { id: USER_ID, user_metadata: { role: "client" } } },
       error: null,
     });
 
@@ -169,7 +180,7 @@ describe("GET /api/client-trainer", () => {
   // 5. Fallback name — no business_name, no full_name
   it("returns 'Tu entrenador' when profile has no names", async () => {
     mockGetUser.mockResolvedValue({
-      data: { user: { id: USER_ID } },
+      data: { user: { id: USER_ID, user_metadata: { role: "client" } } },
       error: null,
     });
 
@@ -207,13 +218,13 @@ describe("GET /api/client-trainer", () => {
     const json = await res.json();
 
     expect(res.status).toBe(500);
-    expect(json.error).toBe("connection lost");
+    expect(json.error).toBe("Error inesperado");
   });
 
   // 7. Uses full_name when business_name is absent
   it("returns full_name when business_name is null", async () => {
     mockGetUser.mockResolvedValue({
-      data: { user: { id: USER_ID } },
+      data: { user: { id: USER_ID, user_metadata: { role: "client" } } },
       error: null,
     });
 

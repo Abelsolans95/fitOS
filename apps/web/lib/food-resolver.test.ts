@@ -168,7 +168,27 @@ describe("getResolvedFoods", () => {
     expect(result[0].kcal).toBe(110);
   });
 
-  // 5. Supabase error propagates
+  // 5. Hidden override excludes food
+  it("excludes foods with hidden=true override", async () => {
+    const foods = [
+      makeFood({ id: "food-1", name: "Arroz blanco" }),
+      makeFood({ id: "food-2", name: "Pollo" }),
+    ];
+    const overrides = [
+      makeOverride({ food_id: "food-1", hidden: true }),
+    ];
+    const supabase = createMockSupabase(
+      { data: foods, error: null },
+      { data: overrides, error: null },
+    );
+
+    const result = await getResolvedFoods(supabase, TRAINER_ID);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("food-2");
+  });
+
+  // 6. Supabase error propagates
   it("propagates Supabase error from foods query", async () => {
     const dbError = { message: "DB connection failed", code: "PGRST000" };
     const supabase = createMockSupabase(

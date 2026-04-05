@@ -3,6 +3,7 @@
 import { memo } from "react";
 import type { KnowledgeArticle } from "./types";
 import { CategoryBadge, timeAgo } from "./shared";
+import { isAllowedVideoUrl } from "@/lib/url-validation";
 
 interface ArticleDetailProps {
   article: KnowledgeArticle;
@@ -60,8 +61,8 @@ export const ArticleDetail = memo(function ArticleDetail({ article, onBack }: Ar
           </div>
         )}
 
-        {/* Non-YouTube video link */}
-        {article.video_url && !videoId && (
+        {/* Non-YouTube video link — SECURITY: only allow whitelisted domains */}
+        {article.video_url && !videoId && isAllowedVideoUrl(article.video_url) && (
           <a
             href={article.video_url}
             target="_blank"

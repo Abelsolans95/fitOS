@@ -1,15 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase-server";
 import { createClient } from "@supabase/supabase-js";
+import { validateCsrf } from "@/lib/csrf";
+import { apiLimiter, getClientIdentifier } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
+    // SECURITY: CSRF protection
+    if (!validateCsrf(request)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     // Verify the request comes from an authenticated client
     const supabaseAuth = await createServerClient();
     const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // SECURITY: Rate limiting
+    const { success } = apiLimiter.check(getClientIdentifier(request, user.id));
+    if (!success) {
+      return NextResponse.json({ error: "Demasiadas peticiones" }, { status: 429 });
     }
 
     // Only clients can activate themselves
@@ -31,7 +44,7 @@ export async function POST(request: NextRequest) {
       .eq("status", "pending");
 
     if (activateError) {
-      console.error("[activate-client] Error activando cliente:", activateError);
+      console.error("[activate-client] Error activando cliente");
       return NextResponse.json({ error: "Error al activar el cliente" }, { status: 500 });
     }
 
@@ -43,14 +56,14 @@ export async function POST(request: NextRequest) {
       .is("email", null);
 
     if (profileError) {
-      console.error("[activate-client] Error actualizando email en perfil:", profileError);
+      console.error("[activate-client] Error actualizando email en perfil");
       // No bloqueante — la activación ya se completó
     }
 
     return NextResponse.json({ success: true });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Unexpected error" },
+      { error: "Error inesperado" },
       { status: 500 }
     );
   }

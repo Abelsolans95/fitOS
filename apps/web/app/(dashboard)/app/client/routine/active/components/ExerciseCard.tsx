@@ -1,5 +1,6 @@
 import type { ExerciseData, SetEntry, SetConfig, PreviousSet } from "../types";
 import { formatTime } from "../types";
+import { isAllowedVideoUrl } from "@/lib/url-validation";
 
 interface ExerciseCardProps {
   exercise: ExerciseData;
@@ -452,7 +453,7 @@ export function ExerciseCard({
       </div>
 
       {/* Video link */}
-      {exercise.video_url && (
+      {exercise.video_url && isAllowedVideoUrl(exercise.video_url) && (
         <a
           href={exercise.video_url}
           target="_blank"

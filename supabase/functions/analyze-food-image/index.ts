@@ -4,12 +4,7 @@
 // Body: { image_base64: string, meal_type?: string }
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { authenticateRequest, validateBodySize, sanitizeForPrompt, getCorsHeaders, corsHeaders } from "../_shared/auth.ts";
 
 interface FoodEstimate {
   name: string;
@@ -37,13 +32,28 @@ serve(async (req: Request) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  const headers = getCorsHeaders(req);
+
   try {
-    const { image_base64, meal_type } = await req.json();
+    // SECURITY: Authenticate user (was missing entirely before)
+    await authenticateRequest(req);
+
+    // SECURITY: Limit body size (base64 images can be huge — max 7MB = ~5MB image)
+    const bodyText = await validateBodySize(req, 7_340_032);
+    const { image_base64, meal_type } = JSON.parse(bodyText);
 
     if (!image_base64) {
       return new Response(
         JSON.stringify({ error: "image_base64 is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...headers, "Content-Type": "application/json" } }
+      );
+    }
+
+    // SECURITY: Validate base64 length (max ~5MB image)
+    if (image_base64.length > 7_000_000) {
+      return new Response(
+        JSON.stringify({ error: "Imagen demasiado grande (max 5MB)" }),
+        { status: 400, headers: { ...headers, "Content-Type": "application/json" } }
       );
     }
 
@@ -91,7 +101,7 @@ serve(async (req: Request) => {
       };
 
       return new Response(JSON.stringify(mockResponse), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...headers, "Content-Type": "application/json" },
       });
     }
 
@@ -120,7 +130,7 @@ serve(async (req: Request) => {
               },
               {
                 type: "text",
-                text: `Analiza esta imagen de comida${meal_type ? ` (${meal_type})` : ""}. Identifica CADA alimento visible, estima las porciones en gramos y calcula los macronutrientes por cada 100g escalados a la porción.
+                text: `Analiza esta imagen de comida${meal_type ? ` (${sanitizeForPrompt(meal_type, 100)})` : ""}. Identifica CADA alimento visible, estima las porciones en gramos y calcula los macronutrientes por cada 100g escalados a la porción.
 
 Responde SOLO con JSON válido (sin markdown):
 {
@@ -145,12 +155,13 @@ Responde SOLO con JSON válido (sin markdown):
     const parsed: AnalysisResponse = JSON.parse(textContent);
 
     return new Response(JSON.stringify(parsed), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...headers, "Content-Type": "application/json" },
     });
   } catch (error) {
+    if (error instanceof Response) throw error;
     return new Response(
-      JSON.stringify({ error: "Error al analizar la imagen", details: String(error) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: "Error al analizar la imagen" }),
+      { status: 500, headers: { ...headers, "Content-Type": "application/json" } }
     );
   }
 });

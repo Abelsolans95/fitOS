@@ -1,19 +1,21 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { parseExcelBuffer, applyColumnMapping, type DetectedColumn, type ParsedSheet } from "./excel-parser";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 // ---------------------------------------------------------------------------
 // Helpers — build a minimal workbook buffer
 // ---------------------------------------------------------------------------
 
-function makeWorkbookBuffer(sheets: Record<string, (string | number | null)[][]>): ArrayBuffer {
-  const wb = XLSX.utils.book_new();
+async function makeWorkbookBuffer(sheets: Record<string, (string | number | null)[][]>): Promise<ArrayBuffer> {
+  const wb = new ExcelJS.Workbook();
   for (const [name, data] of Object.entries(sheets)) {
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    XLSX.utils.book_append_sheet(wb, ws, name);
+    const ws = wb.addWorksheet(name);
+    for (const row of data) {
+      ws.addRow(row);
+    }
   }
-  const out = XLSX.write(wb, { type: "array", bookType: "xlsx" });
-  return out;
+  const nodeBuffer = await wb.xlsx.writeBuffer();
+  return nodeBuffer as unknown as ArrayBuffer;
 }
 
 // ---------------------------------------------------------------------------
@@ -22,8 +24,8 @@ function makeWorkbookBuffer(sheets: Record<string, (string | number | null)[][]>
 
 describe("parseExcelBuffer", () => {
   // 1. Parses basic sheet structure
-  it("parses a sheet with headers and data rows", () => {
-    const buffer = makeWorkbookBuffer({
+  it("parses a sheet with headers and data rows", async () => {
+    const buffer = await makeWorkbookBuffer({
       "Hoja1": [
         ["Ejercicio", "Series", "Reps", "Peso"],
         ["Sentadilla", 4, 8, 80],
@@ -31,7 +33,7 @@ describe("parseExcelBuffer", () => {
       ],
     });
 
-    const result = parseExcelBuffer(buffer, "test.xlsx");
+    const result = await parseExcelBuffer(buffer, "test.xlsx");
 
     expect(result.file_name).toBe("test.xlsx");
     expect(result.sheets).toHaveLength(1);
@@ -41,24 +43,24 @@ describe("parseExcelBuffer", () => {
   });
 
   // 2. Returns empty sheets array for empty workbook
-  it("returns empty sheets for a workbook with an empty sheet", () => {
-    const buffer = makeWorkbookBuffer({ "Empty": [] });
+  it("returns empty sheets for a workbook with an empty sheet", async () => {
+    const buffer = await makeWorkbookBuffer({ "Empty": [] });
 
-    const result = parseExcelBuffer(buffer, "empty.xlsx");
+    const result = await parseExcelBuffer(buffer, "empty.xlsx");
 
     expect(result.sheets).toHaveLength(0);
   });
 
   // 3. Extracts headers from first row
-  it("detects header row and uses as column headers", () => {
-    const buffer = makeWorkbookBuffer({
+  it("detects header row and uses as column headers", async () => {
+    const buffer = await makeWorkbookBuffer({
       "Hoja1": [
         ["Ejercicio", "Series"],
         ["Curl", 3],
       ],
     });
 
-    const result = parseExcelBuffer(buffer, "headers.xlsx");
+    const result = await parseExcelBuffer(buffer, "headers.xlsx");
     const headers = result.sheets[0].columns.map((c) => c.header);
 
     expect(headers).toContain("Ejercicio");
@@ -66,8 +68,8 @@ describe("parseExcelBuffer", () => {
   });
 
   // 4. Infers exercise_name for text columns with header match
-  it("infers exercise_name type for 'Ejercicio' header", () => {
-    const buffer = makeWorkbookBuffer({
+  it("infers exercise_name type for 'Ejercicio' header", async () => {
+    const buffer = await makeWorkbookBuffer({
       "Hoja1": [
         ["Ejercicio", "Series"],
         ["Sentadilla", 4],
@@ -75,7 +77,7 @@ describe("parseExcelBuffer", () => {
       ],
     });
 
-    const result = parseExcelBuffer(buffer, "infer.xlsx");
+    const result = await parseExcelBuffer(buffer, "infer.xlsx");
     const exCol = result.sheets[0].columns.find((c) => c.header === "Ejercicio");
 
     expect(exCol).toBeDefined();
@@ -84,8 +86,8 @@ describe("parseExcelBuffer", () => {
   });
 
   // 5. Sets needs_review when low confidence columns exist
-  it("sets needs_review=true when confidence < 0.9", () => {
-    const buffer = makeWorkbookBuffer({
+  it("sets needs_review=true when confidence < 0.9", async () => {
+    const buffer = await makeWorkbookBuffer({
       "Hoja1": [
         ["A", "B"],
         [1, 2],
@@ -93,7 +95,7 @@ describe("parseExcelBuffer", () => {
       ],
     });
 
-    const result = parseExcelBuffer(buffer, "ambiguous.xlsx");
+    const result = await parseExcelBuffer(buffer, "ambiguous.xlsx");
 
     // Generic headers "A" and "B" with small integer data should be low confidence
     expect(result.needs_review).toBe(true);

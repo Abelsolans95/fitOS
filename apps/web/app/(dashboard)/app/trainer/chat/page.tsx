@@ -96,9 +96,11 @@ export default function TrainerChatPage() {
     fetchThreads();
 
     const supabase = createClient();
+    // SECURITY: filter by trainer_id to prevent receiving other trainers' messages
+    const tid = trainerId;
     const channel = supabase
-      .channel("trainer-chat-list")
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, fetchThreads)
+      .channel(`trainer-chat-list-${tid}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages", ...(tid ? { filter: `trainer_id=eq.${tid}` } : {}) }, fetchThreads)
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };

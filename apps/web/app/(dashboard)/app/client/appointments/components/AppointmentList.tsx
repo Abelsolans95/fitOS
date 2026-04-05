@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import { isSafeHttpsUrl } from "@/lib/url-validation";
 
 const SESSION_TYPES = [
   { value: "presencial", label: "Presencial" },
@@ -83,7 +84,7 @@ function ClientAppointmentCard({
             {appt.location}
           </span>
         )}
-        {appt.meeting_url && appt.status === "confirmed" && (
+        {appt.meeting_url && appt.status === "confirmed" && isSafeHttpsUrl(appt.meeting_url) && (
           <a href={appt.meeting_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[#00E5FF] hover:underline">
             <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />

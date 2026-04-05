@@ -93,6 +93,9 @@ function ActiveTrainingPage() {
             sessionLogs: (sl ?? []) as SavedLogEntry[], exercises: dayEx, previousLogs: pl,
           });
           return;
+        } else {
+          // SECURITY: session_id was provided but not found (RLS blocked or invalid)
+          toast.error("Sesión no encontrada o no disponible");
         }
       }
       t.initializeSets(dayEx);

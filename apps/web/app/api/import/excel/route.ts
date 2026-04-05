@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import Anthropic from "@anthropic-ai/sdk";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
+import { validateExcelMagicBytes } from "@/lib/file-validation";
+import { uploadLimiter, getClientIdentifier } from "@/lib/rate-limit";
+import { validateCsrf } from "@/lib/csrf";
+import { sanitizeName } from "@/lib/sanitize";
 
 /** Column detected by AI analysis */
 interface DetectedColumn {
@@ -38,6 +42,11 @@ interface SheetResult {
 }
 
 export async function POST(request: NextRequest) {
+  // SECURITY: CSRF protection
+  if (!validateCsrf(request)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -56,6 +65,12 @@ export async function POST(request: NextRequest) {
 
   if (profile?.role !== "trainer") {
     return NextResponse.json({ error: "Solo entrenadores" }, { status: 403 });
+  }
+
+  // SECURITY: Rate limiting (10 uploads/min)
+  const { success: rateLimitOk } = uploadLimiter.check(getClientIdentifier(request, user.id));
+  if (!rateLimitOk) {
+    return NextResponse.json({ error: "Demasiadas subidas. Espera un momento." }, { status: 429 });
   }
 
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -94,11 +109,21 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Parse Excel with SheetJS
+  // Parse Excel with ExcelJS
   const buffer = await file.arrayBuffer();
-  const workbook = XLSX.read(buffer, { type: "array" });
 
-  if (workbook.SheetNames.length === 0) {
+  // SECURITY: Validate magic bytes to prevent disguised files
+  if (!validateExcelMagicBytes(buffer)) {
+    return NextResponse.json(
+      { error: "El archivo no es un Excel válido" },
+      { status: 400 }
+    );
+  }
+  const workbook = new ExcelJS.Workbook();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await workbook.xlsx.load(buffer as any);
+
+  if (workbook.worksheets.length === 0) {
     return NextResponse.json(
       { error: "El archivo está vacío" },
       { status: 400 }
@@ -109,12 +134,14 @@ export async function POST(request: NextRequest) {
   const sheetsResult: SheetResult[] = [];
 
   try {
-    for (const sheetName of workbook.SheetNames) {
-      const worksheet = workbook.Sheets[sheetName];
-      const rawRows = XLSX.utils.sheet_to_json<(string | number | null)[]>(
-        worksheet,
-        { header: 1, defval: null }
-      );
+    for (const ws of workbook.worksheets) {
+      const sheetName = ws.name;
+      // Convert worksheet to 2D array (equivalent to XLSX.utils.sheet_to_json with header:1)
+      const rawRows: (string | number | null)[][] = [];
+      ws.eachRow({ includeEmpty: false }, (row) => {
+        const vals = row.values as (string | number | null | undefined)[];
+        rawRows.push(vals.slice(1).map((v) => v ?? null));
+      });
 
       if (rawRows.length === 0) continue;
 
@@ -249,7 +276,7 @@ IMPORTANTE:
       .from("excel_imports")
       .insert({
         trainer_id: user.id,
-        file_name: file.name,
+        file_name: sanitizeName(file.name),
         file_size_bytes: file.size,
         sheet_count: sheetsResult.length,
         detected_columns: sheetsResult[0].columns,
@@ -260,15 +287,16 @@ IMPORTANTE:
       .single();
 
     if (insertError) {
+      console.error("[import/excel] Error guardando importación");
       return NextResponse.json(
-        { error: "Error guardando importación: " + insertError.message },
+        { error: "Error guardando importación" },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       import_id: importRecord.id,
-      file_name: file.name,
+      file_name: sanitizeName(file.name),
       needs_review: sheetsResult.some((s) =>
         s.columns.some((c) => c.confidence < 0.9)
       ),
@@ -278,11 +306,9 @@ IMPORTANTE:
         ...s.ai_analysis,
       })),
     });
-  } catch (err: unknown) {
-    const errorMessage =
-      err instanceof Error ? err.message : "Error desconocido";
+  } catch {
     return NextResponse.json(
-      { error: "Error al analizar con IA: " + errorMessage },
+      { error: "Error al procesar el archivo Excel" },
       { status: 500 }
     );
   }

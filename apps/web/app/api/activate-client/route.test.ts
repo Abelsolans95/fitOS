@@ -28,6 +28,19 @@ vi.mock("@/lib/supabase-server", () => ({
 }));
 
 // ---------------------------------------------------------------------------
+// Mock @/lib/csrf + @/lib/rate-limit
+// ---------------------------------------------------------------------------
+
+vi.mock("@/lib/csrf", () => ({
+  validateCsrf: vi.fn(() => true),
+}));
+
+vi.mock("@/lib/rate-limit", () => ({
+  apiLimiter: { check: vi.fn(() => ({ success: true })) },
+  getClientIdentifier: vi.fn(() => "test-id"),
+}));
+
+// ---------------------------------------------------------------------------
 // Chainable query builder
 // ---------------------------------------------------------------------------
 
@@ -51,6 +64,7 @@ function createChain(result: { data: unknown; error: unknown }) {
 function makeRequest() {
   return {
     json: () => Promise.resolve({}),
+    headers: new Headers({ origin: "http://localhost:3000" }),
   } as unknown as Request;
 }
 
@@ -62,7 +76,7 @@ describe("POST /api/activate-client", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetUser.mockResolvedValue({
-      data: { user: { id: "client-1", email: "client@test.com" } },
+      data: { user: { id: "client-1", email: "client@test.com", user_metadata: { role: "client" } } },
       error: null,
     });
   });
@@ -145,6 +159,6 @@ describe("POST /api/activate-client", () => {
     const json = await res.json();
 
     expect(res.status).toBe(500);
-    expect(json.error).toBe("unexpected crash");
+    expect(json.error).toBe("Error inesperado");
   });
 });

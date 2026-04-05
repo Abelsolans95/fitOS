@@ -9,7 +9,7 @@ interface ClientRow {
   client_id: string;
   status: string;
   joined_at: string;
-  profile: { full_name: string | null; email: string | null; goal: string | null; avatar_url: string | null } | null;
+  profile: { full_name: string | null; goal: string | null; avatar_url: string | null } | null;
 }
 
 function getInitials(name: string | null | undefined): string {
@@ -58,13 +58,13 @@ export default function TrainerClientsPage() {
 
         const clientIds = tcRows.map(r => r.client_id);
         const { data: profileRows, error: profilesErr } = await supabase
-          .from("profiles").select("user_id, full_name, email, goal, avatar_url").in("user_id", clientIds);
+          .from("profiles").select("user_id, full_name, goal, avatar_url").in("user_id", clientIds);
         if (profilesErr) { console.error("[Clients] Error cargando perfiles:", profilesErr); } // No bloqueante
 
         const profileMap = new Map((profileRows ?? []).map(p => [p.user_id, p]));
         setClients(tcRows.map(row => {
           const p = profileMap.get(row.client_id) || null;
-          return { ...row, profile: p ? { full_name: p.full_name, email: p.email, goal: p.goal, avatar_url: p.avatar_url } : null };
+          return { ...row, profile: p ? { full_name: p.full_name, goal: p.goal, avatar_url: p.avatar_url } : null };
         }));
       } catch { setError("Error inesperado al cargar los clientes."); }
       finally { setLoading(false); }
@@ -75,7 +75,7 @@ export default function TrainerClientsPage() {
   const filtered = useMemo(() => {
     if (!search.trim()) return clients;
     const q = search.toLowerCase();
-    return clients.filter(c => (c.profile?.full_name?.toLowerCase() ?? "").includes(q) || (c.profile?.email?.toLowerCase() ?? "").includes(q));
+    return clients.filter(c => (c.profile?.full_name?.toLowerCase() ?? "").includes(q));
   }, [clients, search]);
 
   if (loading) return (
@@ -130,7 +130,7 @@ export default function TrainerClientsPage() {
             </svg>
             <input
               type="text"
-              placeholder="Buscar por nombre o email..."
+              placeholder="Buscar por nombre..."
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="search-input h-10 w-full rounded-xl border border-white/[0.08] bg-[#0E0E18]/60 backdrop-blur-xl pl-10 pr-4 text-[13px] text-white"
@@ -185,7 +185,7 @@ export default function TrainerClientsPage() {
                       </div>
                       <div className="min-w-0">
                         <p className="truncate text-[13px] font-semibold text-white">{client.profile?.full_name ?? "Sin nombre"}</p>
-                        <p className="truncate text-[11px] text-[#5A5A72]">{client.profile?.email ?? "Sin email"}</p>
+                        <p className="truncate text-[11px] text-[#5A5A72]">{client.profile?.goal ?? "Sin objetivo"}</p>
                       </div>
                     </div>
 

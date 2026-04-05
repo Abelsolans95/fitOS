@@ -615,7 +615,7 @@ export function useRoutinesPage() {
         allUserIds.length > 0
           ? await supabase
               .from("profiles")
-              .select("user_id, full_name, email")
+              .select("user_id, full_name")
               .in("user_id", allUserIds)
           : { data: [], error: null };
 
@@ -646,7 +646,7 @@ export function useRoutinesPage() {
         return {
           client_id,
           full_name: p?.full_name ?? null,
-          email: p?.email ?? null,
+          email: null,
         };
       });
 

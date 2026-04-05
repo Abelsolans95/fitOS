@@ -11,7 +11,7 @@
  * the trainer is asked to confirm/correct the mapping.
  */
 
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 export type InferredColumnType =
   | "exercise_name"
@@ -310,20 +310,26 @@ function inferColumnType(
 /**
  * Parse an Excel file buffer and return structured data with column inference.
  */
-export function parseExcelBuffer(
+export async function parseExcelBuffer(
   buffer: ArrayBuffer,
   fileName: string
-): ParseResult {
-  const workbook = XLSX.read(buffer, { type: "array" });
+): Promise<ParseResult> {
+  const workbook = new ExcelJS.Workbook();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await workbook.xlsx.load(buffer as any);
   const sheets: ParsedSheet[] = [];
   let needsReview = false;
 
-  for (const sheetName of workbook.SheetNames) {
-    const worksheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json<Record<string, any>>(worksheet, {
-      header: 1, // Use array indices as keys
-      defval: null,
-    }) as (string | number | null)[][];
+  for (const worksheet of workbook.worksheets) {
+    const sheetName = worksheet.name;
+    // Convert ExcelJS worksheet to 2D array (same format as XLSX.utils.sheet_to_json with header:1)
+    const jsonData: (string | number | null)[][] = [];
+    worksheet.eachRow({ includeEmpty: false }, (row) => {
+      const rowValues = row.values as (string | number | null | undefined)[];
+      // ExcelJS row.values is 1-indexed (index 0 is undefined), shift to 0-indexed
+      const cleaned = rowValues.slice(1).map((v) => v ?? null);
+      jsonData.push(cleaned);
+    });
 
     if (jsonData.length === 0) continue;
 

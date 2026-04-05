@@ -119,7 +119,7 @@ export function OverviewMode({
                     {prevStr ? <Text style={st.anteriorInline}>Anterior: {prevStr}</Text> : null}
                     {progressionRule ? <Text style={st.progressionInline}>{progressionRule}</Text> : null}
                     {notes ? <Text style={st.notesInline}>{notes}</Text> : null}
-                    {exercise.video_url ? (
+                    {exercise.video_url && /^https:\/\/(www\.)?(youtube\.com|youtu\.be|vimeo\.com|player\.vimeo\.com)/.test(exercise.video_url) ? (
                       <TouchableOpacity style={st.videoLink} activeOpacity={0.7}
                         onPress={() => Linking.openURL(exercise.video_url!)}
                       >
