@@ -3,15 +3,14 @@
 // POST /functions/v1/generate-gym-routine
 // Body: { client_id, goal, duration_months, days_per_week, equipment?, level? }
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { authenticateRequest, validateBodySize, sanitizeForPrompt, getCorsHeaders, corsHeaders } from "../_shared/auth.ts";
+import { authenticateRequest, validateBodySize, sanitizeForPrompt, getCorsHeaders } from "../_shared/auth.ts";
 
-serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
-
+Deno.serve(async (req: Request) => {
   const headers = getCorsHeaders(req);
+
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers });
+  }
 
   try {
     // SECURITY: Verify JWT and get authenticated user

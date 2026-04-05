@@ -27,11 +27,6 @@ export function getCorsHeaders(req: Request) {
   };
 }
 
-// Legacy export for backward compatibility (used in OPTIONS handlers)
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 interface AuthResult {
   user: { id: string; role: string | null };
@@ -122,4 +117,3 @@ export function sanitizeForPrompt(input: string, maxLength = 2000): string {
   return clean.trim().slice(0, maxLength);
 }
 
-export { corsHeaders };

@@ -3,8 +3,7 @@
 // Llamada desde el cliente: POST /functions/v1/analyze-food-image
 // Body: { image_base64: string, meal_type?: string }
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { authenticateRequest, validateBodySize, sanitizeForPrompt, getCorsHeaders, corsHeaders } from "../_shared/auth.ts";
+import { authenticateRequest, validateBodySize, sanitizeForPrompt, getCorsHeaders } from "../_shared/auth.ts";
 
 interface FoodEstimate {
   name: string;
@@ -26,13 +25,13 @@ interface AnalysisResponse {
   description: string;
 }
 
-serve(async (req: Request) => {
+Deno.serve(async (req: Request) => {
+  const headers = getCorsHeaders(req);
+
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers });
   }
-
-  const headers = getCorsHeaders(req);
 
   try {
     // SECURITY: Authenticate user (was missing entirely before)

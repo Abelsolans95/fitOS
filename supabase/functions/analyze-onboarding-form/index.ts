@@ -3,9 +3,7 @@
 // POST /functions/v1/analyze-onboarding-form
 // Body: { client_id, response_id }
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { authenticateRequest, validateBodySize, sanitizeForPrompt, getCorsHeaders, corsHeaders } from "../_shared/auth.ts";
+import { authenticateRequest, validateBodySize, sanitizeForPrompt, getCorsHeaders } from "../_shared/auth.ts";
 
 /** Groups flat fields by section for structured prompt */
 function groupFieldsBySection(
@@ -47,12 +45,12 @@ function groupFieldsBySection(
   return groups;
 }
 
-serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
-
+Deno.serve(async (req: Request) => {
   const headers = getCorsHeaders(req);
+
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers });
+  }
 
   try {
     // SECURITY: Verify JWT and get authenticated user
