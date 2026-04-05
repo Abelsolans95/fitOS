@@ -134,8 +134,9 @@ export function useSidebarBadges({
 
     // --- Init & subscribe ---
     const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+      const user = session.user;
       userId = user.id;
 
       // Client needs to look up trainer

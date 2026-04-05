@@ -10,8 +10,9 @@ interface UserState {
 
 /**
  * Returns the current Supabase user.
- * Handles the auth check + loading/error state in one place
- * so pages don't need to repeat this pattern.
+ * Uses getSession() (local JWT parse, no network call) instead of getUser()
+ * because middleware + layout already verified the JWT server-side.
+ * This avoids an extra ~1s round-trip on every page load.
  */
 export function useUser(): UserState {
   const [user, setUser] = useState<User | null>(null);
@@ -21,11 +22,11 @@ export function useUser(): UserState {
   useEffect(() => {
     const supabase = createClient();
 
-    supabase.auth.getUser().then(({ data: { user }, error: authError }) => {
-      if (authError || !user) {
+    supabase.auth.getSession().then(({ data: { session }, error: sessionError }) => {
+      if (sessionError || !session?.user) {
         setError("No se pudo obtener la sesión del usuario.");
       } else {
-        setUser(user);
+        setUser(session.user);
       }
       setLoading(false);
     });
