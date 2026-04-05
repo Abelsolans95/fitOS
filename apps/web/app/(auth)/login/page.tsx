@@ -18,14 +18,13 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     const supabase = createClient();
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
     if (authError) {
       setError(authError.message === "Invalid login credentials" ? "Email o contraseña incorrectos" : authError.message);
       setLoading(false);
       return;
     }
-    const { data: { user } } = await supabase.auth.getUser();
-    const role = user?.user_metadata?.role;
+    const role = data.user?.user_metadata?.role;
     if (role === "trainer") router.push("/app/trainer/dashboard");
     else router.push("/app/client/dashboard");
   };

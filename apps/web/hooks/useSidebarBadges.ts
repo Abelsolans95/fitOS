@@ -220,9 +220,11 @@ export function useSidebarBadges({
       }
     };
 
-    init();
+    // Defer badge loading to avoid blocking initial page render
+    const timer = setTimeout(() => init(), 1500);
 
     return () => {
+      clearTimeout(timer);
       if (channel) supabase.removeChannel(channel);
     };
   }, [role, chatPath, communityPath, ticketsPath]);
