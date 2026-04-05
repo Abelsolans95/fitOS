@@ -464,6 +464,7 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 201. **`log_audit_event()` DEBE validar `p_user_id = auth.uid()`** — Sin esta validación, cualquier usuario autenticado podía loguear eventos como otro usuario (audit log spoofing). Migración 043 añade `RAISE EXCEPTION` si no coinciden.
 202. **Storage buckets `ticket-images` y `knowledge-images` DEBEN ser privados** — Con `public = true`, las URLs de descarga no necesitan token — cualquiera con el path puede descargar. Migración 043 los cambia a `public = false`.
 203. **`increment_promo_code_usage` REVOCADO de public/authenticated** — Solo callable via `service_role` (desde API routes). Previene que un usuario autenticado invoque la función directamente vía `supabase.rpc()`. Migración 043.
+204. **Deploy obligatorio tras modificar Edge Functions** — Las Edge Functions NO se despliegan con `git push`. Tras crear o modificar cualquier función en `supabase/functions/`, indicar SIEMPRE al usuario que ejecute `npx supabase functions deploy [nombre] --project-ref rgrtxlciqmexdkxagomo` para aplicar los cambios en producción. Si se modifica `_shared/auth.ts`, hay que redesplegar TODAS las funciones que lo importan.
 
 ---
 
