@@ -465,6 +465,8 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 202. **Storage buckets `ticket-images` y `knowledge-images` DEBEN ser privados** — Con `public = true`, las URLs de descarga no necesitan token — cualquiera con el path puede descargar. Migración 043 los cambia a `public = false`.
 203. **`increment_promo_code_usage` REVOCADO de public/authenticated** — Solo callable via `service_role` (desde API routes). Previene que un usuario autenticado invoque la función directamente vía `supabase.rpc()`. Migración 043.
 204. **Deploy obligatorio tras modificar Edge Functions** — Las Edge Functions NO se despliegan con `git push`. Tras crear o modificar cualquier función en `supabase/functions/`, indicar SIEMPRE al usuario que ejecute `npx supabase functions deploy [nombre] --project-ref rgrtxlciqmexdkxagomo` para aplicar los cambios en producción. Si se modifica `_shared/auth.ts`, hay que redesplegar TODAS las funciones que lo importan.
+205. **`getSession()` en client components, `getUser()` en server** — En componentes cliente ("use client"), hooks y páginas del dashboard, usar SIEMPRE `supabase.auth.getSession()` (parse local del JWT, ~0ms) en lugar de `supabase.auth.getUser()` (round-trip al servidor, ~1s). El middleware y los layouts ya verifican el JWT server-side como defense-in-depth. `getUser()` solo en: Server Components, API routes, layouts de seguridad, Edge Functions. Patrón: `const { data: { session } } = await supabase.auth.getSession(); const user = session?.user;`.
+206. **Optimización de carga aplicada (05/04/2026)** — 32 archivos optimizados: `getUser()` → `getSession()` en 12 páginas cliente web, 13 páginas trainer web, 6 screens mobile. `Promise.all()` para queries independientes en appointments, dashboard, meals, knowledge. `.limit()` añadido a health_logs, food_log. Resultado: ~1s menos por carga de página en toda la app.
 
 ---
 
@@ -921,3 +923,5 @@ supabase functions deploy analyze-onboarding-form
 | 116 | DB | `log_audit_event()` sin validar caller | Cualquier usuario autenticado podía insertar audit logs como otro user — audit log spoofing. Fix: `p_user_id != auth.uid()` → RAISE EXCEPTION. Regla 201 |
 | 117 | Storage | `ticket-images` y `knowledge-images` con `public = true` | URLs de descarga accesibles sin token. Fix: `UPDATE storage.buckets SET public = false`. Regla 202 |
 | 118 | DB | `increment_promo_code_usage` callable por authenticated | Cualquier usuario podía invocar via `supabase.rpc()`. Fix: REVOKE de public y authenticated. Regla 203 |
+| 119 | Perf | `getUser()` en 32 client components — ~1s extra por página | Client components usaban `getUser()` (network) cuando middleware ya verifica JWT. Fix: `getSession()` (local parse). Regla 205 |
+| 120 | Perf | Queries secuenciales independientes en appointments, dashboard, meals | 2-4 `await supabase.from(...)` secuenciales que no dependen entre sí. Fix: `Promise.all()`. Regla 103 |
