@@ -70,7 +70,7 @@ function getZoneStroke(
     return "rgba(255,145,0,0.65)";
   }
 
-  if (!active) return "rgba(0,229,255,0.15)"; // DEBUG: visible outline for all zones
+  if (!active) return "transparent";
   if (active.pain_score >= 6) return "rgba(255,23,68,0.5)";
   return "rgba(255,145,0,0.45)";
 }

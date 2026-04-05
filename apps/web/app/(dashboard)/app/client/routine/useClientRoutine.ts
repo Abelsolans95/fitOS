@@ -2,236 +2,33 @@
 
 import { useReducer, useCallback, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase";
+import { QUERY_LIMITS } from "@/lib/constants";
 import { toast } from "sonner";
-import type { ExerciseData, DayData, PreviousSet, PreviousLog } from "./active/types";
+import type { PreviousLog } from "./active/types";
 
-/* ────────────────────────────────────────────
-   Types
-   ──────────────────────────────────────────── */
+import {
+  clientRoutineReducer,
+  initialState,
+} from "./client-routine-reducer";
+import type { RoutineRaw, InProgressSession } from "./client-routine-reducer";
 
-export interface RoutineRaw {
-  id: string;
-  title: string;
-  duration_months: number;
-  total_weeks?: number;
-  goal: string;
-  exercises?: ExerciseData[];
-  days?: DayData[];
-  is_active: boolean;
-  sent_at: string | null;
-  created_at: string;
-}
+import {
+  DAY_LABELS,
+  DAY_SHORT,
+  parseExercisesFromRoutine,
+  extractTrainingDays,
+  getExercisesForDay,
+  resolveDayLabel,
+  resolveWeekCount,
+  getPreviousLogSets,
+  formatPreviousLog,
+  buildSessionInputs,
+  buildWeightLogInserts,
+} from "./client-routine-helpers";
 
-export interface SetInput {
-  weight_kg: string;
-  reps_done: string;
-  type: "main" | "rest_pause";
-}
-
-interface InProgressSession {
-  id: string;
-  routine_id: string;
-  day_label: string;
-  week_number: number;
-}
-
-/* ────────────────────────────────────────────
-   State
-   ──────────────────────────────────────────── */
-
-export interface ClientRoutineState {
-  loading: boolean;
-  error: string | null;
-  routine: RoutineRaw | null;
-  userId: string | null;
-  previousLogs: PreviousLog[];
-  activeWeek: number;
-  activeDay: string | null;
-  isTracking: boolean;
-  sessionInputs: Record<string, SetInput[]>;
-  clientNotes: Record<string, string>;
-  exerciseRpe: Record<string, string>;
-  rpeGlobal: number;
-  saving: boolean;
-  inProgressSession: InProgressSession | null;
-  completedSessions: Set<string>;
-}
-
-const initialState: ClientRoutineState = {
-  loading: true,
-  error: null,
-  routine: null,
-  userId: null,
-  previousLogs: [],
-  activeWeek: 1,
-  activeDay: null,
-  isTracking: false,
-  sessionInputs: {},
-  clientNotes: {},
-  exerciseRpe: {},
-  rpeGlobal: 7,
-  saving: false,
-  inProgressSession: null,
-  completedSessions: new Set(),
-};
-
-/* ────────────────────────────────────────────
-   Actions
-   ──────────────────────────────────────────── */
-
-export type ClientRoutineAction =
-  | { type: "SET_LOADING"; loading: boolean }
-  | { type: "SET_ERROR"; error: string | null }
-  | {
-      type: "LOAD_SUCCESS";
-      userId: string;
-      routine: RoutineRaw | null;
-      previousLogs: PreviousLog[];
-      completedSessions: Set<string>;
-      inProgressSession: InProgressSession | null;
-    }
-  | { type: "SET_ACTIVE_WEEK"; week: number }
-  | { type: "SET_ACTIVE_DAY"; day: string }
-  | { type: "START_TRACKING"; sessionInputs: Record<string, SetInput[]> }
-  | { type: "STOP_TRACKING" }
-  | {
-      type: "UPDATE_SET";
-      exerciseName: string;
-      setIndex: number;
-      field: "weight_kg" | "reps_done";
-      value: string;
-    }
-  | { type: "SET_CLIENT_NOTE"; exerciseName: string; note: string }
-  | { type: "SET_EXERCISE_RPE"; exerciseName: string; value: string }
-  | { type: "SET_RPE"; value: number }
-  | { type: "SET_SAVING"; saving: boolean }
-  | { type: "SESSION_SAVED"; previousLogs: PreviousLog[] }
-  | { type: "SET_PREVIOUS_LOGS"; previousLogs: PreviousLog[] };
-
-/* ────────────────────────────────────────────
-   Reducer
-   ──────────────────────────────────────────── */
-
-function clientRoutineReducer(
-  state: ClientRoutineState,
-  action: ClientRoutineAction
-): ClientRoutineState {
-  switch (action.type) {
-    case "SET_LOADING":
-      return { ...state, loading: action.loading };
-
-    case "SET_ERROR":
-      return { ...state, error: action.error, loading: false };
-
-    case "LOAD_SUCCESS":
-      return {
-        ...state,
-        loading: false,
-        userId: action.userId,
-        routine: action.routine,
-        previousLogs: action.previousLogs,
-        completedSessions: action.completedSessions,
-        inProgressSession: action.inProgressSession,
-      };
-
-    case "SET_ACTIVE_WEEK":
-      return { ...state, activeWeek: action.week };
-
-    case "SET_ACTIVE_DAY":
-      return { ...state, activeDay: action.day };
-
-    case "START_TRACKING":
-      return {
-        ...state,
-        isTracking: true,
-        sessionInputs: action.sessionInputs,
-        clientNotes: {},
-      };
-
-    case "STOP_TRACKING":
-      return { ...state, isTracking: false };
-
-    case "UPDATE_SET": {
-      const updated = { ...state.sessionInputs };
-      const sets = [...(updated[action.exerciseName] || [])];
-      sets[action.setIndex] = {
-        ...sets[action.setIndex],
-        [action.field]: action.value,
-      };
-      updated[action.exerciseName] = sets;
-      return { ...state, sessionInputs: updated };
-    }
-
-    case "SET_EXERCISE_RPE":
-      return {
-        ...state,
-        exerciseRpe: { ...state.exerciseRpe, [action.exerciseName]: action.value },
-      };
-
-    case "SET_CLIENT_NOTE":
-      return {
-        ...state,
-        clientNotes: {
-          ...state.clientNotes,
-          [action.exerciseName]: action.note,
-        },
-      };
-
-    case "SET_RPE":
-      return { ...state, rpeGlobal: action.value };
-
-    case "SET_SAVING":
-      return { ...state, saving: action.saving };
-
-    case "SESSION_SAVED":
-      return {
-        ...state,
-        isTracking: false,
-        saving: false,
-        previousLogs: action.previousLogs,
-      };
-
-    case "SET_PREVIOUS_LOGS":
-      return { ...state, previousLogs: action.previousLogs };
-
-    default:
-      return state;
-  }
-}
-
-/* ────────────────────────────────────────────
-   Constants
-   ──────────────────────────────────────────── */
-
-const DAY_ORDER = [
-  "lunes",
-  "martes",
-  "miercoles",
-  "jueves",
-  "viernes",
-  "sabado",
-  "domingo",
-];
-
-export const DAY_LABELS: Record<string, string> = {
-  lunes: "Lunes",
-  martes: "Martes",
-  miercoles: "Miércoles",
-  jueves: "Jueves",
-  viernes: "Viernes",
-  sabado: "Sábado",
-  domingo: "Domingo",
-};
-
-export const DAY_SHORT: Record<string, string> = {
-  lunes: "L",
-  martes: "M",
-  miercoles: "X",
-  jueves: "J",
-  viernes: "V",
-  sabado: "S",
-  domingo: "D",
-};
+/* Re-exports for consumers that import from this file */
+export { DAY_LABELS, DAY_SHORT };
+export type { ClientRoutineAction, ClientRoutineState, RoutineRaw, SetInput } from "./client-routine-reducer";
 
 /* ────────────────────────────────────────────
    Hook
@@ -268,7 +65,7 @@ export function useClientRoutine() {
             .maybeSingle(),
           supabase
             .from("user_routines")
-            .select("id,title,goal,duration_months,total_weeks,exercises,is_active,sent_at,created_at")
+            .select("id,title,goal,duration_months,total_weeks,exercises,is_active,sent_at,created_at,trainer_id")
             .eq("client_id", user.id)
             .eq("is_active", true)
             .order("created_at", { ascending: false })
@@ -277,13 +74,9 @@ export function useClientRoutine() {
         ]);
 
         if (pendingRes.error) {
-          console.error(
-            "[ClientRoutine] Error al buscar sesión pendiente:",
-            pendingRes.error
-          );
+          console.error("[ClientRoutine] Error al buscar sesión pendiente:", pendingRes.error);
         }
 
-        // Load active routine by client_id
         let routineData = null;
         if (routineRes.error) {
           console.error("[ClientRoutine] Error al buscar rutina:", routineRes.error);
@@ -314,14 +107,11 @@ export function useClientRoutine() {
               .select("exercise_name, session_date, sets_data")
               .eq("client_id", user.id)
               .order("session_date", { ascending: false })
-              .limit(200),
+              .limit(QUERY_LIMITS.WEIGHT_LOG),
           ]);
 
           if (doneRes.error) {
-            console.error(
-              "[ClientRoutine] Error al cargar sesiones completadas:",
-              doneRes.error
-            );
+            console.error("[ClientRoutine] Error al cargar sesiones completadas:", doneRes.error);
           }
           if (doneRes.data) {
             completedSessions = new Set(
@@ -333,10 +123,7 @@ export function useClientRoutine() {
           }
 
           if (logsRes.error) {
-            console.error(
-              "[ClientRoutine] Error al cargar historial de pesos:",
-              logsRes.error
-            );
+            console.error("[ClientRoutine] Error al cargar historial de pesos:", logsRes.error);
           }
           if (logsRes.data) {
             previousLogs = logsRes.data as PreviousLog[];
@@ -358,38 +145,33 @@ export function useClientRoutine() {
     load();
   }, []);
 
-  /* ── Parsed exercises ── */
-  const parsedExercises = useMemo((): ExerciseData[] => {
-    if (!state.routine) return [];
+  /* ── Derived data (pure helpers) ── */
+  const parsedExercises = useMemo(
+    () => parseExercisesFromRoutine(state.routine),
+    [state.routine]
+  );
 
-    if (
-      state.routine.exercises &&
-      Array.isArray(state.routine.exercises) &&
-      state.routine.exercises.length > 0
-    ) {
-      return state.routine.exercises;
-    }
+  const trainingDays = useMemo(
+    () => extractTrainingDays(parsedExercises),
+    [parsedExercises]
+  );
 
-    if (state.routine.days && Array.isArray(state.routine.days)) {
-      return state.routine.days.flatMap((day: DayData) =>
-        (day.exercises || []).map((ex: ExerciseData) => ({
-          ...ex,
-          day_of_week: ex.day_of_week || day.day,
-          day_label: ex.day_label || day.label,
-        }))
-      );
-    }
+  const dayExercises = useMemo(
+    () => getExercisesForDay(parsedExercises, state.activeDay),
+    [parsedExercises, state.activeDay]
+  );
 
-    return [];
-  }, [state.routine]);
+  const dayLabel = useMemo(
+    () => resolveDayLabel(parsedExercises, state.activeDay),
+    [parsedExercises, state.activeDay]
+  );
 
-  /* ── Training days ── */
-  const trainingDays = useMemo(() => {
-    const days = [...new Set(parsedExercises.map((ex) => ex.day_of_week))];
-    return days.sort(
-      (a, b) => DAY_ORDER.indexOf(a) - DAY_ORDER.indexOf(b)
-    );
-  }, [parsedExercises]);
+  const isSessionCompleted = useMemo(() => {
+    if (!dayLabel || !state.activeWeek) return false;
+    return state.completedSessions.has(`${dayLabel}::${state.activeWeek}`);
+  }, [state.completedSessions, dayLabel, state.activeWeek]);
+
+  const weekCount = resolveWeekCount(state.routine);
 
   /* ── Set initial active day ── */
   useEffect(() => {
@@ -398,99 +180,22 @@ export function useClientRoutine() {
     }
   }, [trainingDays, state.activeDay]);
 
-  /* ── Exercises for current day ── */
-  const dayExercises = useMemo(() => {
-    if (!state.activeDay) return [];
-    return parsedExercises
-      .filter((ex) => ex.day_of_week === state.activeDay)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  }, [parsedExercises, state.activeDay]);
-
-  /* ── Day label ── */
-  const dayLabel = useMemo(() => {
-    if (!state.activeDay) return "";
-    const ex = parsedExercises.find(
-      (e) => e.day_of_week === state.activeDay
-    );
-    return ex?.day_label || DAY_LABELS[state.activeDay] || state.activeDay;
-  }, [parsedExercises, state.activeDay]);
-
-  /* ── Session completed check ── */
-  const isSessionCompleted = useMemo(() => {
-    if (!dayLabel || !state.activeWeek) return false;
-    return state.completedSessions.has(`${dayLabel}::${state.activeWeek}`);
-  }, [state.completedSessions, dayLabel, state.activeWeek]);
-
-  /* ── Week count ── */
-  const weekCount = state.routine
-    ? (state.routine.total_weeks ??
-        Math.max(1, (state.routine.duration_months || 1) * 4))
-    : 0;
-
   /* ── Previous log helpers ── */
   const getPreviousLog = useCallback(
-    (exerciseName: string): PreviousSet[] => {
-      const log = state.previousLogs.find(
-        (l) => l.exercise_name === exerciseName
-      );
-      if (!log || !log.sets_data) return [];
-      return (log.sets_data as PreviousSet[]) || [];
-    },
+    (exerciseName: string) => getPreviousLogSets(state.previousLogs, exerciseName),
     [state.previousLogs]
   );
 
   const formatPrevious = useCallback(
-    (exerciseName: string): string => {
-      const prev = getPreviousLog(exerciseName);
-      if (prev.length === 0) return "";
-      const mainSets = prev.filter((s) => s.type !== "rest_pause");
-      const firstWeight = mainSets[0]?.weight_kg ?? 0;
-      const firstReps = mainSets[0]?.reps_done ?? 0;
-      return `${firstWeight}x${firstReps}`;
-    },
-    [getPreviousLog]
+    (exerciseName: string) => formatPreviousLog(state.previousLogs, exerciseName),
+    [state.previousLogs]
   );
 
   /* ── Start tracking ── */
   const startTracking = useCallback(() => {
-    const inputs: Record<string, SetInput[]> = {};
-
-    dayExercises.forEach((ex) => {
-      const mainSets = ex.sets || 3;
-      const rpSets = ex.rest_pause_sets || 0;
-      const prevLog = getPreviousLog(ex.name);
-      const weight = ex.target_weight ?? ex.weight_kg ?? 0;
-
-      const sets: SetInput[] = [];
-      for (let i = 0; i < mainSets; i++) {
-        sets.push({
-          weight_kg: prevLog[i]?.weight_kg
-            ? String(prevLog[i].weight_kg)
-            : weight
-              ? String(weight)
-              : "",
-          reps_done: "",
-          type: "main",
-        });
-      }
-      for (let i = 0; i < rpSets; i++) {
-        const rpIdx = mainSets + i;
-        sets.push({
-          weight_kg: prevLog[rpIdx]?.weight_kg
-            ? String(prevLog[rpIdx].weight_kg)
-            : weight
-              ? String(weight)
-              : "",
-          reps_done: "",
-          type: "rest_pause",
-        });
-      }
-
-      inputs[ex.name] = sets;
-    });
-
-    dispatch({ type: "START_TRACKING", sessionInputs: inputs });
-  }, [dayExercises, getPreviousLog]);
+    const sessionInputs = buildSessionInputs(dayExercises, state.previousLogs);
+    dispatch({ type: "START_TRACKING", sessionInputs });
+  }, [dayExercises, state.previousLogs]);
 
   /* ── Update set value ── */
   const updateSet = useCallback(
@@ -520,9 +225,7 @@ export function useClientRoutine() {
         .insert({
           client_id: state.userId,
           routine_id: state.routine?.id,
-          trainer_id: state.routine
-            ? (state.routine as any).trainer_id
-            : null,
+          trainer_id: state.routine?.trainer_id ?? null,
           session_date: today,
           day_label: dayLabel,
           week_number: state.activeWeek,
@@ -534,43 +237,21 @@ export function useClientRoutine() {
         .single();
 
       if (sessionError) {
-        console.error(
-          "[ClientRoutine] Error al crear sesión:",
-          sessionError
-        );
+        console.error("[ClientRoutine] Error al crear sesión:", sessionError);
         toast.error("Error al crear la sesión de entrenamiento");
         dispatch({ type: "SET_SAVING", saving: false });
         return;
       }
 
-      const currentSessionId = session?.id || null;
+      const currentSessionId = session?.id ?? null;
 
-      const weightLogInserts = dayExercises.map((ex) => {
-        const sets = state.sessionInputs[ex.name] || [];
-        const setsData = sets.map((s, i) => ({
-          set_number: i + 1,
-          weight_kg: Number(s.weight_kg) || 0,
-          reps_done: Number(s.reps_done) || 0,
-          type: s.type,
-        }));
-
-        const totalVolume = setsData.reduce(
-          (sum, s) => sum + s.weight_kg * s.reps_done,
-          0
-        );
-
-        const rpeVal = state.exerciseRpe[ex.name] ? Number(state.exerciseRpe[ex.name]) : null;
-
-        return {
-          client_id: state.userId,
-          exercise_id: ex.exercise_id,
-          exercise_name: ex.name,
-          session_date: today,
-          session_id: currentSessionId,
-          sets_data: setsData,
-          total_volume_kg: totalVolume,
-          exercise_rpe: rpeVal,
-        };
+      const weightLogInserts = buildWeightLogInserts({
+        dayExercises,
+        sessionInputs: state.sessionInputs,
+        exerciseRpe: state.exerciseRpe,
+        userId: state.userId,
+        sessionDate: today,
+        sessionId: currentSessionId,
       });
 
       const { error: weightError } = await supabase
@@ -585,14 +266,8 @@ export function useClientRoutine() {
 
       // Update session aggregates
       if (currentSessionId) {
-        const totalVol = weightLogInserts.reduce(
-          (s, w) => s + w.total_volume_kg,
-          0
-        );
-        const totalSets = weightLogInserts.reduce(
-          (s, w) => s + (w.sets_data?.length || 0),
-          0
-        );
+        const totalVol = weightLogInserts.reduce((s, w) => s + w.total_volume_kg, 0);
+        const totalSets = weightLogInserts.reduce((s, w) => s + (w.sets_data?.length ?? 0), 0);
         const { error: updateErr } = await supabase
           .from("workout_sessions")
           .update({
@@ -603,83 +278,27 @@ export function useClientRoutine() {
           })
           .eq("id", currentSessionId);
         if (updateErr) {
-          console.error(
-            "[ClientRoutine] Error al actualizar agregados de sesión:",
-            updateErr
-          );
+          console.error("[ClientRoutine] Error al actualizar agregados de sesión:", updateErr);
         }
       }
 
       // Calendar entry
-      const { data: existingCal } = await supabase
-        .from("user_calendar")
-        .select("id")
-        .eq("user_id", state.userId)
-        .eq("date", today)
-        .eq("activity_type", "workout")
-        .maybeSingle();
-
-      if (existingCal) {
-        const { error: calUpErr } = await supabase
-          .from("user_calendar")
-          .update({ completed: true, rpe: state.rpeGlobal })
-          .eq("id", existingCal.id);
-        if (calUpErr) {
-          console.error(
-            "[ClientRoutine] Error al actualizar calendario:",
-            calUpErr
-          );
-        }
-      } else {
-        const { error: calInsErr } = await supabase
-          .from("user_calendar")
-          .insert({
-            user_id: state.userId,
-            date: today,
-            activity_type: "workout",
-            activity_details: {
-              nombre: state.routine?.title || "Entrenamiento",
-              dia: state.activeDay,
-              day_label: dayLabel,
-            },
-            completed: true,
-            rpe: state.rpeGlobal,
-          });
-        if (calInsErr) {
-          console.error(
-            "[ClientRoutine] Error al crear entrada de calendario:",
-            calInsErr
-          );
-        }
-      }
+      await saveCalendarEntry(supabase, {
+        userId: state.userId!,
+        today,
+        rpeGlobal: state.rpeGlobal,
+        routine: state.routine,
+        activeDay: state.activeDay!,
+        dayLabel,
+      });
 
       // RPE history
-      const totalVol = weightLogInserts.reduce(
-        (sum, w) => sum + w.total_volume_kg,
-        0
-      );
-      const { data: calEntry } = await supabase
-        .from("user_calendar")
-        .select("id")
-        .eq("user_id", state.userId)
-        .eq("date", today)
-        .eq("activity_type", "workout")
-        .single();
-
-      if (calEntry) {
-        const { error: rpeErr } = await supabase.from("rpe_history").insert({
-          client_id: state.userId,
-          calendar_id: calEntry.id,
-          rpe_global: state.rpeGlobal,
-          total_volume_kg: totalVol,
-        });
-        if (rpeErr) {
-          console.error(
-            "[ClientRoutine] Error al guardar historial RPE:",
-            rpeErr
-          );
-        }
-      }
+      await saveRpeHistory(supabase, {
+        userId: state.userId!,
+        today,
+        rpeGlobal: state.rpeGlobal,
+        totalVolume: weightLogInserts.reduce((s, w) => s + w.total_volume_kg, 0),
+      });
 
       toast.success("Sesión guardada correctamente");
 
@@ -689,12 +308,9 @@ export function useClientRoutine() {
         .select("exercise_name, session_date, sets_data")
         .eq("client_id", state.userId)
         .order("session_date", { ascending: false })
-        .limit(200);
+        .limit(QUERY_LIMITS.WEIGHT_LOG);
       if (reloadErr) {
-        console.error(
-          "[ClientRoutine] Error al recargar historial:",
-          reloadErr
-        );
+        console.error("[ClientRoutine] Error al recargar historial:", reloadErr);
       }
 
       dispatch({
@@ -711,6 +327,7 @@ export function useClientRoutine() {
     state.routine,
     state.activeWeek,
     state.sessionInputs,
+    state.exerciseRpe,
     state.rpeGlobal,
     state.previousLogs,
     dayLabel,
@@ -735,4 +352,89 @@ export function useClientRoutine() {
     updateSet,
     handleSaveSession,
   };
+}
+
+/* ────────────────────────────────────────────
+   Private async helpers (calendar + RPE)
+   ──────────────────────────────────────────── */
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SupabaseClient = ReturnType<typeof createClient>;
+
+async function saveCalendarEntry(
+  supabase: SupabaseClient,
+  opts: {
+    userId: string;
+    today: string;
+    rpeGlobal: number;
+    routine: RoutineRaw | null;
+    activeDay: string;
+    dayLabel: string;
+  }
+) {
+  const { data: existingCal } = await supabase
+    .from("user_calendar")
+    .select("id")
+    .eq("user_id", opts.userId)
+    .eq("date", opts.today)
+    .eq("activity_type", "workout")
+    .maybeSingle();
+
+  if (existingCal) {
+    const { error: calUpErr } = await supabase
+      .from("user_calendar")
+      .update({ completed: true, rpe: opts.rpeGlobal })
+      .eq("id", existingCal.id);
+    if (calUpErr) {
+      console.error("[ClientRoutine] Error al actualizar calendario:", calUpErr);
+    }
+  } else {
+    const { error: calInsErr } = await supabase
+      .from("user_calendar")
+      .insert({
+        user_id: opts.userId,
+        date: opts.today,
+        activity_type: "workout",
+        activity_details: {
+          nombre: opts.routine?.title ?? "Entrenamiento",
+          dia: opts.activeDay,
+          day_label: opts.dayLabel,
+        },
+        completed: true,
+        rpe: opts.rpeGlobal,
+      });
+    if (calInsErr) {
+      console.error("[ClientRoutine] Error al crear entrada de calendario:", calInsErr);
+    }
+  }
+}
+
+async function saveRpeHistory(
+  supabase: SupabaseClient,
+  opts: {
+    userId: string;
+    today: string;
+    rpeGlobal: number;
+    totalVolume: number;
+  }
+) {
+  const { data: calEntry } = await supabase
+    .from("user_calendar")
+    .select("id")
+    .eq("user_id", opts.userId)
+    .eq("date", opts.today)
+    .eq("activity_type", "workout")
+    .single();
+
+  if (calEntry) {
+    const { error: rpeErr } = await supabase.from("rpe_history").insert({
+      client_id: opts.userId,
+      calendar_id: calEntry.id,
+      rpe_global: opts.rpeGlobal,
+      total_volume_kg: opts.totalVolume,
+    });
+    if (rpeErr) {
+      console.error("[ClientRoutine] Error al guardar historial RPE:", rpeErr);
+    }
+  }
 }

@@ -71,8 +71,8 @@ export default function ImportPage() {
 
         toast.success(`Archivo procesado: ${data.sheets[0]?.row_count || 0} filas`);
         setStep("mapping");
-      } catch (err: any) {
-        toast.error(err.message || "Error procesando archivo");
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : "Error procesando archivo");
       } finally {
         setLoading(false);
       }
@@ -137,8 +137,8 @@ export default function ImportPage() {
         `${data.summary.auto_matched} auto-match, ${data.summary.needs_review} para revisar, ${data.summary.no_match} sin match`
       );
       setStep("reconcile");
-    } catch (err: any) {
-      toast.error(err.message || "Error en reconciliación");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Error en reconciliación");
     } finally {
       setLoading(false);
     }
@@ -238,8 +238,8 @@ export default function ImportPage() {
       setSheets([]);
       setDecisions({});
       setReconciliation([]);
-    } catch (err: any) {
-      toast.error(err.message || "Error importando");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Error importando");
     } finally {
       setImporting(false);
     }

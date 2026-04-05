@@ -2,12 +2,10 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Switch,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -16,200 +14,14 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
 import { colors, fonts } from "../theme";
 import { groupFieldsBySection, getEnabledSections } from "@fitos/shared";
-import type { SectionGroup } from "@fitos/shared";
+
+import { FormStep } from "./onboarding/FormStep";
+import { PhysicalDataStep } from "./onboarding/PhysicalDataStep";
+import { StepIndicator } from "./onboarding/StepIndicator";
+import type { FormField, OnboardingForm, Responses } from "./onboarding/types";
 
 /* -------------------------------------------------------------------------- */
-/*  Types                                                                      */
-/* -------------------------------------------------------------------------- */
-
-interface FormField {
-  id: string;
-  label: string;
-  type: "text" | "textarea" | "number" | "select" | "multiselect" | "boolean" | "scale" | "date" | "section";
-  required: boolean;
-  options?: string[];
-  placeholder?: string;
-  description?: string;
-  enabled?: boolean;
-}
-
-interface OnboardingForm {
-  id: string;
-  title: string;
-  fields: FormField[];
-}
-
-type Responses = Record<string, string | number | boolean | string[]>;
-
-/* -------------------------------------------------------------------------- */
-/*  Constants                                                                  */
-/* -------------------------------------------------------------------------- */
-
-const GOAL_OPTIONS = [
-  { label: "Hipertrofia", value: "hipertrofia" },
-  { label: "Fuerza", value: "fuerza" },
-  { label: "Perdida de peso", value: "perdida_peso" },
-  { label: "Mantenimiento", value: "mantenimiento" },
-];
-
-const DIETARY_RESTRICTIONS = [
-  "Vegetariano", "Vegano", "Sin gluten", "Sin lactosa",
-  "Sin frutos secos", "Halal", "Kosher",
-];
-
-/* -------------------------------------------------------------------------- */
-/*  Dynamic Field Renderer                                                     */
-/* -------------------------------------------------------------------------- */
-
-function DynamicField({
-  field,
-  value,
-  onChange,
-}: {
-  field: FormField;
-  value: string | number | boolean | string[] | undefined;
-  onChange: (val: string | number | boolean | string[]) => void;
-}) {
-  switch (field.type) {
-    case "text":
-      return (
-        <TextInput
-          style={styles.input}
-          placeholder={field.placeholder || ""}
-          placeholderTextColor={colors.muted + "80"}
-          value={(value as string) ?? ""}
-          onChangeText={(t) => onChange(t)}
-        />
-      );
-
-    case "textarea":
-      return (
-        <TextInput
-          style={[styles.input, { height: 80, textAlignVertical: "top" }]}
-          placeholder={field.placeholder || ""}
-          placeholderTextColor={colors.muted + "80"}
-          value={(value as string) ?? ""}
-          onChangeText={(t) => onChange(t)}
-          multiline
-        />
-      );
-
-    case "number":
-      return (
-        <TextInput
-          style={styles.input}
-          placeholder={field.placeholder || ""}
-          placeholderTextColor={colors.muted + "80"}
-          value={value !== undefined && value !== "" ? String(value) : ""}
-          onChangeText={(t) => onChange(t === "" ? "" : Number(t))}
-          keyboardType="decimal-pad"
-        />
-      );
-
-    case "date":
-      return (
-        <TextInput
-          style={styles.input}
-          placeholder="AAAA-MM-DD"
-          placeholderTextColor={colors.muted + "80"}
-          value={(value as string) ?? ""}
-          onChangeText={(t) => onChange(t)}
-        />
-      );
-
-    case "select":
-      return (
-        <View style={styles.optionsGrid}>
-          {(field.options ?? []).map((option) => {
-            const isSelected = value === option;
-            return (
-              <TouchableOpacity
-                key={option}
-                onPress={() => onChange(option)}
-                style={[styles.optionButton, isSelected && styles.optionButtonActive]}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.radioOuter, isSelected && styles.radioOuterActive]}>
-                  {isSelected && <View style={styles.radioInner} />}
-                </View>
-                <Text style={[styles.optionText, isSelected && styles.optionTextActive]}>
-                  {option}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      );
-
-    case "multiselect": {
-      const selected = Array.isArray(value) ? value : [];
-      return (
-        <View style={styles.pillsWrap}>
-          {(field.options ?? []).map((option) => {
-            const isSelected = selected.includes(option);
-            return (
-              <TouchableOpacity
-                key={option}
-                onPress={() =>
-                  onChange(
-                    isSelected ? selected.filter((s) => s !== option) : [...selected, option]
-                  )
-                }
-                style={[styles.pill, isSelected && styles.pillActive]}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.pillText, isSelected && styles.pillTextActive]}>
-                  {option}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      );
-    }
-
-    case "boolean":
-      return (
-        <View style={styles.switchRow}>
-          <Switch
-            value={!!value}
-            onValueChange={(val) => onChange(val)}
-            trackColor={{ false: colors.border, true: colors.cyan + "60" }}
-            thumbColor={value ? colors.cyan : colors.muted}
-          />
-          <Text style={styles.switchLabel}>{value ? "Si" : "No"}</Text>
-        </View>
-      );
-
-    case "scale":
-      return (
-        <View style={styles.scaleRow}>
-          {Array.from({ length: 10 }, (_, i) => {
-            const n = i + 1;
-            const isSelected = value === n;
-            return (
-              <TouchableOpacity
-                key={n}
-                onPress={() => onChange(n)}
-                style={[styles.scaleButton, isSelected && styles.scaleButtonActive]}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.scaleText, isSelected && styles.scaleTextActive]}>
-                  {n}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      );
-
-    default:
-      return null;
-  }
-}
-
-/* -------------------------------------------------------------------------- */
-/*  Main Screen                                                                */
+/*  Main Screen (orchestrator)                                                 */
 /* -------------------------------------------------------------------------- */
 
 export default function OnboardingScreen() {
@@ -440,6 +252,15 @@ export default function OnboardingScreen() {
     setSubmitting(false);
   };
 
+  /* ----- Response change handler ----- */
+
+  const handleResponseChange = useCallback(
+    (fieldId: string, val: string | number | boolean | string[]) => {
+      setResponses((prev) => ({ ...prev, [fieldId]: val }));
+    },
+    []
+  );
+
   /* ----- Get fields for current form step ----- */
 
   const currentFields = useMemo((): FormField[] => {
@@ -448,7 +269,7 @@ export default function OnboardingScreen() {
     return form.fields.filter((f) => f.type !== "section");
   }, [form, isProfileStep, hasSections, sectionGroups, currentSectionIndex]);
 
-  const currentSection: SectionGroup["section"] | null = hasSections
+  const currentSection = hasSections
     ? sectionGroups[currentSectionIndex]?.section ?? null
     : null;
 
@@ -488,234 +309,44 @@ export default function OnboardingScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
         <Text style={styles.logo}>Fit<Text style={{ color: colors.cyan }}>OS</Text></Text>
         <Text style={styles.subtitle}>Completa tu perfil para empezar</Text>
 
-        {/* Step indicator */}
-        <View style={styles.stepRow}>
-          {Array.from({ length: totalSteps }, (_, i) => (
-            <React.Fragment key={i}>
-              <View style={[styles.stepDot, step >= i + 1 && styles.stepDotActive]} />
-              {i < totalSteps - 1 && (
-                <View style={[styles.stepLine, step > i + 1 && styles.stepLineActive]} />
-              )}
-            </React.Fragment>
-          ))}
-        </View>
-        <Text style={styles.stepLabel}>
-          Paso {step} de {totalSteps} — {stepLabel}
-        </Text>
+        <StepIndicator currentStep={step} totalSteps={totalSteps} stepLabel={stepLabel} />
 
-        {/* ============ FORM STEPS ============ */}
         {!isProfileStep && (
-          <View style={styles.section}>
-            {/* Section header */}
-            {currentSection ? (
-              <>
-                <Text style={[styles.sectionTitle, { color: colors.violet }]}>
-                  {currentSection.label}
-                </Text>
-                {currentSection.description && (
-                  <Text style={styles.sectionSubtitle}>{currentSection.description}</Text>
-                )}
-              </>
-            ) : (
-              <>
-                <Text style={styles.sectionTitle}>
-                  Formulario de <Text style={{ color: colors.cyan }}>{trainerName}</Text>
-                </Text>
-                <Text style={styles.sectionSubtitle}>
-                  Tu entrenador necesita esta informacion para personalizar tu plan.
-                </Text>
-              </>
-            )}
-
-            {!form ? (
-              <View style={styles.noFormCard}>
-                <Text style={styles.noFormText}>
-                  Tu entrenador aun no ha configurado un formulario de onboarding.
-                </Text>
-                <Text style={styles.noFormHint}>Puedes continuar al siguiente paso.</Text>
-              </View>
-            ) : (
-              currentFields.map((field) => (
-                <View key={field.id} style={styles.fieldGroup}>
-                  <Text style={styles.fieldLabel}>
-                    {field.label}
-                    {field.required && <Text style={{ color: colors.red }}> *</Text>}
-                  </Text>
-                  <DynamicField
-                    field={field}
-                    value={responses[field.id]}
-                    onChange={(val) => setResponses((prev) => ({ ...prev, [field.id]: val }))}
-                  />
-                </View>
-              ))
-            )}
-
-            {/* Navigation */}
-            <View style={styles.actionsRow}>
-              {step > 1 && (
-                <TouchableOpacity
-                  style={styles.backButton}
-                  onPress={handleBack}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.backButtonText}>Anterior</Text>
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity
-                style={[styles.primaryButton, submitting && { opacity: 0.5 }, step > 1 && { flex: 1 }]}
-                onPress={handleNext}
-                disabled={submitting}
-                activeOpacity={0.8}
-              >
-                {submitting ? (
-                  <ActivityIndicator color={colors.bg} />
-                ) : (
-                  <Text style={styles.primaryButtonText}>Siguiente</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
+          <FormStep
+            form={form}
+            currentFields={currentFields}
+            currentSection={currentSection}
+            trainerName={trainerName}
+            responses={responses}
+            step={step}
+            submitting={submitting}
+            onResponseChange={handleResponseChange}
+            onBack={handleBack}
+            onNext={handleNext}
+          />
         )}
 
-        {/* ============ PROFILE STEP ============ */}
         {isProfileStep && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Datos fisicos y preferencias</Text>
-            <Text style={styles.sectionSubtitle}>
-              Esta informacion nos ayuda a personalizar tus planes.
-            </Text>
-
-            {/* Height & Weight */}
-            <View style={styles.row}>
-              <View style={styles.halfField}>
-                <Text style={styles.fieldLabel}>Altura (cm) <Text style={{ color: colors.red }}>*</Text></Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="170"
-                  placeholderTextColor={colors.muted + "80"}
-                  value={height}
-                  onChangeText={setHeight}
-                  keyboardType="decimal-pad"
-                />
-              </View>
-              <View style={styles.halfField}>
-                <Text style={styles.fieldLabel}>Peso (kg) <Text style={{ color: colors.red }}>*</Text></Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="70"
-                  placeholderTextColor={colors.muted + "80"}
-                  value={weight}
-                  onChangeText={setWeight}
-                  keyboardType="decimal-pad"
-                />
-              </View>
-            </View>
-
-            {/* Goal */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Objetivo <Text style={{ color: colors.red }}>*</Text></Text>
-              <View style={styles.optionsGrid}>
-                {GOAL_OPTIONS.map(({ label, value }) => {
-                  const isSelected = goal === value;
-                  return (
-                    <TouchableOpacity
-                      key={value}
-                      onPress={() => setGoal(value)}
-                      style={[styles.optionButton, isSelected && styles.optionButtonActive]}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={[styles.optionText, isSelected && styles.optionTextActive]}>
-                        {label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-
-            {/* Separator */}
-            <View style={styles.separator}>
-              <View style={styles.separatorLine} />
-              <Text style={styles.separatorText}>Preferencias alimentarias</Text>
-              <View style={styles.separatorLine} />
-            </View>
-
-            {/* Dietary restrictions */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Restricciones alimentarias</Text>
-              <View style={styles.pillsWrap}>
-                {DIETARY_RESTRICTIONS.map((r) => {
-                  const isSelected = dietaryRestrictions.includes(r);
-                  return (
-                    <TouchableOpacity
-                      key={r}
-                      onPress={() =>
-                        setDietaryRestrictions((prev) =>
-                          isSelected ? prev.filter((x) => x !== r) : [...prev, r]
-                        )
-                      }
-                      style={[styles.pill, isSelected && styles.pillActive]}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={[styles.pillText, isSelected && styles.pillTextActive]}>{r}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-
-            {/* Allergies */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Alergias</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Ej: cacahuetes, mariscos..."
-                placeholderTextColor={colors.muted + "80"}
-                value={allergies}
-                onChangeText={setAllergies}
-              />
-            </View>
-
-            {/* Disliked foods */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Alimentos que no me gustan</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Ej: brocoli, higado..."
-                placeholderTextColor={colors.muted + "80"}
-                value={dislikedFoods}
-                onChangeText={setDislikedFoods}
-              />
-            </View>
-
-            {/* Actions */}
-            <View style={styles.actionsRow}>
-              <TouchableOpacity
-                style={styles.backButton}
-                onPress={handleBack}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.backButtonText}>Anterior</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.completeButton, submitting && { opacity: 0.5 }]}
-                onPress={handleComplete}
-                disabled={submitting}
-                activeOpacity={0.8}
-              >
-                {submitting ? (
-                  <ActivityIndicator color={colors.bg} />
-                ) : (
-                  <Text style={styles.completeButtonText}>Completar</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
+          <PhysicalDataStep
+            height={height}
+            weight={weight}
+            goal={goal}
+            dietaryRestrictions={dietaryRestrictions}
+            allergies={allergies}
+            dislikedFoods={dislikedFoods}
+            submitting={submitting}
+            onHeightChange={setHeight}
+            onWeightChange={setWeight}
+            onGoalChange={setGoal}
+            onDietaryRestrictionsChange={setDietaryRestrictions}
+            onAllergiesChange={setAllergies}
+            onDislikedFoodsChange={setDislikedFoods}
+            onBack={handleBack}
+            onComplete={handleComplete}
+          />
         )}
       </ScrollView>
     </KeyboardAvoidingView>
@@ -723,7 +354,7 @@ export default function OnboardingScreen() {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Styles                                                                     */
+/*  Styles (orchestrator-only: loading, error, layout)                         */
 /* -------------------------------------------------------------------------- */
 
 const styles = StyleSheet.create({
@@ -735,122 +366,6 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 14, color: colors.muted, textAlign: "center", marginTop: 8, marginBottom: 20 },
   loadingText: { fontSize: 13, color: colors.muted, marginTop: 12 },
 
-  // Step indicator
-  stepRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", marginBottom: 8 },
-  stepDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.border, borderWidth: 1, borderColor: colors.border },
-  stepDotActive: { backgroundColor: colors.cyan, borderColor: colors.cyan },
-  stepLine: { width: 30, height: 2, backgroundColor: colors.border, marginHorizontal: 4 },
-  stepLineActive: { backgroundColor: colors.cyan },
-  stepLabel: { fontSize: 12, color: colors.muted, textAlign: "center", marginBottom: 20 },
-
-  // Sections
-  section: { gap: 16 },
-  sectionTitle: { fontSize: 18, fontFamily: fonts.bold, color: colors.white, textAlign: "center" },
-  sectionSubtitle: { fontSize: 13, color: colors.muted, textAlign: "center", marginBottom: 4 },
-
-  // Fields
-  fieldGroup: { gap: 8 },
-  fieldLabel: { fontSize: 13, fontFamily: fonts.medium, color: colors.muted },
-  input: {
-    backgroundColor: colors.bg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 15,
-    color: colors.white,
-  },
-  row: { flexDirection: "row", gap: 12 },
-  halfField: { flex: 1, gap: 8 },
-
-  // Options (select)
-  optionsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  optionButton: {
-    flexBasis: "47%",
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    padding: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  optionButtonActive: { borderColor: colors.cyan, backgroundColor: colors.cyan + "15" },
-  optionText: { fontSize: 14, color: colors.muted },
-  optionTextActive: { color: colors.cyan },
-  radioOuter: { width: 18, height: 18, borderRadius: 9, borderWidth: 1.5, borderColor: colors.border, justifyContent: "center", alignItems: "center" },
-  radioOuterActive: { borderColor: colors.cyan, backgroundColor: colors.cyan },
-  radioInner: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.bg },
-
-  // Pills (multiselect)
-  pillsWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  pill: { borderWidth: 1, borderColor: colors.border, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 },
-  pillActive: { borderColor: colors.violet, backgroundColor: colors.violet + "20" },
-  pillText: { fontSize: 13, color: colors.muted },
-  pillTextActive: { color: colors.violet },
-
-  // Switch
-  switchRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  switchLabel: { fontSize: 14, color: colors.muted },
-
-  // Scale
-  scaleRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  scaleButton: {
-    width: 36, height: 36, borderRadius: 8,
-    borderWidth: 1, borderColor: colors.border,
-    justifyContent: "center", alignItems: "center",
-  },
-  scaleButtonActive: { backgroundColor: colors.cyan, borderColor: colors.cyan },
-  scaleText: { fontSize: 14, fontFamily: fonts.medium, color: colors.muted },
-  scaleTextActive: { color: colors.bg },
-
-  // No form
-  noFormCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 24,
-    alignItems: "center",
-  },
-  noFormText: { fontSize: 14, color: colors.muted, textAlign: "center" },
-  noFormHint: { fontSize: 12, color: colors.muted + "80", textAlign: "center", marginTop: 8 },
-
-  // Separator
-  separator: { flexDirection: "row", alignItems: "center", gap: 12, marginVertical: 4 },
-  separatorLine: { flex: 1, height: 1, backgroundColor: colors.border },
-  separatorText: { fontSize: 12, color: colors.muted + "80" },
-
-  // Buttons
-  primaryButton: {
-    backgroundColor: colors.cyan,
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  primaryButtonText: { fontSize: 16, fontFamily: fonts.bold, color: colors.bg },
-  completeButton: {
-    flex: 1,
-    backgroundColor: colors.green,
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
-  completeButtonText: { fontSize: 16, fontFamily: fonts.bold, color: colors.bg },
-  backButton: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    alignItems: "center",
-  },
-  backButtonText: { fontSize: 14, fontFamily: fonts.medium, color: colors.muted },
-  actionsRow: { flexDirection: "row", gap: 12, marginTop: 8 },
-
-  // Error
   errorCard: {
     backgroundColor: colors.red + "15",
     borderWidth: 1,

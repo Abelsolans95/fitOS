@@ -2,6 +2,7 @@
 
 import { useReducer, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
+import { QUERY_LIMITS } from "@/lib/constants";
 import { toast } from "sonner";
 import type { SupportTicket, TicketReply, TicketCategory } from "./components/types";
 
@@ -130,7 +131,7 @@ export function useClientTicketsPage() {
       .select("id, trainer_id, client_id, category, subject, description, image_url, status, trainer_read_at, created_at, updated_at")
       .eq("client_id", clientId)
       .order("created_at", { ascending: false })
-      .limit(100);
+      .limit(QUERY_LIMITS.TICKETS);
 
     if (error) {
       toast.error("Error al cargar tus consultas");
@@ -231,7 +232,7 @@ export function useClientTicketsPage() {
       .select("id, ticket_id, sender_id, content, image_url, read_at, created_at")
       .eq("ticket_id", ticketId)
       .order("created_at", { ascending: true })
-      .limit(200);
+      .limit(QUERY_LIMITS.TICKET_REPLIES);
 
     if (error) {
       toast.error("Error al cargar respuestas");

@@ -44,7 +44,7 @@ export default function TrainerFormsPage() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setSaving(false); return; }
-    const formData = { trainer_id: user.id, title, description, fields: fields as unknown as Record<string, unknown>[], is_active: true };
+    const formData = { trainer_id: user.id, title, description, fields: JSON.parse(JSON.stringify(fields)) as Record<string, unknown>[], is_active: true };
     if (formId) {
       await supabase.from("onboarding_forms").update({ ...formData, updated_at: new Date().toISOString() }).eq("id", formId);
     } else {

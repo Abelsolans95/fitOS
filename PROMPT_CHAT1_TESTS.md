@@ -84,3 +84,28 @@ Elimina los console.log de performance cuando termines. Son solo para auditoria.
 4. Por ultimo la auditoria de performance
 
 Commitea y pushea despues de cada grupo de tests completados.
+
+---
+
+## Resumen de ejecucion (02/04/2026)
+
+### Tests creados/corregidos
+- **google-calendar.test.ts** — 9 tests (getGoogleAuthUrl, syncWorkout, syncAppointment, syncMeal + errores)
+- **onboarding-templates.test.ts** — 8 tests (SECTION_TEMPLATES metadata, getOnboardingSectionsTemplate: 5 secciones, IDs unicos, tipos correctos)
+- **zones.test.ts** (shared) — 8 tests (zonas front/back, IDs unicos, labels, viewbox, zonas conocidas)
+- **onboarding/index.test.ts** (shared) — 9 tests (groupFieldsBySection, getEnabledSections: sections null, disabled, empty)
+- **activate-client/route.test.ts** — Corregido: añadido `user_metadata.role` a mocks, añadido test de role check (403)
+- **client-trainer/route.test.ts** — Corregido: añadido `user_metadata.role` a mocks, añadido test de role check (403)
+- **complete-registration/route.test.ts** — Reescrito: adaptado a nuevo RPC atomico, añadidos tests de auth (403) y role mismatch
+- **useActiveTraining.test.ts** — Corregido: expect "sfr" en vez de "training" (fase SFR añadida)
+- **vitest.config.ts** — Añadidos aliases react/react-dom para resolver Next.js CJS en monorepo
+
+### Performance audit
+- **community_comments** queries en trainer y client: añadido `.limit(500)`
+- **useTicketsPage.ts**: convertido queries secuenciales (profiles + unread) a `Promise.all`
+- No se encontraron queries >600ms. Las queries de appointments ya tienen filtros de fecha correctos. Las tablas crecientes ya tienen `.limit()` en la mayoría de casos.
+
+### Resultado final: 126 tests, 13 archivos, todos pasando
+
+### Nota sobre regla 600ms
+No se detectaron queries que superen 600ms con los datos actuales. Las queries más pesadas serían las de `weight_log` con `.limit(200-500)` en analytics del trainer, pero están correctamente limitadas.

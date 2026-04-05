@@ -12,6 +12,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path } from "react-native-svg";
 import { supabase } from "../lib/supabase";
+import { QUERY_LIMITS } from "../lib/constants";
 import { useAuth } from "../contexts/AuthContext";
 import { colors, spacing, radius, shadows , fonts} from "../theme";
 
@@ -47,7 +48,7 @@ export default function ProgressScreen() {
       .select("id, recorded_at, weight_kg, body_fat_pct, muscle_mass_kg, notes")
       .eq("user_id", user.id)
       .order("recorded_at", { ascending: false })
-      .limit(30);
+      .limit(QUERY_LIMITS.BODY_METRICS);
     if (metricsErr) {
       console.error("[ProgressScreen] Error cargando métricas:", metricsErr);
       Alert.alert("Error", "No se pudieron cargar las métricas");

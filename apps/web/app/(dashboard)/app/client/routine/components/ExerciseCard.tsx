@@ -40,7 +40,7 @@ export const ExerciseCard = memo(function ExerciseCard({ ex, idx, activeWeek, fo
     const detail = wk?.sets_detail ?? ex.sets_config ?? [];
     let normalNum = 0;
     setRows = detail.map((s, i) => {
-      const st = (s as any).set_type || "normal";
+      const st = s.set_type || "normal";
       if (st === "normal") normalNum++;
       return {
         idx: st === "normal" ? normalNum : i + 1,

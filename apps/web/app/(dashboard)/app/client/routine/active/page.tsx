@@ -1,9 +1,10 @@
 "use client";
 
-import { Suspense, useState, useEffect, useCallback } from "react";
+import { Suspense, useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { toast } from "sonner";
+import { QUERY_LIMITS } from "@/lib/constants";
 import type { ExerciseData, PreviousLog, SavedLogEntry } from "./types";
 import { useActiveTraining } from "./useActiveTraining";
 import { RestTimer } from "./components/RestTimer";
@@ -28,6 +29,8 @@ function ActiveTrainingPage() {
 
   const t = useActiveTraining({ exercises, previousLogs, userId, routineId, trainerId, routineTitle, day, week });
   const { state } = t;
+  const tRef = useRef(t);
+  tRef.current = t;
 
   useEffect(() => {
     const load = async () => {
@@ -65,7 +68,7 @@ function ActiveTrainingPage() {
 
       const { data: logs, error: logsError } = await supabase.from("weight_log")
         .select("exercise_name, session_date, sets_data")
-        .eq("client_id", user.id).order("session_date", { ascending: false }).limit(200);
+        .eq("client_id", user.id).order("session_date", { ascending: false }).limit(QUERY_LIMITS.WEIGHT_LOG);
       if (logsError) {
         console.error("[RoutineActive] Error cargando logs anteriores:", logsError);
         // No bloqueante — continuamos sin datos anteriores
@@ -88,7 +91,7 @@ function ActiveTrainingPage() {
             console.error("[RoutineActive] Error cargando sets guardados:", slError);
             // No bloqueante
           }
-          t.resumeFromSession({
+          tRef.current.resumeFromSession({
             sessionId: es.id, sessionCreatedAt: es.created_at,
             sessionLogs: (sl ?? []) as SavedLogEntry[], exercises: dayEx, previousLogs: pl,
           });
@@ -98,10 +101,9 @@ function ActiveTrainingPage() {
           toast.error("Sesión no encontrada o no disponible");
         }
       }
-      t.initializeSets(dayEx);
+      tRef.current.initializeSets(dayEx);
     };
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [routineId, day, resumeSessionId]);
 
   const handleFinalize = useCallback(async () => {

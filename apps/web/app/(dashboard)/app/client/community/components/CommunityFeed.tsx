@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useState, useEffect } from "react";
 import Image from "next/image";
 import type { Post, Comment } from "./types";
 
@@ -48,6 +48,13 @@ function ClientCommentItem({
   const isReplying = replyingTo === comment.id;
   const currentReplyText = replyText[comment.id] ?? "";
   const maxDepth = 2;
+  const [confirmDeleteComment, setConfirmDeleteComment] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!confirmDeleteComment) return;
+    const timer = setTimeout(() => setConfirmDeleteComment(null), 3000);
+    return () => clearTimeout(timer);
+  }, [confirmDeleteComment]);
 
   return (
     <div className={depth > 0 ? "ml-6 border-l border-white/[0.04] pl-3" : ""}>
@@ -83,7 +90,16 @@ function ClientCommentItem({
             )}
 
             {isOwn && (
-              <button onClick={() => onDeleteComment(postId, comment.id)} className="text-[10px] text-[#5A5A72] transition-colors hover:text-[#FF1744]">Eliminar</button>
+              <button
+                onClick={() => {
+                  if (confirmDeleteComment === comment.id) { onDeleteComment(postId, comment.id); setConfirmDeleteComment(null); }
+                  else { setConfirmDeleteComment(comment.id); }
+                }}
+                onBlur={() => setConfirmDeleteComment(null)}
+                className={`text-[10px] transition-colors ${confirmDeleteComment === comment.id ? "font-semibold text-[#FF1744]" : "text-[#5A5A72] hover:text-[#FF1744]"}`}
+              >
+                {confirmDeleteComment === comment.id ? "Confirmar?" : "Eliminar"}
+              </button>
             )}
           </div>
 
@@ -135,6 +151,14 @@ export const CommunityFeed = memo(function CommunityFeed({
   onDeletePost, onDeleteComment, onToggleCommentLike, onSetNewComment, onAddComment,
   onSetReplyingTo, onSetReplyText,
 }: CommunityFeedProps) {
+  const [confirmDeletePost, setConfirmDeletePost] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!confirmDeletePost) return;
+    const timer = setTimeout(() => setConfirmDeletePost(null), 3000);
+    return () => clearTimeout(timer);
+  }, [confirmDeletePost]);
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       {posts.length === 0 && (
@@ -176,8 +200,20 @@ export const CommunityFeed = memo(function CommunityFeed({
                 </div>
               </div>
               {isAuthor && (
-                <button onClick={() => onDeletePost(post.id)} className="rounded-lg p-1.5 text-[#5A5A72] transition-colors hover:text-[#FF1744]" title="Eliminar">
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
+                <button
+                  onClick={() => {
+                    if (confirmDeletePost === post.id) { onDeletePost(post.id); setConfirmDeletePost(null); }
+                    else { setConfirmDeletePost(post.id); }
+                  }}
+                  onBlur={() => setConfirmDeletePost(null)}
+                  className={`rounded-lg p-1.5 transition-colors ${confirmDeletePost === post.id ? "text-[#FF1744]" : "text-[#5A5A72] hover:text-[#FF1744]"}`}
+                  title={confirmDeletePost === post.id ? "Confirmar eliminacion" : "Eliminar"}
+                >
+                  {confirmDeletePost === post.id ? (
+                    <span className="text-[10px] font-semibold">Eliminar?</span>
+                  ) : (
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
+                  )}
                 </button>
               )}
             </div>

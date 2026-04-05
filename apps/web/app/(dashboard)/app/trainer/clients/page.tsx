@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
+import { getInitials } from "@/lib/utils";
 
 interface ClientRow {
   id: string;
@@ -10,12 +11,6 @@ interface ClientRow {
   status: string;
   joined_at: string;
   profile: { full_name: string | null; goal: string | null; avatar_url: string | null } | null;
-}
-
-function getInitials(name: string | null | undefined): string {
-  if (!name) return "??";
-  const parts = name.trim().split(/\s+/);
-  return parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : name.slice(0, 2).toUpperCase();
 }
 
 function formatDate(dateStr: string): string {

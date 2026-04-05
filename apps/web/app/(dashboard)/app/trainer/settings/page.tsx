@@ -40,7 +40,7 @@ export default function TrainerSettingsPage() {
         if (promoRes.data) { setPromoCode(promoRes.data.code); setPromoCodeId(promoRes.data.id); }
 
         if (formRes.error) { console.error("[Settings] Error cargando formulario:", formRes.error); } // No bloqueante
-        if (formRes.data?.fields) setFormFieldCount((formRes.data.fields as unknown[]).length);
+        if (formRes.data?.fields && Array.isArray(formRes.data.fields)) setFormFieldCount(formRes.data.fields.length);
       } catch { setError("Error inesperado al cargar la configuración."); }
       finally { setLoading(false); }
     };

@@ -30,11 +30,12 @@ export function useExercisesPage() {
 
   // ── Load overrides ──
   const loadOverrides = useCallback(async (supabase: ReturnType<typeof createClient>, trainerId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("trainer_exercise_overrides")
       .select("exercise_id, hidden")
       .eq("trainer_id", trainerId)
       .eq("hidden", true);
+    if (error) { console.error("[useExercisesPage] Error loading overrides:", error); }
 
     return new Set((data ?? []).map((ov: { exercise_id: string }) => ov.exercise_id));
   }, []);

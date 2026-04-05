@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
+import { QUERY_LIMITS } from "../lib/constants";
 
 interface TodayPlan {
   workout: { name: string; details: string } | null;
@@ -92,7 +93,7 @@ export function useDashboardData(user: User | null): DashboardData {
           .eq("user_id", user.id)
           .eq("activity_type", "workout")
           .order("date", { ascending: false })
-          .limit(30);
+          .limit(QUERY_LIMITS.DASHBOARD_RECENT);
 
         if (cancelled) return;
 

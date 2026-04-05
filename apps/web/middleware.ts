@@ -54,6 +54,13 @@ export async function middleware(request: NextRequest) {
   if (user && (pathname === "/login" || pathname === "/register")) {
     const url = request.nextUrl.clone();
     const role = user.user_metadata?.role;
+
+    // If role is missing/corrupted, redirect to login to prevent defaulting to trainer
+    if (!role) {
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+
     const onboardingCompleted = user.user_metadata?.onboarding_completed;
     if (role === "admin") {
       url.pathname = "/app/admin/dashboard";
@@ -70,6 +77,14 @@ export async function middleware(request: NextRequest) {
   // If authenticated client/trainer accesses /app/* without completing onboarding, redirect
   if (user && pathname.startsWith("/app/")) {
     const role = user.user_metadata?.role;
+
+    // If role is missing/corrupted, redirect to login
+    if (!role) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+
     const onboardingCompleted = user.user_metadata?.onboarding_completed;
     // Admin skips onboarding
     if (role !== "admin" && !onboardingCompleted) {

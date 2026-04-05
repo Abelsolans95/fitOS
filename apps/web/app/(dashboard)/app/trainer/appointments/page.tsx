@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase";
+import { QUERY_LIMITS } from "@/lib/constants";
 import type { Appointment, ClientOption } from "./components/types";
 import { CreateAppointmentModal } from "./components/CreateAppointmentModal";
 import { AppointmentCalendar } from "./components/AppointmentCalendar";
@@ -34,7 +35,7 @@ export default function TrainerAppointmentsPage() {
       .gte("starts_at", monthAgo.toISOString())
       .lte("starts_at", threeMonthsAhead.toISOString())
       .order("starts_at", { ascending: true })
-      .limit(200);
+      .limit(QUERY_LIMITS.APPOINTMENTS);
 
     if (apptError) {
       toast.error("Error al cargar las citas");

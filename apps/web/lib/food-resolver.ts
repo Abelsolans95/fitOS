@@ -9,6 +9,7 @@
  */
 
 import { SupabaseClient } from "@supabase/supabase-js";
+import { getCached, setCache, invalidateCache } from "./query-cache";
 
 /** Row shape from trainer_food_overrides */
 interface TrainerFoodOverride {
@@ -55,11 +56,15 @@ export async function getResolvedFoods(
   supabase: SupabaseClient,
   trainerId: string
 ): Promise<ResolvedFood[]> {
+  const cacheKey = `foods:${trainerId}`;
+  const cached = getCached<ResolvedFood[]>(cacheKey);
+  if (cached) return cached;
+
   const [foodsRes, overridesRes] = await Promise.all([
     supabase
       .from("trainer_food_library")
       .select("id,name,kcal,protein,carbs,fat,fiber,is_global,trainer_id")
-      .or("is_global.eq.true,trainer_id.eq." + encodeURIComponent(trainerId))
+      .or(`is_global.eq.true,trainer_id.eq.${trainerId}`)
       .order("name"),
     supabase
       .from("trainer_food_overrides")
@@ -76,8 +81,9 @@ export async function getResolvedFoods(
   }
 
   const result: ResolvedFood[] = [];
-  for (const food of foodsRes.data ?? []) {
+  for (const food of (foodsRes.data ?? [])) {
     const override = overrideMap.get(food.id);
+    // Layer C: hidden=true means the trainer has explicitly hidden this global food
     if (override?.hidden) continue;
     result.push({
       id: food.id,
@@ -93,6 +99,7 @@ export async function getResolvedFoods(
       notes: override?.custom_notes ?? null,
     });
   }
+  setCache(cacheKey, result);
   return result;
 }
 
@@ -148,5 +155,6 @@ export async function upsertFoodOverride(
     .single();
 
   if (error) throw error;
+  invalidateCache(`foods:${trainerId}`);
   return data;
 }

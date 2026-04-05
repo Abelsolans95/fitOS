@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase";
+import { QUERY_LIMITS } from "@/lib/constants";
 
 interface CalendarEvent {
   id: string;
@@ -60,21 +61,21 @@ export default function CalendarPage() {
             .eq("user_id", user.id)
             .gte("logged_at", startDate)
             .lte("logged_at", endDate + "T23:59:59")
-            .limit(200),
+            .limit(QUERY_LIMITS.CALENDAR_ENTRIES),
           supabase
             .from("food_log")
             .select("id, logged_at, meal_type, total_kcal")
             .eq("user_id", user.id)
             .gte("logged_at", startDate)
             .lte("logged_at", endDate + "T23:59:59")
-            .limit(200),
+            .limit(QUERY_LIMITS.CALENDAR_ENTRIES),
           supabase
             .from("body_metrics")
             .select("id, recorded_at, weight_kg, body_fat_pct")
             .eq("user_id", user.id)
             .gte("recorded_at", startDate)
             .lte("recorded_at", endDate + "T23:59:59")
-            .limit(100),
+            .limit(QUERY_LIMITS.CALENDAR_BODY_METRICS),
         ]);
 
         const workoutLogs = workoutRes.data;

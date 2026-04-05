@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 interface QueryState<T> {
   data: T | null;
@@ -29,6 +29,11 @@ export function useSupabaseQuery<T>(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
+  const queryFnRef = useRef(queryFn);
+  queryFnRef.current = queryFn;
+
+  // Stable key derived from deps — avoids spreading dynamic arrays in the dep list
+  const depsKey = JSON.stringify(deps);
 
   const refetch = useCallback(() => setTick((t) => t + 1), []);
 
@@ -37,7 +42,7 @@ export function useSupabaseQuery<T>(
     setLoading(true);
     setError(null);
 
-    queryFn()
+    queryFnRef.current()
       .then((result) => {
         if (!cancelled) {
           setData(result);
@@ -54,8 +59,7 @@ export function useSupabaseQuery<T>(
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tick, ...deps]);
+  }, [tick, depsKey]);
 
   return { data, loading, error, refetch };
 }
