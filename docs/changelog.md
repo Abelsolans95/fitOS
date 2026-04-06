@@ -88,3 +88,13 @@
 - Android notification channel with FitOS cyan accent (#00E5FF).
 - Graceful fallback on simulators and permission denial.
 - Placeholder EAS projectId in app.json (update before first EAS build).
+
+## Apple Health / Google Health Connect — Biometric Sync (06/04/2026) ✅
+- `src/lib/health-sync.ts`: platform-agnostic health data layer (iOS HealthKit via `@kingstinct/react-native-healthkit`, Android via `react-native-health-connect`).
+- Reads steps, sleep, weight, heart rate with 15-min AsyncStorage cache.
+- `syncWeightToSupabase()` auto-inserts to `body_metrics` when weight changes (0.1 kg tolerance).
+- `src/hooks/useHealthData.ts`: hook with `connectHealth()`, `refresh()`, availability/permission state.
+- `DashboardScreen.tsx` updated: "Conectar Salud" CTA when unconnected, 4-metric health card when connected.
+- `app.json`: HealthKit entitlements, NSHealthShareUsageDescription, react-native-health-connect plugin.
+- All reads wrapped in try/catch — graceful fallback on simulators and denied permissions.
+- Dynamic imports prevent crashes on platforms where native modules are absent.
