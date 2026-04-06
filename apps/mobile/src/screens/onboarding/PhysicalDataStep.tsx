@@ -142,6 +142,7 @@ export function PhysicalDataStep({
           placeholderTextColor={colors.muted + "80"}
           value={allergies}
           onChangeText={onAllergiesChange}
+          maxLength={500}
         />
       </View>
 
@@ -154,6 +155,7 @@ export function PhysicalDataStep({
           placeholderTextColor={colors.muted + "80"}
           value={dislikedFoods}
           onChangeText={onDislikedFoodsChange}
+          maxLength={500}
         />
       </View>
 

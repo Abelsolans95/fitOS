@@ -55,7 +55,7 @@ export async function GET(request: Request) {
     const tokens = await exchangeCodeForTokens(code);
 
     // Save tokens to the authenticated trainer's profile
-    await supabase
+    const { error: updateErr } = await supabase
       .from("profiles")
       .update({
         google_calendar_tokens: {
@@ -65,6 +65,13 @@ export async function GET(request: Request) {
         },
       })
       .eq("user_id", user.id);
+
+    if (updateErr) {
+      console.error("[GoogleOAuth] Error saving tokens");
+      return NextResponse.redirect(
+        new URL("/app/trainer/appointments?google_error=save_failed", request.url)
+      );
+    }
 
     const returnTo = sanitizeReturnUrl(state);
     return NextResponse.redirect(

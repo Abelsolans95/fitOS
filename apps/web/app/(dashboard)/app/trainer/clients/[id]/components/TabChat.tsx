@@ -77,11 +77,12 @@ export function TabChat({
             return [...prev, msg];
           });
           // Auto-mark client message as read
-          supabase
-            .from("messages")
-            .update({ read_at: new Date().toISOString() })
-            .eq("id", msg.id)
-            .then(() => {});
+          Promise.resolve(
+            supabase
+              .from("messages")
+              .update({ read_at: new Date().toISOString() })
+              .eq("id", msg.id)
+          ).catch(() => console.error("[TabChat] Error marking as read"));
         }
       )
       .subscribe();

@@ -85,11 +85,12 @@ export function useChat() {
       setLoading(false);
 
       // Mark trainer messages as read (fire-and-forget)
-      supabase.from("messages")
-        .update({ read_at: new Date().toISOString() })
-        .eq("trainer_id", tid).eq("client_id", user.id)
-        .eq("sender_id", tid).is("read_at", null)
-        .then(() => {});
+      Promise.resolve(
+        supabase.from("messages")
+          .update({ read_at: new Date().toISOString() })
+          .eq("trainer_id", tid).eq("client_id", user.id)
+          .eq("sender_id", tid).is("read_at", null)
+      ).catch(() => console.error("[useChat] Error marking as read"));
 
       channel = supabase.channel(`chat-client-${user.id}`)
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `client_id=eq.${user.id}` },
@@ -97,7 +98,7 @@ export function useChat() {
             const msg = payload.new as Message;
             if (msg.sender_id === clientIdRef.current) return;
             setMessages((prev) => deduplicateMessage(prev, msg));
-            supabase.from("messages").update({ read_at: new Date().toISOString() }).eq("id", msg.id).then(() => {});
+            Promise.resolve(supabase.from("messages").update({ read_at: new Date().toISOString() }).eq("id", msg.id)).catch(() => console.error("[useChat] Error marking as read"));
           }
         ).subscribe();
     };
