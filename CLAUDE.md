@@ -29,6 +29,7 @@ Este archivo contiene TODO lo necesario para continuar el desarrollo: reglas, cr
 - **Fase 9 (01/04/2026):** Sistema de Consultas/Tickets ✅ — Cliente envía dudas categorizadas (Nutrición, Rutina, Lesión, General) al trainer. Trainer gestiona inbox con filtros de estado/categoría/búsqueda, responde en hilo conversacional, y marca como resuelta. Realtime. Badges de no leídos en ambos sidebars. Migración 038. Web trainer + web cliente + mobile. Fix post-deploy (02/04): política RLS `trainer_replies_update_read` para permitir al trainer marcar replies de clientes como leídas; acciones de reducer `MARK_TICKET_READ` e `INCREMENT_UNREAD` para evitar stale closures; reset de badge en sidebar via `usePathname`.
 - **Onboarding con secciones (01/04/2026):** Formulario de onboarding extendido con secciones opcionales ✅ — 5 secciones predefinidas (historial medico, deportivo, experiencias, estado actual, objetivos) que el trainer puede activar/desactivar. Cliente ve wizard multi-paso (1 seccion = 1 step). Plantilla cargable con un click. AI edge function actualizada para analisis por seccion. Sin migracion DB (todo en JSONB existente). Web + mobile.
 - **Fase 10 (02/04/2026):** Base de Conocimiento / FAQ ✅ — Trainer escribe artículos FAQ categorizados (Nutrición, Rutina, Lesión, Técnica, Suplementación, General) con texto + video URL. Cliente busca/filtra artículos antes de preguntar. Integración bidireccional con Consultas: convertir ticket resuelto en artículo, sugerir artículos relevantes al crear ticket (debounced search). Vista contador incrementada via SECURITY DEFINER. Full-text search PostgreSQL (español). Migración 039. Web trainer + web cliente + mobile. Tipos compartidos en `@fitos/shared`.
+- **Panel Admin (06/04/2026):** Panel de administración completo ✅ — AdminSidebar con 7 secciones. `verifyAdmin()` helper compartido (auth + role + rate limit + service_role). Dashboard con 9 KPIs via queries paralelas. Gestión de usuarios (CRUD trainer/client/admin con rollback, búsqueda, filtros, paginación, detalle con stats por rol, edición inline). Códigos promo (listado con enrichment, filtros, toggle activación con confirmación 2 pasos). Auditoría (log viewer con filtros acción/recurso, enrichment de nombres). Consultas (supervisión read-only de tickets cliente→trainer). Analíticas (17 queries paralelas: crecimiento 7d/30d, retención, tendencias sesiones, contenido, top trainers ranking). Configuración (info plataforma, integraciones, seguridad, límites).
 
 ---
 
@@ -324,6 +325,7 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 - `/api/activate-client`: verifica `role === "client"` (solo clientes pueden activarse).
 - `/api/client-trainer`: verifica `role === "client"`.
 - `/api/complete-registration`: verifica auth + `client_id === user.id` (el body no puede suplantar otro usuario).
+- Rutas admin (`/api/admin/*`): verifican `user_metadata.role === "admin"` via `verifyAdmin()` helper + rate limiting + service_role client. No modifican RLS existente — usan service_role para bypass total.
 
 **Mobile:** La app mobile es SOLO para clientes. Los trainers usan la web. El `AuthContext` expone `role: UserRole` cargado desde `profiles.role` en DB. Tipo: `"client" | "trainer" | "admin" | null`.
 
@@ -335,27 +337,45 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 | `profiles.role` (DB) | Verificación en API routes | Escrito en onboarding via upsert |
 | `AuthContext.role` (mobile) | Navegación y lógica en mobile | Leído de `profiles.role` al iniciar sesión |
 
-### Rol Admin — Implementado parcialmente (30/03/2026)
+### Rol Admin — Implementado (06/04/2026)
 
-**Estado actual:** Middleware y página placeholder ya implementados. Falta el contenido real del panel.
+**Estado actual:** Panel de administración completo implementado.
 
-**Ya implementado:**
+**Implementado:**
 - ✅ Middleware: routing completo para admin (login/register → `/app/admin/dashboard`, bloquea `/app/client/*` y `/app/trainer/*`)
-- ✅ `apps/web/app/(dashboard)/app/admin/dashboard/page.tsx` — placeholder "Panel de Administración"
+- ✅ `AdminSidebar` con 7 secciones: Dashboard, Usuarios, Códigos Promo, Consultas, Analíticas, Auditoría, Configuración
+- ✅ `verifyAdmin()` helper compartido — verifica sesión + `user_metadata.role === "admin"` + rate limiting + retorna service_role client
+- ✅ Dashboard con 9 KPIs via queries paralelas
+- ✅ Gestión de usuarios: CRUD (crear trainer/client/admin con rollback), lista paginada con búsqueda y filtros, detalle con stats por rol, edición inline
+- ✅ Códigos promo: lista con enrichment de trainers, filtros (activo/inactivo/expirado), toggle con confirmación
+- ✅ Consultas: supervisión read-only de tickets cliente→trainer
+- ✅ Analíticas: 17 queries paralelas, crecimiento 7d/30d, retención, tendencias, top trainers ranking
+- ✅ Auditoría: visor de logs filtrable por acción y recurso
+- ✅ Configuración: info plataforma, integraciones, seguridad, límites
 - ✅ `AuthContext` mobile acepta `role: "admin"` (`UserRole = "client" | "trainer" | "admin" | null`)
 - ✅ `profiles.role` es TEXT sin CHECK constraint — acepta "admin" sin migración
 
-**Para añadir contenido real al panel admin:**
+**Arquitectura:**
+- Admin usa `service_role` (bypass total RLS) — NO se modifican políticas RLS existentes
+- Todas las API routes admin en `/api/admin/*` usan `verifyAdmin()` helper
+- Crear admin: desde el panel admin (`/app/admin/users/create`) o SQL directo en Supabase
 
-1. **Registro de admin** — Crear flujo separado (no expuesto en `/register` público). SQL en Supabase: INSERT en `auth.users` con `role: "admin"` en `user_metadata` + upsert en `profiles` con `role: "admin"`.
+**Para registro de admin inicial (bootstrap):**
+```sql
+-- En Supabase SQL Editor:
+-- 1. Crear usuario auth con rol admin
+INSERT INTO auth.users (email, encrypted_password, email_confirmed_at, raw_user_meta_data)
+VALUES ('admin@fitos.com', crypt('password', gen_salt('bf')), now(), '{"role":"admin","onboarding_completed":true}'::jsonb);
+-- 2. Crear perfil
+INSERT INTO profiles (user_id, full_name, email, role)
+VALUES ((SELECT id FROM auth.users WHERE email = 'admin@fitos.com'), 'Admin', 'admin@fitos.com', 'admin');
+```
 
-2. **API routes de admin** — Verificar `profiles.role === "admin"` igual que trainer. Pueden usar `supabaseAdmin` (service_role) para bypass total de RLS.
+229. **`verifyAdmin()` patrón obligatorio para API routes admin** — Toda ruta en `/api/admin/*` DEBE usar `verifyAdmin(request)` de `lib/admin-auth.ts` como primera operación. Retorna `{ auth, errorResponse }`. Si `auth === null`, retornar `errorResponse!`. El `supabaseAdmin` retornado es un cliente service_role que bypasea RLS. Nunca crear un cliente service_role sin pasar por `verifyAdmin()` en rutas admin.
 
-3. **RLS para admin** — Opción A: añadir policy `FOR ALL USING (EXISTS (SELECT 1 FROM profiles WHERE user_id = auth.uid() AND role = 'admin'))` en tablas donde admin necesite acceso. Opción B: usar service_role en API routes (más sencillo y seguro).
+230. **Admin NO modifica RLS** — El panel admin accede a datos de todos los trainers y clientes via `service_role`. No añadir políticas RLS para admin en tablas existentes. Si una consulta admin no devuelve datos, verificar que se usa `supabaseAdmin` (service_role) y no el cliente anon.
 
-4. **Mobile** — El `AuthContext` ya acepta `role: "admin"`. La navegación en `App.tsx` debe añadir un tercer navigator `AppNavigatorAdmin` con las pantallas de administración.
-
-5. **Regla de decisión**: ¿Una nueva API route es para admin? → verificar `role === "admin"`. ¿Puede admin acceder a datos de trainer y cliente? → usar service_role en la route, no modificar RLS existente.
+231. **Creación de usuarios admin: rollback obligatorio** — `admin/users/create` crea auth user, luego profile, luego user_roles. Si la creación de profile falla, DEBE hacer rollback eliminando el auth user (`supabaseAdmin.auth.admin.deleteUser()`). Sin rollback, queda un auth user huérfano sin perfil.
 
 ---
 
@@ -619,20 +639,40 @@ fitOS/
 │   │   │   │       │   ├── knowledge/components/    ← types/shared/ArticleDetail
 │   │   │   │       │   └── chat/page.tsx            ← Realtime
 │   │   │   │       └── admin/
-│   │   │   │           └── dashboard/page.tsx       ← placeholder
+│   │   │   │           ├── layout.tsx               ← Server Component, auth + role admin check
+│   │   │   │           ├── dashboard/page.tsx       ← 9 KPIs + quick actions
+│   │   │   │           ├── users/page.tsx           ← lista con búsqueda, filtros, paginación
+│   │   │   │           ├── users/create/page.tsx    ← crear trainer/client/admin
+│   │   │   │           ├── users/[id]/page.tsx      ← detalle + edición inline
+│   │   │   │           ├── promo-codes/page.tsx     ← gestión códigos promo
+│   │   │   │           ├── tickets/page.tsx         ← supervisión read-only
+│   │   │   │           ├── analytics/page.tsx       ← métricas detalladas + top trainers
+│   │   │   │           ├── audit/page.tsx           ← visor de logs
+│   │   │   │           └── settings/page.tsx        ← config plataforma
 │   │   │   ├── api/
 │   │   │   │   ├── auth/google/route.ts
 │   │   │   │   ├── auth/google/callback/route.ts
 │   │   │   │   ├── import/excel/route.ts
 │   │   │   │   ├── import/create-exercises/route.ts
 │   │   │   │   ├── import/reconcile/route.ts
-│   │   │   │   └── complete-registration/route.ts
+│   │   │   │   ├── complete-registration/route.ts
+│   │   │   │   └── admin/                          ← todas con verifyAdmin() + service_role
+│   │   │   │       ├── stats/route.ts              ← GET: 9 KPIs paralelos
+│   │   │   │       ├── users/route.ts              ← GET: lista paginada + enrichment
+│   │   │   │       ├── users/create/route.ts       ← POST: crear usuario con rollback
+│   │   │   │       ├── users/[id]/route.ts         ← GET+PUT: detalle + edición
+│   │   │   │       ├── promo-codes/route.ts        ← GET: lista códigos
+│   │   │   │       ├── promo-codes/[id]/route.ts   ← PUT: toggle activo
+│   │   │   │       ├── tickets/route.ts            ← GET: supervisión tickets
+│   │   │   │       ├── analytics/route.ts          ← GET: 17 queries paralelas
+│   │   │   │       └── audit/route.ts              ← GET: logs de auditoría
 │   │   │   └── components/
-│   │   │       ├── layout/TrainerSidebar.tsx + ClientSidebar.tsx
+│   │   │       ├── layout/TrainerSidebar.tsx + ClientSidebar.tsx + AdminSidebar.tsx
 │   │   │       ├── ui/DarkSelect.tsx
 │   │   │       └── health/AnatomyMap.tsx        ← imagen + overlay SVG, soporta gender
 │   │   ├── public/assets/anatomy/              ← 4 imágenes anatómicas (front/back × male/female)
 │   │   ├── lib/
+│   │   │   ├── admin-auth.ts              ← verifyAdmin() helper para API routes admin
 │   │   │   ├── supabase.ts + supabase-server.ts
 │   │   │   ├── exercise-resolver.ts + .test.ts
 │   │   │   ├── food-resolver.ts + .test.ts
@@ -714,6 +754,7 @@ fitOS/
 | Fase 9 — Consultas/Tickets | ✅ Completo | Migración 038 aplicada + política `trainer_replies_update_read` |
 | Fase 10 — Base de Conocimiento / FAQ | ✅ Completo | Migración 039 pendiente aplicar |
 | Auditoría Seguridad OWASP (Fase 1+2) | ✅ Completo | Migraciones 040+041. 16+15 vulns corregidas. Enterprise security |
+| Panel Admin | ✅ Completo | Dashboard, usuarios CRUD, promo codes, tickets, analytics, audit, settings |
 | Gamificación | ❌ Sin UI | Tablas existen, falta interfaz |
 | Stripe + suscripciones | ❌ Sin implementar | |
 | Push notifications | ❌ Sin implementar | |
