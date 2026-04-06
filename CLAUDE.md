@@ -467,6 +467,10 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 204. **Deploy obligatorio tras modificar Edge Functions** — Las Edge Functions NO se despliegan con `git push`. Tras crear o modificar cualquier función en `supabase/functions/`, indicar SIEMPRE al usuario que ejecute `npx supabase functions deploy [nombre] --project-ref rgrtxlciqmexdkxagomo` para aplicar los cambios en producción. Si se modifica `_shared/auth.ts`, hay que redesplegar TODAS las funciones que lo importan.
 205. **`getSession()` en client components, `getUser()` en server** — En componentes cliente ("use client"), hooks y páginas del dashboard, usar SIEMPRE `supabase.auth.getSession()` (parse local del JWT, ~0ms) en lugar de `supabase.auth.getUser()` (round-trip al servidor, ~1s). El middleware y los layouts ya verifican el JWT server-side como defense-in-depth. `getUser()` solo en: Server Components, API routes, layouts de seguridad, Edge Functions. Patrón: `const { data: { session } } = await supabase.auth.getSession(); const user = session?.user;`.
 206. **Optimización de carga aplicada (05/04/2026)** — 32 archivos optimizados: `getUser()` → `getSession()` en 12 páginas cliente web, 13 páginas trainer web, 6 screens mobile. `Promise.all()` para queries independientes en appointments, dashboard, meals, knowledge. `.limit()` añadido a health_logs, food_log. Resultado: ~1s menos por carga de página en toda la app.
+225. **Lógica de rutina compartida en `@fitos/shared/routine-logic`** — Las funciones puras de entrenamiento activo (creación de sets, totales de sesión, RPE promedio, payload para DB) viven en `packages/shared/src/routine-logic/`. Archivos: `set-helpers.ts` (resolveSetEntryType, getSetTypeForIndex, createEmptySet, getTotalSetsCount, findPreviousSets), `session-helpers.ts` (buildSetsData, buildRegistrationSetsData, computeAverageRpe, computeSessionTotals, computeTotalVolume), `stress-index.ts`. Web y mobile importan desde `@fitos/shared` y mantienen solo wrappers platform-specific (calculateProgress con colores, buildSummaryData/computeSummaryData).
+226. **`SetType` vs `SetEntryType` — dos type systems de sets** — `SetType` = `"normal" | "rest_pause" | "drop_set"` se usa en `SetConfig.set_type` (lo que el trainer configura). `SetEntryType` = `"main" | "rest_pause" | "drop_set"` se usa en `SetEntry.type` y `weight_log.sets_data[].type` (lo que se guarda en DB). `resolveSetEntryType()` mapea de config a runtime: `"normal"` → `"main"`. Nunca mezclar ambos.
+227. **Mobile `SetEntry.type` es required, shared es optional** — En shared, `SetEntry.type?` es optional (web no lo usa durante entrenamiento). Mobile redefine `SetEntry` con `type: SetEntryType` required en `apps/mobile/src/screens/routine/types.ts`. Esto permite que el código mobile acceda a `.type` sin checks. No cambiar el shared `SetEntry` a required — rompería web.
+228. **No duplicar tipos entre mobile y shared** — `MobileSetConfig`, `MobileWeekConfig`, `ExerciseData`, `DayData`, `RoutineRaw`, `PreviousSet`, `PreviousLog`, `SavedLogEntry`, `InProgressSession`, `ScreenMode` se re-exportan desde `@fitos/shared` en `apps/mobile/src/screens/routine/types.ts`. No redefinir localmente. Solo `SetEntry` tiene redefinición local (por `type` required).
 
 ---
 
@@ -539,6 +543,11 @@ fitOS/
 │       │   ├── index.ts          ← barrel export de tipos, zonas, utils, onboarding
 │       │   ├── anatomy/zones.ts  ← MUSCLE_ZONES, ZONE_LABELS, ANATOMY_VIEWBOX
 │       │   ├── onboarding/index.ts ← groupFieldsBySection, getEnabledSections
+│       │   ├── routine-logic/
+│       │   │   ├── index.ts          ← barrel de routine-logic
+│       │   │   ├── stress-index.ts   ← calculateStressIndex
+│       │   │   ├── set-helpers.ts    ← resolveSetEntryType, createEmptySet, getTotalSetsCount, findPreviousSets
+│       │   │   └── session-helpers.ts ← buildSetsData, computeAverageRpe, computeSessionTotals
 │       │   ├── types/            ← health, routine, appointments, community, messages, knowledge
 │       │   ├── data/days.ts
 │       │   └── utils/time.ts
