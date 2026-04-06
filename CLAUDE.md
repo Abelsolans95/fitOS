@@ -6,7 +6,7 @@
 
 Para historial completo de fases: @docs/changelog.md
 Para integraciones pendientes: @docs/integrations.md
-Para errores documentados: @docs/gotchas.md
+Para errores documentados: .claude/rules/gotchas.md (carga automática)
 
 ## Stack
 
@@ -77,6 +77,7 @@ Las reglas detalladas están organizadas en `.claude/rules/`:
 | `mobile.md` | React Native, widgets, theme, Realtime cleanup |
 | `architecture.md` | Fragmentación, useReducer, performance, patterns |
 | `testing.md` | Vitest, mocks Supabase, convenciones |
+| `gotchas.md` | 121 errores documentados — prevención de errores repetidos |
 | `api-routes.md` | Checklist API routes (path-scoped: `apps/web/app/api/**`) |
 | `edge-functions.md` | Edge Functions rules (path-scoped: `supabase/functions/**`) |
 
@@ -85,7 +86,7 @@ Las reglas detalladas están organizadas en `.claude/rules/`:
 Al terminar cualquier desarrollo, bugfix o cambio significativo:
 
 1. **Regla nueva** → añadirla al rule file correspondiente en `.claude/rules/`
-2. **Gotcha nuevo** → añadirlo a `docs/gotchas.md`
+2. **Gotcha nuevo** → añadirlo a `.claude/rules/gotchas.md`
 3. **Feature completada** → actualizar `docs/changelog.md`
 4. **Config/integración** → actualizar `docs/integrations.md`
 
