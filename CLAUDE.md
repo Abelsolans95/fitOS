@@ -358,18 +358,7 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 **Arquitectura:**
 - Admin usa `service_role` (bypass total RLS) — NO se modifican políticas RLS existentes
 - Todas las API routes admin en `/api/admin/*` usan `verifyAdmin()` helper
-- Crear admin: desde el panel admin (`/app/admin/users/create`) o SQL directo en Supabase
-
-**Para registro de admin inicial (bootstrap):**
-```sql
--- En Supabase SQL Editor:
--- 1. Crear usuario auth con rol admin
-INSERT INTO auth.users (email, encrypted_password, email_confirmed_at, raw_user_meta_data)
-VALUES ('admin@fitos.com', crypt('password', gen_salt('bf')), now(), '{"role":"admin","onboarding_completed":true}'::jsonb);
--- 2. Crear perfil
-INSERT INTO profiles (user_id, full_name, email, role)
-VALUES ((SELECT id FROM auth.users WHERE email = 'admin@fitos.com'), 'Admin', 'admin@fitos.com', 'admin');
-```
+- Crear admin: desde el panel admin (`/app/admin/users/create`) o SQL directo en Supabase (ver `generar_admin.md`)
 
 229. **`verifyAdmin()` patrón obligatorio para API routes admin** — Toda ruta en `/api/admin/*` DEBE usar `verifyAdmin(request)` de `lib/admin-auth.ts` como primera operación. Retorna `{ auth, errorResponse }`. Si `auth === null`, retornar `errorResponse!`. El `supabaseAdmin` retornado es un cliente service_role que bypasea RLS. Nunca crear un cliente service_role sin pasar por `verifyAdmin()` en rutas admin.
 
