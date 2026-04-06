@@ -122,3 +122,7 @@ Tabla de errores cometidos durante el desarrollo. Consultar antes de trabajar en
 | 119 | Perf | getUser() en 32 client components | getSession() |
 | 120 | Perf | Queries secuenciales independientes | Promise.all() |
 | 121 | Auth | verifyAdmin solo JWT — spoofable | Doble check JWT + profiles.role |
+| 122 | Mobile | Import directo de módulos nativos de salud crashea en Expo Go | Usar `import()` dinámico en try/catch |
+| 123 | Mobile | Permisos de salud no tienen API booleana directa | Usar data no-null como proxy de permisos |
+| 124 | Mobile | Sync peso duplica registros por decimales | Tolerancia de dedup 0.1 kg |
+| 125 | Mobile | Módulos nativos de salud no funcionan sin prebuild | Requiere `expo prebuild` + compilación nativa |
