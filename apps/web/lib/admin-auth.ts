@@ -18,6 +18,11 @@ export interface AdminAuthResult {
 /**
  * Verify admin role and return service_role client.
  * Returns null + sends error response if auth fails.
+ *
+ * SECURITY: Double verification — checks BOTH user_metadata (JWT) AND profiles.role (DB).
+ * user_metadata alone is insufficient because an attacker can signUp() with { data: { role: "admin" } }.
+ * The prevent_role_change() trigger only blocks UPDATE, not initial INSERT.
+ * profiles.role is the source of truth — only set via onboarding (trainer/client) or admin creation.
  */
 export async function verifyAdmin(
   request: NextRequest
@@ -30,7 +35,7 @@ export async function verifyAdmin(
     return { auth: null, errorResponse: NextResponse.json({ error: "No autenticado" }, { status: 401 }) };
   }
 
-  // 2. Verify admin role (fail-closed: DB error = 403)
+  // 2. Quick check on JWT metadata (fast rejection for non-admin)
   if (user.user_metadata?.role !== "admin") {
     return { auth: null, errorResponse: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
   }
@@ -46,6 +51,19 @@ export async function verifyAdmin(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
+
+  // 5. CRITICAL: Verify profiles.role in DB — prevents signUp() role spoofing
+  // An attacker can set role: "admin" in user_metadata during signUp, but cannot
+  // create a profile with role: "admin" (RLS blocks it, onboarding only creates trainer/client).
+  const { data: profile, error: profileErr } = await supabaseAdmin
+    .from("profiles")
+    .select("role")
+    .eq("user_id", user.id)
+    .single();
+
+  if (profileErr || !profile || profile.role !== "admin") {
+    return { auth: null, errorResponse: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
+  }
 
   return {
     auth: { userId: user.id, supabaseAdmin },

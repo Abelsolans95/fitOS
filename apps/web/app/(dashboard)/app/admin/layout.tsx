@@ -1,5 +1,6 @@
 import { AdminSidebar } from "@/components/layout/AdminSidebar";
 import { createClient } from "@/lib/supabase-server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 
 export default async function AdminLayout({
@@ -7,14 +8,32 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // SECURITY: Server-side admin role verification as defense-in-depth
+  // SECURITY: Double verification — JWT + DB profile
+  // user_metadata.role alone is spoofable via signUp({ data: { role: "admin" } })
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
 
+  // Quick JWT check
   if (user.user_metadata?.role !== "admin") {
     redirect("/app/client/dashboard");
+  }
+
+  // CRITICAL: Verify profiles.role in DB (source of truth)
+  const supabaseAdmin = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { data: profile } = await supabaseAdmin
+    .from("profiles")
+    .select("role")
+    .eq("user_id", user.id)
+    .single();
+
+  if (!profile || profile.role !== "admin") {
+    redirect("/login");
   }
 
   return (

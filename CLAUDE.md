@@ -377,6 +377,10 @@ VALUES ((SELECT id FROM auth.users WHERE email = 'admin@fitos.com'), 'Admin', 'a
 
 231. **Creación de usuarios admin: rollback obligatorio** — `admin/users/create` crea auth user, luego profile, luego user_roles. Si la creación de profile falla, DEBE hacer rollback eliminando el auth user (`supabaseAdmin.auth.admin.deleteUser()`). Sin rollback, queda un auth user huérfano sin perfil.
 
+232. **`verifyAdmin()` DEBE verificar `profiles.role` en DB — no solo JWT** — `user_metadata.role` del JWT es spoofable: un atacante puede llamar `supabase.auth.signUp({ data: { role: "admin" } })` para obtener un JWT con rol admin. El trigger `prevent_role_change()` (migración 040) solo bloquea UPDATE, no INSERT. La verificación DOBLE (JWT + `profiles.role` via service_role) es obligatoria. El layout admin también verifica `profiles.role` como defense-in-depth.
+
+233. **Migración 044: protección anti-admin signup** — CHECK constraint `profiles.role IN ('trainer', 'client', 'admin')`. Políticas RLS RESTRICTIVE en `profiles`: bloquean INSERT con `role = 'admin'` y UPDATE a `role = 'admin'` (excepto si ya es admin). Combinado con `verifyAdmin()` que verifica `profiles.role`, un atacante que haga signUp con `role: admin` no puede crear un perfil admin (RLS lo bloquea) y por tanto `verifyAdmin()` lo rechaza.
+
 ---
 
 ## `@fitos/theme` — Paquete compartido de tokens de diseño
@@ -730,7 +734,8 @@ fitOS/
         ├── 040_security_hardening.sql
         ├── 041_security_hardening_phase2.sql
         ├── 042_ticket_replies_trainer_client_ids.sql
-        └── 043_rls_trainer_clients_hardening.sql
+        ├── 043_rls_trainer_clients_hardening.sql
+        └── 044_prevent_admin_signup.sql
 ```
 
 ---
@@ -768,6 +773,7 @@ fitOS/
 | Ejecutar migración 041_security_hardening_phase2.sql | 🔴 Alta | Storage SELECT restrictivos, tabla audit_logs, función log_audit_event() |
 | Ejecutar migración 042_ticket_replies_trainer_client_ids.sql | 🔴 Alta | Columnas trainer_id + client_id en ticket_replies para Realtime filters |
 | Ejecutar migración 043_rls_trainer_clients_hardening.sql | 🔴 Alta | RLS trainer_clients en 6 tablas core, log_audit_event hardened, storage buckets private, promo revoke |
+| Ejecutar migración 044_prevent_admin_signup.sql | 🔴 Alta | CHECK constraint profiles.role, RLS RESTRICTIVE anti-admin signup en profiles |
 | Ejecutar política RLS `trainer_replies_update_read` | 🔴 Alta | Trainer pueda marcar replies de clientes como leídas |
 | `ANTHROPIC_API_KEY` en Supabase secrets | 🟠 Alta | Edge Functions IA (ahora mock) |
 | Verificar dominio en Resend + `RESEND_API_KEY` | 🟠 Alta | Emails confirmación citas |
@@ -975,3 +981,4 @@ supabase functions deploy analyze-onboarding-form
 | 118 | DB | `increment_promo_code_usage` callable por authenticated | Cualquier usuario podía invocar via `supabase.rpc()`. Fix: REVOKE de public y authenticated. Regla 203 |
 | 119 | Perf | `getUser()` en 32 client components — ~1s extra por página | Client components usaban `getUser()` (network) cuando middleware ya verifica JWT. Fix: `getSession()` (local parse). Regla 205 |
 | 120 | Perf | Queries secuenciales independientes en appointments, dashboard, meals | 2-4 `await supabase.from(...)` secuenciales que no dependen entre sí. Fix: `Promise.all()`. Regla 103 |
+| 121 | Auth | `verifyAdmin()` solo verificaba JWT `user_metadata.role` — admin spoofable | Un atacante puede hacer `signUp({ data: { role: "admin" } })` para obtener JWT con rol admin. El trigger `prevent_role_change()` solo bloquea UPDATE, no INSERT. Fix: verificación doble JWT + `profiles.role` en DB via service_role. Migración 044: RLS RESTRICTIVE bloquea INSERT/UPDATE de profiles con `role = 'admin'`. Regla 232 |
