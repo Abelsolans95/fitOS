@@ -17,7 +17,6 @@ import {
   resumeSetsFromSession,
   buildSetsData,
   computeAverageRpe,
-  computeTotalVolume,
   computeSessionTotals,
   buildSummaryData,
   findPreviousSets,
@@ -117,8 +116,7 @@ export function useActiveTraining(params: UseActiveTrainingParams) {
 
       const sets = setsOverride ?? state.allSets[exIdx] ?? [];
       const today = new Date().toISOString().split("T")[0];
-      const setsData = buildSetsData(sets, ex.sets || 3);
-      const totalVolume = computeTotalVolume(setsData);
+      const { setsData, totalVolume } = buildSetsData(sets, ex.sets || 3);
       const notes = state.exerciseNotes[exIdx]?.trim() || null;
       const exerciseRpeVal = computeAverageRpe(setsData);
       const stimulusVal = state.exerciseStimulus[exIdx] ?? null;

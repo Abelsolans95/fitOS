@@ -1,46 +1,37 @@
 /**
  * Pure helper functions for useRoutineScreen.
  * No React hooks, no side effects, no Supabase calls.
+ *
+ * Shared logic lives in @fitos/shared/routine-logic.
+ * This file contains mobile-specific wrappers that ensure SetEntry.type is always set.
  */
 import type {
   ExerciseData,
   SetEntry,
   SavedLogEntry,
   PreviousSet,
-  PreviousLog,
-  MobileSetConfig,
 } from "./types";
 import { calculateProgress } from "./constants";
 
-// ─── Set type resolution ─────────────────────────────────────────────────────
+// ── Re-export shared helpers used directly by mobile ────────────────────────
+export type { SetsDataEntry as SetsDataRow } from "@fitos/shared";
+export {
+  findPreviousSets,
+  computeAverageRpe,
+  computeTotalVolume,
+} from "@fitos/shared";
 
-type SetEntryType = SetEntry["type"];
-
-/**
- * Derive the SetEntry type from a MobileSetConfig.set_type value.
- */
-export function resolveSetEntryType(setType: string | undefined): SetEntryType {
-  if (setType === "rest_pause") return "rest_pause";
-  if (setType === "drop_set") return "drop_set";
-  return "main";
-}
-
-/**
- * Get the set type for a given index, checking weekly_config sets_detail first,
- * then falling back to mainCount threshold.
- */
-export function getSetTypeForIndex(
-  index: number,
-  weekDetail: MobileSetConfig[] | undefined,
-  mainCount: number
-): SetEntryType {
-  if (weekDetail?.[index]) {
-    return resolveSetEntryType(weekDetail[index].set_type ?? "normal");
-  }
-  return index < mainCount ? "main" : "rest_pause";
-}
+// ── Shared imports used internally ──────────────────────────────────────────
+import {
+  resolveSetEntryType,
+  getSetTypeForIndex,
+  getTotalSetsCount,
+} from "@fitos/shared";
+import type { SetConfig } from "@fitos/shared";
 
 // ─── Empty set creation ──────────────────────────────────────────────────────
+
+import type { SetEntryType } from "@fitos/shared";
 
 function emptySet(type: SetEntryType): SetEntry {
   return { weight_kg: "", reps_done: "", rir: "", rpe: "", completed: false, type };
@@ -59,7 +50,6 @@ export function buildInitialSets(
   const initial: Record<number, SetEntry[]> = {};
 
   exercises.forEach((ex, idx) => {
-    // Check weekly_config sets_detail first (works for both equal and different modes)
     const wkDetail = ex.weekly_config?.[activeWeek]?.sets_detail;
 
     if (wkDetail && wkDetail.length > 0) {
@@ -103,19 +93,18 @@ export function buildResumedSets(
   exercises.forEach((ex, idx) => {
     const wkDetail = ex.weekly_config?.[activeWeek]?.sets_detail;
     const mainCount = ex.sets ?? 3;
-    const rpCount = ex.rest_pause_sets ?? 0;
-    const total = wkDetail?.length ?? (mainCount + rpCount);
+    const total = getTotalSetsCount(ex, activeWeek);
     const savedLog = savedLogs.find((l) => l.exercise_name === ex.name);
 
     if (savedLog && savedLog.sets_data) {
-      sets[idx] = savedLog.sets_data.map(
-        (s: PreviousSet & { rir?: number; rpe?: number; completed?: boolean }, i: number) => ({
+      sets[idx] = (savedLog.sets_data as Array<{ weight_kg: number; reps_done: number; rir?: number | string; rpe?: number | string; completed?: boolean }>).map(
+        (s, i: number) => ({
           weight_kg: String(s.weight_kg),
           reps_done: String(s.reps_done),
           rir: String(s.rir ?? ""),
           rpe: String(s.rpe ?? ""),
           completed: s.completed !== false,
-          type: getSetTypeForIndex(i, wkDetail, mainCount),
+          type: getSetTypeForIndex(i, wkDetail as SetConfig[] | undefined, mainCount),
         })
       );
 
@@ -126,7 +115,7 @@ export function buildResumedSets(
       // Pad to expected total if saved data is shorter
       while (sets[idx].length < total) {
         const i = sets[idx].length;
-        sets[idx].push(emptySet(getSetTypeForIndex(i, wkDetail, mainCount)));
+        sets[idx].push(emptySet(getSetTypeForIndex(i, wkDetail as SetConfig[] | undefined, mainCount)));
       }
 
       if (savedLog.client_notes) {
@@ -134,7 +123,7 @@ export function buildResumedSets(
       }
     } else {
       sets[idx] = Array.from({ length: total }, (_, i) =>
-        emptySet(getSetTypeForIndex(i, wkDetail, mainCount))
+        emptySet(getSetTypeForIndex(i, wkDetail as SetConfig[] | undefined, mainCount))
       );
     }
   });
@@ -154,15 +143,7 @@ export function buildResumedSets(
 
 // ─── Build sets_data payload for DB ──────────────────────────────────────────
 
-export interface SetsDataRow {
-  set_number: number;
-  weight_kg: number;
-  reps_done: number;
-  rir: number;
-  rpe: number;
-  type: string;
-  completed: boolean;
-}
+import { buildSetsData as sharedBuildSetsData, buildRegistrationSetsData as sharedBuildRegistrationSetsData } from "@fitos/shared";
 
 /**
  * Transform SetEntry[] into the shape expected by weight_log.sets_data.
@@ -171,20 +152,8 @@ export interface SetsDataRow {
 export function buildSetsDataPayload(
   sets: SetEntry[],
   mainCount: number
-): { setsData: SetsDataRow[]; totalVolume: number } {
-  const setsData: SetsDataRow[] = sets.map((s, i) => ({
-    set_number: i + 1,
-    weight_kg: Number(s.weight_kg) || 0,
-    reps_done: Number(s.reps_done) || 0,
-    rir: Number(s.rir) || 0,
-    rpe: Number(s.rpe) || 0,
-    type: i < mainCount ? "main" : "rest_pause",
-    completed: s.completed,
-  }));
-
-  const totalVolume = setsData.reduce((sum, s) => sum + s.weight_kg * s.reps_done, 0);
-
-  return { setsData, totalVolume };
+): { setsData: { set_number: number; weight_kg: number; reps_done: number; rir: number; rpe: number; type: string; completed: boolean }[]; totalVolume: number } {
+  return sharedBuildSetsData(sets, mainCount);
 }
 
 /**
@@ -193,47 +162,18 @@ export function buildSetsDataPayload(
 export function buildRegistrationSetsData(
   sets: SetEntry[]
 ): { setsData: { set_number: number; weight_kg: number; reps_done: number; type: string }[]; totalVolume: number } {
-  const setsData = sets.map((s, i) => ({
-    set_number: i + 1,
-    weight_kg: Number(s.weight_kg) || 0,
-    reps_done: Number(s.reps_done) || 0,
-    type: s.type,
-  }));
-
-  const totalVolume = setsData.reduce((sum, s) => sum + s.weight_kg * s.reps_done, 0);
-
-  return { setsData, totalVolume };
-}
-
-// ─── Compute average RPE from completed sets ─────────────────────────────────
-
-export function computeAverageRpe(setsData: SetsDataRow[]): number | null {
-  const rpeVals = setsData.filter((s) => s.completed && s.rpe > 0).map((s) => s.rpe);
-  if (rpeVals.length === 0) return null;
-  return Math.round((rpeVals.reduce((a, b) => a + b, 0) / rpeVals.length) * 10) / 10;
+  return sharedBuildRegistrationSetsData(sets);
 }
 
 // ─── Compute session totals ──────────────────────────────────────────────────
+
+import { computeSessionTotals as sharedComputeSessionTotals } from "@fitos/shared";
 
 export function computeSessionTotals(
   allSets: Record<number, SetEntry[]>,
   countOnlyCompleted: boolean
 ): { totalVolume: number; totalSetsCount: number } {
-  let totalVolume = 0;
-  let totalSetsCount = 0;
-
-  for (const sets of Object.values(allSets)) {
-    for (const s of sets) {
-      totalVolume += (Number(s.weight_kg) || 0) * (Number(s.reps_done) || 0);
-      if (countOnlyCompleted) {
-        if (s.completed) totalSetsCount++;
-      } else {
-        totalSetsCount++;
-      }
-    }
-  }
-
-  return { totalVolume, totalSetsCount };
+  return sharedComputeSessionTotals(allSets, countOnlyCompleted);
 }
 
 // ─── Summary data computation ────────────────────────────────────────────────
@@ -246,6 +186,7 @@ export interface SummaryResult {
 
 /**
  * Compute end-of-session summary with progress comparison against previous logs.
+ * Uses platform-specific calculateProgress for colors.
  */
 export function computeSummaryData(
   exercises: ExerciseData[],

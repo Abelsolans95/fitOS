@@ -1,6 +1,10 @@
 // ── Routine & Training types ──────────────────────────────────────────────────
 
+/** Config-level set type (what the trainer configures in SetConfig). */
 export type SetType = "normal" | "rest_pause" | "drop_set";
+
+/** Runtime/DB set type (what gets saved in weight_log.sets_data and used during training). */
+export type SetEntryType = "main" | "rest_pause" | "drop_set";
 
 export interface SetConfig {
   reps_min: number;
@@ -45,6 +49,8 @@ export interface ExerciseData {
   technique_notes?: string;
   video_url?: string;
   order?: number;
+  /** Used by mobile to track which week of the mesocycle this exercise belongs to. */
+  week_of_month?: number;
   mode?: "equal" | "different";
   sets_config?: SetConfig[];
   weekly_config?: Record<number, WeekConfig>;
@@ -67,6 +73,9 @@ export interface RoutineRaw {
   duration_months?: number;
   exercises?: ExerciseData[];
   days?: DayData[];
+  total_weeks?: number;
+  current_week?: number;
+  training_days?: string[];
 }
 
 export interface PreviousSet {
@@ -87,6 +96,8 @@ export interface SetEntry {
   rir: string;
   rpe: string;
   completed: boolean;
+  /** Runtime set type. Optional on web (computed at save time), required on mobile. */
+  type?: SetEntryType;
 }
 
 export interface SavedSetData {
@@ -120,3 +131,13 @@ export interface SummaryData {
   totalSetsCount: number;
   exerciseResults: SummaryExerciseResult[];
 }
+
+export interface InProgressSession {
+  id: string;
+  routine_id: string;
+  day_label: string;
+  week_number: number;
+  created_at: string;
+}
+
+export type ScreenMode = "overview" | "registration" | "active" | "rest" | "sfr" | "rpe" | "summary";

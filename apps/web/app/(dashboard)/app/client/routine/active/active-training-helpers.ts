@@ -1,6 +1,9 @@
 /* ────────────────────────────────────────────
    Active Training — Pure helper functions
    Extracted from useActiveTraining.ts (Rule 51)
+
+   Shared logic lives in @fitos/shared/routine-logic.
+   This file wraps shared functions and adds web-specific buildSummaryData.
    ──────────────────────────────────────────── */
 
 import type {
@@ -15,26 +18,26 @@ import type {
 } from "./types";
 import { calculateProgress } from "./types";
 
-/* ── Empty set factory ── */
+// ── Re-export shared helpers used by useActiveTraining ───────────────────────
+export {
+  createEmptySet,
+  getTotalSetsCount,
+  findPreviousSets,
+} from "@fitos/shared";
 
-export function createEmptySet(): SetEntry {
-  return {
-    weight_kg: "",
-    reps_done: "",
-    rir: "",
-    rpe: "",
-    completed: false,
-  };
-}
+export type { SetsDataEntry } from "@fitos/shared";
 
-/* ── Compute total sets count for an exercise at a given week ── */
+export {
+  buildSetsData,
+  computeAverageRpe,
+  computeSessionTotals,
+} from "@fitos/shared";
 
-export function getTotalSetsCount(ex: ExerciseData, week: number): number {
-  const wkDetail = ex.weekly_config?.[week]?.sets_detail;
-  if (wkDetail?.length) return wkDetail.length;
-  if (ex.mode === "different" && ex.sets_config?.length) return ex.sets_config.length;
-  return (ex.sets || 3) + (ex.rest_pause_sets || 0);
-}
+// ── Import shared helpers used internally ───────────────────────────────────
+import {
+  createEmptySet,
+  getTotalSetsCount,
+} from "@fitos/shared";
 
 /* ── Initialize sets for a fresh session ── */
 
@@ -108,72 +111,7 @@ export function resumeSetsFromSession(
   };
 }
 
-/* ── Build sets_data payload for DB upsert ── */
-
-export interface SetsDataEntry {
-  set_number: number;
-  weight_kg: number;
-  reps_done: number;
-  rir: number;
-  rpe: number;
-  type: string;
-  completed: boolean;
-}
-
-export function buildSetsData(
-  sets: SetEntry[],
-  exerciseSetsCount: number
-): SetsDataEntry[] {
-  return sets.map((s, i) => ({
-    set_number: i + 1,
-    weight_kg: Number(s.weight_kg) || 0,
-    reps_done: Number(s.reps_done) || 0,
-    rir: Number(s.rir) || 0,
-    rpe: Number(s.rpe) || 0,
-    type: i < exerciseSetsCount ? "main" : "rest_pause",
-    completed: s.completed,
-  }));
-}
-
-/* ── Compute average RPE from per-set values ── */
-
-export function computeAverageRpe(setsData: SetsDataEntry[]): number | null {
-  const rpeValues = setsData
-    .filter((s) => s.rpe > 0 && s.completed)
-    .map((s) => s.rpe);
-  return rpeValues.length > 0
-    ? Math.round(rpeValues.reduce((a, b) => a + b, 0) / rpeValues.length)
-    : null;
-}
-
-/* ── Compute total volume from sets data ── */
-
-export function computeTotalVolume(setsData: SetsDataEntry[]): number {
-  return setsData.reduce((sum, s) => sum + s.weight_kg * s.reps_done, 0);
-}
-
-/* ── Compute session-level totals from all sets ── */
-
-export interface SessionTotals {
-  totalVolume: number;
-  totalSetsCount: number;
-}
-
-export function computeSessionTotals(
-  allSets: Record<number, SetEntry[]>
-): SessionTotals {
-  let totalVolume = 0;
-  let totalSetsCount = 0;
-  for (const sets of Object.values(allSets)) {
-    for (const s of sets) {
-      totalVolume += (Number(s.weight_kg) || 0) * (Number(s.reps_done) || 0);
-      if (s.completed) totalSetsCount++;
-    }
-  }
-  return { totalVolume, totalSetsCount };
-}
-
-/* ── Build summary data for the summary view ── */
+/* ── Build summary data for the summary view (web-specific: uses calculateProgress with hex colors) ── */
 
 export function buildSummaryData(
   exercises: ExerciseData[],
@@ -215,14 +153,4 @@ export function buildSummaryData(
   });
 
   return { totalVolume, totalSetsCount, exerciseResults };
-}
-
-/* ── Lookup previous log for a given exercise name ── */
-
-export function findPreviousSets(
-  previousLogs: PreviousLog[],
-  exerciseName: string
-): PreviousSet[] {
-  const log = previousLogs.find((l) => l.exercise_name === exerciseName);
-  return (log?.sets_data as PreviousSet[]) || [];
 }

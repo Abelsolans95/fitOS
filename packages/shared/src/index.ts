@@ -4,6 +4,7 @@
 // Types
 export type {
   SetType,
+  SetEntryType,
   SetConfig,
   WeekConfig,
   ExerciseData,
@@ -17,6 +18,8 @@ export type {
   Phase,
   SummaryExerciseResult,
   SummaryData,
+  InProgressSession,
+  ScreenMode,
 } from "./types/routine";
 
 export type { Appointment } from "./types/appointments";
@@ -73,8 +76,20 @@ export type { SectionGroup } from "./onboarding";
 export { groupFieldsBySection, getEnabledSections } from "./onboarding";
 
 // Routine logic
-export type { StressIndexSet } from "./routine-logic";
-export { calculateStressIndex } from "./routine-logic";
+export type { StressIndexSet, SetsDataEntry, SessionTotals } from "./routine-logic";
+export {
+  calculateStressIndex,
+  resolveSetEntryType,
+  getSetTypeForIndex,
+  createEmptySet,
+  getTotalSetsCount,
+  findPreviousSets,
+  buildSetsData,
+  buildRegistrationSetsData,
+  computeAverageRpe,
+  computeSessionTotals,
+  computeTotalVolume,
+} from "./routine-logic";
 
 // Utils
 export { formatTime } from "./utils/time";
