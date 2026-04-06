@@ -38,6 +38,13 @@
         }
       ],
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#00E5FF"
+        }
+      ],
+      [
         "react-native-android-widget",
         {
           "widgets": [
@@ -58,6 +65,11 @@
         }
       ],
       "./plugins/withIOSWidget"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "00000000-0000-0000-0000-000000000000"
+      }
+    }
   }
 }

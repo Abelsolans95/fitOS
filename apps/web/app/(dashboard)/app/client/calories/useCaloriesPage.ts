@@ -7,6 +7,7 @@ import { toast } from "sonner";
 export interface FoodItem {
   name: string; portion_g: number;
   kcal: number; protein: number; carbs: number; fat: number;
+  fiber?: number; confidence?: number;
 }
 
 export interface FoodLogEntry {
@@ -27,6 +28,7 @@ export function useCaloriesPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [analyzedFoods, setAnalyzedFoods] = useState<FoodItem[]>([]);
+  const [aiRawResponse, setAiRawResponse] = useState<Record<string, unknown> | null>(null);
   const [selectedMealType, setSelectedMealType] = useState("comida");
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -88,14 +90,40 @@ export function useCaloriesPage() {
   const handleAnalyze = async () => {
     if (!selectedImage) return;
     setAnalyzing(true);
-    // Mock — production calls analyze-food-image Edge Function
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setAnalyzedFoods([
-      { name: "Pechuga de pollo a la plancha", portion_g: 150, kcal: 248, protein: 46.5, carbs: 0, fat: 5.4 },
-      { name: "Arroz integral", portion_g: 200, kcal: 232, protein: 4.8, carbs: 48.6, fat: 1.8 },
-      { name: "Ensalada mixta", portion_g: 120, kcal: 24, protein: 1.4, carbs: 4.2, fat: 0.3 },
-    ]);
-    setAnalyzing(false);
+    try {
+      const supabase = createClient();
+
+      // Convert File to base64
+      const buffer = await selectedImage.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      let binary = "";
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const image_base64 = btoa(binary);
+
+      const { data, error: fnError } = await supabase.functions.invoke("analyze-food-image", {
+        body: { image_base64, meal_type: selectedMealType },
+      });
+
+      if (fnError) {
+        toast.error("Error al analizar la imagen con IA");
+        console.error("[useCaloriesPage] analyze-food-image:", fnError);
+        return;
+      }
+
+      if (!data?.foods || !Array.isArray(data.foods) || data.foods.length === 0) {
+        toast.error("No se detectaron alimentos en la imagen");
+        return;
+      }
+
+      setAiRawResponse(data);
+      setAnalyzedFoods(data.foods as FoodItem[]);
+    } catch {
+      toast.error("Error inesperado al analizar la imagen");
+    } finally {
+      setAnalyzing(false);
+    }
   };
 
   const handlePortionChange = (index: number, newPortion: number) => {
@@ -118,20 +146,22 @@ export function useCaloriesPage() {
 
       const { error: insertError } = await supabase.from("food_log").insert({
         client_id: userId, meal_type: selectedMealType, foods: analyzedFoods,
-        total_kcal: totalKcal, total_protein: totalProtein, total_carbs: totalCarbs, total_fat: totalFat, source: "ai_vision",
+        total_kcal: totalKcal, total_protein: totalProtein, total_carbs: totalCarbs, total_fat: totalFat,
+        source: "ai_vision", ai_raw: aiRawResponse,
       });
-      if (insertError) { setError("Error al guardar el registro."); setSaving(false); return; }
+      if (insertError) { toast.error("Error al guardar el registro de comida"); console.error("[useCaloriesPage] food_log insert:", insertError); setSaving(false); return; }
 
       setSaveSuccess(true);
       setAnalyzedFoods([]);
+      setAiRawResponse(null);
       setSelectedImage(null);
       setImagePreview(null);
       await loadTodayLog(userId);
-    } catch { setError("Error inesperado al guardar."); }
+    } catch { toast.error("Error inesperado al guardar el registro"); }
     finally { setSaving(false); }
   };
 
-  const clearImage = () => { setSelectedImage(null); setImagePreview(null); setAnalyzedFoods([]); };
+  const clearImage = () => { setSelectedImage(null); setImagePreview(null); setAnalyzedFoods([]); setAiRawResponse(null); };
 
   return {
     loading, error, setError,

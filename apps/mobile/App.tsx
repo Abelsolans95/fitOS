@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import * as SplashScreen from "expo-splash-screen";
+import * as Notifications from "expo-notifications";
 import {
   useFonts,
   PlusJakartaSans_400Regular,
@@ -11,6 +12,17 @@ import {
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
+
+// Configure how notifications are handled when the app is in foreground
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowInForeground: true,
+  }),
+});
+
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -19,6 +31,7 @@ import Svg, { Path } from "react-native-svg";
 import * as Sentry from "@sentry/react-native";
 
 import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
+import { NotificationProvider } from "./src/contexts/NotificationContext";
 import { colors } from "./src/theme";
 
 // Screens
@@ -278,8 +291,10 @@ export default Sentry.wrap(function App() {
   return (
     <AuthProvider>
       <NavigationContainer>
-        <StatusBar style="light" />
-        <AppNavigator />
+        <NotificationProvider>
+          <StatusBar style="light" />
+          <AppNavigator />
+        </NotificationProvider>
       </NavigationContainer>
     </AuthProvider>
   );

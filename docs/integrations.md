@@ -47,4 +47,4 @@ supabase functions deploy analyze-onboarding-form --project-ref rgrtxlciqmexdkxa
 |---------|--------|
 | Gamificación | Tablas existen, falta UI |
 | Stripe + suscripciones | Sin implementar |
-| Push notifications | Sin implementar |
+| Push notifications | Mobile client done — needs: (1) `profiles.expo_push_token` TEXT column in DB, (2) real EAS projectId in app.json, (3) `notification-icon.png` asset for Android, (4) backend/Edge Function to send via Expo Push API |

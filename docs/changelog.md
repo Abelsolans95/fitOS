@@ -79,3 +79,12 @@
 
 ## Optimización de carga (05/04/2026) ✅
 - 32 archivos optimizados: getUser() → getSession(), Promise.all(), .limit().
+
+## Push Notifications — Mobile (06/04/2026) ✅
+- `expo-notifications` integration for Expo SDK 55.
+- `src/lib/notifications.ts`: registration, token persistence, local scheduling.
+- `src/contexts/NotificationContext.tsx`: provider with foreground/tap listeners, deep linking to tabs.
+- Token saved to `profiles.expo_push_token` via upsert.
+- Android notification channel with FitOS cyan accent (#00E5FF).
+- Graceful fallback on simulators and permission denial.
+- Placeholder EAS projectId in app.json (update before first EAS build).

@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   RefreshControl,
   Dimensions,
+  Platform,
+  ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Circle, Path } from "react-native-svg";
@@ -14,6 +16,7 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
 import { colors, spacing, radius, shadows , fonts} from "../theme";
 import { updateWidget } from "../lib/widget-sync";
+import { useHealthData } from "../hooks/useHealthData";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
