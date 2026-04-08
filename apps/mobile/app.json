@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "FitOS",
+    "name": "Kuvox",
     "slug": "fitos",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -15,8 +15,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.antigravity.fitos",
       "infoPlist": {
-        "NSHealthShareUsageDescription": "FitOS necesita acceso a tus datos de salud para mostrarte pasos, sueno, peso y frecuencia cardiaca.",
-        "NSHealthUpdateUsageDescription": "FitOS puede guardar datos de peso y metricas corporales en Apple Salud."
+        "NSHealthShareUsageDescription": "Kuvox necesita acceso a tus datos de salud para mostrarte pasos, sueno, peso y frecuencia cardiaca.",
+        "NSHealthUpdateUsageDescription": "Kuvox puede guardar datos de peso y metricas corporales en Apple Salud."
       },
       "entitlements": {
         "com.apple.developer.healthkit": true,
@@ -58,7 +58,7 @@
           "widgets": [
             {
               "name": "TodayWorkout",
-              "label": "FitOS — Entrenamiento del día",
+              "label": "Kuvox — Entrenamiento del día",
               "minWidth": "250dp",
               "minHeight": "180dp",
               "targetCellWidth": 4,
@@ -76,8 +76,8 @@
       [
         "@kingstinct/react-native-healthkit",
         {
-          "NSHealthShareUsageDescription": "FitOS necesita acceso a tus datos de salud para mostrarte pasos, sueno, peso y frecuencia cardiaca.",
-          "NSHealthUpdateUsageDescription": "FitOS puede guardar datos de peso y metricas corporales en Apple Salud."
+          "NSHealthShareUsageDescription": "Kuvox necesita acceso a tus datos de salud para mostrarte pasos, sueno, peso y frecuencia cardiaca.",
+          "NSHealthUpdateUsageDescription": "Kuvox puede guardar datos de peso y metricas corporales en Apple Salud."
         }
       ],
       [

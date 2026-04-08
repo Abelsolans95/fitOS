@@ -85,3 +85,38 @@
 ## Full-text search
 
 - `pg_trgm` habilitado — funciones `search_similar_exercises()` y `search_similar_foods()` via `supabase.rpc()`. Threshold 0.3.
+
+## Contracts tables
+
+- `contracts` — status: draft|sent|viewed|signed|expired. `signature_data` (TEXT, base64 canvas). `signer_ip` (TEXT).
+- `contract_templates` — trainer-owned reusable templates.
+- RLS: trainer CRUD propios, client SELECT + UPDATE (viewed/signed) propios.
+
+## Marketplace tables
+
+- `marketplace_products` — `price_cents` INTEGER, `category` CHECK (hipertrofia|fuerza|perdida_peso|funcional|calistenia|otro), `status` CHECK (draft|pending_review|published|rejected), `routine_data` JSONB.
+- `marketplace_purchases` — `license_key` TEXT UNIQUE, `buyer_email`.
+- `increment_marketplace_downloads()` — SECURITY DEFINER para contadores.
+- RLS: trainers CRUD propios productos, anon SELECT publicados.
+
+## Leads table (CRM)
+
+- `leads` — `trainer_id`, `name`, `email`, `phone`, `goal`, `source` CHECK (landing|blog|instagram_dm|instagram_ads|tiktok|whatsapp|manual), `status` CHECK (nuevo|contactado|interesado|prueba|cliente|descartado).
+- RLS: trainer CRUD propios leads. Anon INSERT via service_role en API route.
+
+## Public profiles & blog
+
+- `profiles.slug` — TEXT UNIQUE, auto-generated from full_name. Editable una vez.
+- `profiles.accent_color` — TEXT DEFAULT '#00E5FF'.
+- `community_posts.is_public` — BOOLEAN DEFAULT false. Toggle en publish form.
+- `community_posts.slug` — TEXT, auto-generated from title.
+- `community_posts.meta_description` — TEXT, primeros 160 chars del content.
+
+## Leagues & gamification
+
+- `communities.gamification_enabled` — BOOLEAN DEFAULT false. Trainer toggle.
+- `leagues` — `metric` CHECK (consistency|volume|steps|sessions|custom), `status` CHECK (upcoming|active|completed).
+- `league_participants` — UNIQUE(league_id, client_id). `score` NUMERIC, `rank` INTEGER.
+- `badges` — 8 badges seeded (racha_7, racha_30, first_league, top_3, champion, sessions_50, sessions_100, personal_record).
+- `user_badges` — UNIQUE(user_id, badge_id).
+- `league_participants` unique constraint → handle error code 23505 on duplicate join.

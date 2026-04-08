@@ -6,7 +6,7 @@ export function NavBar() {
     <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 w-[calc(100%-24px)] sm:w-full sm:max-w-5xl px-0 sm:px-4">
       <nav className="nav-pill flex items-center justify-between px-4 sm:px-5 py-2.5 sm:py-3">
         <span className="text-[15px] font-extrabold tracking-tight">
-          Fit<span className="text-[#00E5FF]">OS</span>
+          Kuv<span className="text-[#00E5FF]">ox</span>
         </span>
         <div className="hidden sm:flex items-center gap-7 text-[13px] text-[#8B8BA3]">
           <a href="#features" className="hover:text-white transition-colors">Módulos</a>

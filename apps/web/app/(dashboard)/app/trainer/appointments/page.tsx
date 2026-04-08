@@ -129,7 +129,7 @@ export default function TrainerAppointmentsPage() {
         <div className="flex items-center gap-2">
           <a
             href="/api/calendar/export?range=month"
-            download="fitos-calendar.ics"
+            download="kuvox-calendar.ics"
             className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-[#12121A] px-3 py-2.5 text-sm font-semibold text-[#8B8BA3] transition-colors hover:border-[#00E5FF]/30 hover:text-[#00E5FF]"
             title="Exportar calendario (.ics)"
           >

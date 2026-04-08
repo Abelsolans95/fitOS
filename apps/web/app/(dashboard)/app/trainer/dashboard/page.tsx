@@ -220,7 +220,7 @@ export default function TrainerDashboardPage() {
 
         {/* ── Tip cards ── */}
         <div className="dash-in d5">
-          <p className="section-label">Consejos para sacarle partido a FitOS</p>
+          <p className="section-label">Consejos para sacarle partido a Kuvox</p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {tips.map((tip, i) => (
               <div key={i} className="relative overflow-hidden rounded-[16px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-5 transition-colors hover:bg-white/[0.04]">

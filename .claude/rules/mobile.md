@@ -45,6 +45,20 @@ Nunca `return setup()` (retorna Promise, no cleanup).
 - Tipos compartidos re-exportados desde `@fitos/shared` en `apps/mobile/src/screens/routine/types.ts`. No redefinir localmente (excepto `SetEntry`).
 - Zonas anatómicas: importar `ZONE_LABELS` de `@fitos/shared`, no del deprecado `muscleData.ts`.
 
+## Offline mode (WatermelonDB)
+
+- `src/lib/offline/` — schema, models, database, sync.
+- ALL imports of WatermelonDB and NetInfo use dynamic `import()` in try/catch — Expo Go safe.
+- Schema defined as plain objects in `schema.ts` — built into WatermelonDB schema at runtime in `database.ts`.
+- Model classes created inside async functions via dynamic import (decorators require it).
+- `getDatabase()` is singleton — returns `{ db, available, error }`. Check `available` before using.
+- Sync order: push sessions first, then weight_log (weight_log needs session server IDs).
+- Conflict resolution: client workout/weight data always wins. Routines/plans are server-authoritative.
+- `OfflineContext` wraps app — provides `useOfflineContext()` hook to any component.
+- Offline/syncing banners rendered automatically by `OfflineProvider`.
+- Auto-sync triggers: app focus (AppState), network reconnect (NetInfo).
+- Requires `expo prebuild` + native build for actual SQLite functionality.
+
 ## Paridad web ↔ mobile
 
 - OBLIGATORIA. Cualquier funcionalidad nueva o bugfix debe aplicarse en AMBAS plataformas.

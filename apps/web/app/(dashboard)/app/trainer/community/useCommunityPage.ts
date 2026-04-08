@@ -194,9 +194,34 @@ export function useCommunityPage() {
 
     const titleTrimmed = state.newPostTitle.trim() || null;
 
+    // Auto-generate post slug from title when publishing publicly
+    let postSlug: string | null = null;
+    if (state.newPostIsPublic && titleTrimmed) {
+      postSlug = titleTrimmed
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 80);
+      if (!postSlug) postSlug = null;
+    }
+
+    const insertData: Record<string, unknown> = {
+      community_id: state.community.id,
+      author_id: state.userId,
+      title: titleTrimmed,
+      content: state.newPostContent.trim(),
+      image_url: imageUrl,
+      is_public: state.newPostIsPublic,
+      ...(postSlug ? { slug: postSlug } : {}),
+    };
+
     const { data: post, error } = await supabase
       .from("community_posts")
-      .insert({ community_id: state.community.id, author_id: state.userId, title: titleTrimmed, content: state.newPostContent.trim(), image_url: imageUrl })
+      .insert(insertData)
       .select()
       .single();
 
@@ -208,8 +233,8 @@ export function useCommunityPage() {
     }
 
     dispatch({ type: "ADD_POST", payload: { ...post, author_name: "Coach", author_role: "trainer", likes_count: 0, comments_count: 0, user_has_liked: false } });
-    toast.success("Publicacion creada");
-  }, [state.community, state.userId, state.newPostTitle, state.newPostContent, state.newPostImage]);
+    toast.success(state.newPostIsPublic ? "Publicacion creada (publica)" : "Publicacion creada");
+  }, [state.community, state.userId, state.newPostTitle, state.newPostContent, state.newPostImage, state.newPostIsPublic]);
 
   const handleDeletePost = useCallback(async (postId: string) => {
     const supabase = supabaseRef.current;

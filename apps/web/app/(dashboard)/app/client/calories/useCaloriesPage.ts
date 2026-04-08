@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
 import { toast } from "sonner";
+import type { MealSuggestion } from "./components/MealSuggestionCard";
+
+export type CaloriesTab = "analizar" | "nevera" | "buffet";
 
 export interface FoodItem {
   name: string; portion_g: number;
@@ -16,10 +19,18 @@ export interface FoodLogEntry {
   total_carbs: number; total_fat: number; source: string;
 }
 
+interface TargetMacros {
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
 export function useCaloriesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<CaloriesTab>("analizar");
 
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -32,9 +43,11 @@ export function useCaloriesPage() {
   const [selectedMealType, setSelectedMealType] = useState("comida");
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [savingSuggestion, setSavingSuggestion] = useState(false);
 
   const [todayLog, setTodayLog] = useState<FoodLogEntry[]>([]);
   const [dailyTotals, setDailyTotals] = useState({ kcal: 0, protein: 0, carbs: 0, fat: 0 });
+  const [targetMacros, setTargetMacros] = useState<TargetMacros>({ kcal: 2000, protein: 150, carbs: 250, fat: 65 });
 
   const loadTodayLog = useCallback(async (uid: string) => {
     const supabase = createClient();
@@ -57,6 +70,30 @@ export function useCaloriesPage() {
     }
   }, []);
 
+  const loadTargetMacros = useCallback(async (uid: string) => {
+    const supabase = createClient();
+    const { data, error: mpError } = await supabase.from("meal_plans")
+      .select("target_kcal, days")
+      .eq("client_id", uid)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (mpError) { console.error("[useCaloriesPage] meal_plans:", mpError); return; }
+
+    if (data?.target_kcal) {
+      // Estimate macro split from target_kcal: 30% protein, 40% carbs, 30% fat
+      const kcal = data.target_kcal;
+      setTargetMacros({
+        kcal,
+        protein: Math.round((kcal * 0.3) / 4),
+        carbs: Math.round((kcal * 0.4) / 4),
+        fat: Math.round((kcal * 0.3) / 9),
+      });
+    }
+  }, []);
+
   useEffect(() => {
     const init = async () => {
       try {
@@ -65,12 +102,12 @@ export function useCaloriesPage() {
         if (authError || !session?.user) { setError("No se pudo obtener la sesion del usuario."); setLoading(false); return; }
         const user = session.user;
         setUserId(user.id);
-        await loadTodayLog(user.id);
+        await Promise.all([loadTodayLog(user.id), loadTargetMacros(user.id)]);
       } catch { setError("Error al cargar los datos."); }
       finally { setLoading(false); }
     };
     init();
-  }, [loadTodayLog]);
+  }, [loadTodayLog, loadTargetMacros]);
 
   const handleFileSelect = (file: File) => {
     if (!file.type.startsWith("image/")) return;
@@ -163,11 +200,91 @@ export function useCaloriesPage() {
 
   const clearImage = () => { setSelectedImage(null); setImagePreview(null); setAnalyzedFoods([]); setAiRawResponse(null); };
 
+  // Remaining macros: target - already eaten
+  const remainingMacros = {
+    kcal: Math.max(0, targetMacros.kcal - dailyTotals.kcal),
+    protein: Math.max(0, targetMacros.protein - dailyTotals.protein),
+    carbs: Math.max(0, targetMacros.carbs - dailyTotals.carbs),
+    fat: Math.max(0, targetMacros.fat - dailyTotals.fat),
+  };
+
+  // Names of foods already eaten today for context
+  const alreadyEatenToday = todayLog.flatMap(
+    (entry) => (entry.foods as FoodItem[]).map((f) => f.name)
+  );
+
+  const invokeSuggestMeal = useCallback(async (params: {
+    image_base64: string;
+    remaining_macros: { kcal: number; protein: number; carbs: number; fat: number };
+    dietary_preferences?: string;
+    already_eaten_today?: string[];
+  }): Promise<{ suggestions: MealSuggestion[]; identified_items: string[]; context: string } | null> => {
+    const supabase = createClient();
+    const { data, error: fnError } = await supabase.functions.invoke("suggest-meal-from-image", {
+      body: params,
+    });
+
+    if (fnError) {
+      toast.error("Error al comunicarse con el servicio de IA");
+      console.error("[useCaloriesPage] suggest-meal-from-image:", fnError);
+      return null;
+    }
+
+    if (data?.error) {
+      toast.error(data.error);
+      return null;
+    }
+
+    return data as { suggestions: MealSuggestion[]; identified_items: string[]; context: string };
+  }, []);
+
+  const handleSaveSuggestion = useCallback(async (suggestion: MealSuggestion) => {
+    if (!userId) return;
+    setSavingSuggestion(true);
+    try {
+      const supabase = createClient();
+      const { error: insertError } = await supabase.from("food_log").insert({
+        client_id: userId,
+        meal_type: selectedMealType,
+        foods: [{
+          name: suggestion.name,
+          portion_g: 0,
+          kcal: suggestion.estimated_macros.kcal,
+          protein: suggestion.estimated_macros.protein,
+          carbs: suggestion.estimated_macros.carbs,
+          fat: suggestion.estimated_macros.fat,
+        }],
+        total_kcal: suggestion.estimated_macros.kcal,
+        total_protein: suggestion.estimated_macros.protein,
+        total_carbs: suggestion.estimated_macros.carbs,
+        total_fat: suggestion.estimated_macros.fat,
+        source: "ai_suggestion",
+      });
+
+      if (insertError) {
+        toast.error("Error al guardar la sugerencia en el registro");
+        console.error("[useCaloriesPage] suggestion save:", insertError);
+        return;
+      }
+
+      toast.success("Comida guardada en el registro");
+      await loadTodayLog(userId);
+    } catch {
+      toast.error("Error inesperado al guardar la sugerencia");
+    } finally {
+      setSavingSuggestion(false);
+    }
+  }, [userId, selectedMealType, loadTodayLog]);
+
   return {
     loading, error, setError,
+    activeTab, setActiveTab,
     selectedImage, imagePreview, analyzing, dragOver, setDragOver, fileInputRef,
     analyzedFoods, selectedMealType, setSelectedMealType, saving, saveSuccess,
+    savingSuggestion,
     todayLog, dailyTotals,
+    remainingMacros, alreadyEatenToday,
     handleFileSelect, handleDrop, handleAnalyze, handlePortionChange, handleSave, clearImage,
+    invokeSuggestMeal, handleSaveSuggestion,
   };
 }

@@ -52,7 +52,7 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
     // Android requires a notification channel
     if (Platform.OS === "android") {
       await Notifications.setNotificationChannelAsync("default", {
-        name: "FitOS",
+        name: "Kuvox",
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: "#00E5FF",

@@ -332,7 +332,7 @@ export default function ClientOnboardingPage() {
         <div className="w-full max-w-md">
           <div className="mb-8 text-center">
             <h1 className="text-4xl font-bold tracking-tight text-white">
-              Fit<span className="text-[#00E5FF]">OS</span>
+              Kuv<span className="text-[#00E5FF]">ox</span>
             </h1>
           </div>
           <SpotlightCard>
@@ -376,7 +376,7 @@ export default function ClientOnboardingPage() {
         {/* Logo */}
         <div className="mb-6 text-center">
           <h1 className="text-4xl font-bold tracking-tight text-white">
-            Fit<span className="text-[#00E5FF]">OS</span>
+            Kuv<span className="text-[#00E5FF]">ox</span>
           </h1>
           <p className="mt-2 text-sm text-[#8B8BA3]">
             Completa tu perfil para empezar

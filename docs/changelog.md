@@ -98,3 +98,39 @@
 - `app.json`: HealthKit entitlements, NSHealthShareUsageDescription, react-native-health-connect plugin.
 - All reads wrapped in try/catch — graceful fallback on simulators and denied permissions.
 - Dynamic imports prevent crashes on platforms where native modules are absent.
+
+## Offline Mode Infrastructure — WatermelonDB (08/04/2026) ✅
+- `src/lib/offline/schema.ts`: WatermelonDB schema for routines, workout_sessions, weight_log, meal_plans, profiles_cache, sync_metadata.
+- `src/lib/offline/models/`: Routine, WorkoutSession, WeightLog model classes with dynamic imports.
+- `src/lib/offline/database.ts`: SQLite adapter initialization with graceful degradation if native module absent.
+- `src/lib/offline/sync.ts`: bidirectional sync — pull routines/plans from Supabase, push workout data back. Client session data always wins on conflict.
+- `src/hooks/useOffline.ts`: hook providing isOnline, isSyncing, lastSyncAt, pendingChanges, syncNow.
+- `src/contexts/OfflineContext.tsx`: provider with auto-sync on app focus and network reconnect. Offline/syncing banners.
+- `App.tsx` wrapped with OfflineProvider.
+- All WatermelonDB and NetInfo imports use dynamic `import()` in try/catch — safe in Expo Go.
+- Packages: `@nozbe/watermelondb`, `@nozbe/with-observables`, `@react-native-community/netinfo`.
+
+## IA Comida Avanzada — Foto Nevera + Video Buffet (08/04/2026) ✅
+- Edge Function `suggest-meal-from-image`: Claude Vision analyzes fridge/buffet photos, returns 2-3 meal suggestions fitted to remaining daily macros.
+- Web: 3-tab system in calories page (Analizar / Foto nevera / Video buffet).
+  - Fridge: drag-drop image upload, identified ingredients display, macro-aware meal suggestions with save-to-log.
+  - Buffet: video upload with client-side frame extraction (canvas + pixel variance), best-frame analysis.
+- Mobile: 3-mode toggle in CaloriesScreen (Analizar / Mi nevera / Buffet).
+  - Fridge: camera/gallery via expo-image-picker, suggestion cards with save.
+  - Buffet: camera photo of buffet, analysis and recommendations.
+- Remaining macros calculated from active `meal_plans.target_kcal` minus today's `food_log` totals.
+- `MealSuggestionCard` component (web) reused across fridge/buffet tabs.
+- Saved suggestions use `source: "ai_suggestion"` in food_log for differentiation.
+- Requires `ANTHROPIC_API_KEY` in Supabase secrets; returns 503 with helpful message if missing.
+
+## Ligas y Gamificacion (08/04/2026) ✅
+- Migration 048: leagues, league_participants, badges, user_badges tables with RLS.
+- `communities.gamification_enabled` toggle for trainers to activate/deactivate.
+- 8 default badges seeded (streaks, league placement, session milestones).
+- Web trainer: `/app/trainer/leagues` — create/manage leagues, toggle gamification, leaderboard, enroll all clients, status management (upcoming/active/completed).
+- Web client: `/app/client/leagues` — view leagues, join, leaderboard, badge collection. Hidden if gamification disabled.
+- Mobile: `LeaguesScreen.tsx` with leagues tab, badges tab, leaderboard, join. Conditional on gamification_enabled.
+- API routes: `/api/leagues` (CRUD), `/api/leagues/[id]/join`, `/api/leagues/[id]/leaderboard`.
+- Shared types: `packages/shared/src/types/leagues.ts`.
+- Sidebar entries added to TrainerSidebar and ClientSidebar.
+- Mobile tab "Ligas" added to bottom navigation.

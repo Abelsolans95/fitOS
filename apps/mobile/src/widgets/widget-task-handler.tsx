@@ -36,7 +36,7 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
         props.renderWidget(
           <TodayWorkoutWidget
             dayName="Hoy"
-            dayLabel="Abre FitOS para sincronizar"
+            dayLabel="Abre Kuvox para sincronizar"
             isRestDay={true}
           />
         );

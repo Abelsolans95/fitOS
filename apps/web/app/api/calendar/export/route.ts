@@ -111,8 +111,8 @@ export async function GET(request: NextRequest) {
 
     // Generate ICS
     const calendar = ical({
-      name: "FitOS — Citas",
-      prodId: { company: "FitOS", product: "Calendar Export" },
+      name: "Kuvox — Citas",
+      prodId: { company: "Kuvox", product: "Calendar Export" },
     });
 
     for (const appt of rows) {
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
         id: appt.id,
         start: new Date(appt.starts_at),
         end: new Date(appt.ends_at),
-        summary: appt.title ?? "Cita FitOS",
+        summary: appt.title ?? "Cita Kuvox",
         status: STATUS_MAP[appt.status] ?? undefined,
       };
 
@@ -145,7 +145,7 @@ export async function GET(request: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": "text/calendar; charset=utf-8",
-        "Content-Disposition": 'attachment; filename="fitos-calendar.ics"',
+        "Content-Disposition": 'attachment; filename="kuvox-calendar.ics"',
         "Cache-Control": "no-store",
       },
     });

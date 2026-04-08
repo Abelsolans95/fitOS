@@ -56,7 +56,7 @@ export default function LoginScreen() {
         {/* Brand mark */}
         <View style={styles.brandContainer}>
           <Text style={styles.logo}>
-            Fit<Text style={styles.logoAccent}>OS</Text>
+            Kuvox
           </Text>
           <View style={styles.brandLine} />
           <Text style={styles.tagline}>ENTRENAMIENTO INTELIGENTE</Text>
@@ -125,7 +125,7 @@ export default function LoginScreen() {
         </View>
 
         {/* Footer */}
-        <Text style={styles.version}>v1.0 — FitOS</Text>
+        <Text style={styles.version}>v1.0 — Kuvox</Text>
       </View>
     </KeyboardAvoidingView>
   );

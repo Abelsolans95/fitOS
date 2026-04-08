@@ -87,7 +87,7 @@ export function HeroSection() {
             <span className="h-2 w-2 rounded-full bg-[#FF5F57]" />
             <span className="h-2 w-2 rounded-full bg-[#FEBC2E]" />
             <span className="h-2 w-2 rounded-full bg-[#28C840]" />
-            <span className="ml-2 font-mono text-[10px] text-[#3A3A52]">app.fitos.io</span>
+            <span className="ml-2 font-mono text-[10px] text-[#3A3A52]">app.kuvox.io</span>
             <span className="ml-auto flex items-center gap-1 rounded-full bg-[#00C853]/10 px-2 py-0.5 text-[9px] font-bold text-[#00C853]">
               <span className="h-1 w-1 rounded-full bg-[#00C853]" />EN VIVO
             </span>

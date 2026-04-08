@@ -126,3 +126,11 @@ Tabla de errores cometidos durante el desarrollo. Consultar antes de trabajar en
 | 123 | Mobile | Permisos de salud no tienen API booleana directa | Usar data no-null como proxy de permisos |
 | 124 | Mobile | Sync peso duplica registros por decimales | Tolerancia de dedup 0.1 kg |
 | 125 | Mobile | Módulos nativos de salud no funcionan sin prebuild | Requiere `expo prebuild` + compilación nativa |
+| 126 | Offline | WatermelonDB SQLiteAdapter es default export | `module.default ?? (module as any).SQLiteAdapter` |
+| 127 | Offline | WatermelonDB schema helpers importados a nivel de módulo crashean | Definir schema como plain objects, construir con appSchema/tableSchema en runtime |
+| 128 | Offline | WatermelonDB decorators requieren import dinámico | Crear Model classes dentro de funciones async con dynamic import |
+| 129 | Offline | Push weight_log antes de tener session server ID falla | Siempre push sessions primero, luego weight_log |
+| 130 | Offline | Dedup sessions offline: insertar duplicadas por retry | Verificar existencia por day_label + week_number + routine antes de INSERT |
+| 131 | Leagues | league_participants unique constraint error 23505 en join duplicado | Manejar 23505 como "ya inscrito", no como error |
+| 132 | Leagues | gamification_enabled default false en communities | Verificar flag antes de mostrar UI de ligas al cliente |
+| 133 | Leagues | leagues no tiene FK a trainer_clients | Verificar manualmente que client_id pertenece al trainer antes de enroll |

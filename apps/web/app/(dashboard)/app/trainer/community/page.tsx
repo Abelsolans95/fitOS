@@ -125,9 +125,11 @@ function CommunityPageInner() {
           newPostContent={state.newPostContent}
           newPostImagePreview={state.newPostImagePreview}
           publishing={state.publishing}
+          isPublic={state.newPostIsPublic}
           onSetTitle={(v: string) => dispatch({ type: "SET_NEW_POST_TITLE", payload: v })}
           onSetContent={(v: string) => dispatch({ type: "SET_NEW_POST_CONTENT", payload: v })}
           onSetImage={(file: File | null, preview: string | null) => dispatch({ type: "SET_NEW_POST_IMAGE", payload: { file, preview } })}
+          onSetIsPublic={(v: boolean) => dispatch({ type: "SET_NEW_POST_IS_PUBLIC", payload: v })}
           onPublish={handlePublish}
         />
       )}

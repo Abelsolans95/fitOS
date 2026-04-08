@@ -7,9 +7,11 @@ interface CommunityPublishProps {
   newPostContent: string;
   newPostImagePreview: string | null;
   publishing: boolean;
+  isPublic: boolean;
   onSetTitle: (v: string) => void;
   onSetContent: (v: string) => void;
   onSetImage: (file: File | null, preview: string | null) => void;
+  onSetIsPublic: (v: boolean) => void;
   onPublish: () => void;
 }
 
@@ -18,9 +20,11 @@ export function CommunityPublish({
   newPostContent,
   newPostImagePreview,
   publishing,
+  isPublic,
   onSetTitle,
   onSetContent,
   onSetImage,
+  onSetIsPublic,
   onPublish,
 }: CommunityPublishProps) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -66,6 +70,33 @@ export function CommunityPublish({
             </button>
           </div>
         )}
+
+        {/* Public toggle */}
+        <div className="mt-4 flex items-center gap-3 rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-4 py-3">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isPublic}
+            onClick={() => onSetIsPublic(!isPublic)}
+            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
+              isPublic ? "bg-[#00E5FF]" : "bg-white/[0.12]"
+            }`}
+          >
+            <span
+              className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
+                isPublic ? "translate-x-[18px]" : "translate-x-[3px]"
+              }`}
+            />
+          </button>
+          <div>
+            <p className="text-xs font-semibold text-white">
+              Publicar en perfil publico
+            </p>
+            <p className="text-[10px] text-[#5A5A72]">
+              Visible para cualquier visitante de tu landing
+            </p>
+          </div>
+        </div>
 
         <div className="mt-4 flex items-center justify-between">
           <button

@@ -12,7 +12,7 @@ const FEATURES = [
 export function RegisterPhotoPanel() {
   return (
     <div className="hidden lg:block relative w-[50%] overflow-hidden">
-      <Image src="/auth-register.jpg" fill className="object-cover object-top" alt="FitOS athlete" priority />
+      <Image src="/auth-register.jpg" fill className="object-cover object-top" alt="Kuvox athlete" priority />
 
       <div className="absolute inset-0" style={{ background: "linear-gradient(to left, rgba(10,10,15,0.1) 0%, rgba(10,10,15,0.15) 55%, rgba(10,10,15,0.88) 88%, #0A0A0F 100%)" }} />
       <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(10,10,15,0.92) 0%, rgba(10,10,15,0.35) 35%, transparent 65%)" }} />
@@ -21,7 +21,7 @@ export function RegisterPhotoPanel() {
       <div className="absolute inset-0 flex flex-col justify-between p-12">
         <div className="flex justify-end">
           <Link href="/" className="text-[15px] font-extrabold tracking-tight text-white">
-            Fit<span className="text-[#00E5FF]">OS</span>
+            Kuv<span className="text-[#00E5FF]">ox</span>
           </Link>
         </div>
 
@@ -47,7 +47,7 @@ export function RegisterPhotoPanel() {
 
       <div className="absolute left-5 top-1/2 -translate-y-1/2 flex flex-col items-center gap-3">
         <div className="h-16 w-px" style={{ background: "linear-gradient(to bottom, transparent, rgba(124,58,237,0.25), transparent)" }} />
-        <p className="text-[9px] font-bold uppercase tracking-[0.45em] text-[#3A3A52]" style={{ writingMode: "vertical-rl" }}>FitOS · 2026</p>
+        <p className="text-[9px] font-bold uppercase tracking-[0.45em] text-[#3A3A52]" style={{ writingMode: "vertical-rl" }}>Kuvox · 2026</p>
         <div className="h-16 w-px" style={{ background: "linear-gradient(to bottom, transparent, rgba(124,58,237,0.25), transparent)" }} />
       </div>
     </div>

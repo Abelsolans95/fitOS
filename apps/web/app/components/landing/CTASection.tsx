@@ -16,11 +16,11 @@ export function CTASection() {
           <span className="shimmer-cyan">mejores herramientas.</span>
         </h2>
         <p className="mx-auto mt-7 max-w-md text-[14px] leading-relaxed text-[#8B8BA3]">
-          Únete a los entrenadores que ya usan FitOS para gestionar sus clientes, ahorrar tiempo y escalar con IA.
+          Únete a los entrenadores que ya usan Kuvox para gestionar sus clientes, ahorrar tiempo y escalar con IA.
         </p>
         <div className="mt-10">
           <Link href="/register" className="btn-primary font-jakarta inline-flex items-center gap-3 rounded-2xl px-10 py-5 text-[15px] uppercase tracking-wide">
-            Prueba FitOS gratis <IcArrow />
+            Prueba Kuvox gratis <IcArrow />
           </Link>
         </div>
         <p className="mt-5 text-[11px] text-[#5A5A72]">Sin tarjeta · Sin compromiso · 14 días gratis</p>

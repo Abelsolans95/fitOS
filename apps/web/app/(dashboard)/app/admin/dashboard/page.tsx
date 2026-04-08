@@ -86,7 +86,7 @@ export default function AdminDashboardPage() {
           Panel de Administración
         </h1>
         <p className="mt-1 text-sm text-[#8B8BA3]">
-          Vista general de la plataforma FitOS
+          Vista general de la plataforma Kuvox
         </p>
       </div>
 

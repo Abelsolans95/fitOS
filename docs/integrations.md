@@ -26,6 +26,7 @@
 ```bash
 supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
 supabase functions deploy analyze-food-image --project-ref rgrtxlciqmexdkxagomo
+supabase functions deploy suggest-meal-from-image --project-ref rgrtxlciqmexdkxagomo
 supabase functions deploy generate-meal-plan --project-ref rgrtxlciqmexdkxagomo
 supabase functions deploy generate-gym-routine --project-ref rgrtxlciqmexdkxagomo
 supabase functions deploy analyze-onboarding-form --project-ref rgrtxlciqmexdkxagomo
@@ -45,6 +46,7 @@ supabase functions deploy analyze-onboarding-form --project-ref rgrtxlciqmexdkxa
 
 | Feature | Estado |
 |---------|--------|
-| Gamificación | Tablas existen, falta UI |
+| Gamificación | Implementado (Fase Ligas). Trainer toggle, leagues CRUD, badges, leaderboard. Pendiente: scoring automatico via Edge Function |
 | Stripe + suscripciones | Sin implementar |
 | Push notifications | Mobile client done — needs: (1) `profiles.expo_push_token` TEXT column in DB, (2) real EAS projectId in app.json, (3) `notification-icon.png` asset for Android, (4) backend/Edge Function to send via Expo Push API |
+| Offline mode | Infrastructure done (WatermelonDB + sync + context). Needs: (1) `expo prebuild` for native SQLite, (2) screen integration (RoutineScreen, ActiveTraining to use local DB when offline), (3) offline meal plan viewer |

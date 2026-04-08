@@ -126,7 +126,7 @@ export default function RegisterPage() {
           <div className="relative w-full max-w-[400px]">
             {/* Mobile: logo + back */}
             <div className="mb-10 flex items-center justify-between lg:hidden">
-              <Link href="/" className="text-[15px] font-extrabold tracking-tight">Fit<span className="text-[#00E5FF]">OS</span></Link>
+              <Link href="/" className="text-[15px] font-extrabold tracking-tight">Kuv<span className="text-[#00E5FF]">ox</span></Link>
               <Link href="/" className="text-[11px] text-[#5A5A72] hover:text-white transition-colors">← Volver</Link>
             </div>
 
