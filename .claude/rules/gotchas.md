@@ -134,3 +134,9 @@ Tabla de errores cometidos durante el desarrollo. Consultar antes de trabajar en
 | 131 | Leagues | league_participants unique constraint error 23505 en join duplicado | Manejar 23505 como "ya inscrito", no como error |
 | 132 | Leagues | gamification_enabled default false en communities | Verificar flag antes de mostrar UI de ligas al cliente |
 | 133 | Leagues | leagues no tiene FK a trainer_clients | Verificar manualmente que client_id pertenece al trainer antes de enroll |
+| 134 | API | ILIKE con input de usuario sin escapar wildcards | Escapar `%` y `_` antes de interpolar: `.replace(/%/g, "\\%").replace(/_/g, "\\_")` |
+| 135 | Security | JSON-LD con dangerouslySetInnerHTML sin sanitizar | `.replace(/</g, "\\u003c")` en JSON.stringify para prevenir XSS via `</script>` |
+| 136 | Web | `<img>` en páginas públicas en vez de next/image | next/image obligatorio — para data URLs usar `unoptimized` prop |
+| 137 | API | `/api/leads` POST sin CSRF validation | validateCsrf() en TODO POST aunque sea endpoint semi-público (mismo origin) |
+| 138 | RLS | lp_client_insert sin verificar trainer_clients | JOIN leagues + trainer_clients para verificar que el client pertenece al trainer |
+| 139 | Web | Patrón C ignorado en saves fire-and-forget | Destructurar `error` + toast.error incluso en saves al cerrar paneles (ej: notas leads) |

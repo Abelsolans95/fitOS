@@ -93,18 +93,19 @@ function LeadsPageInner() {
   // ── Persist notes on close ──
   const handleCloseDetail = useCallback(async () => {
     if (selectedLead) {
-      const current = leads.find((l) => l.id === selectedLead.id);
-      if (current && current.notes !== selectedLead.notes) {
-        // No need for error check on notes — we already have it locally
-      }
       const supabase = supabaseRef.current;
-      await supabase
+      const { error } = await supabase
         .from("leads")
         .update({ notes: selectedLead.notes ?? null })
         .eq("id", selectedLead.id);
+
+      if (error) {
+        toast.error("Error al guardar las notas");
+        console.error("[Leads] saveNotes:", error);
+      }
     }
     setSelectedLead(null);
-  }, [selectedLead, leads]);
+  }, [selectedLead]);
 
   // ── Update status from detail panel ──
   const handleUpdateStatus = useCallback(async (newStatus: LeadStatus) => {

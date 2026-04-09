@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
+import Image from "next/image";
 import { useCaloriesPage, CaloriesTab } from "./useCaloriesPage";
 import { MacroSummary } from "./components/MacroSummary";
 import { FoodLogList } from "./components/FoodLogList";
@@ -112,7 +113,7 @@ export default function CaloriesPage() {
           >
             {imagePreview ? (
               <div className="relative">
-                <img src={imagePreview} alt="Foto de comida" className="h-56 w-full object-cover" />
+                <Image src={imagePreview} alt="Foto de comida" width={700} height={224} className="h-56 w-full object-cover" unoptimized />
                 <button
                   type="button" onClick={clearImage}
                   className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"

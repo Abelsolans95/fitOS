@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import { createRateLimiter, getClientIdentifier } from "@/lib/rate-limit";
+import { validateCsrf } from "@/lib/csrf";
 import { sanitizeName, sanitizeEmail, sanitizeText } from "@/lib/sanitize";
 
 // Rate limiter: 10 requests per minute (public form, strict)
 const leadLimiter = createRateLimiter({ interval: 60_000, maxRequests: 10 });
 
 export async function POST(request: Request) {
+  // CSRF
+  if (!validateCsrf(request)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   // Rate limit by IP (no auth)
   const identifier = getClientIdentifier(request);
   const { success } = leadLimiter.check(identifier);

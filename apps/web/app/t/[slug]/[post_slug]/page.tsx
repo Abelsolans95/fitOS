@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
+import Image from "next/image";
 
 // ── Supabase anon client for public pages ──
 function getPublicSupabase() {
@@ -173,7 +174,7 @@ export default async function PublicArticlePage({
     <div className="min-h-screen bg-[#0A0A0F]">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema).replace(/</g, "\\u003c") }}
       />
 
       {/* ── Header / Back nav ── */}
@@ -214,11 +215,13 @@ export default async function PublicArticlePage({
 
         {/* Hero image */}
         {post.image_url && (
-          <div className="mt-8">
-            <img
+          <div className="relative mt-8 aspect-video overflow-hidden rounded-2xl border border-white/[0.06]">
+            <Image
               src={post.image_url}
               alt={post.title ?? "Imagen del articulo"}
-              className="w-full rounded-2xl border border-white/[0.06] object-cover"
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 700px"
             />
           </div>
         )}

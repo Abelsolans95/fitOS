@@ -103,7 +103,9 @@ export async function GET(request: NextRequest) {
       query = query.eq("category", category);
     }
     if (search.trim()) {
-      query = query.ilike("title", `%${search.trim()}%`);
+      // Escape ILIKE wildcards to prevent user-controlled pattern matching
+      const escapedSearch = search.trim().replace(/%/g, "\\%").replace(/_/g, "\\_");
+      query = query.ilike("title", `%${escapedSearch}%`);
     }
 
     const { data: products, error: listErr } = await query;

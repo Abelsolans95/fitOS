@@ -127,9 +127,16 @@ CREATE POLICY lp_client_select ON league_participants FOR SELECT TO authenticate
     )
   );
 
--- Client can join a league (INSERT own row)
+-- Client can join a league (INSERT own row) — must be linked to the league's trainer
 CREATE POLICY lp_client_insert ON league_participants FOR INSERT TO authenticated
-  WITH CHECK (client_id = auth.uid());
+  WITH CHECK (
+    client_id = auth.uid()
+    AND EXISTS (
+      SELECT 1 FROM leagues l
+      JOIN trainer_clients tc ON tc.trainer_id = l.trainer_id AND tc.client_id = auth.uid()
+      WHERE l.id = league_participants.league_id
+    )
+  );
 
 -- Badges: all authenticated can read
 CREATE POLICY badges_select ON badges FOR SELECT TO authenticated USING (true);

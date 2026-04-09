@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
+import Image from "next/image";
 import { ContactForm } from "./components/ContactForm";
 
 // ── Supabase anon client for public pages (no cookies needed) ──
@@ -71,31 +72,22 @@ export default async function TrainerLandingPage({
   const { slug } = await params;
   const supabase = getPublicSupabase();
 
-  // Fetch trainer profile + public posts in parallel
-  const [profileRes, postsRes] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("user_id, full_name, business_name, specialty, bio, slug, accent_color")
-      .eq("slug", slug)
-      .eq("role", "trainer")
-      .single(),
-    supabase
-      .from("community_posts")
-      .select("id, title, slug, content, image_url, meta_description, created_at")
-      .eq("is_public", true)
-      .order("created_at", { ascending: false })
-      .limit(20),
-  ]);
+  // Fetch trainer profile first (needed for subsequent queries)
+  const { data: trainerData, error: profileErr } = await supabase
+    .from("profiles")
+    .select("user_id, full_name, business_name, specialty, bio, slug, accent_color")
+    .eq("slug", slug)
+    .eq("role", "trainer")
+    .single();
 
-  if (profileRes.error || !profileRes.data) {
+  if (profileErr || !trainerData) {
     notFound();
   }
 
-  const trainer = profileRes.data as TrainerProfile;
+  const trainer = trainerData as TrainerProfile;
   const accentColor = trainer.accent_color ?? "#00E5FF";
 
-  // Filter posts by trainer's community (need community_id lookup)
-  // Since community_posts don't have trainer_id directly, we fetch the community
+  // Fetch community + posts (community_id depends on trainer)
   const { data: community } = await supabase
     .from("communities")
     .select("id")
@@ -203,9 +195,11 @@ export default async function TrainerLandingPage({
                       <div className="flex gap-4">
                         {post.image_url && (
                           <div className="hidden sm:block">
-                            <img
+                            <Image
                               src={post.image_url}
                               alt=""
+                              width={80}
+                              height={80}
                               className="h-20 w-20 rounded-xl object-cover"
                             />
                           </div>
