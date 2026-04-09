@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
         signer_ip: signerIp,
       })
       .eq("id", id)
-      .select("id, trainer_id, client_id, title, content, status, signed_at, pdf_url, created_at, updated_at")
+      .select("id, trainer_id, client_id, template_id, title, content, status, signed_at, signature_data, pdf_url, created_at, updated_at")
       .single();
 
     if (updateErr) {
