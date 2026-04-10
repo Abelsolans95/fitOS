@@ -140,3 +140,4 @@ Tabla de errores cometidos durante el desarrollo. Consultar antes de trabajar en
 | 137 | RLS | lp_client_insert sin verificar trainer_clients | JOIN leagues + trainer_clients para que solo clientes del trainer puedan unirse |
 | 138 | API | /api/leads POST sin CSRF | validateCsrf() incluso en endpoints con service_role (formulario misma origin) |
 | 139 | Web | Patrón C omitido en operaciones "fire-and-forget" | Toda mutación Supabase DEBE destructurar error y manejar — no existe "fire-and-forget" |
+| 140 | API | PUT/POST response .select() omite columnas del tipo shared | Verificar que TODAS las columnas del tipo TypeScript aparecen en el .select() — columnas faltantes causan undefined en frontend |
