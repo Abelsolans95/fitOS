@@ -134,3 +134,13 @@
 - Shared types: `packages/shared/src/types/leagues.ts`.
 - Sidebar entries added to TrainerSidebar and ClientSidebar.
 - Mobile tab "Ligas" added to bottom navigation.
+
+## Gestion de Menus — Admin (12/04/2026) ✅
+- Migration 049: `profiles.menus_enabled` BOOLEAN DEFAULT true.
+- Admin page `/app/admin/menus` — table with toggle switches per user, role filter, search, pagination.
+- API route `/api/admin/menus` — GET (paginated list) + PUT (toggle per user). Full security: verifyAdmin, CSRF, rate limiting.
+- TrainerSidebar: hides "Nutricion" when `menus_enabled = false`.
+- ClientSidebar: hides "Comidas" and "Calorias" when `menus_enabled = false`.
+- Hook `useMenusEnabled` — fetches profile flag, used by both sidebars.
+- Admin sidebar updated with "Gestion de menus" nav item.
+- Tests: 7 tests for admin menus API (GET filtering, PUT toggle, validation, role guard).

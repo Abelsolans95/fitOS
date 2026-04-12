@@ -2,6 +2,7 @@
 
 import { AppSidebar, SidebarNavItem } from "./AppSidebar";
 import { useSidebarBadges } from "@/hooks/useSidebarBadges";
+import { useMenusEnabled } from "@/hooks/useMenusEnabled";
 
 const BASE_NAV_ITEMS: SidebarNavItem[] = [
   {
@@ -158,8 +159,13 @@ export function TrainerSidebar() {
     communityPath: "/app/trainer/community",
     ticketsPath: "/app/trainer/tickets",
   });
+  const menusEnabled = useMenusEnabled();
 
-  const items: SidebarNavItem[] = BASE_NAV_ITEMS.map((item) => {
+  const filtered = menusEnabled
+    ? BASE_NAV_ITEMS
+    : BASE_NAV_ITEMS.filter((item) => item.href !== "/app/trainer/nutrition");
+
+  const items: SidebarNavItem[] = filtered.map((item) => {
     if (item.href === "/app/trainer/chat" && chatUnread > 0)
       return { ...item, badge: chatUnread };
     if (item.href === "/app/trainer/community" && communityUnread > 0)

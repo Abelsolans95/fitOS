@@ -2,6 +2,7 @@
 
 import { AppSidebar, SidebarNavItem } from "./AppSidebar";
 import { useSidebarBadges } from "@/hooks/useSidebarBadges";
+import { useMenusEnabled } from "@/hooks/useMenusEnabled";
 
 const CHAT_HREF = "/app/client/chat";
 
@@ -135,8 +136,14 @@ export function ClientSidebar() {
     communityPath: COMMUNITY_HREF,
     ticketsPath: "/app/client/tickets",
   });
+  const menusEnabled = useMenusEnabled();
 
-  const navItems: SidebarNavItem[] = BASE_NAV.map((item) => {
+  const MENU_HREFS = ["/app/client/meals", "/app/client/calories"];
+  const filtered = menusEnabled
+    ? BASE_NAV
+    : BASE_NAV.filter((item) => !MENU_HREFS.includes(item.href));
+
+  const navItems: SidebarNavItem[] = filtered.map((item) => {
     if (item.href === CHAT_HREF && chatUnread > 0)
       return { ...item, badge: chatUnread };
     if (item.href === COMMUNITY_HREF && communityUnread > 0)

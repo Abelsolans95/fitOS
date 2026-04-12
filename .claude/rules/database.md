@@ -4,6 +4,7 @@
 
 - `profiles` usa `height` y `weight` (NO `height_cm`/`weight_kg`). Columna `role` es NOT NULL — incluirla siempre en upserts.
 - `profiles.gender` — TEXT nullable (`'male'` | `'female'`). Default NULL = male en componentes.
+- `profiles.menus_enabled` — BOOLEAN NOT NULL DEFAULT true. Admin toggle para habilitar/deshabilitar nutricion por usuario.
 - `trainer_clients` usa `joined_at` — no `created_at`.
 - `meal_plans` usa columna `days` — no `content`. JSONB con los días del plan.
 - `food_log` usa `client_id` — no `user_id`. Diferente al resto de tablas.
