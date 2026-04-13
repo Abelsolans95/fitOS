@@ -3,31 +3,8 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <div className="relative min-h-screen bg-[#0A0A0F] text-white">
-      {/* ── Premium Ambient Background ── */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute inset-0 mesh-gradient" />
-        <div className="absolute inset-0 premium-grid" />
-      </div>
-
-      <div className="relative z-10">
-        {/* Top nav bar */}
-        <header className="sticky top-0 z-50 border-b border-white/[0.04] bg-[#0A0A0F]/80 backdrop-blur-xl">
-          <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-            <h1 className="text-xl font-bold text-white">
-              Kuv<span className="text-[#00E5FF]">ox</span>
-            </h1>
-            <nav className="flex items-center gap-4">
-              <span className="text-sm text-[#8B8BA3]">Dashboard</span>
-            </nav>
-          </div>
-        </header>
-        {/* Main content */}
-        <main className="mx-auto max-w-7xl px-6 py-8">
-          {children}
-        </main>
-      </div>
-    </div>
-  );
+  // Each role layout (admin/trainer/client) provides its own sidebar, header,
+  // and background. This wrapper is intentionally minimal to avoid z-index
+  // stacking conflicts between a parent header and child fixed sidebars.
+  return <>{children}</>;
 }
