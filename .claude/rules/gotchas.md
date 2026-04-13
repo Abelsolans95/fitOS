@@ -141,3 +141,6 @@ Tabla de errores cometidos durante el desarrollo. Consultar antes de trabajar en
 | 138 | API | /api/leads POST sin CSRF | validateCsrf() incluso en endpoints con service_role (formulario misma origin) |
 | 139 | Web | Patrón C omitido en operaciones "fire-and-forget" | Toda mutación Supabase DEBE destructurar error y manejar — no existe "fire-and-forget" |
 | 140 | API | PUT/POST response .select() omite columnas del tipo shared | Verificar que TODAS las columnas del tipo TypeScript aparecen en el .select() — columnas faltantes causan undefined en frontend |
+| 141 | Layout | (dashboard)/layout.tsx con header propio causa z-index conflict con sidebars hijos | Layout wrapper debe ser passthrough `<>{children}</>` — cada rol tiene su propio sidebar/header |
+| 142 | Layout | Admin layout error no capturado muestra página en blanco | error.tsx no captura errores de layout del mismo nivel — usar try/catch con re-throw de redirect errors (check `digest` property) |
+| 143 | Layout | Admin layout redirect a /login cuando falta SUPABASE_SERVICE_ROLE_KEY causa redirect loop | Renderizar error inline en vez de redirect cuando faltan env vars o falla la query de perfil |
