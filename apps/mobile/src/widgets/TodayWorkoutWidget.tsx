@@ -24,7 +24,7 @@ interface TodayWorkoutWidgetProps {
   completedExercises?: number;
 }
 
-// Theme colors matching FitOS design system
+// Theme colors matching Kuvox design system
 const C = {
   bg: "#0A0A0F",
   surface: "#12121A",
@@ -72,7 +72,7 @@ export function TodayWorkoutWidget({
       >
         <FlexWidget style={{ flexDirection: "column", flex: 1 }}>
           <TextWidget
-            text="FitOS"
+            text="Kuvox"
             style={{
               fontSize: 11,
               color: C.cyan,

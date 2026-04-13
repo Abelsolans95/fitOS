@@ -5,7 +5,7 @@
 
 ---
 
-## 1. Rebrand
+## 1. Rebrand - realizado (parcial: solo nombre)
 
 | Actual | Nuevo |
 |--------|-------|
@@ -15,6 +15,15 @@
 | — | Intentar comprar kuvox.com (no urgente, el .io y .app son suficientes) |
 | — | Asegurar @kuvox en Instagram, Twitter/X, TikTok |
 | — | Registrar marca en OEPM / EUIPO cuando haya revenue |
+
+### ✅ Realizado
+- Renombrado "FitOS" → "Kuvox" en 20 archivos de UI (web landing, auth, dashboard, mobile)
+
+### 📋 Pendiente por ti
+- Comprar dominios kuvox.io y kuvox.app
+- Asegurar @kuvox en redes sociales
+- Registrar marca cuando haya revenue
+- NO se cambiaron: nombres de paquetes (@fitos/*), bundle IDs, import paths, env vars — esto se hace cuando los dominios estén listos
 
 ---
 
@@ -143,7 +152,7 @@ Primeros 2 clientes:    GRATIS (sin limite de tiempo)
 
 ---
 
-## 7. Gestion de contratos
+## 7. Gestion de contratos - realizado
 
 ### Modelo de datos
 ```
@@ -172,9 +181,22 @@ Tabla: contracts
 - Bucket `contracts` en Supabase Storage
 - PDFs generados server-side con la firma embebida
 
+### ✅ Realizado
+- Migración 045: tablas `contract_templates` + `contracts` con RLS
+- API routes: `/api/contracts` (CRUD) + `/api/contracts/sign` (firma con IP + timestamp)
+- Web trainer: crear/editar contratos, plantillas reutilizables, ver firma
+- Web client: ver contrato, firmar con canvas signature
+- Tipos compartidos en `@fitos/shared`
+- Sidebar entries en trainer y client
+
+### 📋 Pendiente por ti
+- Aplicar migración `045_contracts.sql` en Supabase
+- (Opcional) Generación de PDF server-side con firma embebida — actualmente se guarda signature_data en base64
+- (Opcional) Crear bucket `contracts` en Supabase Storage para PDFs
+
 ---
 
-## 8. IA de comida avanzada
+## 8. IA de comida avanzada - realizado
 
 ### Feature 1: Foto de nevera
 - Cliente fotografía su nevera
@@ -195,9 +217,25 @@ Tabla: contracts
 - `suggest-meal-from-image` — recibe imagen(es) + macros restantes → devuelve sugerencia personalizada
 - Reutiliza la infraestructura de `analyze-food-image` pero con prompt diferente (sugerir vs analizar)
 
+### ✅ Realizado
+- Edge Function `suggest-meal-from-image` creada (Claude Vision, 2-3 sugerencias con macros restantes)
+- Web: sistema 3 tabs en página de calorías (Analizar / Foto nevera / Video buffet)
+  - Fridge: drag-drop imagen, ingredientes identificados, sugerencias macro-aware con guardar en log
+  - Buffet: upload de video, extracción de frames client-side (canvas + pixel variance), análisis
+- Mobile: toggle 3 modos en CaloriesScreen (Analizar / Mi nevera / Buffet)
+  - Fridge: cámara/galería via expo-image-picker, tarjetas de sugerencia con guardar
+  - Buffet: foto de buffet, análisis y recomendaciones
+- Macros restantes calculados de `meal_plans.target_kcal` - totales de `food_log` del día
+- Sugerencias guardadas con `source: "ai_suggestion"` para diferenciación
+
+### 📋 Pendiente por ti
+- Configurar ANTHROPIC_API_KEY en Supabase: `supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx`
+- Deploy de la nueva Edge Function: `supabase functions deploy suggest-meal-from-image --project-ref rgrtxlciqmexdkxagomo`
+- Sin la API key la función retorna 503 con mensaje explicativo
+
 ---
 
-## 9. Marketplace de rutinas
+## 9. Marketplace de rutinas - realizado
 
 ### Modelo
 - Trainers publican rutinas como productos digitales
@@ -225,6 +263,21 @@ Tabla: contracts
 - Fase 1: curated (aprobacion manual antes de publicar)
 - Fase 2: review system (compradores valoran, las mejores suben)
 - Badge "Trainer verificado" para trainers con clientes activos
+
+### ✅ Realizado
+- Migración 046: tablas `marketplace_products` + `marketplace_purchases` con RLS
+- Catálogo público en `/marketplace` (sin auth requerida)
+- Detalle de producto con descarga en formato `.kuvox`
+- Web trainer: publicar rutinas como productos, gestión de productos
+- API routes: `/api/marketplace` (catálogo público) + `/api/marketplace/publish` (trainer)
+- `lib/kuvox-format.ts`: generación de archivos .kuvox
+- Sidebar entry "Marketplace" en trainer
+
+### 📋 Pendiente por ti
+- Aplicar migración `046_marketplace.sql` en Supabase
+- Integrar Stripe para pagos reales (actualmente el flujo de compra es placeholder)
+- Comisión Kuvox 15-20% pendiente de implementar con Stripe Connect
+- Aprobación manual de productos (actualmente status draft→published sin review)
 
 ---
 
@@ -316,7 +369,7 @@ Apple Watch, Garmin (todos), Oura Ring, Samsung Galaxy Watch, Fitbit, Whoop, Pol
 
 ---
 
-## 12. Modo offline (imprescindible)
+## 12. Modo offline (imprescindible) - realizado
 
 ### El problema
 Los gimnasios tienen mala cobertura movil (sotanos, estructuras metalicas). Un cliente que no puede entrenar porque la app necesita internet = desinstala la app.
@@ -382,6 +435,22 @@ Regla simple: la sesion en curso del cliente SIEMPRE gana.
 | Metro/avion | No puede ni consultar rutina | Ve su rutina, puede entrenar |
 | Wifi lento del gym | Spinners, timeouts | Instantaneo |
 
+### ✅ Realizado
+- Schema WatermelonDB: 6 tablas (routines, workout_sessions, weight_log, meal_plans, profiles_cache, sync_metadata)
+- Models: Routine, WorkoutSession, WeightLog con decorators via dynamic import
+- Database: SQLite adapter singleton con graceful degradation si módulo nativo ausente
+- Sync bidireccional: pull rutinas/planes de Supabase, push workout data. Client wins on conflict
+- Hook `useOffline`: isOnline, isSyncing, lastSyncAt, pendingChanges, syncNow
+- `OfflineContext` + `OfflineProvider`: auto-sync en app focus y reconnect de red, banners offline/syncing
+- App.tsx envuelto con OfflineProvider
+- Todos los imports WatermelonDB/NetInfo usan `import()` dinámico en try/catch — safe en Expo Go
+
+### 📋 Pendiente por ti
+- Ejecutar `expo prebuild` + compilación nativa para que SQLite funcione de verdad
+- Integrar en pantallas: RoutineScreen y ActiveTraining deben leer de DB local cuando offline
+- Crear visor de meal plan offline
+- Instalar paquetes: `npm install @nozbe/watermelondb @nozbe/with-observables @react-native-community/netinfo` en apps/mobile (si no están)
+
 ---
 
 ## 13. Flywheel del negocio
@@ -429,7 +498,7 @@ Clientes satisfechos → trainer publica resultados → mas leads
 
 ---
 
-## 14. Perfil publico del trainer (landing auto-generada)
+## 14. Perfil publico del trainer (landing auto-generada) - realizado
 
 ### Concepto
 Cada trainer que se registra en Kuvox tiene automaticamente una landing publica. No la diseña nadie — se genera sola con los datos del onboarding.
@@ -476,9 +545,22 @@ Fase 3 (premium):    Landing Page Builder completo (drag & drop, bloques,
 ### Ventaja SEO
 Cada landing es una pagina indexada por Google. Con 100 trainers = 100 paginas posicionando por diferentes ciudades y especialidades. Los trainers generan SEO para Kuvox sin saberlo.
 
+### ✅ Realizado
+- Migración 047: `profiles.slug` (UNIQUE), `profiles.accent_color` (DEFAULT '#00E5FF')
+- Ruta pública `/t/[slug]`: landing auto-generada con SEO (meta tags, og:image)
+- Formulario de contacto → lead directo al CRM del trainer
+- Listado de artículos públicos del trainer
+- Settings del trainer: editor de slug (una vez) + color picker de acento
+- Sitemap dinámico en `/sitemap.ts`
+
+### 📋 Pendiente por ti
+- Aplicar migración `047_public_profiles_blog_crm.sql` en Supabase
+- Los trainers deben rellenar bio/especialidad en Settings para que la landing tenga contenido
+- Fase 2 (plantillas de diseño) y Fase 3 (builder drag & drop) pendientes
+
 ---
 
-## 15. Blog publico del trainer (posts de comunidad al mundo)
+## 15. Blog publico del trainer (posts de comunidad al mundo) - realizado
 
 ### Concepto
 El trainer ya escribe posts para su Comunidad privada. Con un toggle, puede publicar cualquier post al mundo. Se genera una pagina publica SEO-optimizada automaticamente.
@@ -549,15 +631,28 @@ Todo el trafico llega a Kuvox organicamente
 
 ### Fases
 ```
-Fase 1:  Toggle "publicar al mundo" + pagina publica basica + SEO auto
-Fase 2:  Listado de articulos en landing del trainer
+Fase 1:  Toggle "publicar al mundo" + pagina publica basica + SEO auto  ← REALIZADO
+Fase 2:  Listado de articulos en landing del trainer  ← REALIZADO
 Fase 3:  Vincular posts con rutinas del marketplace
 Fase 4:  Analytics por post (visitas, clicks en CTA, leads generados)
 ```
 
+### ✅ Realizado
+- Migración 047: `community_posts.is_public`, `community_posts.slug`, `community_posts.meta_description`
+- Toggle "Publicar en perfil público" en formulario de publicación de comunidad
+- Ruta pública `/t/[slug]/[post_slug]` con SEO (meta tags, schema markup Article + Person)
+- CTA "¿Quieres entrenar con [Trainer]?" en cada artículo público
+- Listado de artículos en la landing del trainer
+- Sitemap incluye artículos públicos
+
+### 📋 Pendiente por ti
+- Aplicar migración `047_public_profiles_blog_crm.sql` en Supabase (misma que punto 14)
+- Fase 3: vincular posts con rutinas del marketplace
+- Fase 4: analytics por post
+
 ---
 
-## 16. CRM con captacion automatica desde RRSS
+## 16. CRM con captacion automatica desde RRSS - realizado (parcial: solo Fase 1)
 
 ### Concepto
 El trainer gestiona potenciales clientes en un pipeline visual (Kanban). Los leads entran automaticamente desde redes sociales, formularios, y la landing publica. No hay que crear leads manualmente.
@@ -631,15 +726,32 @@ Cliente potencial escribe al WhatsApp del trainer
 
 ### Fases de implementacion
 ```
-Fase 1 (CRM basico):    Pipeline Kanban + formulario en landing + leads manuales
-Fase 2 (Automacion):    Instagram DM automation (Meta API) + Meta Lead Ads
-Fase 3 (Expansion):     TikTok Lead Gen + follow-up email automatico
-Fase 4 (Avanzado):      WhatsApp Business + analytics por fuente
+Fase 1 (CRM basico):    Pipeline Kanban + formulario en landing + leads manuales  ← REALIZADO
+Fase 2 (Automacion):    Instagram DM automation (Meta API) + Meta Lead Ads  ← PENDIENTE
+Fase 3 (Expansion):     TikTok Lead Gen + follow-up email automatico  ← PENDIENTE
+Fase 4 (Avanzado):      WhatsApp Business + analytics por fuente  ← PENDIENTE
 ```
+
+### ✅ Realizado (Fase 1)
+- Migración 047: tabla `leads` con source CHECK y status CHECK
+- Pipeline Kanban visual con 6 columnas (nuevo, contactado, interesado, prueba, cliente, descartado)
+- Formulario público en landing del trainer → lead automático con source "landing"
+- CTA en artículos públicos → lead con source "blog"
+- API route `/api/leads` con service_role para INSERT desde formularios públicos
+- Sidebar entry "Leads" en trainer
+- Creación manual de leads desde el panel
+
+### 📋 Pendiente por ti
+- Aplicar migración `047_public_profiles_blog_crm.sql` en Supabase
+- **Punto 2**: Instagram DM automation (Meta API) — requiere app de Meta for Developers
+- **Punto 3**: TikTok Lead Gen — requiere TikTok Marketing API
+- **Punto 4**: Meta Lead Ads webhook
+- **Punto 5**: Follow-up email automático — requiere Resend configurado
+- **Punto 6**: WhatsApp Business API + analytics por fuente
 
 ---
 
-## 17. Ligas y gamificacion
+## 17. Ligas y gamificacion - realizado
 
 ### Concepto
 El trainer crea competiciones entre sus clientes para motivarlos. Rankings en tiempo real, badges de logros, y wall de actividad.
@@ -667,6 +779,23 @@ El trainer crea competiciones entre sus clientes para motivarlos. Rankings en ti
 
 ### Estado actual
 Las tablas de gamificacion ya existen en la DB. Falta la interfaz.
+
+### ✅ Realizado
+- Migración 048: tablas `leagues`, `league_participants`, `badges`, `user_badges` con RLS
+- 8 badges seeded (racha_7, racha_30, first_league, top_3, champion, sessions_50, sessions_100, personal_record)
+- Toggle `communities.gamification_enabled` para activar/desactivar
+- Web trainer: crear/gestionar ligas, toggle gamificación, leaderboard, enroll masivo, gestión de estados (upcoming/active/completed)
+- Web client: ver ligas, unirse, leaderboard, colección de badges. Oculto si gamificación desactivada
+- Mobile: `LeaguesScreen.tsx` con tabs de ligas y badges, leaderboard, join. Condicional a gamification_enabled
+- API routes: `/api/leagues` (CRUD), `/api/leagues/[id]/join`, `/api/leagues/[id]/leaderboard`
+- Tipos compartidos en `@fitos/shared`
+- Sidebar entries en trainer y client + tab "Ligas" en mobile
+
+### 📋 Pendiente por ti
+- Aplicar migración `048_leagues_gamification.sql` en Supabase
+- Scoring automático via Edge Function (actualmente manual)
+- Otorgamiento automático de badges (actualmente hay que implementar la lógica de detección)
+- Wall de actividad (feed con actividad de clientes)
 
 ---
 

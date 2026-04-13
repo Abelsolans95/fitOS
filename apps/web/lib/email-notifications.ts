@@ -59,7 +59,7 @@ const SESSION_TYPE_LABELS: Record<string, string> = {
  */
 export async function sendAppointmentEmail(data: AppointmentEmailData): Promise<{ sent: boolean; error?: string }> {
   const apiKey = process.env.RESEND_API_KEY;
-  const fromEmail = process.env.RESEND_FROM_EMAIL || "citas@fitOS.app";
+  const fromEmail = process.env.RESEND_FROM_EMAIL || "citas@kuvox.app";
 
   if (!apiKey) {
     // TODO: implementar cuando RESEND_API_KEY y dominio estén configurados (ver regla 44 CLAUDE.md)
@@ -91,7 +91,7 @@ function getEmailSubject(data: AppointmentEmailData): string {
     case "pending":
       return `📅 Nueva solicitud de cita: ${data.appointmentTitle}`;
     default:
-      return `FitOS: ${typeLabel} — ${data.appointmentTitle}`;
+      return `Kuvox: ${typeLabel} — ${data.appointmentTitle}`;
   }
 }
 
@@ -118,7 +118,7 @@ function getEmailTextBody(data: AppointmentEmailData): string {
   if (data.meetingUrl) lines.push(`Enlace: ${data.meetingUrl}`);
   if (data.notes) lines.push(`Notas: ${data.notes}`);
 
-  lines.push("", "El equipo de FitOS");
+  lines.push("", "El equipo de Kuvox");
 
   return lines.join("\n");
 }
@@ -148,14 +148,14 @@ function getEmailHtmlBody(data: AppointmentEmailData): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FitOS — Cita</title>
+  <title>Kuvox — Cita</title>
 </head>
 <body style="margin:0;padding:0;background:#0A0A0F;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
   <div style="max-width:560px;margin:0 auto;padding:32px 16px;">
     <!-- Header -->
     <div style="text-align:center;margin-bottom:32px;">
       <span style="font-size:28px;font-weight:900;color:#ffffff;letter-spacing:-1px;">
-        Fit<span style="color:#00E5FF;">OS</span>
+        Kuvox
       </span>
     </div>
 
@@ -202,7 +202,7 @@ function getEmailHtmlBody(data: AppointmentEmailData): string {
 
     <!-- Footer -->
     <p style="color:#5A5A72;font-size:12px;text-align:center;margin-top:24px;">
-      FitOS — La plataforma para entrenadores y clientes
+      Kuvox — La plataforma para entrenadores y clientes
     </p>
   </div>
 </body>

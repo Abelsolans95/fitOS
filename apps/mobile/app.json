@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "FitOS",
+    "name": "Kuvox",
     "slug": "fitos",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,7 +13,15 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.antigravity.fitos"
+      "bundleIdentifier": "com.antigravity.fitos",
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "Kuvox necesita acceso a tus datos de salud para mostrarte pasos, sueno, peso y frecuencia cardiaca.",
+        "NSHealthUpdateUsageDescription": "Kuvox puede guardar datos de peso y metricas corporales en Apple Salud."
+      },
+      "entitlements": {
+        "com.apple.developer.healthkit": true,
+        "com.apple.developer.healthkit.background-delivery": false
+      }
     },
     "android": {
       "package": "com.antigravity.fitos",
@@ -38,12 +46,19 @@
         }
       ],
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#00E5FF"
+        }
+      ],
+      [
         "react-native-android-widget",
         {
           "widgets": [
             {
               "name": "TodayWorkout",
-              "label": "FitOS — Entrenamiento del día",
+              "label": "Kuvox — Entrenamiento del día",
               "minWidth": "250dp",
               "minHeight": "180dp",
               "targetCellWidth": 4,
@@ -57,7 +72,25 @@
           ]
         }
       ],
-      "./plugins/withIOSWidget"
-    ]
+      "./plugins/withIOSWidget",
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "Kuvox necesita acceso a tus datos de salud para mostrarte pasos, sueno, peso y frecuencia cardiaca.",
+          "NSHealthUpdateUsageDescription": "Kuvox puede guardar datos de peso y metricas corporales en Apple Salud."
+        }
+      ],
+      [
+        "react-native-health-connect",
+        {
+          "requestPermissionsBackCompat": true
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "00000000-0000-0000-0000-000000000000"
+      }
+    }
   }
 }

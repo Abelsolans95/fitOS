@@ -16,7 +16,7 @@ export default function DashboardLayout({
         <header className="sticky top-0 z-50 border-b border-white/[0.04] bg-[#0A0A0F]/80 backdrop-blur-xl">
           <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
             <h1 className="text-xl font-bold text-white">
-              Fit<span className="text-[#00E5FF]">OS</span>
+              Kuv<span className="text-[#00E5FF]">ox</span>
             </h1>
             <nav className="flex items-center gap-4">
               <span className="text-sm text-[#8B8BA3]">Dashboard</span>

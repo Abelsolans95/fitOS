@@ -134,16 +134,29 @@ export default function ClientAppointmentsPage() {
             {trainer ? `Con ${trainer.full_name ?? "tu entrenador"}` : "Sesiones con tu entrenador"}
           </p>
         </div>
-        <button
-          onClick={() => setShowRequest(true)}
-          disabled={!trainerId}
-          className="flex items-center gap-2 rounded-xl bg-[#00E5FF] px-4 py-2.5 text-sm font-bold text-[#0A0A0F] transition-opacity hover:opacity-90 disabled:opacity-40"
-        >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          Solicitar cita
-        </button>
+        <div className="flex items-center gap-2">
+          <a
+            href="/api/calendar/export?range=month"
+            download="kuvox-calendar.ics"
+            className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-[#12121A] px-3 py-2.5 text-sm font-semibold text-[#8B8BA3] transition-colors hover:border-[#00E5FF]/30 hover:text-[#00E5FF]"
+            title="Exportar calendario (.ics)"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            <span className="hidden sm:inline">Exportar</span>
+          </a>
+          <button
+            onClick={() => setShowRequest(true)}
+            disabled={!trainerId}
+            className="flex items-center gap-2 rounded-xl bg-[#00E5FF] px-4 py-2.5 text-sm font-bold text-[#0A0A0F] transition-opacity hover:opacity-90 disabled:opacity-40"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Solicitar cita
+          </button>
+        </div>
       </div>
 
       <AppointmentList

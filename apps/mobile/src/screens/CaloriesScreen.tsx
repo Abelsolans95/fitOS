@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -13,7 +13,11 @@ import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path } from "react-native-svg";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
-import { colors, spacing, radius, shadows , fonts} from "../theme";
+import { colors, spacing, radius, shadows, fonts } from "../theme";
+import FridgeAnalysis from "./calories/FridgeAnalysis";
+import BuffetAnalysis from "./calories/BuffetAnalysis";
+
+type CaloriesMode = "analizar" | "nevera" | "buffet";
 
 interface FoodLogEntry {
   id: string;
@@ -25,6 +29,7 @@ interface FoodLogEntry {
   total_fat: number;
   source: string;
   photo_url: string | null;
+  foods: Array<{ name: string }>;
 }
 
 const MEAL_LABELS: Record<string, string> = {
@@ -36,20 +41,28 @@ const MEAL_LABELS: Record<string, string> = {
   snack: "Snack",
 };
 
+const MODE_TABS: { key: CaloriesMode; label: string }[] = [
+  { key: "analizar", label: "Analizar" },
+  { key: "nevera", label: "Mi nevera" },
+  { key: "buffet", label: "Buffet" },
+];
+
 export default function CaloriesScreen() {
   const { user } = useAuth();
   const [todayLogs, setTodayLogs] = useState<FoodLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState("comida");
+  const [activeMode, setActiveMode] = useState<CaloriesMode>("analizar");
+  const [targetMacros, setTargetMacros] = useState({ kcal: 2000, protein: 150, carbs: 250, fat: 65 });
 
   const today = new Date().toISOString().split("T")[0];
 
-  const loadTodayLogs = async () => {
+  const loadTodayLogs = useCallback(async () => {
     if (!user) return;
     const { data, error } = await supabase
       .from("food_log")
-      .select("id, logged_at, meal_type, total_kcal, total_protein, total_carbs, total_fat, source, photo_url")
+      .select("id, logged_at, meal_type, total_kcal, total_protein, total_carbs, total_fat, source, photo_url, foods")
       .eq("client_id", user.id)
       .gte("logged_at", today)
       .lte("logged_at", today + "T23:59:59")
@@ -60,23 +73,59 @@ export default function CaloriesScreen() {
       console.error("[CaloriesScreen] Error cargando registros:", error);
       Alert.alert("Error", "No se pudieron cargar los registros de hoy");
     }
-    if (data) setTodayLogs(data);
+    if (data) setTodayLogs(data as FoodLogEntry[]);
     setLoading(false);
-  };
+  }, [user, today]);
 
-  useEffect(() => {
-    loadTodayLogs();
+  const loadTargetMacros = useCallback(async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from("meal_plans")
+      .select("target_kcal")
+      .eq("client_id", user.id)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) { console.error("[CaloriesScreen] meal_plans:", error); return; }
+    if (data?.target_kcal) {
+      const kcal = data.target_kcal;
+      setTargetMacros({
+        kcal,
+        protein: Math.round((kcal * 0.3) / 4),
+        carbs: Math.round((kcal * 0.4) / 4),
+        fat: Math.round((kcal * 0.3) / 9),
+      });
+    }
   }, [user]);
 
-  const totalKcal = todayLogs.reduce((sum, l) => sum + (l.total_kcal || 0), 0);
-  const totalProtein = todayLogs.reduce((sum, l) => sum + (l.total_protein || 0), 0);
-  const totalCarbs = todayLogs.reduce((sum, l) => sum + (l.total_carbs || 0), 0);
-  const totalFat = todayLogs.reduce((sum, l) => sum + (l.total_fat || 0), 0);
+  useEffect(() => {
+    if (user) {
+      Promise.all([loadTodayLogs(), loadTargetMacros()]);
+    }
+  }, [user, loadTodayLogs, loadTargetMacros]);
+
+  const totalKcal = todayLogs.reduce((sum, l) => sum + (l.total_kcal ?? 0), 0);
+  const totalProtein = todayLogs.reduce((sum, l) => sum + (l.total_protein ?? 0), 0);
+  const totalCarbs = todayLogs.reduce((sum, l) => sum + (l.total_carbs ?? 0), 0);
+  const totalFat = todayLogs.reduce((sum, l) => sum + (l.total_fat ?? 0), 0);
+
+  const remainingMacros = {
+    kcal: Math.max(0, targetMacros.kcal - totalKcal),
+    protein: Math.max(0, targetMacros.protein - totalProtein),
+    carbs: Math.max(0, targetMacros.carbs - totalCarbs),
+    fat: Math.max(0, targetMacros.fat - totalFat),
+  };
+
+  const alreadyEatenToday = todayLogs.flatMap(
+    (entry) => (entry.foods ?? []).map((f) => f.name)
+  );
 
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permiso necesario", "Necesitamos acceso a la cámara para analizar tu comida.");
+      Alert.alert("Permiso necesario", "Necesitamos acceso a la camara para analizar tu comida.");
       return;
     }
 
@@ -134,7 +183,7 @@ export default function CaloriesScreen() {
         Alert.alert("Analizado", `${data.foods.length} alimentos detectados (${Math.round(data.total_kcal)} kcal)`);
       }
     } catch (err) {
-      Alert.alert("Error", "No se pudo analizar la imagen. Inténtalo de nuevo.");
+      Alert.alert("Error", "No se pudo analizar la imagen. Intentalo de nuevo.");
     } finally {
       setAnalyzing(false);
     }
@@ -172,7 +221,24 @@ export default function CaloriesScreen() {
         </View>
       </View>
 
-      {/* Meal type pills */}
+      {/* Mode tabs */}
+      <View style={styles.modeTabContainer}>
+        {MODE_TABS.map((tab) => {
+          const active = activeMode === tab.key;
+          return (
+            <TouchableOpacity
+              key={tab.key}
+              onPress={() => setActiveMode(tab.key)}
+              style={[styles.modeTab, active && styles.modeTabActive]}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.modeTabText, active && styles.modeTabTextActive]}>{tab.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* Meal type pills — shared across modes */}
       <Text style={styles.sectionLabel}>TIPO DE COMIDA</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pillScroll}>
         {Object.entries(MEAL_LABELS).map(([key, label]) => {
@@ -190,60 +256,84 @@ export default function CaloriesScreen() {
         })}
       </ScrollView>
 
-      {/* Capture actions */}
-      <View style={styles.captureRow}>
-        <TouchableOpacity
-          style={styles.captureMain}
-          onPress={takePhoto}
-          disabled={analyzing}
-          activeOpacity={0.85}
-        >
-          <LinearGradient
-            colors={["#00E5FF", "#00B8D4"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.captureGradient}
+      {/* Mode: Analizar (existing) */}
+      {activeMode === "analizar" && (
+        <View style={styles.captureRow}>
+          <TouchableOpacity
+            style={styles.captureMain}
+            onPress={takePhoto}
+            disabled={analyzing}
+            activeOpacity={0.85}
           >
-            {analyzing ? (
-              <ActivityIndicator color={colors.bg} />
-            ) : (
-              <>
-                <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-                  <Path
-                    d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316zM16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"
-                    stroke={colors.bg}
-                    strokeWidth={1.8}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </Svg>
-                <Text style={styles.captureMainText}>Escanear</Text>
-              </>
-            )}
-          </LinearGradient>
-        </TouchableOpacity>
+            <LinearGradient
+              colors={["#00E5FF", "#00B8D4"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.captureGradient}
+            >
+              {analyzing ? (
+                <ActivityIndicator color={colors.bg} />
+              ) : (
+                <>
+                  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+                    <Path
+                      d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316zM16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"
+                      stroke={colors.bg}
+                      strokeWidth={1.8}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </Svg>
+                  <Text style={styles.captureMainText}>Escanear</Text>
+                </>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.captureSecondary}
-          onPress={pickImage}
-          disabled={analyzing}
-          activeOpacity={0.8}
-        >
-          <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-            <Path
-              d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
-              stroke={colors.white}
-              strokeWidth={1.8}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </Svg>
-          <Text style={styles.captureSecondaryText}>Galería</Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={styles.captureSecondary}
+            onPress={pickImage}
+            disabled={analyzing}
+            activeOpacity={0.8}
+          >
+            <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+              <Path
+                d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
+                stroke={colors.white}
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>
+            <Text style={styles.captureSecondaryText}>Galeria</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Mode: Nevera */}
+      {activeMode === "nevera" && user && (
+        <FridgeAnalysis
+          userId={user.id}
+          remainingMacros={remainingMacros}
+          alreadyEatenToday={alreadyEatenToday}
+          selectedMealType={selectedMealType}
+          onSaved={loadTodayLogs}
+        />
+      )}
+
+      {/* Mode: Buffet */}
+      {activeMode === "buffet" && user && (
+        <BuffetAnalysis
+          userId={user.id}
+          remainingMacros={remainingMacros}
+          alreadyEatenToday={alreadyEatenToday}
+          selectedMealType={selectedMealType}
+          onSaved={loadTodayLogs}
+        />
+      )}
 
       {/* Today's log */}
-      <Text style={styles.sectionLabel}>REGISTRO DEL DÍA</Text>
+      <Text style={[styles.sectionLabel, { marginTop: spacing.xxl }]}>REGISTRO DEL DÍA</Text>
       {loading ? (
         <ActivityIndicator color={colors.cyan} style={{ marginTop: 20 }} />
       ) : todayLogs.length === 0 ? (
@@ -271,7 +361,7 @@ export default function CaloriesScreen() {
                 </Text>
               </View>
               <View>
-                <Text style={styles.logMealType}>{MEAL_LABELS[log.meal_type] || log.meal_type}</Text>
+                <Text style={styles.logMealType}>{MEAL_LABELS[log.meal_type] ?? log.meal_type}</Text>
                 <View style={styles.logMacroRow}>
                   <Text style={[styles.logMacro, { color: colors.cyan }]}>P:{Math.round(log.total_protein)}g</Text>
                   <Text style={[styles.logMacro, { color: colors.orange }]}>C:{Math.round(log.total_carbs)}g</Text>
@@ -282,9 +372,11 @@ export default function CaloriesScreen() {
             <View style={styles.logRight}>
               <Text style={styles.logKcal}>{Math.round(log.total_kcal)}</Text>
               <Text style={styles.logKcalUnit}>kcal</Text>
-              {log.source === "ai_vision" && (
-                <View style={styles.aiBadge}>
-                  <Text style={styles.aiBadgeText}>IA</Text>
+              {(log.source === "ai_vision" || log.source === "ai_suggestion") && (
+                <View style={[styles.aiBadge, log.source === "ai_suggestion" && { backgroundColor: colors.orangeDim }]}>
+                  <Text style={[styles.aiBadgeText, log.source === "ai_suggestion" && { color: colors.orange }]}>
+                    {log.source === "ai_suggestion" ? "SUGERENCIA" : "IA"}
+                  </Text>
                 </View>
               )}
             </View>
@@ -312,7 +404,7 @@ const styles = StyleSheet.create({
     ...shadows.card,
   },
   heroLabel: { fontSize: 10, fontFamily: fonts.bold, color: colors.dimmed, letterSpacing: 3, marginBottom: 8 },
-  heroKcal: { fontSize: 56, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.cyan, letterSpacing: -3 },
+  heroKcal: { fontSize: 56, fontFamily: fonts.extraBold, color: colors.cyan, letterSpacing: -3 },
   heroUnit: { fontSize: 12, color: colors.muted, letterSpacing: 2, marginBottom: spacing.xl },
 
   // Macros
@@ -321,6 +413,28 @@ const styles = StyleSheet.create({
   macroBar: { width: 3, height: 16, borderRadius: 2 },
   macroValue: { fontSize: 16, fontFamily: fonts.extraBold, letterSpacing: -0.5 },
   macroLabel: { fontSize: 9, fontFamily: fonts.bold, color: colors.dimmed, letterSpacing: 1.5 },
+
+  // Mode tabs
+  modeTabContainer: {
+    flexDirection: "row",
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 4,
+    marginBottom: spacing.xxl,
+  },
+  modeTab: {
+    flex: 1,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radius.lg,
+    alignItems: "center",
+  },
+  modeTabActive: {
+    backgroundColor: colors.surfaceHover,
+  },
+  modeTabText: { fontSize: 12, fontFamily: fonts.medium, color: colors.muted },
+  modeTabTextActive: { color: colors.white, fontFamily: fonts.bold },
 
   // Section
   sectionLabel: { fontSize: 10, fontFamily: fonts.bold, color: colors.dimmed, letterSpacing: 2, marginBottom: spacing.md },

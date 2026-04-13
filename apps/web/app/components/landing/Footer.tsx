@@ -14,7 +14,7 @@ export function Footer() {
         <div className="mb-8 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
           <div className="flex items-center gap-4">
-            <span className="text-[15px] font-extrabold">Fit<span className="text-[#00E5FF]">OS</span></span>
+            <span className="text-[15px] font-extrabold">Kuv<span className="text-[#00E5FF]">ox</span></span>
             <span className="text-[11px] text-[#3A3A52]">&copy; 2026 &middot; Software para entrenadores</span>
           </div>
           <nav className="flex items-center gap-6">

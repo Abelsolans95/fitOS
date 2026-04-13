@@ -24,7 +24,7 @@ export function PhotoBreakSection() {
             <span className="shimmer-cyan">ahorras, importa.</span>
           </h2>
           <p className="mt-6 text-[15px] text-white/50 max-w-md mx-auto">
-            FitOS automatiza la planificación para que puedas dedicar toda tu energía a lo que de verdad marca la diferencia: tus clientes.
+            Kuvox automatiza la planificación para que puedas dedicar toda tu energía a lo que de verdad marca la diferencia: tus clientes.
           </p>
         </div>
       </div>

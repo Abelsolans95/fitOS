@@ -21,16 +21,26 @@ export default async function AdminLayout({
   }
 
   // CRITICAL: Verify profiles.role in DB (source of truth)
-  const supabaseAdmin = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  const { data: profile } = await supabaseAdmin
+  if (!url || !serviceKey) {
+    console.error("[AdminLayout] Missing SUPABASE_SERVICE_ROLE_KEY env var");
+    redirect("/login");
+  }
+
+  const supabaseAdmin = createServiceClient(url, serviceKey);
+
+  const { data: profile, error: profileErr } = await supabaseAdmin
     .from("profiles")
     .select("role")
     .eq("user_id", user.id)
     .single();
+
+  if (profileErr) {
+    console.error("[AdminLayout] Profile check failed:", profileErr.code);
+    redirect("/login");
+  }
 
   if (!profile || profile.role !== "admin") {
     redirect("/login");

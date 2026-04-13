@@ -52,7 +52,7 @@ export function AppSidebar({ items, defaultHref }: AppSidebarProps) {
       {/* ── Mobile top bar ── */}
       <div className="fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-between border-b border-white/[0.04] bg-[#0A0A0F]/80 backdrop-blur-xl px-4 lg:hidden">
         <Link href={defaultHref} className="text-base font-extrabold tracking-tight text-white">
-          Fit<span className="text-[#00E5FF]">OS</span>
+          Kuv<span className="text-[#00E5FF]">ox</span>
         </Link>
         <button
           type="button"
@@ -97,7 +97,7 @@ export function AppSidebar({ items, defaultHref }: AppSidebarProps) {
         }`}>
           {!collapsed && (
             <Link href={defaultHref} className="pl-2 text-[17px] font-extrabold tracking-tight text-white transition-opacity hover:opacity-80">
-              Fit<span className="text-[#00E5FF]">OS</span>
+              Kuv<span className="text-[#00E5FF]">ox</span>
             </Link>
           )}
           <button

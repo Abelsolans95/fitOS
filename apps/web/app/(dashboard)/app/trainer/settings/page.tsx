@@ -16,6 +16,8 @@ export default function TrainerSettingsPage() {
   const [businessName, setBusinessName] = useState("");
   const [specialty, setSpecialty] = useState("");
   const [bio, setBio] = useState("");
+  const [slug, setSlug] = useState("");
+  const [accentColor, setAccentColor] = useState("#00E5FF");
   const [promoCode, setPromoCode] = useState<string | null>(null);
   const [promoCodeId, setPromoCodeId] = useState<string | null>(null);
   const [formFieldCount, setFormFieldCount] = useState(0);
@@ -29,13 +31,13 @@ export default function TrainerSettingsPage() {
         if (authError || !user) { setError("No se pudo obtener la sesión del usuario."); setLoading(false); return; }
 
         const [profileRes, promoRes, formRes] = await Promise.all([
-          supabase.from("profiles").select("business_name, specialty, bio").eq("user_id", user.id).single(),
+          supabase.from("profiles").select("business_name, specialty, bio, slug, accent_color").eq("user_id", user.id).single(),
           supabase.from("trainer_promo_codes").select("id, code").eq("trainer_id", user.id).eq("is_active", true).order("created_at", { ascending: false }).limit(1).single(),
           supabase.from("onboarding_forms").select("fields").eq("trainer_id", user.id).eq("is_active", true).order("created_at", { ascending: false }).limit(1).maybeSingle(),
         ]);
 
         if (profileRes.error) { console.error("[Settings] Error cargando perfil:", profileRes.error); } // No bloqueante
-        if (profileRes.data) { setBusinessName(profileRes.data.business_name || ""); setSpecialty(profileRes.data.specialty || ""); setBio(profileRes.data.bio || ""); }
+        if (profileRes.data) { setBusinessName(profileRes.data.business_name || ""); setSpecialty(profileRes.data.specialty || ""); setBio(profileRes.data.bio || ""); setSlug(profileRes.data.slug || ""); setAccentColor(profileRes.data.accent_color || "#00E5FF"); }
 
         if (promoRes.error && promoRes.error.code !== "PGRST116") { console.error("[Settings] Error cargando código promo:", promoRes.error); } // No bloqueante
         if (promoRes.data) { setPromoCode(promoRes.data.code); setPromoCodeId(promoRes.data.id); }
@@ -66,7 +68,7 @@ export default function TrainerSettingsPage() {
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user;
       if (!user) return;
-      const firstName = (user.user_metadata?.full_name || "FITOS").split(" ")[0].toUpperCase().slice(0, 6);
+      const firstName = (user.user_metadata?.full_name || "KUVOX").split(" ")[0].toUpperCase().slice(0, 6);
       const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
       const suffix = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
       const newCode = `${firstName}-${suffix}`;
@@ -93,7 +95,7 @@ export default function TrainerSettingsPage() {
       const user = session?.user;
       if (!user) { setError("No se pudo obtener la sesión."); setSaving(false); return; }
       const { error: updateError } = await supabase.from("profiles")
-        .update({ business_name: businessName || null, specialty: specialty || null, bio: bio || null })
+        .update({ business_name: businessName || null, specialty: specialty || null, bio: bio || null, slug: slug || null, accent_color: accentColor || "#00E5FF" })
         .eq("user_id", user.id);
       if (updateError) { setError("Error al guardar los cambios."); setSaving(false); return; }
       setSuccess(true); setTimeout(() => setSuccess(false), 3000);
@@ -254,6 +256,98 @@ export default function TrainerSettingsPage() {
                   "Guardar cambios"
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Public Profile ── */}
+        <div className="st-in st-3 relative overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6">
+          <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(90deg, #00E5FF, #7C3AED)" }} />
+          <div className="pointer-events-none absolute -top-8 -right-8 h-32 w-32 rounded-full bg-[#00E5FF] opacity-[0.04] blur-[40px]" />
+
+          <div className="relative">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#00E5FF]">— Perfil publico</p>
+            <h2 className="mt-1 text-[17px] font-bold text-white">Landing page personal</h2>
+            <p className="mt-1 text-[13px] text-[#8B8BA3]">Configura tu perfil publico para captar leads</p>
+
+            <div className="mt-6 space-y-5">
+              {/* Slug */}
+              <div className="space-y-1.5">
+                <label htmlFor="slug" className="block text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]">
+                  URL personalizada
+                </label>
+                <div className="flex items-center gap-0">
+                  <span className="flex h-[42px] items-center rounded-l-xl border border-r-0 border-white/[0.08] bg-white/[0.03] px-3 text-[13px] text-[#5A5A72]">
+                    kuvox.io/t/
+                  </span>
+                  <input
+                    id="slug"
+                    type="text"
+                    value={slug}
+                    onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                    placeholder="tu-nombre"
+                    className="st-input !rounded-l-none"
+                  />
+                </div>
+                {slug && (
+                  <p className="text-[11px] text-[#8B8BA3]">
+                    Tu landing:{" "}
+                    <a
+                      href={`/t/${slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#00E5FF] hover:underline"
+                    >
+                      kuvox.io/t/{slug}
+                    </a>
+                  </p>
+                )}
+              </div>
+
+              {/* Accent Color */}
+              <div className="space-y-1.5">
+                <label htmlFor="accent_color" className="block text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]">
+                  Color de acento
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    id="accent_color"
+                    type="color"
+                    value={accentColor}
+                    onChange={(e) => setAccentColor(e.target.value)}
+                    className="h-[42px] w-[42px] cursor-pointer rounded-xl border border-white/[0.08] bg-[#0A0A0F] p-1"
+                  />
+                  <input
+                    type="text"
+                    value={accentColor}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (/^#[0-9A-Fa-f]{0,6}$/.test(v)) setAccentColor(v);
+                    }}
+                    className="st-input !w-32"
+                    maxLength={7}
+                  />
+                  <div
+                    className="flex h-8 items-center rounded-lg px-4 text-[11px] font-bold"
+                    style={{ backgroundColor: accentColor, color: "#0A0A0F" }}
+                  >
+                    Preview
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick color presets */}
+              <div className="flex flex-wrap gap-2">
+                {["#00E5FF", "#7C3AED", "#FF9100", "#00C853", "#FF1744", "#FFD600"].map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setAccentColor(c)}
+                    className={`h-7 w-7 rounded-full border-2 transition-all ${accentColor === c ? "border-white scale-110" : "border-transparent"}`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>

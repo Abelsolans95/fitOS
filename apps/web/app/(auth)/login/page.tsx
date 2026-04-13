@@ -105,7 +105,7 @@ export default function LoginPage() {
             src="/auth-login.jpg"
             fill
             className="object-cover object-center"
-            alt="FitOS gym"
+            alt="Kuvox gym"
             priority
           />
 
@@ -168,7 +168,7 @@ export default function LoginPage() {
               className="text-[9px] font-bold uppercase tracking-[0.45em] text-[#3A3A52]"
               style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
             >
-              FitOS · 2026
+              Kuvox · 2026
             </p>
             <div className="h-16 w-px" style={{ background: "linear-gradient(to bottom, transparent, rgba(0,229,255,0.25), transparent)" }} />
           </div>
@@ -184,7 +184,7 @@ export default function LoginPage() {
             {/* Mobile: logo + back */}
             <div className="mb-10 flex items-center justify-between lg:hidden">
               <Link href="/" className="text-[15px] font-extrabold tracking-tight">
-                Fit<span className="text-[#00E5FF]">OS</span>
+                Kuv<span className="text-[#00E5FF]">ox</span>
               </Link>
               <Link href="/" className="text-[11px] text-[#5A5A72] hover:text-white transition-colors">← Volver</Link>
             </div>

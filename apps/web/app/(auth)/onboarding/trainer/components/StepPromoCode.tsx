@@ -125,7 +125,7 @@ export function StepPromoCode({
               <button
                 type="button"
                 onClick={() => {
-                  const text = `Registrate en FitOS con mi codigo: ${promoCode}`;
+                  const text = `Registrate en Kuvox con mi codigo: ${promoCode}`;
                   const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
                   window.open(url, "_blank");
                 }}
@@ -139,9 +139,9 @@ export function StepPromoCode({
               <button
                 type="button"
                 onClick={() => {
-                  const subject = encodeURIComponent("Tu codigo para FitOS");
+                  const subject = encodeURIComponent("Tu codigo para Kuvox");
                   const body = encodeURIComponent(
-                    `Hola!\n\nRegistrate en FitOS con mi codigo promocional: ${promoCode}\n\nNos vemos en la plataforma!`
+                    `Hola!\n\nRegistrate en Kuvox con mi codigo promocional: ${promoCode}\n\nNos vemos en la plataforma!`
                   );
                   window.open(
                     `mailto:?subject=${subject}&body=${body}`,

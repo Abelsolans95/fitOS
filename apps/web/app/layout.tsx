@@ -34,11 +34,11 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://fit-os-web.vercel.
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: "FitOS — Software para Entrenadores Personales",
-    template: "%s | FitOS",
+    default: "Kuvox — Software para Entrenadores Personales",
+    template: "%s | Kuvox",
   },
   description:
-    "FitOS es la plataforma SaaS para entrenadores personales. Genera rutinas y menús con IA, gestiona clientes, analiza comidas con visión artificial y controla el progreso desde web y móvil. Prueba gratis 14 días.",
+    "Kuvox es la plataforma SaaS para entrenadores personales. Genera rutinas y menús con IA, gestiona clientes, analiza comidas con visión artificial y controla el progreso desde web y móvil. Prueba gratis 14 días.",
   keywords: [
     "software entrenador personal",
     "aplicacion entrenador personal",
@@ -51,9 +51,9 @@ export const metadata: Metadata = {
     "generador rutinas IA",
     "seguimiento clientes gym",
   ],
-  authors: [{ name: "FitOS" }],
-  creator: "FitOS",
-  publisher: "FitOS",
+  authors: [{ name: "Kuvox" }],
+  creator: "Kuvox",
+  publisher: "Kuvox",
   robots: {
     index: true,
     follow: true,
@@ -69,8 +69,8 @@ export const metadata: Metadata = {
     type: "website",
     locale: "es_ES",
     url: BASE_URL,
-    siteName: "FitOS",
-    title: "FitOS — Software para Entrenadores Personales",
+    siteName: "Kuvox",
+    title: "Kuvox — Software para Entrenadores Personales",
     description:
       "Gestiona clientes, genera rutinas y menús con IA, analiza comidas con la cámara. Todo lo que necesita tu negocio de entrenamiento personal.",
     images: [
@@ -78,13 +78,13 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "FitOS — Plataforma para Entrenadores Personales",
+        alt: "Kuvox — Plataforma para Entrenadores Personales",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "FitOS — Software para Entrenadores Personales",
+    title: "Kuvox — Software para Entrenadores Personales",
     description:
       "Gestiona clientes, genera rutinas y menús con IA. Prueba gratis 14 días.",
     images: ["/og-image.png"],
@@ -112,7 +112,7 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "SoftwareApplication",
-              name: "FitOS",
+              name: "Kuvox",
               applicationCategory: "BusinessApplication",
               operatingSystem: "Web, iOS, Android",
               description:

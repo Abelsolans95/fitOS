@@ -13,6 +13,7 @@ export interface CommunityState {
   newPostContent: string;
   newPostImage: File | null;
   newPostImagePreview: string | null;
+  newPostIsPublic: boolean;
   publishing: boolean;
   // Comments
   expandedPostId: string | null;
@@ -40,6 +41,7 @@ export const communityInitialState: CommunityState = {
   newPostContent: "",
   newPostImage: null,
   newPostImagePreview: null,
+  newPostIsPublic: false,
   publishing: false,
   expandedPostId: null,
   comments: {},
@@ -64,6 +66,7 @@ export type CommunityAction =
   | { type: "SET_NEW_POST_TITLE"; payload: string }
   | { type: "SET_NEW_POST_CONTENT"; payload: string }
   | { type: "SET_NEW_POST_IMAGE"; payload: { file: File | null; preview: string | null } }
+  | { type: "SET_NEW_POST_IS_PUBLIC"; payload: boolean }
   | { type: "SET_PUBLISHING"; payload: boolean }
   | { type: "ADD_POST"; payload: CommunityPost }
   | { type: "REMOVE_POST"; payload: string }
@@ -103,10 +106,12 @@ export function communityReducer(state: CommunityState, action: CommunityAction)
       return { ...state, newPostContent: action.payload };
     case "SET_NEW_POST_IMAGE":
       return { ...state, newPostImage: action.payload.file, newPostImagePreview: action.payload.preview };
+    case "SET_NEW_POST_IS_PUBLIC":
+      return { ...state, newPostIsPublic: action.payload };
     case "SET_PUBLISHING":
       return { ...state, publishing: action.payload };
     case "ADD_POST":
-      return { ...state, posts: [action.payload, ...state.posts], newPostTitle: "", newPostContent: "", newPostImage: null, newPostImagePreview: null, publishing: false };
+      return { ...state, posts: [action.payload, ...state.posts], newPostTitle: "", newPostContent: "", newPostImage: null, newPostImagePreview: null, newPostIsPublic: false, publishing: false };
     case "REMOVE_POST":
       return { ...state, posts: state.posts.filter((p) => p.id !== action.payload) };
     case "TOGGLE_LIKE":

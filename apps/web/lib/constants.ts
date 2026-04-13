@@ -37,4 +37,8 @@ export const QUERY_LIMITS = {
   TICKET_REPLIES_PREVIEW: 50,
   /** Knowledge article suggestions in ticket creation */
   KNOWLEDGE_SUGGESTIONS: 3,
+  /** Contracts per trainer/client view */
+  CONTRACTS: 200,
+  /** Contract templates per trainer */
+  CONTRACT_TEMPLATES: 50,
 } as const;

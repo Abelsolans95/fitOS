@@ -278,7 +278,7 @@ export default function OnboardingScreen() {
   if (pageLoading) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.logo}>Fit<Text style={{ color: colors.cyan }}>OS</Text></Text>
+        <Text style={styles.logo}>Kuv<Text style={{ color: colors.cyan }}>ox</Text></Text>
         <ActivityIndicator size="large" color={colors.cyan} style={{ marginTop: 24 }} />
         <Text style={styles.loadingText}>Cargando formulario...</Text>
       </View>
@@ -290,7 +290,7 @@ export default function OnboardingScreen() {
   if (pageError && !trainerId) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.logo}>Fit<Text style={{ color: colors.cyan }}>OS</Text></Text>
+        <Text style={styles.logo}>Kuv<Text style={{ color: colors.cyan }}>ox</Text></Text>
         <View style={styles.errorCard}>
           <Text style={styles.errorText}>{pageError}</Text>
         </View>
@@ -309,7 +309,7 @@ export default function OnboardingScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.logo}>Fit<Text style={{ color: colors.cyan }}>OS</Text></Text>
+        <Text style={styles.logo}>Kuv<Text style={{ color: colors.cyan }}>ox</Text></Text>
         <Text style={styles.subtitle}>Completa tu perfil para empezar</Text>
 
         <StepIndicator currentStep={step} totalSteps={totalSteps} stepLabel={stepLabel} />
