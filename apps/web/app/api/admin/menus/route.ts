@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { verifyAdmin } from "@/lib/admin-auth";
-import { validateCsrf } from "@/lib/csrf";
+import { handler } from "@/lib/api-handler";
+import { uuidSchema, escapeLike } from "@/lib/validation";
 import { logger } from "@/lib/logger";
 
 /**
  * GET /api/admin/menus
  * List users with their menus_enabled status.
  * Query params: role (trainer|client|all), search, page, limit
+ *
+ * NOTE: GET still uses the verifyAdmin helper directly (no body to validate),
+ * which is the cleaner choice for read-only routes.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -19,10 +24,12 @@ export async function GET(request: NextRequest) {
     const roleFilter = searchParams.get("role") ?? "all";
     const search = searchParams.get("search")?.trim() ?? "";
     const page = Math.max(parseInt(searchParams.get("page") ?? "1", 10) || 1, 1);
-    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") ?? "50", 10) || 50, 1), 100);
+    const limit = Math.min(
+      Math.max(parseInt(searchParams.get("limit") ?? "50", 10) || 50, 1),
+      100
+    );
     const offset = (page - 1) * limit;
 
-    // Count query
     let countQuery = supabaseAdmin
       .from("profiles")
       .select("user_id", { count: "exact", head: true });
@@ -34,7 +41,8 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      countQuery = countQuery.ilike("full_name", `%${search.replace(/%/g, "\\%").replace(/_/g, "\\_")}%`);
+      // escapeLike prevents % / _ wildcard injection (gotcha #134).
+      countQuery = countQuery.ilike("full_name", `%${escapeLike(search)}%`);
     }
 
     const { count, error: countErr } = await countQuery;
@@ -44,7 +52,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Error al contar usuarios" }, { status: 500 });
     }
 
-    // Data query
     let dataQuery = supabaseAdmin
       .from("profiles")
       .select("user_id, full_name, business_name, role, menus_enabled")
@@ -58,7 +65,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      dataQuery = dataQuery.ilike("full_name", `%${search.replace(/%/g, "\\%").replace(/_/g, "\\_")}%`);
+      dataQuery = dataQuery.ilike("full_name", `%${escapeLike(search)}%`);
     }
 
     const { data: users, error: dataErr } = await dataQuery;
@@ -83,33 +90,22 @@ export async function GET(request: NextRequest) {
 /**
  * PUT /api/admin/menus
  * Toggle menus_enabled for a user.
- * Body: { user_id: string, menus_enabled: boolean }
+ *
+ * Migrated to the declarative `handler` wrapper — CSRF, rate-limit, auth,
+ * admin-role (DB-verified, gotcha #121) and body validation are applied by
+ * construction. The business logic is the only thing the route owns now.
  */
-export async function PUT(request: NextRequest) {
-  try {
-    if (!validateCsrf(request)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+const putBodySchema = z.object({
+  user_id: uuidSchema,
+  menus_enabled: z.boolean(),
+});
 
-    const { auth, errorResponse } = await verifyAdmin(request);
-    if (!auth) return errorResponse!;
+export const PUT = handler(
+  { auth: "required", role: "admin", body: putBodySchema },
+  async ({ admin, body }) => {
+    const { user_id: userId, menus_enabled: menusEnabled } = body;
 
-    const { supabaseAdmin } = auth;
-    const body = await request.json();
-
-    const userId = body.user_id;
-    const menusEnabled = body.menus_enabled;
-
-    if (!userId || typeof userId !== "string") {
-      return NextResponse.json({ error: "user_id es requerido" }, { status: 400 });
-    }
-
-    if (typeof menusEnabled !== "boolean") {
-      return NextResponse.json({ error: "menus_enabled debe ser boolean" }, { status: 400 });
-    }
-
-    // Verify user exists and is trainer or client
-    const { data: profile, error: fetchErr } = await supabaseAdmin
+    const { data: profile, error: fetchErr } = await admin
       .from("profiles")
       .select("user_id, role")
       .eq("user_id", userId)
@@ -120,10 +116,13 @@ export async function PUT(request: NextRequest) {
     }
 
     if (profile.role !== "trainer" && profile.role !== "client") {
-      return NextResponse.json({ error: "Solo se pueden modificar trainers y clientes" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Solo se pueden modificar trainers y clientes" },
+        { status: 400 }
+      );
     }
 
-    const { error: updateErr } = await supabaseAdmin
+    const { error: updateErr } = await admin
       .from("profiles")
       .update({ menus_enabled: menusEnabled })
       .eq("user_id", userId);
@@ -133,8 +132,10 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, user_id: userId, menus_enabled: menusEnabled });
-  } catch {
-    return NextResponse.json({ error: "Error inesperado" }, { status: 500 });
+    return NextResponse.json({
+      success: true,
+      user_id: userId,
+      menus_enabled: menusEnabled,
+    });
   }
-}
+);
