@@ -144,3 +144,23 @@
 - Hook `useMenusEnabled` — fetches profile flag, used by both sidebars.
 - Admin sidebar updated with "Gestion de menus" nav item.
 - Tests: 7 tests for admin menus API (GET filtering, PUT toggle, validation, role guard).
+
+## Defense-in-depth refactor + repo hygiene (17/04/2026) ✅
+- **Security fixes**:
+  - CORS whitelist en Edge Functions (`supabase/functions/_shared/auth.ts`) — reemplazada heurística permisiva `origin.endsWith(".vercel.app") && origin.includes("fitos")` por regex exacta via `VERCEL_PROJECT_PREVIEW_REGEX` env var. Sin la env, solo se permiten los orígenes estáticos del whitelist.
+  - UUID regex case-insensitive en `/api/leads` sustituida por `uuidSchema` Zod (lowercase estricto, forma canónica de Postgres).
+  - 55 ocurrencias de `console.error` en API routes migradas a `logger.error` — ahora PII-redacted por defecto.
+- **Defense-by-construction**:
+  - `lib/api-handler.ts` — wrapper declarativo que aplica CSRF → rate-limit → auth → role → body-parse+validate de un plumazo. Previene la clase entera de gotchas #68, #93, #94, #97, #138. 16 tests.
+  - `lib/validation.ts` — schemas Zod compartidos (`uuidSchema`, `emailSchema`, `roleSchema`, etc.) + `escapeLike()` para prevenir wildcard injection ILIKE (gotcha #134). 14 tests.
+- **Test coverage** (+88 tests):
+  - `admin-auth` (6 — gotcha #121), `csrf` (8), `rate-limit` (8), `sanitize` (10), `file-validation` (10), `url-validation` (10), `logger` (6), `validation` (14), `api-handler` (16).
+- **Repo hygiene**:
+  - `pnpm-workspace.yaml` eliminado (proyecto usa npm).
+  - `commit_diff.txt`, `push_error.txt`, `staged_diff.txt` eliminados + blindado `.gitignore`.
+  - Planning markdown (`PROMPT_CHAT*.md`, `RUTA_ABRIL.md`, `KUVOX_VISION.md`, etc.) movidos a `docs/archive/`.
+  - Scripts dev (`script_*.js`, `replace_dashboard_colors.js`, etc.) movidos a `scripts/dev/`.
+- **Shared code**:
+  - `exercise-resolver`, `food-resolver`, `query-cache` extraídos a `@fitos/shared/resolvers`. `apps/web/lib/*` son ahora shims de re-export (backward compat). Listos para consumir desde mobile.
+- **Docs**:
+  - Path de migración a Upstash Redis documentado en `lib/rate-limit.ts` (mantiene la misma API de `check()` al migrar).

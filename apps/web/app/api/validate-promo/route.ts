@@ -4,6 +4,7 @@ import { createClient as createServerClient } from "@/lib/supabase-server";
 import { authLimiter, getClientIdentifier } from "@/lib/rate-limit";
 import { validateCsrf } from "@/lib/csrf";
 import { sanitizeName } from "@/lib/sanitize";
+import { logger } from "@/lib/logger";
 
 export async function POST(req: Request) {
   // SECURITY: CSRF check
@@ -63,7 +64,7 @@ export async function POST(req: Request) {
     .single();
 
   if (profileErr) {
-    console.error("[validate-promo] Error cargando perfil:", profileErr);
+    logger.error("[validate-promo] Error cargando perfil:", { error: profileErr });
   }
 
   return NextResponse.json({

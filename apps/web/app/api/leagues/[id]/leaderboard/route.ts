@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase-server";
 import { apiLimiter, getClientIdentifier } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/leagues/[id]/leaderboard
@@ -62,7 +63,7 @@ export async function GET(
       .limit(200);
 
     if (partErr) {
-      console.error("[leagues/leaderboard] Error al cargar participantes");
+      logger.error("[leagues/leaderboard] Error al cargar participantes");
       return NextResponse.json(
         { error: "Error al cargar clasificacion" },
         { status: 500 }

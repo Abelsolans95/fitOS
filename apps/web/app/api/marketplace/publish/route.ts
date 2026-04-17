@@ -4,6 +4,7 @@ import { createClient as createBrowserClient } from "@/lib/supabase-server";
 import { apiLimiter, getClientIdentifier } from "@/lib/rate-limit";
 import { validateCsrf } from "@/lib/csrf";
 import { sanitizeName, sanitizeText } from "@/lib/sanitize";
+import { logger } from "@/lib/logger";
 
 const VALID_CATEGORIES = [
   "hipertrofia",
@@ -188,7 +189,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertErr) {
-      console.error("[marketplace/publish] Error inserting product");
+      logger.error("[marketplace/publish] Error inserting product");
       return NextResponse.json(
         { error: "Error al crear el producto" },
         { status: 500 }

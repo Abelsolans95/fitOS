@@ -117,3 +117,23 @@ export {
 
 // Utils
 export { formatTime } from "./utils/time";
+
+// Resolvers (three-layer exercise/food + query cache) — cross-platform.
+export {
+  getResolvedExercises,
+  resolveExercise,
+  searchSimilarExercises,
+  upsertExerciseOverride,
+  getResolvedFoods,
+  searchSimilarFoods,
+  upsertFoodOverride,
+  getCached,
+  setCache,
+  invalidateCache,
+} from "./resolvers";
+export type {
+  ResolvedExercise,
+  SimilarExerciseResult,
+  ResolvedFood,
+  SimilarFoodResult,
+} from "./resolvers";

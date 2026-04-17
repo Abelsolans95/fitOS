@@ -4,6 +4,7 @@ import { createClient as createServerClient } from "@/lib/supabase-server";
 import { apiLimiter, getClientIdentifier } from "@/lib/rate-limit";
 import { validateCsrf } from "@/lib/csrf";
 import { sanitizeName, sanitizeText } from "@/lib/sanitize";
+import { logger } from "@/lib/logger";
 
 const VALID_STATUSES = ["draft", "sent", "viewed", "signed", "expired"];
 
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
         .limit(200);
 
       if (error) {
-        console.error("[contracts] Error loading trainer contracts");
+        logger.error("[contracts] Error loading trainer contracts");
         return NextResponse.json({ error: "Error al cargar contratos" }, { status: 500 });
       }
 
@@ -81,7 +82,7 @@ export async function GET(request: NextRequest) {
         .limit(200);
 
       if (error) {
-        console.error("[contracts] Error loading client contracts");
+        logger.error("[contracts] Error loading client contracts");
         return NextResponse.json({ error: "Error al cargar contratos" }, { status: 500 });
       }
 
@@ -181,7 +182,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertErr) {
-      console.error("[contracts] Error creating contract");
+      logger.error("[contracts] Error creating contract");
       return NextResponse.json({ error: "Error al crear contrato" }, { status: 500 });
     }
 
@@ -278,7 +279,7 @@ export async function PUT(request: NextRequest) {
         .single();
 
       if (updateErr) {
-        console.error("[contracts] Error updating contract");
+        logger.error("[contracts] Error updating contract");
         return NextResponse.json({ error: "Error al actualizar contrato" }, { status: 500 });
       }
 
@@ -303,7 +304,7 @@ export async function PUT(request: NextRequest) {
         .single();
 
       if (updateErr) {
-        console.error("[contracts] Error marking contract viewed");
+        logger.error("[contracts] Error marking contract viewed");
         return NextResponse.json({ error: "Error al actualizar contrato" }, { status: 500 });
       }
 
@@ -383,7 +384,7 @@ export async function DELETE(request: NextRequest) {
       .eq("id", id);
 
     if (deleteErr) {
-      console.error("[contracts] Error deleting contract");
+      logger.error("[contracts] Error deleting contract");
       return NextResponse.json({ error: "Error al eliminar contrato" }, { status: 500 });
     }
 

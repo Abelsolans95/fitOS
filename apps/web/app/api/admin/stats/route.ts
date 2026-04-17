@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdmin } from "@/lib/admin-auth";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -82,7 +83,7 @@ export async function GET(request: NextRequest) {
       newClientsWeek: recentClientsResult.count ?? 0,
     });
   } catch {
-    console.error("[admin/stats] Error inesperado");
+    logger.error("[admin/stats] Error inesperado");
     return NextResponse.json({ error: "Error inesperado" }, { status: 500 });
   }
 }

@@ -5,19 +5,33 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// SECURITY: Restrict CORS to actual app domains instead of wildcard
+// SECURITY: Restrict CORS to actual app domains instead of wildcard.
+// Static whitelist comes from APP_URL (production) + localhost dev ports.
+// Preview deploys are only allowed when their origin matches VERCEL_PROJECT_PREVIEW_REGEX
+// (e.g. "^https://fitos-[a-z0-9-]+-abelsolans95\\.vercel\\.app$"). Without the env var,
+// *.vercel.app origins are blocked — prevents spoofing via `fitos-evil.vercel.app`.
 const ALLOWED_ORIGINS = [
   Deno.env.get("APP_URL") || "http://localhost:3000",
   "http://localhost:3000",
   "http://localhost:3001",
 ].filter(Boolean);
 
+const PREVIEW_REGEX = (() => {
+  const raw = Deno.env.get("VERCEL_PROJECT_PREVIEW_REGEX");
+  if (!raw) return null;
+  try {
+    return new RegExp(raw);
+  } catch {
+    return null;
+  }
+})();
+
 function getCorsOrigin(req: Request): string {
   const origin = req.headers.get("origin") || "";
   if (ALLOWED_ORIGINS.includes(origin)) return origin;
-  // Fallback: allow if origin matches Vercel preview deploys
-  // Only allow our own Vercel preview deploys (project-specific)
-  if (origin.endsWith(".vercel.app") && origin.includes("fitos")) return origin;
+  // Only allow preview origins that match the exact project regex — never the
+  // broad `*.vercel.app + includes("fitos")` heuristic (spoofable).
+  if (PREVIEW_REGEX && PREVIEW_REGEX.test(origin)) return origin;
   return ""; // Block requests from unknown origins
 }
 

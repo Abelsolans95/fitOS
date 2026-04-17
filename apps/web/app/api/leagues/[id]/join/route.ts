@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase-server";
 import { apiLimiter, getClientIdentifier } from "@/lib/rate-limit";
 import { validateCsrf } from "@/lib/csrf";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/leagues/[id]/join
@@ -106,7 +107,7 @@ export async function POST(
           { status: 409 }
         );
       }
-      console.error("[leagues/join] Error al unirse a liga");
+      logger.error("[leagues/join] Error al unirse a liga");
       return NextResponse.json(
         { error: "Error al unirse a la liga" },
         { status: 500 }

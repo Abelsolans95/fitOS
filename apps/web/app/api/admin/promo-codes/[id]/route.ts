@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdmin } from "@/lib/admin-auth";
 import { validateCsrf } from "@/lib/csrf";
+import { logger } from "@/lib/logger";
 
 export async function PUT(
   request: NextRequest,
@@ -46,13 +47,13 @@ export async function PUT(
       .eq("id", id);
 
     if (updateErr) {
-      console.error("[admin/promo-codes/[id]] Error actualizando");
+      logger.error("[admin/promo-codes/[id]] Error actualizando");
       return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch {
-    console.error("[admin/promo-codes/[id]] Error inesperado");
+    logger.error("[admin/promo-codes/[id]] Error inesperado");
     return NextResponse.json({ error: "Error inesperado" }, { status: 500 });
   }
 }

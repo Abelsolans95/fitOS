@@ -6,6 +6,7 @@ import { validateExcelMagicBytes } from "@/lib/file-validation";
 import { uploadLimiter, getClientIdentifier } from "@/lib/rate-limit";
 import { validateCsrf } from "@/lib/csrf";
 import { sanitizeName } from "@/lib/sanitize";
+import { logger } from "@/lib/logger";
 
 /** Column detected by AI analysis */
 interface DetectedColumn {
@@ -211,7 +212,7 @@ IMPORTANTE:
           ],
         });
       } catch {
-        console.error("[import/excel] Anthropic API error for sheet:", sheetName);
+        logger.error("[import/excel] Anthropic API error for sheet:", { error: sheetName });
         continue; // Skip this sheet, process remaining
       }
 
@@ -304,7 +305,7 @@ IMPORTANTE:
       .single();
 
     if (insertError) {
-      console.error("[import/excel] Error guardando importación");
+      logger.error("[import/excel] Error guardando importación");
       return NextResponse.json(
         { error: "Error guardando importación" },
         { status: 500 }

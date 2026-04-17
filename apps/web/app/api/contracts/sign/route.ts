@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase-server";
 import { apiLimiter, getClientIdentifier } from "@/lib/rate-limit";
 import { validateCsrf } from "@/lib/csrf";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/contracts/sign
@@ -91,7 +92,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (updateErr) {
-      console.error("[contracts/sign] Error signing contract");
+      logger.error("[contracts/sign] Error signing contract");
       return NextResponse.json({ error: "Error al firmar contrato" }, { status: 500 });
     }
 

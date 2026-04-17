@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdmin } from "@/lib/admin-auth";
 import { validateCsrf } from "@/lib/csrf";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/admin/menus
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
     const { count, error: countErr } = await countQuery;
 
     if (countErr) {
-      console.error("[admin/menus] Error counting users");
+      logger.error("[admin/menus] Error counting users");
       return NextResponse.json({ error: "Error al contar usuarios" }, { status: 500 });
     }
 
@@ -63,7 +64,7 @@ export async function GET(request: NextRequest) {
     const { data: users, error: dataErr } = await dataQuery;
 
     if (dataErr) {
-      console.error("[admin/menus] Error loading users");
+      logger.error("[admin/menus] Error loading users");
       return NextResponse.json({ error: "Error al cargar usuarios" }, { status: 500 });
     }
 
@@ -128,7 +129,7 @@ export async function PUT(request: NextRequest) {
       .eq("user_id", userId);
 
     if (updateErr) {
-      console.error("[admin/menus] Error updating menus_enabled");
+      logger.error("[admin/menus] Error updating menus_enabled");
       return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
     }
 

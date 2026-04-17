@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAdmin } from "@/lib/admin-auth";
 import { validateCsrf } from "@/lib/csrf";
 import { sanitizeName, sanitizeEmail } from "@/lib/sanitize";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
       if (authError.message?.includes("already")) {
         return NextResponse.json({ error: "Ya existe un usuario con este email" }, { status: 409 });
       }
-      console.error("[admin/users/create] Error creando auth user");
+      logger.error("[admin/users/create] Error creando auth user");
       return NextResponse.json({ error: "Error al crear usuario" }, { status: 500 });
     }
 
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
       .upsert(profileData, { onConflict: "user_id" });
 
     if (profileErr) {
-      console.error("[admin/users/create] Error creando perfil");
+      logger.error("[admin/users/create] Error creando perfil");
       // Rollback: delete auth user
       await supabaseAdmin.auth.admin.deleteUser(newUserId);
       return NextResponse.json({ error: "Error al crear perfil" }, { status: 500 });
@@ -111,7 +112,7 @@ export async function POST(request: NextRequest) {
       .upsert({ user_id: newUserId, role }, { onConflict: "user_id" });
 
     if (roleErr) {
-      console.error("[admin/users/create] Error creando user_roles");
+      logger.error("[admin/users/create] Error creando user_roles");
     }
 
     // 4. If client, create trainer_clients relationship
@@ -126,7 +127,7 @@ export async function POST(request: NextRequest) {
         });
 
       if (tcErr) {
-        console.error("[admin/users/create] Error creando trainer_clients");
+        logger.error("[admin/users/create] Error creando trainer_clients");
         return NextResponse.json({ error: "Usuario creado pero error al asignar entrenador" }, { status: 207 });
       }
     }
@@ -152,7 +153,7 @@ export async function POST(request: NextRequest) {
       role,
     }, { status: 201 });
   } catch {
-    console.error("[admin/users/create] Error inesperado");
+    logger.error("[admin/users/create] Error inesperado");
     return NextResponse.json({ error: "Error inesperado" }, { status: 500 });
   }
 }
