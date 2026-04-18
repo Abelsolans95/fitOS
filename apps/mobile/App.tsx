@@ -38,6 +38,7 @@ import { colors } from "./src/theme";
 // Screens
 import LoginScreen from "./src/screens/LoginScreen";
 import OnboardingScreen from "./src/screens/OnboardingScreen";
+import MyDayScreen from "./src/screens/MyDayScreen";
 import DashboardScreen from "./src/screens/DashboardScreen";
 import CaloriesScreen from "./src/screens/CaloriesScreen";
 import RoutineScreen from "./src/screens/RoutineScreen";
@@ -67,6 +68,17 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
   const size = 22;
 
   const icons: Record<string, React.ReactNode> = {
+    "Mi día": (
+      <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+        <Path
+          d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+          stroke={color}
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </Svg>
+    ),
     Inicio: (
       <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
         <Path
@@ -268,6 +280,7 @@ function AppNavigator() {
         },
       })}
     >
+      <Tab.Screen name="Mi día" component={MyDayScreen} />
       <Tab.Screen name="Inicio" component={DashboardScreen} />
       <Tab.Screen name="Calorías" component={CaloriesScreen} />
       <Tab.Screen name="Rutina" component={RoutineScreen} />

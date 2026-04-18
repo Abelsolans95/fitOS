@@ -164,3 +164,29 @@
   - `exercise-resolver`, `food-resolver`, `query-cache` extraídos a `@fitos/shared/resolvers`. `apps/web/lib/*` son ahora shims de re-export (backward compat). Listos para consumir desde mobile.
 - **Docs**:
   - Path de migración a Upstash Redis documentado en `lib/rate-limit.ts` (mantiene la misma API de `check()` al migrar).
+
+## Panel "Hoy" del trainer + Pantalla "Mi día" del cliente (18/04/2026) ✅
+
+Traducción directa del positioning ("ves en un panel quién necesita atención hoy" + "reporte en 30 segundos"):
+
+- **Migration 050** — nueva tabla `daily_checkins` (sleep/stress/energy/pain 1-5, notes).
+  UNIQUE(client_id, checkin_date) → una fila por día. RLS: client CRUD propio; trainer SELECT
+  sólo para clientes activos (EXISTS en trainer_clients).
+- **@fitos/shared**: tipos `DailyCheckin`, `TodayAlert`, `TodayPanel` y sus variantes por tipo.
+- **Trainer**:
+  - `/api/trainer/today` — agrega en paralelo 6 señales: `no_workout` (3+ días), `no_checkin`
+    (48h), `new_injury` (7 días), `pending_ticket` (open/in_progress), `high_stress` (≥4/5),
+    `high_pain` (≥4/5). Usa el `handler` wrapper + rol=trainer + RLS del caller. 7 tests.
+  - `/app/trainer/today` — página client-side con secciones por tipo de alerta, contador,
+    botón refresh y estado vacío "todo en orden".
+  - TrainerSidebar: "Hoy" como primer item. Default href del sidebar movido a `/app/trainer/today`.
+- **Cliente**:
+  - `/api/client/daily-checkin` — POST upsert (onConflict client_id+checkin_date) + GET fetch
+    del día. `handler({ auth, role: 'client', body: zod schema })`.
+  - `MyDayScreen.tsx` (mobile): secciones Entreno (toggle), Comidas (link a tab Calorías),
+    Peso (input decimal), Cómo me siento (4 sliders 1-5), Notas, CTA "Guardar check-in".
+  - Hook `useMyDay` carga en paralelo: daily_checkins de hoy, workout_sessions completadas hoy,
+    último body_metrics del día — pre-rellena formulario.
+  - Tab "Mi día" añadida como primera en el bottom nav.
+
+Tests: 362/362 verdes.

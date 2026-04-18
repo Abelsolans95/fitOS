@@ -79,6 +79,21 @@ export type {
 } from "./types/leagues";
 export { LEAGUE_METRICS, LEAGUE_STATUSES, BADGE_ICONS } from "./types/leagues";
 
+export type {
+  DailyCheckin,
+  DailyCheckinInput,
+  TodayAlert,
+  TodayAlertKind,
+  TodayAlertClient,
+  TodayPanel,
+  NoWorkoutAlert,
+  NoCheckinAlert,
+  NewInjuryAlert,
+  PendingTicketAlert,
+  HighStressAlert,
+  HighPainAlert,
+} from "./types/daily-checkin";
+
 // Data
 export { DAY_KEYS, DAY_LABELS, DAY_SHORT } from "./data/days";
 export type { DayKey } from "./data/days";

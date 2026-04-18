@@ -6,6 +6,15 @@ import { useMenusEnabled } from "@/hooks/useMenusEnabled";
 
 const BASE_NAV_ITEMS: SidebarNavItem[] = [
   {
+    label: "Hoy",
+    href: "/app/trainer/today",
+    icon: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+      </svg>
+    ),
+  },
+  {
     label: "Dashboard",
     href: "/app/trainer/dashboard",
     icon: (
@@ -175,5 +184,5 @@ export function TrainerSidebar() {
     return item;
   });
 
-  return <AppSidebar items={items} defaultHref="/app/trainer/dashboard" />;
+  return <AppSidebar items={items} defaultHref="/app/trainer/today" />;
 }
