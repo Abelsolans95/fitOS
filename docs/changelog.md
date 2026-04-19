@@ -1,4 +1,4 @@
-# Changelog — FitOS Development History
+# Changelog — Kuvox Development History
 
 ## Fase 0 — Estructura base ✅
 - Estructura monorepo, auth, 19 tablas, tema visual.
@@ -63,7 +63,7 @@
 ## Seguridad Fase 3 — Auditoría Profunda (03/04/2026) ✅
 - 23 vulnerabilidades adicionales. Migraciones 042, 043.
 
-## `@fitos/theme` (30/03/2026) ✅
+## `@kuvox/theme` (30/03/2026) ✅
 - Paquete compartido de tokens de diseño. Metro watchFolders configurado.
 
 ## Mapa anatómico con imágenes reales (31/03/2026) ✅
@@ -161,7 +161,7 @@
   - Planning markdown (`PROMPT_CHAT*.md`, `RUTA_ABRIL.md`, `KUVOX_VISION.md`, etc.) movidos a `docs/archive/`.
   - Scripts dev (`script_*.js`, `replace_dashboard_colors.js`, etc.) movidos a `scripts/dev/`.
 - **Shared code**:
-  - `exercise-resolver`, `food-resolver`, `query-cache` extraídos a `@fitos/shared/resolvers`. `apps/web/lib/*` son ahora shims de re-export (backward compat). Listos para consumir desde mobile.
+  - `exercise-resolver`, `food-resolver`, `query-cache` extraídos a `@kuvox/shared/resolvers`. `apps/web/lib/*` son ahora shims de re-export (backward compat). Listos para consumir desde mobile.
 - **Docs**:
   - Path de migración a Upstash Redis documentado en `lib/rate-limit.ts` (mantiene la misma API de `check()` al migrar).
 
@@ -172,7 +172,7 @@ Traducción directa del positioning ("ves en un panel quién necesita atención 
 - **Migration 050** — nueva tabla `daily_checkins` (sleep/stress/energy/pain 1-5, notes).
   UNIQUE(client_id, checkin_date) → una fila por día. RLS: client CRUD propio; trainer SELECT
   sólo para clientes activos (EXISTS en trainer_clients).
-- **@fitos/shared**: tipos `DailyCheckin`, `TodayAlert`, `TodayPanel` y sus variantes por tipo.
+- **@kuvox/shared**: tipos `DailyCheckin`, `TodayAlert`, `TodayPanel` y sus variantes por tipo.
 - **Trainer**:
   - `/api/trainer/today` — agrega en paralelo 6 señales: `no_workout` (3+ días), `no_checkin`
     (48h), `new_injury` (7 días), `pending_ticket` (open/in_progress), `high_stress` (≥4/5),

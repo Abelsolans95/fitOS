@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Alert } from "react-native";
 import { supabase } from "../../lib/supabase";
-import type { DailyCheckin, DailyCheckinInput } from "@fitos/shared";
+import type { DailyCheckin, DailyCheckinInput } from "@kuvox/shared";
 
 type Score = 1 | 2 | 3 | 4 | 5 | null;
 

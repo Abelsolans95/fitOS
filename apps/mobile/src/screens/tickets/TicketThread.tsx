@@ -3,7 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet,
   ActivityIndicator, KeyboardAvoidingView, Platform,
 } from "react-native";
-import { TICKET_CATEGORIES } from "@fitos/shared";
+import { TICKET_CATEGORIES } from "@kuvox/shared";
 import { colors, spacing, radius, fonts } from "../../theme";
 import { CATEGORY_COLORS, STATUS_COLORS, STATUS_LABELS, timeAgo } from "./types";
 import type { SupportTicket, TicketReply } from "./types";

@@ -29,8 +29,8 @@ const EMPTY_HEALTH: HealthData = {
   lastSyncedAt: null,
 };
 
-const STORAGE_KEY_LAST_SYNC = "@fitos/health_last_sync";
-const STORAGE_KEY_CACHED_DATA = "@fitos/health_cached_data";
+const STORAGE_KEY_LAST_SYNC = "@kuvox/health_last_sync";
+const STORAGE_KEY_CACHED_DATA = "@kuvox/health_cached_data";
 const MIN_SYNC_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
 
 // ─── Platform availability ───────────────────────────────────────────────────

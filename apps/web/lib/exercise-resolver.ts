@@ -1,5 +1,5 @@
 /**
- * Backwards-compat shim — canonical implementation lives in `@fitos/shared/resolvers`.
+ * Backwards-compat shim — canonical implementation lives in `@kuvox/shared/resolvers`.
  * Kept so existing `@/lib/exercise-resolver` imports (and tests) continue to work.
  */
 export {
@@ -7,5 +7,5 @@ export {
   resolveExercise,
   searchSimilarExercises,
   upsertExerciseOverride,
-} from "@fitos/shared";
-export type { ResolvedExercise, SimilarExerciseResult } from "@fitos/shared";
+} from "@kuvox/shared";
+export type { ResolvedExercise, SimilarExerciseResult } from "@kuvox/shared";

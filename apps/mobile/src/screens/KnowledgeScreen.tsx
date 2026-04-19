@@ -7,8 +7,8 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
 import { QUERY_LIMITS } from "../lib/constants";
 import { colors, spacing, radius, fonts } from "../theme";
-import type { KnowledgeCategory, KnowledgeArticle } from "@fitos/shared";
-import { KNOWLEDGE_CATEGORIES } from "@fitos/shared";
+import type { KnowledgeCategory, KnowledgeArticle } from "@kuvox/shared";
+import { KNOWLEDGE_CATEGORIES } from "@kuvox/shared";
 
 // ── Category colors ──
 

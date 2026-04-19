@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase";
 import { QUERY_LIMITS } from "@/lib/constants";
 import type { TicketCategory } from "./types";
 import { TICKET_CATEGORIES } from "./types";
-import type { KnowledgeArticle } from "@fitos/shared";
+import type { KnowledgeArticle } from "@kuvox/shared";
 
 interface CreateTicketFormProps {
   category: TicketCategory;

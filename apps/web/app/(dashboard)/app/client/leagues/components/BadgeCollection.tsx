@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import type { Badge, UserBadge } from "@fitos/shared";
-import { BADGE_ICONS } from "@fitos/shared";
+import type { Badge, UserBadge } from "@kuvox/shared";
+import { BADGE_ICONS } from "@kuvox/shared";
 
 interface BadgeCollectionProps {
   badges: Badge[];

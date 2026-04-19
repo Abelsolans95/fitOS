@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { DynamicField } from "./DynamicField";
 import { Spinner } from "./Shared";
 import type { OnboardingForm, TrainerInfo, Responses, FormField } from "./types";
-import type { SectionGroup } from "@fitos/shared";
+import type { SectionGroup } from "@kuvox/shared";
 
 interface StepDynamicFormProps {
   trainer: TrainerInfo | null;

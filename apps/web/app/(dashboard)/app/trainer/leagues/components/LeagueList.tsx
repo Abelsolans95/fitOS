@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import type { League, LeagueStatus } from "@fitos/shared";
-import { LEAGUE_METRICS, LEAGUE_STATUSES } from "@fitos/shared";
+import type { League, LeagueStatus } from "@kuvox/shared";
+import { LEAGUE_METRICS, LEAGUE_STATUSES } from "@kuvox/shared";
 
 interface LeagueListProps {
   leagues: League[];

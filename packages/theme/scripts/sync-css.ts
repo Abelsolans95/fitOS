@@ -1,5 +1,5 @@
 /**
- * sync-css.ts — Sincroniza los colores de @fitos/theme con globals.css (Tailwind v4)
+ * sync-css.ts — Sincroniza los colores de @kuvox/theme con globals.css (Tailwind v4)
  *
  * Uso: pnpm sync-theme
  *
@@ -68,7 +68,7 @@ function sync() {
 
   writeFileSync(CSS_PATH, updated, "utf-8");
 
-  console.log("✅  globals.css actualizado con los colores de @fitos/theme:");
+  console.log("✅  globals.css actualizado con los colores de @kuvox/theme:");
   CSS_MAP.forEach(([key, cssName]) => {
     console.log(`   --color-${cssName}: ${colors[key]}`);
   });

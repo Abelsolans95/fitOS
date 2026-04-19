@@ -5,7 +5,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "./supabase";
 
-const WIDGET_DATA_KEY = "@fitos/widget-today-workout";
+const WIDGET_DATA_KEY = "@kuvox/widget-today-workout";
 
 const DAY_KEYS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
 const DAY_LABELS: Record<string, string> = {

@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text } from "react-native";
-import type { Badge, UserBadge } from "@fitos/shared";
-import { BADGE_ICONS } from "@fitos/shared";
+import type { Badge, UserBadge } from "@kuvox/shared";
+import { BADGE_ICONS } from "@kuvox/shared";
 import { colors } from "../../theme";
 import { styles } from "./styles";
 

@@ -1,5 +1,5 @@
 // ============================================================
-// Community module types — re-exported from @fitos/shared
+// Community module types — re-exported from @kuvox/shared
 // ============================================================
 
 export type {
@@ -9,4 +9,4 @@ export type {
   CommunityCommentLike,
   CommunityLike,
   CommunityTab,
-} from "@fitos/shared";
+} from "@kuvox/shared";

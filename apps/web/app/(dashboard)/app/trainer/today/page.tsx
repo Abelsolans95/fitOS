@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import type { TodayPanel } from "@fitos/shared";
+import type { TodayPanel } from "@kuvox/shared";
 import { AlertSection } from "./components/AlertSection";
 
 const SECTIONS: {

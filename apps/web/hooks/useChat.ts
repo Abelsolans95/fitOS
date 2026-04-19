@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase";
 import { QUERY_LIMITS } from "@/lib/constants";
-import type { Message } from "@fitos/shared";
+import type { Message } from "@kuvox/shared";
 
 export type { Message };
 

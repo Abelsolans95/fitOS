@@ -1,9 +1,9 @@
 /**
- * @fitos/theme — Única fuente de verdad para colores, spacing y radius.
+ * @kuvox/theme — Única fuente de verdad para colores, spacing y radius.
  *
  * Uso:
- *   Mobile: import { colors } from "@fitos/theme"
- *   Web JS:  import { colors } from "@fitos/theme"  (inline styles, charts)
+ *   Mobile: import { colors } from "@kuvox/theme"
+ *   Web JS:  import { colors } from "@kuvox/theme"  (inline styles, charts)
  *   Web CSS: clases Tailwind (bg-neon-cyan, text-neon-violet...) generadas
  *            por `pnpm sync-theme` desde estos valores.
  *

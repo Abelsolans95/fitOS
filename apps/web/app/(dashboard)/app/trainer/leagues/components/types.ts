@@ -1,4 +1,4 @@
-import type { League, LeagueParticipant, LeagueMetric, LeagueStatus } from "@fitos/shared";
+import type { League, LeagueParticipant, LeagueMetric, LeagueStatus } from "@kuvox/shared";
 
 export type LeaguesTab = "list" | "create";
 

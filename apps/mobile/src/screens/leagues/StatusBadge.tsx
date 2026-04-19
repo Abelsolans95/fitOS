@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text } from "react-native";
-import type { LeagueStatus } from "@fitos/shared";
-import { LEAGUE_STATUSES } from "@fitos/shared";
+import type { LeagueStatus } from "@kuvox/shared";
+import { LEAGUE_STATUSES } from "@kuvox/shared";
 import { styles } from "./styles";
 
 const colorMap: Record<LeagueStatus, string> = {

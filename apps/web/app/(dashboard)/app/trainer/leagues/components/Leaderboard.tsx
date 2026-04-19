@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import type { LeagueParticipant } from "@fitos/shared";
+import type { LeagueParticipant } from "@kuvox/shared";
 
 interface LeaderboardProps {
   participants: LeagueParticipant[];

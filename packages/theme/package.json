@@ -1,5 +1,5 @@
 {
-  "name": "@fitos/theme",
+  "name": "@kuvox/theme",
   "version": "0.1.0",
   "description": "FitOS design tokens — shared color, spacing and radius values",
   "main": "./src/index.ts",

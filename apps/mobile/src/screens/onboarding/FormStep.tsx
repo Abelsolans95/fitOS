@@ -9,7 +9,7 @@ import {
 import { colors, fonts } from "../../theme";
 import { DynamicField } from "./DynamicField";
 import type { FormField, OnboardingForm, Responses } from "./types";
-import type { SectionGroup } from "@fitos/shared";
+import type { SectionGroup } from "@kuvox/shared";
 
 interface FormStepProps {
   form: OnboardingForm | null;

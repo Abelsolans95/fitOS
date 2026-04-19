@@ -3,8 +3,8 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, StyleSheet,
 import Svg, { Path } from "react-native-svg";
 import { supabase } from "../../lib/supabase";
 import { colors, spacing, radius, fonts } from "../../theme";
-import { ZONE_LABELS as MUSCLE_LABELS } from "@fitos/shared";
-import type { HealthLog } from "@fitos/shared";
+import { ZONE_LABELS as MUSCLE_LABELS } from "@kuvox/shared";
+import type { HealthLog } from "@kuvox/shared";
 
 interface Props {
   visible: boolean;

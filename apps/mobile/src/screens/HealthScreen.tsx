@@ -14,10 +14,10 @@ import Svg, { Path, Defs, Filter, FeGaussianBlur, FeColorMatrix, FeMerge, FeMerg
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
 import { colors, spacing, radius, shadows, fonts } from "../theme";
-import { getZonesByView, ZONE_LABELS, ANATOMY_VIEWBOX } from "@fitos/shared";
-import type { MuscleZone } from "@fitos/shared";
+import { getZonesByView, ZONE_LABELS, ANATOMY_VIEWBOX } from "@kuvox/shared";
+import type { MuscleZone } from "@kuvox/shared";
 import { ReportModal } from "./health/ReportModal";
-import type { HealthLog } from "@fitos/shared";
+import type { HealthLog } from "@kuvox/shared";
 
 type Gender = "male" | "female";
 

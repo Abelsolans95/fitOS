@@ -5,8 +5,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-import type { League, LeagueParticipant, LeagueStatus } from "@fitos/shared";
-import { LEAGUE_METRICS } from "@fitos/shared";
+import type { League, LeagueParticipant, LeagueStatus } from "@kuvox/shared";
+import { LEAGUE_METRICS } from "@kuvox/shared";
 import { colors } from "../../theme";
 import { styles, PODIUM_COLORS, formatDate } from "./styles";
 import { StatusBadge } from "./StatusBadge";

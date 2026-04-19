@@ -7,7 +7,7 @@ import type {
   RoutineRaw, ExerciseData, DayData, PreviousLog, PreviousSet,
   SetEntry, InProgressSession, ScreenMode,
 } from "./types";
-import { calculateStressIndex } from "@fitos/shared";
+import { calculateStressIndex } from "@kuvox/shared";
 import {
   buildInitialSets,
   buildResumedSets,

@@ -1,4 +1,4 @@
-import type { League, LeagueParticipant, Badge, UserBadge } from "@fitos/shared";
+import type { League, LeagueParticipant, Badge, UserBadge } from "@kuvox/shared";
 
 export type ClientLeaguesTab = "leagues" | "badges";
 

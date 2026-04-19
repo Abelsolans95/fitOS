@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useReducer } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase";
-import type { League, Badge, UserBadge } from "@fitos/shared";
+import type { League, Badge, UserBadge } from "@kuvox/shared";
 import { ClientLeagueList } from "./components/ClientLeagueList";
 import { BadgeCollection } from "./components/BadgeCollection";
 import {

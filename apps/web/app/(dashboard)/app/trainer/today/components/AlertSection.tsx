@@ -1,6 +1,6 @@
 "use client";
 
-import type { TodayAlert, TodayAlertKind } from "@fitos/shared";
+import type { TodayAlert, TodayAlertKind } from "@kuvox/shared";
 import { AlertCard } from "./AlertCard";
 
 interface AlertSectionProps {

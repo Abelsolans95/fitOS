@@ -2,7 +2,7 @@ import React, { memo, useCallback } from "react";
 import {
   View, Text, TouchableOpacity, FlatList, StyleSheet, Platform,
 } from "react-native";
-import { TICKET_CATEGORIES } from "@fitos/shared";
+import { TICKET_CATEGORIES } from "@kuvox/shared";
 import { colors, spacing, radius, fonts } from "../../theme";
 import { CATEGORY_COLORS, STATUS_COLORS, STATUS_LABELS, timeAgo } from "./types";
 import type { SupportTicket } from "./types";

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CONTRACT_STATUSES } from "@fitos/shared";
+import { CONTRACT_STATUSES } from "@kuvox/shared";
 import { StatusBadge, timeAgo } from "./shared";
 import type { Contract, ContractTab } from "./types";
 

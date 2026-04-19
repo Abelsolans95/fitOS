@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { TodayAlert } from "@fitos/shared";
+import type { TodayAlert } from "@kuvox/shared";
 
 const KIND_META: Record<
   TodayAlert["kind"],

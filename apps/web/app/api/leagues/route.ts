@@ -4,7 +4,7 @@ import { createClient as createServerClient } from "@/lib/supabase-server";
 import { apiLimiter, getClientIdentifier } from "@/lib/rate-limit";
 import { validateCsrf } from "@/lib/csrf";
 import { sanitizeName, sanitizeText } from "@/lib/sanitize";
-import type { LeagueMetric, LeagueStatus } from "@fitos/shared";
+import type { LeagueMetric, LeagueStatus } from "@kuvox/shared";
 import { logger } from "@/lib/logger";
 
 const VALID_METRICS: LeagueMetric[] = ["consistency", "volume", "steps", "sessions", "custom"];

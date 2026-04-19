@@ -20,8 +20,8 @@
     ],
     "paths": {
       "@/*": ["./*"],
-      "@fitos/theme": ["../../packages/theme/src/index.ts"],
-      "@fitos/shared": ["../../packages/shared/src/index.ts"]
+      "@kuvox/theme": ["../../packages/theme/src/index.ts"],
+      "@kuvox/shared": ["../../packages/shared/src/index.ts"]
     }
   },
   "include": [

@@ -15,11 +15,11 @@ export type {
   SavedLogEntry,
   InProgressSession,
   ScreenMode,
-} from "@fitos/shared";
+} from "@kuvox/shared";
 
 // Mobile's SetEntry always has `type` set (required, not optional like shared).
 // Re-define with required type so mobile code can access .type without checks.
-import type { SetEntry as SharedSetEntry, SetEntryType } from "@fitos/shared";
+import type { SetEntry as SharedSetEntry, SetEntryType } from "@kuvox/shared";
 
 export interface SetEntry extends Omit<SharedSetEntry, "type"> {
   type: SetEntryType;

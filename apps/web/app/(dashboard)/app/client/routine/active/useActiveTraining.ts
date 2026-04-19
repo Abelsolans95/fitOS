@@ -4,7 +4,7 @@ import { useReducer, useCallback, useRef, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase";
 import { toast } from "sonner";
 import type { ExerciseData, PreviousLog, SetEntry, SavedLogEntry } from "./types";
-import { calculateStressIndex } from "@fitos/shared";
+import { calculateStressIndex } from "@kuvox/shared";
 
 /* ── Reducer (extracted) ── */
 export { trainingReducer, initialState } from "./active-training-reducer";

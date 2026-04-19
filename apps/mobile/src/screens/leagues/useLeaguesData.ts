@@ -6,7 +6,7 @@ import type {
   LeagueParticipant,
   Badge,
   UserBadge,
-} from "@fitos/shared";
+} from "@kuvox/shared";
 
 export type TabKey = "leagues" | "badges";
 

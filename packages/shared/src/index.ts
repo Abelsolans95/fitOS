@@ -1,4 +1,4 @@
-// ── @fitos/shared — barrel export ────────────────────────────────────────────
+// ── @kuvox/shared — barrel export ────────────────────────────────────────────
 // Single source of truth for cross-platform types, constants and pure utilities.
 
 // Types

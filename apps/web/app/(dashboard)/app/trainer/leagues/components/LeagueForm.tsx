@@ -1,7 +1,7 @@
 "use client";
 
 import { DarkSelect } from "@/components/ui/DarkSelect";
-import { LEAGUE_METRICS } from "@fitos/shared";
+import { LEAGUE_METRICS } from "@kuvox/shared";
 import type { LeagueFormData } from "./types";
 
 interface LeagueFormProps {

@@ -13,7 +13,7 @@ import {
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
 import { colors, fonts } from "../theme";
-import { groupFieldsBySection, getEnabledSections } from "@fitos/shared";
+import { groupFieldsBySection, getEnabledSections } from "@kuvox/shared";
 
 import { FormStep } from "./onboarding/FormStep";
 import { PhysicalDataStep } from "./onboarding/PhysicalDataStep";

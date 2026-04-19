@@ -1,4 +1,4 @@
-import type { ContractStatus, Contract, ContractTemplate } from "@fitos/shared";
+import type { ContractStatus, Contract, ContractTemplate } from "@kuvox/shared";
 
 export type { ContractStatus, Contract, ContractTemplate };
 

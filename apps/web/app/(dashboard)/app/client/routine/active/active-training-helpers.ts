@@ -2,7 +2,7 @@
    Active Training — Pure helper functions
    Extracted from useActiveTraining.ts (Rule 51)
 
-   Shared logic lives in @fitos/shared/routine-logic.
+   Shared logic lives in @kuvox/shared/routine-logic.
    This file wraps shared functions and adds web-specific buildSummaryData.
    ──────────────────────────────────────────── */
 
@@ -23,21 +23,21 @@ export {
   createEmptySet,
   getTotalSetsCount,
   findPreviousSets,
-} from "@fitos/shared";
+} from "@kuvox/shared";
 
-export type { SetsDataEntry } from "@fitos/shared";
+export type { SetsDataEntry } from "@kuvox/shared";
 
 export {
   buildSetsData,
   computeAverageRpe,
   computeSessionTotals,
-} from "@fitos/shared";
+} from "@kuvox/shared";
 
 // ── Import shared helpers used internally ───────────────────────────────────
 import {
   createEmptySet,
   getTotalSetsCount,
-} from "@fitos/shared";
+} from "@kuvox/shared";
 
 /* ── Initialize sets for a fresh session ── */
 

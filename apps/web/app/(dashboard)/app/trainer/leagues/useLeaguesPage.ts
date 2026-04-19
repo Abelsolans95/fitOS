@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useReducer } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase";
-import type { League, LeagueStatus } from "@fitos/shared";
+import type { League, LeagueStatus } from "@kuvox/shared";
 import {
   leaguesReducer,
   INITIAL_STATE,

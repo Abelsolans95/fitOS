@@ -11,7 +11,7 @@ import type {
   PendingTicketAlert,
   HighStressAlert,
   HighPainAlert,
-} from "@fitos/shared";
+} from "@kuvox/shared";
 
 /**
  * GET /api/trainer/today

@@ -68,8 +68,8 @@ if (error) { console.error("[Context] Error:", error); } // No bloqueante
 
 ## Shared packages
 
-- `@fitos/theme` — fuente de verdad para colores/spacing/radius/fonts.
-- `@fitos/shared` — tipos, zonas anatómicas, routine-logic, utils.
+- `@kuvox/theme` — fuente de verdad para colores/spacing/radius/fonts.
+- `@kuvox/shared` — tipos, zonas anatómicas, routine-logic, utils.
 - Routine logic compartida en `packages/shared/src/routine-logic/`.
 - NO migrar valores hardcoded existentes de tema — política "new code only".
 - Tailwind v4 CSS-first — NO crear `tailwind.config.js`.

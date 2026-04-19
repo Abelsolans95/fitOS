@@ -1,4 +1,4 @@
-import type { TicketCategory, TicketStatus, SupportTicket, TicketReply } from "@fitos/shared";
+import type { TicketCategory, TicketStatus, SupportTicket, TicketReply } from "@kuvox/shared";
 import { colors, fonts } from "../../theme";
 
 export type ScreenView = "list" | "create" | "detail";

@@ -62,7 +62,7 @@ El CLAUDE.md pasó de **973 líneas** (siempre cargadas) a **92 líneas** core +
 **20 archivos modificados:**
 - Web: landing (Hero, CTA, Footer, NavBar, Testimonials), auth (login, register, forgot-password, reset-password, onboarding), admin dashboard, layout, sidebar, email-notifications, constants
 - Mobile: App.tsx, OnboardingScreen, LoginScreen, widget
-- **NO cambiado:** nombres de paquetes (@fitos/*), bundle IDs, import paths, env vars
+- **NO cambiado:** nombres de paquetes (@kuvox/*), bundle IDs, import paths, env vars
 
 ### Punto 7 — Gestión de Contratos
 **Archivos creados:**

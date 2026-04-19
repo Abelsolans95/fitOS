@@ -7,8 +7,8 @@ import {
   ZONE_LABELS,
   ALL_ZONE_IDS,
   ANATOMY_VIEWBOX,
-} from "@fitos/shared";
-import type { MuscleZone } from "@fitos/shared";
+} from "@kuvox/shared";
+import type { MuscleZone } from "@kuvox/shared";
 
 /* ── Public types ──────────────────────────────────────────── */
 
