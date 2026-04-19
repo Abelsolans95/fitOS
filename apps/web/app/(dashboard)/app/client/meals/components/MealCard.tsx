@@ -26,7 +26,7 @@ export const MealCard = memo(function MealCard({
   return (
     <div
       className={`rounded-2xl border bg-[#0E0E18]/60 backdrop-blur-xl p-4 transition-all ${
-        isCompleted ? "border-[#00C853]/20" : "border-white/[0.06]"
+        isCompleted ? "border-[#00C853]/20" : "border-white/10"
       }`}
     >
       {/* Meal header */}

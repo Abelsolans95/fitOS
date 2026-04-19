@@ -24,7 +24,7 @@ export function ReviewStep({
 }: Props) {
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6">
+      <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-6">
         <h2 className="mb-4 text-lg font-bold text-white">
           Resumen de importación
         </h2>
@@ -86,7 +86,7 @@ export function ReviewStep({
       <div className="flex gap-3">
         <button
           onClick={onBack}
-          className="rounded-xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-6 py-3 font-semibold text-white transition-colors hover:bg-white/[0.04]"
+          className="rounded-xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl px-6 py-3 font-semibold text-white transition-colors hover:bg-white/[0.04]"
         >
           Volver
         </button>

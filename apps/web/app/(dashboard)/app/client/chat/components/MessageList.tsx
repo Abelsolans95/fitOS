@@ -66,7 +66,7 @@ export const MessageList = memo(function MessageList({ messages, clientId, clien
                 <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${
                   isClient
                     ? "bg-[#7C3AED]/10 border border-[#7C3AED]/20 text-white rounded-br-sm"
-                    : "bg-white/[0.05] border border-white/[0.06] text-[#E8E8ED] rounded-bl-sm"
+                    : "bg-white/[0.05] border border-white/10 text-[#E8E8ED] rounded-bl-sm"
                 } ${isOptimistic ? "opacity-70" : ""}`}>
                   <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.content}</p>
                   <div className={`mt-1 flex items-center gap-1 ${isClient ? "justify-end" : "justify-start"}`}>

@@ -163,7 +163,7 @@ export const ExerciseAnalytics = memo(function ExerciseAnalytics({
 
   if (exerciseNames.length === 0) {
     return (
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-8 text-center">
+      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-8 text-center">
         <p className="text-sm text-[#5A5A72]">
           No hay datos de ejercicios registrados todavía
         </p>
@@ -192,7 +192,7 @@ export const ExerciseAnalytics = memo(function ExerciseAnalytics({
       </div>
 
       {chartData.length < 2 ? (
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6 text-center">
+        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6 text-center">
           <p className="text-sm text-[#5A5A72]">
             Necesita al menos 2 sesiones para mostrar gráficas
           </p>
@@ -286,7 +286,7 @@ function SummaryCard({
   color: string;
 }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
       <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#5A5A72]">
         {label}
       </p>
@@ -311,7 +311,7 @@ function ChartCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
       <h4 className="mb-3 text-xs font-bold uppercase tracking-[0.15em] text-[#8B8BA3]">
         {title}
       </h4>

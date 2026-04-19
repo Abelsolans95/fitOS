@@ -31,8 +31,8 @@ export default function ExerciseSelector({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="mx-4 w-full max-w-md rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl shadow-2xl">
-        <div className="flex items-center justify-between border-b border-white/[0.06] px-6 py-4">
+      <div className="mx-4 w-full max-w-md rounded-[18px] border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl shadow-2xl">
+        <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
           <h3 className="text-[13px] font-semibold text-white">Añadir ejercicio</h3>
           <button
             type="button"

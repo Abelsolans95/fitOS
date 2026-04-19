@@ -201,7 +201,7 @@ export function AnatomyMap({
   return (
     <div className="flex flex-col items-center gap-4">
       {/* View toggle */}
-      <div className="flex gap-1 rounded-lg border border-white/[0.06] bg-[#0A0A12] p-1">
+      <div className="flex gap-1 rounded-lg border border-white/10 bg-[#0A0A12] p-1">
         <button
           type="button"
           onClick={() => setView("front")}

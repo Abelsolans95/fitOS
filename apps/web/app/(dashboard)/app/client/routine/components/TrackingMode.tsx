@@ -66,7 +66,7 @@ export const TrackingMode = memo(function TrackingMode({
         const progress = currentData.length > 0 ? calculateProgressLabel(currentData, prevData) : "";
 
         return (
-          <div key={`${ex.exercise_id}-${exIdx}`} className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl overflow-hidden">
+          <div key={`${ex.exercise_id}-${exIdx}`} className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl overflow-hidden">
             {/* Exercise header */}
             <div className="border-b border-white/[0.04] px-4 py-3">
               <div className="flex items-center justify-between">
@@ -140,7 +140,7 @@ export const TrackingMode = memo(function TrackingMode({
                   type="text" placeholder="Notas / sensaciones..."
                   value={clientNotes[ex.name] || ""}
                   onChange={(e) => dispatch({ type: "SET_CLIENT_NOTE", exerciseName: ex.name, note: e.target.value })}
-                  className="h-8 w-full rounded-lg border border-white/[0.06] bg-transparent px-3 text-xs text-[#8B8BA3] placeholder:text-[#5A5A72]/50 outline-none transition-colors focus:border-[#00E5FF]/30"
+                  className="h-8 w-full rounded-lg border border-white/10 bg-transparent px-3 text-xs text-[#8B8BA3] placeholder:text-[#5A5A72]/50 outline-none transition-colors focus:border-[#00E5FF]/30"
                 />
               </div>
             </div>
@@ -149,7 +149,7 @@ export const TrackingMode = memo(function TrackingMode({
       })}
 
       {/* RPE Global */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-4">
+      <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-4">
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-medium uppercase tracking-wider text-[#5A5A72]">RPE Global</p>
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#00E5FF]/10 text-sm font-bold text-[#00E5FF]">{rpeGlobal}</span>

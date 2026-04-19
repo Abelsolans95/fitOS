@@ -20,7 +20,7 @@ export const Leaderboard = React.memo(function Leaderboard({
 }: LeaderboardProps) {
   if (loading) {
     return (
-      <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6">
+      <div className="rounded-2xl border border-white/10 bg-[#12121A] p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-white">Clasificacion</h3>
           <button onClick={onClose} className="text-[#5A5A72] hover:text-white transition-colors text-sm">
@@ -35,7 +35,7 @@ export const Leaderboard = React.memo(function Leaderboard({
   }
 
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6">
+    <div className="rounded-2xl border border-white/10 bg-[#12121A] p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-lg font-bold text-white">Clasificacion</h3>

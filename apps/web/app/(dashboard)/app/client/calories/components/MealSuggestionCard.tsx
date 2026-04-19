@@ -36,7 +36,7 @@ export const MealSuggestionCard = memo(function MealSuggestionCard({
   const diff = DIFFICULTY_LABELS[suggestion.difficulty] ?? DIFFICULTY_LABELS.facil;
 
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-5">
+    <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-5">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">

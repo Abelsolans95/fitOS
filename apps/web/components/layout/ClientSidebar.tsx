@@ -1,133 +1,86 @@
 "use client";
 
+import {
+  Home,
+  Dumbbell,
+  Salad,
+  LineChart,
+  MessagesSquare,
+  Wrench,
+} from "lucide-react";
 import { AppSidebar, SidebarNavItem } from "./AppSidebar";
 import { useSidebarBadges } from "@/hooks/useSidebarBadges";
 import { useMenusEnabled } from "@/hooks/useMenusEnabled";
 
 const CHAT_HREF = "/app/client/chat";
-
-const BASE_NAV: Omit<SidebarNavItem, "badge">[] = [
-  {
-    label: "Inicio",
-    href: "/app/client/dashboard",
-    icon: (
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
-      </svg>
-    ),
-  },
-  {
-    label: "Calorías",
-    href: "/app/client/calories",
-    icon: (
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
-      </svg>
-    ),
-  },
-  {
-    label: "Rutina",
-    href: "/app/client/routine",
-    icon: (
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-      </svg>
-    ),
-  },
-  {
-    label: "Comidas",
-    href: "/app/client/meals",
-    icon: (
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.25v-1.5m0 1.5c-1.355 0-2.697.056-4.024.166C6.845 8.51 6 9.473 6 10.608v2.513m6-4.871c1.355 0 2.697.056 4.024.166C17.155 8.51 18 9.473 18 10.608v2.513M15 8.25v-1.5m-6 1.5v-1.5m12 9.75-1.5.75a3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0L3 16.5" />
-      </svg>
-    ),
-  },
-  {
-    label: "Progreso",
-    href: "/app/client/progress",
-    icon: (
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" />
-      </svg>
-    ),
-  },
-  {
-    label: "Salud",
-    href: "/app/client/health",
-    icon: (
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
-      </svg>
-    ),
-  },
-  {
-    label: "Citas",
-    href: "/app/client/appointments",
-    icon: (
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
-      </svg>
-    ),
-  },
-  {
-    label: "Contratos",
-    href: "/app/client/contracts",
-    icon: (
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-      </svg>
-    ),
-  },
-  {
-    label: "Ligas",
-    href: "/app/client/leagues",
-    icon: (
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M18.75 4.236c.982.143 1.954.317 2.916.52A6.003 6.003 0 0 1 16.27 9.728M18.75 4.236V4.5c0 2.108-.966 3.99-2.48 5.228m0 0a6.023 6.023 0 0 1-3.52 1.122 6.023 6.023 0 0 1-3.52-1.122" />
-      </svg>
-    ),
-  },
-  {
-    label: "Comunidad",
-    href: "/app/client/community",
-    icon: (
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
-      </svg>
-    ),
-  },
-  {
-    label: "Consultas",
-    href: "/app/client/tickets",
-    icon: (
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
-      </svg>
-    ),
-  },
-  {
-    label: "Conocimiento",
-    href: "/app/client/knowledge",
-    icon: (
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
-      </svg>
-    ),
-  },
-  {
-    label: "Chat",
-    href: CHAT_HREF,
-    icon: (
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
-      </svg>
-    ),
-  },
-];
-
 const COMMUNITY_HREF = "/app/client/community";
+
+/**
+ * Client top-level is deliberately narrow — a client opens the app, ideally
+ * hits "Mi día" equivalent (Inicio), Rutina, and Chat. Everything else goes
+ * under groups so the surface feels focused.
+ */
+function buildNavItems(menusEnabled: boolean): SidebarNavItem[] {
+  const items: SidebarNavItem[] = [
+    {
+      label: "Inicio",
+      href: "/app/client/dashboard",
+      icon: <Home className="h-4 w-4" />,
+    },
+    {
+      label: "Rutina",
+      href: "/app/client/routine",
+      icon: <Dumbbell className="h-4 w-4" />,
+    },
+  ];
+
+  if (menusEnabled) {
+    items.push({
+      label: "Nutrición",
+      href: "/app/client/meals",
+      icon: <Salad className="h-4 w-4" />,
+      children: [
+        { label: "Comidas", href: "/app/client/meals" },
+        { label: "Calorías", href: "/app/client/calories" },
+      ],
+    });
+  }
+
+  items.push(
+    {
+      label: "Progreso",
+      href: "/app/client/progress",
+      icon: <LineChart className="h-4 w-4" />,
+      children: [
+        { label: "Progreso", href: "/app/client/progress" },
+        { label: "Salud", href: "/app/client/health" },
+        { label: "Ligas", href: "/app/client/leagues" },
+      ],
+    },
+    {
+      label: "Comunicación",
+      href: CHAT_HREF,
+      icon: <MessagesSquare className="h-4 w-4" />,
+      children: [
+        { label: "Chat", href: CHAT_HREF },
+        { label: "Consultas", href: "/app/client/tickets" },
+        { label: "Comunidad", href: COMMUNITY_HREF },
+        { label: "Citas", href: "/app/client/appointments" },
+      ],
+    },
+    {
+      label: "Más",
+      href: "/app/client/knowledge",
+      icon: <Wrench className="h-4 w-4" />,
+      children: [
+        { label: "Conocimiento", href: "/app/client/knowledge" },
+        { label: "Contratos", href: "/app/client/contracts" },
+      ],
+    }
+  );
+
+  return items;
+}
 
 export function ClientSidebar() {
   const { chatUnread, communityUnread, ticketUnread } = useSidebarBadges({
@@ -138,20 +91,11 @@ export function ClientSidebar() {
   });
   const menusEnabled = useMenusEnabled();
 
-  const MENU_HREFS = ["/app/client/meals", "/app/client/calories"];
-  const filtered = menusEnabled
-    ? BASE_NAV
-    : BASE_NAV.filter((item) => !MENU_HREFS.includes(item.href));
+  const base = buildNavItems(menusEnabled);
+  const commUnread = chatUnread + communityUnread + ticketUnread;
+  const items = base.map((item) =>
+    item.href === CHAT_HREF && commUnread > 0 ? { ...item, badge: commUnread } : item
+  );
 
-  const navItems: SidebarNavItem[] = filtered.map((item) => {
-    if (item.href === CHAT_HREF && chatUnread > 0)
-      return { ...item, badge: chatUnread };
-    if (item.href === COMMUNITY_HREF && communityUnread > 0)
-      return { ...item, badge: communityUnread };
-    if (item.href === "/app/client/tickets" && ticketUnread > 0)
-      return { ...item, badge: ticketUnread };
-    return item;
-  });
-
-  return <AppSidebar items={navItems} defaultHref="/app/client/dashboard" />;
+  return <AppSidebar items={items} defaultHref="/app/client/dashboard" />;
 }

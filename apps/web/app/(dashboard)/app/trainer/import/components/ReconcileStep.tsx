@@ -21,7 +21,7 @@ export function ReconcileStep({
 }: Props) {
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6">
+      <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-6">
         <h2 className="mb-4 text-lg font-bold text-white">
           Reconciliación de ejercicios
         </h2>
@@ -89,7 +89,7 @@ export function ReconcileStep({
                           className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
                             decisions[r.original_name]?.matched_id === m.id
                               ? "border-[#00E5FF] bg-[#00E5FF]/10 text-[#00E5FF]"
-                              : "border-white/[0.06] text-[#8B8BA3] hover:border-white/[0.12]"
+                              : "border-white/10 text-[#8B8BA3] hover:border-white/[0.12]"
                           }`}
                         >
                           {m.name}
@@ -120,7 +120,7 @@ export function ReconcileStep({
                       className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
                         decisions[r.original_name]?.action === "create"
                           ? "border-[#7C3AED] bg-[#7C3AED]/10 text-[#7C3AED]"
-                          : "border-white/[0.06] text-[#8B8BA3] hover:border-white/[0.12]"
+                          : "border-white/10 text-[#8B8BA3] hover:border-white/[0.12]"
                       }`}
                     >
                       Crear nuevo
@@ -132,7 +132,7 @@ export function ReconcileStep({
                       className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
                         decisions[r.original_name]?.action === "skip"
                           ? "border-[#FF1744] bg-[#FF1744]/10 text-[#FF1744]"
-                          : "border-white/[0.06] text-[#8B8BA3] hover:border-white/[0.12]"
+                          : "border-white/10 text-[#8B8BA3] hover:border-white/[0.12]"
                       }`}
                     >
                       Omitir
@@ -148,7 +148,7 @@ export function ReconcileStep({
       <div className="flex gap-3">
         <button
           onClick={onBack}
-          className="rounded-xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-6 py-3 font-semibold text-white transition-colors hover:bg-white/[0.04]"
+          className="rounded-xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl px-6 py-3 font-semibold text-white transition-colors hover:bg-white/[0.04]"
         >
           Volver
         </button>

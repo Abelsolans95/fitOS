@@ -52,7 +52,7 @@ function ClientCommunityInner() {
 
       {/* Tabs */}
       {clientTabs.length > 1 && (
-        <div className="flex gap-1 rounded-xl border border-white/[0.06] bg-[#12121A] p-1">
+        <div className="flex gap-1 rounded-xl border border-white/10 bg-[#12121A] p-1">
           {clientTabs.map((tab) => (
             <button
               key={tab.key}

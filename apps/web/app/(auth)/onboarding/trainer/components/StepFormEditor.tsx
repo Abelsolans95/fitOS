@@ -138,7 +138,7 @@ export function StepFormEditor({
             onFieldsChange={setFormFields}
           />
         ) : (
-          <div className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-6">
+          <div className="rounded-xl border border-white/10 bg-[#0A0A0F] p-6">
             <FormPreview
               title={formTitle}
               description={formDescription}

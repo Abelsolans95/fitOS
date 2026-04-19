@@ -103,7 +103,7 @@ const s = StyleSheet.create({
   header: {
     flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.md,
     paddingTop: spacing.xl + 20, paddingBottom: spacing.md,
-    borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.06)",
+    borderBottomWidth: 1, borderBottomColor: "rgba(255, 255, 255, 0.10)",
   },
   headerLeft: { flex: 1 },
   title: { color: "#fff", fontSize: 20, fontFamily: fonts.extrabold, letterSpacing: -0.5 },
@@ -115,7 +115,7 @@ const s = StyleSheet.create({
   newBtnText: { color: "#0A0A0F", fontSize: 12, fontFamily: fonts.bold },
   ticketCard: {
     backgroundColor: colors.card, borderRadius: radius.xl, borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)", padding: spacing.md, marginBottom: spacing.sm,
+    borderColor: "rgba(255, 255, 255, 0.10)", padding: spacing.md, marginBottom: spacing.sm,
   },
   ticketRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" },
   ticketLeft: { flex: 1, marginRight: 12 },

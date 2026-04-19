@@ -58,7 +58,7 @@ export default function TrainerNutritionPage() {
         </div>
 
         {/* Tabs */}
-        <div className="pg-in pg-2 flex gap-1 rounded-[14px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-1">
+        <div className="pg-in pg-2 flex gap-1 rounded-[14px] border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-1">
           {(["menus", "biblioteca"] as const).map((tab) => (
             <button
               key={tab}
@@ -98,9 +98,9 @@ export default function TrainerNutritionPage() {
                 description="Crea un menu y guardalo con el botón 'Guardar menu'"
               />
             ) : (
-              <div className="relative overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl">
+              <div className="relative overflow-hidden rounded-[18px] border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl">
                 <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(90deg, #00C853, transparent)" }} />
-                <div className="hidden border-b border-white/[0.06] px-6 py-3 sm:grid sm:grid-cols-12 sm:gap-4">
+                <div className="hidden border-b border-white/10 px-6 py-3 sm:grid sm:grid-cols-12 sm:gap-4">
                   {["Nombre", "Dias", "Semanas", "Kcal obj.", "Creado"].map((h, i) => (
                     <div key={h} className={`col-span-${[4, 3, 2, 2, 1][i]} text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]`}>{h}</div>
                   ))}

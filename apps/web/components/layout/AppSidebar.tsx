@@ -86,11 +86,11 @@ export function AppSidebar({ items, defaultHref }: AppSidebarProps) {
         className={`fixed inset-y-0 left-0 z-50 flex flex-col transition-all duration-300
           ${collapsed ? "lg:w-[80px]" : "lg:w-[240px]"} w-[240px]
           ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-          lg:bg-transparent bg-[#0A0A0F] lg:border-none border-r border-white/[0.06]
+          lg:bg-transparent bg-[#0A0A0F] lg:border-none border-r border-white/10
           lg:p-4
         `}
       >
-        <div className="flex h-full flex-col overflow-hidden bg-[#0A0A0F] lg:rounded-2xl lg:border lg:border-white/[0.06] lg:bg-[#12121A]/70 lg:backdrop-blur-xl lg:shadow-2xl">
+        <div className="flex h-full flex-col overflow-hidden bg-[#0A0A0F] lg:rounded-2xl lg:border lg:border-white/10 lg:bg-[#12121A]/70 lg:backdrop-blur-xl lg:shadow-2xl">
         {/* Logo — desktop only */}
         <div className={`hidden h-16 shrink-0 items-center border-b border-white/[0.04] lg:flex ${
           collapsed ? "justify-center px-3" : "justify-between px-4"
@@ -175,7 +175,7 @@ export function AppSidebar({ items, defaultHref }: AppSidebarProps) {
                       className="overflow-hidden transition-all duration-200 ease-in-out"
                       style={{ maxHeight: isOpen ? `${item.children!.length * 60}px` : "0px", opacity: isOpen ? 1 : 0 }}
                     >
-                      <div className="ml-5 mt-1 border-l border-white/[0.06] flex flex-col gap-0.5 pl-3 pb-1">
+                      <div className="ml-5 mt-1 border-l border-white/10 flex flex-col gap-0.5 pl-3 pb-1">
                         {item.children!.map((child) => {
                           const childActive =
                             pathname === child.href || pathname.startsWith(child.href + "/");

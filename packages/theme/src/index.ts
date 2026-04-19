@@ -24,7 +24,7 @@ export const colors = {
   dimmed: "#5A5A72",
 
   // Bordes
-  border: "rgba(255, 255, 255, 0.06)",
+  border: "rgba(255, 255, 255, 0.10)",
   borderSubtle: "rgba(255, 255, 255, 0.03)",
   borderActive: "rgba(0, 229, 255, 0.15)",
   // Versiones hex para manipulación dinámica de opacidad en RN:

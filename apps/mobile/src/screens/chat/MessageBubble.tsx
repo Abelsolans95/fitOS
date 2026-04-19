@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
   bubbleTrainer: {
     backgroundColor: "rgba(255,255,255,0.05)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: "rgba(255, 255, 255, 0.10)",
     borderBottomLeftRadius: 4,
   },
   bubbleClient: {

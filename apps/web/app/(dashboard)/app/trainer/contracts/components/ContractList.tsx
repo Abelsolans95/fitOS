@@ -58,7 +58,7 @@ export const ContractList = React.memo(function ContractList({
               className={`w-full rounded-xl border p-4 text-left transition-all hover:border-white/10 ${
                 selectedId === contract.id
                   ? "border-[#00E5FF]/30 bg-[#00E5FF]/[0.03]"
-                  : "border-white/[0.06] bg-[#12121A]"
+                  : "border-white/10 bg-[#12121A]"
               }`}
             >
               <div className="flex items-start justify-between gap-3">

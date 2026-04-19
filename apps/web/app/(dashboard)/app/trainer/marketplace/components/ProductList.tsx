@@ -13,7 +13,7 @@ export function ProductList({ products, onNewProduct }: ProductListProps) {
   return (
     <div className="space-y-4">
       {products.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-white/[0.06] bg-[#12121A] py-16">
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#12121A] py-16">
           <svg
             className="mb-4 h-16 w-16 text-[#5A5A72]/30"
             fill="none"
@@ -47,7 +47,7 @@ export function ProductList({ products, onNewProduct }: ProductListProps) {
             return (
               <div
                 key={product.id}
-                className="flex items-center gap-4 rounded-2xl border border-white/[0.06] bg-[#12121A] p-4"
+                className="flex items-center gap-4 rounded-2xl border border-white/10 bg-[#12121A] p-4"
               >
                 {/* Cover thumbnail */}
                 <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-[#0A0A0F]">

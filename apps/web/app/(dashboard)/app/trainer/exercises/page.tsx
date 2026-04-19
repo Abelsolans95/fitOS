@@ -104,7 +104,7 @@ export default function TrainerExercisesPage() {
 
         <div className="ex-in ex-3">
           {filteredExercises.length === 0 ? (
-            <div className="rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-12">
+            <div className="rounded-[18px] border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-12">
               <div className="flex flex-col items-center gap-3 py-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.03] ring-1 ring-white/[0.06] text-[#3A3A52]">
                   <DumbbellIcon className="h-6 w-6" />

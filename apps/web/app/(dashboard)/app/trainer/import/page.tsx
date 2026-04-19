@@ -270,7 +270,7 @@ export default function ImportPage() {
                   ? "bg-[#00E5FF] text-[#0A0A0F]"
                   : STEPS.indexOf(step) > i
                     ? "bg-[#00E5FF]/20 text-[#00E5FF]"
-                    : "bg-[#0E0E18]/60 backdrop-blur-xl text-[#5A5A72] border border-white/[0.06]"
+                    : "bg-[#0E0E18]/60 backdrop-blur-xl text-[#5A5A72] border border-white/10"
               }`}
             >
               {i + 1}

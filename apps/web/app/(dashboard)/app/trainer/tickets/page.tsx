@@ -49,10 +49,10 @@ function TicketsPageInner() {
       </div>
 
       {/* Content — master-detail layout */}
-      <div className="flex flex-1 gap-4 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0A0A0F]">
+      <div className="flex flex-1 gap-4 overflow-hidden rounded-2xl border border-white/10 bg-[#0A0A0F]">
         {/* Left panel — ticket list */}
         <div
-          className={`w-full flex-shrink-0 border-r border-white/[0.06] p-4 lg:w-[380px] ${
+          className={`w-full flex-shrink-0 border-r border-white/10 p-4 lg:w-[380px] ${
             selectedTicket ? "hidden lg:block" : ""
           }`}
         >

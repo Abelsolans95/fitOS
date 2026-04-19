@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useState, useEffect, useCallback } from "react";
+import { Salad, Dumbbell, Bandage, HelpCircle, type LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { QUERY_LIMITS } from "@/lib/constants";
 import type { TicketCategory } from "./types";
@@ -21,11 +22,30 @@ interface CreateTicketFormProps {
   onViewArticle?: (articleId: string) => void;
 }
 
-const CATEGORY_ICONS: Record<TicketCategory, { icon: string; color: string; bgColor: string }> = {
-  nutricion: { icon: "🥗", color: "text-[#00C853]", bgColor: "border-[#00C853]/20 hover:border-[#00C853]/40 hover:bg-[#00C853]/5" },
-  rutina: { icon: "💪", color: "text-[#00E5FF]", bgColor: "border-[#00E5FF]/20 hover:border-[#00E5FF]/40 hover:bg-[#00E5FF]/5" },
-  lesion: { icon: "🩹", color: "text-[#FF1744]", bgColor: "border-[#FF1744]/20 hover:border-[#FF1744]/40 hover:bg-[#FF1744]/5" },
-  general: { icon: "❓", color: "text-[#7C3AED]", bgColor: "border-[#7C3AED]/20 hover:border-[#7C3AED]/40 hover:bg-[#7C3AED]/5" },
+const CATEGORY_ICONS: Record<
+  TicketCategory,
+  { Icon: LucideIcon; color: string; bgColor: string }
+> = {
+  nutricion: {
+    Icon: Salad,
+    color: "text-[#00C853]",
+    bgColor: "border-[#00C853]/20 hover:border-[#00C853]/40 hover:bg-[#00C853]/5",
+  },
+  rutina: {
+    Icon: Dumbbell,
+    color: "text-[#00E5FF]",
+    bgColor: "border-[#00E5FF]/20 hover:border-[#00E5FF]/40 hover:bg-[#00E5FF]/5",
+  },
+  lesion: {
+    Icon: Bandage,
+    color: "text-[#FF1744]",
+    bgColor: "border-[#FF1744]/20 hover:border-[#FF1744]/40 hover:bg-[#FF1744]/5",
+  },
+  general: {
+    Icon: HelpCircle,
+    color: "text-[#7C3AED]",
+    bgColor: "border-[#7C3AED]/20 hover:border-[#7C3AED]/40 hover:bg-[#7C3AED]/5",
+  },
 };
 
 const SELECTED_STYLES: Record<TicketCategory, string> = {
@@ -91,18 +111,21 @@ export const CreateTicketForm = memo(function CreateTicketForm({
         </label>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {TICKET_CATEGORIES.map((c) => {
-            const icon = CATEGORY_ICONS[c.value];
+            const { Icon, color, bgColor } = CATEGORY_ICONS[c.value];
             const selected = category === c.value;
             return (
               <button
                 key={c.value}
                 onClick={() => onSetCategory(c.value)}
-                className={`rounded-xl border p-4 text-center transition-all ${
-                  selected ? SELECTED_STYLES[c.value] : `border-white/[0.06] bg-[#12121A] ${icon.bgColor}`
+                className={`flex flex-col items-center gap-2 rounded-xl border p-4 text-center transition-all ${
+                  selected ? SELECTED_STYLES[c.value] : `border-white/10 bg-[#12121A] ${bgColor}`
                 }`}
               >
-                <span className="text-2xl">{icon.icon}</span>
-                <p className={`mt-2 text-sm font-semibold ${selected ? icon.color : "text-[#8B8BA3]"}`}>
+                <Icon
+                  className={`h-6 w-6 ${selected ? color : "text-[#8B8BA3]"}`}
+                  strokeWidth={1.6}
+                />
+                <p className={`text-sm font-semibold ${selected ? color : "text-[#8B8BA3]"}`}>
                   {c.label}
                 </p>
               </button>
@@ -122,7 +145,7 @@ export const CreateTicketForm = memo(function CreateTicketForm({
           onChange={(e) => onSetSubject(e.target.value)}
           placeholder="¿Sobre qué es tu consulta?"
           maxLength={200}
-          className="w-full rounded-xl border border-white/[0.06] bg-[#12121A] px-4 py-3 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#00E5FF]/30"
+          className="w-full rounded-xl border border-white/10 bg-[#12121A] px-4 py-3 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#00E5FF]/30"
         />
       </div>
 
@@ -137,7 +160,7 @@ export const CreateTicketForm = memo(function CreateTicketForm({
               <button
                 key={article.id}
                 onClick={() => onViewArticle?.(article.id)}
-                className="flex w-full items-center gap-2 rounded-lg border border-white/[0.06] bg-[#12121A] px-3 py-2 text-left text-sm text-white transition-colors hover:border-[#7C3AED]/30"
+                className="flex w-full items-center gap-2 rounded-lg border border-white/10 bg-[#12121A] px-3 py-2 text-left text-sm text-white transition-colors hover:border-[#7C3AED]/30"
               >
                 <svg className="h-4 w-4 shrink-0 text-[#7C3AED]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
@@ -159,7 +182,7 @@ export const CreateTicketForm = memo(function CreateTicketForm({
           onChange={(e) => onSetDescription(e.target.value)}
           placeholder="Describe tu duda o problema con el mayor detalle posible..."
           rows={6}
-          className="w-full resize-none rounded-xl border border-white/[0.06] bg-[#12121A] px-4 py-3 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#00E5FF]/30"
+          className="w-full resize-none rounded-xl border border-white/10 bg-[#12121A] px-4 py-3 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#00E5FF]/30"
         />
       </div>
 

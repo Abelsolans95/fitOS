@@ -190,3 +190,34 @@ Traducción directa del positioning ("ves en un panel quién necesita atención 
   - Tab "Mi día" añadida como primera en el bottom nav.
 
 Tests: 362/362 verdes.
+
+## UX polish premium — rebrand, iconografía, densidad (19/04/2026) ✅
+
+Todo el package de mejoras estéticas propuestas en la auditoría visual:
+
+- **Sidebar trainer**: 17 items → 7 top-level. "Comunicación" y "Herramientas"
+  agrupan las secciones secundarias. Heroicons inline sustituidos por Lucide
+  (`LayoutDashboard`, `CalendarClock`, `Users`, `Dumbbell`, `Salad`,
+  `MessagesSquare`, `Wrench`, `Settings2`).
+- **Sidebar client**: 14 items → 5 top-level ("Inicio", "Rutina", "Nutrición",
+  "Progreso", "Comunicación", "Más") con children agrupados.
+- **Sidebar admin**: migrado a Lucide (8 items, ya razonable).
+- **Mobile tabs**: 11 → 5 visibles ("Mi día", "Rutina", "Calorías", "Chat",
+  "Más") + MoreScreen con deep-link a las secundarias ocultas (tabBarButton
+  null).
+- **Opacidad de bordes**: `rgba(255,255,255,0.06)` → `0.10` global (400
+  reemplazos en 160 archivos) — legibilidad en Android/luz solar.
+- **Dashboard trainer**: paleta 4-color → **grayscale con cyan como único
+  acento en hover**. KPICard simplificado. Todo el CSS-in-JS inline migrado a
+  Tailwind; animaciones de entrada movidas a `.dash-in/.dash-d*` en
+  `globals.css` (respeta `prefers-reduced-motion`).
+- **Emojis como iconos** → Lucide SVG: CreateTicketForm (`Salad`, `Dumbbell`,
+  `Bandage`, `HelpCircle`), trainer `today` empty state (`CheckCircle2`),
+  mobile LeaguesScreen (trofeo SVG custom).
+- **Migration 051**: `profiles.avatar_url` TEXT + bucket `avatars` (private,
+  5 MB max, jpeg/png/webp) con RLS — escritura sólo en carpeta propia,
+  lectura cruzada sólo entre trainer↔client activos.
+- **Avatar component** (`components/ui/Avatar.tsx`): next/image + fallback de
+  iniciales con gradiente determinista por nombre.
+
+Tests: 362/362 verdes (ningún test tocaba estos archivos).

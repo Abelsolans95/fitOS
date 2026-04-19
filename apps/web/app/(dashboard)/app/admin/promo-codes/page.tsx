@@ -100,7 +100,7 @@ export default function PromoCodesPage() {
           placeholder="Buscar por código..."
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          className="flex-1 rounded-xl border border-white/[0.06] bg-[#12121A] px-4 py-2.5 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#7C3AED]/50"
+          className="flex-1 rounded-xl border border-white/10 bg-[#12121A] px-4 py-2.5 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#7C3AED]/50"
         />
         <div className="flex gap-2">
           {STATUS_OPTIONS.map((opt) => (
@@ -110,7 +110,7 @@ export default function PromoCodesPage() {
               className={`rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
                 statusFilter === opt.value
                   ? "bg-[#7C3AED] text-white"
-                  : "border border-white/[0.06] bg-[#12121A] text-[#8B8BA3] hover:text-white"
+                  : "border border-white/10 bg-[#12121A] text-[#8B8BA3] hover:text-white"
               }`}
             >
               {opt.label}
@@ -120,7 +120,7 @@ export default function PromoCodesPage() {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-2xl border border-white/[0.06] bg-[#12121A]">
+      <div className="overflow-x-auto rounded-2xl border border-white/10 bg-[#12121A]">
         {loading ? (
           <div className="flex h-48 items-center justify-center">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#7C3AED] border-t-transparent" />
@@ -132,7 +132,7 @@ export default function PromoCodesPage() {
         ) : (
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-white/[0.06] text-xs font-bold uppercase tracking-[0.15em] text-[#5A5A72]">
+              <tr className="border-b border-white/10 text-xs font-bold uppercase tracking-[0.15em] text-[#5A5A72]">
                 <th className="px-4 py-3">Código</th>
                 <th className="px-4 py-3">Entrenador</th>
                 <th className="px-4 py-3">Estado</th>
@@ -229,7 +229,7 @@ export default function PromoCodesPage() {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1}
-            className="rounded-lg border border-white/[0.06] bg-[#12121A] px-3 py-1.5 text-xs text-[#8B8BA3] transition-colors hover:text-white disabled:opacity-30"
+            className="rounded-lg border border-white/10 bg-[#12121A] px-3 py-1.5 text-xs text-[#8B8BA3] transition-colors hover:text-white disabled:opacity-30"
           >
             Anterior
           </button>
@@ -239,7 +239,7 @@ export default function PromoCodesPage() {
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
-            className="rounded-lg border border-white/[0.06] bg-[#12121A] px-3 py-1.5 text-xs text-[#8B8BA3] transition-colors hover:text-white disabled:opacity-30"
+            className="rounded-lg border border-white/10 bg-[#12121A] px-3 py-1.5 text-xs text-[#8B8BA3] transition-colors hover:text-white disabled:opacity-30"
           >
             Siguiente
           </button>

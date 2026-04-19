@@ -9,7 +9,7 @@ export default function AdminError({
 }) {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
-      <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-8 text-center">
+      <div className="rounded-2xl border border-white/10 bg-[#12121A] p-8 text-center">
         <p className="text-lg font-semibold text-white">Error al cargar el panel</p>
         <p className="mt-2 text-sm text-[#8B8BA3]">
           {error.digest ? `Ref: ${error.digest}` : "Ha ocurrido un error inesperado"}

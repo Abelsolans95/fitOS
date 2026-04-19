@@ -255,7 +255,7 @@ export const st = StyleSheet.create({
   },
   regSetNumText: { fontSize: 11, fontFamily: fonts.bold, color: colors.dimmed },
   regInput: {
-    flex: 1, height: 36, borderRadius: 6, borderWidth: 1, borderColor: "rgba(255,255,255,0.06)",
+    flex: 1, height: 36, borderRadius: 6, borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.10)",
     backgroundColor: colors.bg, color: colors.white, fontSize: 14, fontFamily: fonts.medium,
     textAlign: "center", paddingHorizontal: 6,
   },
@@ -300,7 +300,7 @@ export const st = StyleSheet.create({
   // Rest notes input
   restNotesInput: {
     width: "100%", minHeight: 44, borderRadius: radius.lg, borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)", backgroundColor: colors.surface,
+    borderColor: "rgba(255, 255, 255, 0.10)", backgroundColor: colors.surface,
     color: colors.muted, fontSize: 13, paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm, marginTop: spacing.xl, textAlignVertical: "top",
   },

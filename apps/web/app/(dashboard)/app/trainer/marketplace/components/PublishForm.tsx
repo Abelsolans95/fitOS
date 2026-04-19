@@ -41,7 +41,7 @@ export function PublishForm({
     !saving;
 
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6">
+    <div className="rounded-2xl border border-white/10 bg-[#12121A] p-6">
       <h2 className="mb-6 text-lg font-bold text-white">
         Publicar rutina en el Marketplace
       </h2>

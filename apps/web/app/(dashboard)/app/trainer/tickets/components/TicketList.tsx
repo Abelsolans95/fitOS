@@ -38,7 +38,7 @@ export const TicketList = memo(function TicketList({
   return (
     <div className="flex h-full flex-col">
       {/* Tabs */}
-      <div className="flex gap-1 rounded-xl border border-white/[0.06] bg-[#12121A] p-1">
+      <div className="flex gap-1 rounded-xl border border-white/10 bg-[#12121A] p-1">
         {TABS.map((tab) => (
           <button
             key={tab.key}
@@ -61,12 +61,12 @@ export const TicketList = memo(function TicketList({
           value={searchQuery}
           onChange={(e) => onSetSearch(e.target.value)}
           placeholder="Buscar consultas..."
-          className="flex-1 rounded-lg border border-white/[0.06] bg-[#12121A] px-3 py-2 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#00E5FF]/30"
+          className="flex-1 rounded-lg border border-white/10 bg-[#12121A] px-3 py-2 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#00E5FF]/30"
         />
         <select
           value={filterCategory}
           onChange={(e) => onSetCategory(e.target.value as TicketCategory | "all")}
-          className="rounded-lg border border-white/[0.06] bg-[#12121A] px-3 py-2 text-sm text-white outline-none"
+          className="rounded-lg border border-white/10 bg-[#12121A] px-3 py-2 text-sm text-white outline-none"
         >
           <option value="all">Categoría</option>
           {TICKET_CATEGORIES.map((c) => (
@@ -89,7 +89,7 @@ export const TicketList = memo(function TicketList({
                   ? "border-[#00E5FF]/30 bg-[#00E5FF]/5"
                   : (ticket.unread_count ?? 0) > 0
                     ? "border-[#00E5FF]/20 bg-[#12121A] hover:border-[#00E5FF]/30 shadow-[inset_3px_0_0_0_#00E5FF]"
-                    : "border-white/[0.06] bg-[#12121A] hover:border-white/10"
+                    : "border-white/10 bg-[#12121A] hover:border-white/10"
               }`}
             >
               <div className="flex items-start justify-between gap-2">

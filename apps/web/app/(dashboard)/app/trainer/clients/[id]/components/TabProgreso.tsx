@@ -41,7 +41,7 @@ export function TabProgreso({ metrics }: { metrics: BodyMetric[] }) {
         {[...metrics].reverse().map((m) => (
           <div
             key={m.id}
-            className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4"
+            className="rounded-xl border border-white/10 bg-white/[0.02] p-4"
           >
             <div className="mb-2 flex items-center justify-between">
               <span className="text-xs text-[#8B8BA3]">{formatDate(m.recorded_at)}</span>

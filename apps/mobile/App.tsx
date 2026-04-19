@@ -39,6 +39,7 @@ import { colors } from "./src/theme";
 import LoginScreen from "./src/screens/LoginScreen";
 import OnboardingScreen from "./src/screens/OnboardingScreen";
 import MyDayScreen from "./src/screens/MyDayScreen";
+import MoreScreen from "./src/screens/MoreScreen";
 import DashboardScreen from "./src/screens/DashboardScreen";
 import CaloriesScreen from "./src/screens/CaloriesScreen";
 import RoutineScreen from "./src/screens/RoutineScreen";
@@ -72,6 +73,17 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
       <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
         <Path
           d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+          stroke={color}
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </Svg>
+    ),
+    Más: (
+      <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+        <Path
+          d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
           stroke={color}
           strokeWidth={1.8}
           strokeLinecap="round"
@@ -280,18 +292,53 @@ function AppNavigator() {
         },
       })}
     >
+      {/* Primary 5 tabs — visible in bottom bar. */}
       <Tab.Screen name="Mi día" component={MyDayScreen} />
-      <Tab.Screen name="Inicio" component={DashboardScreen} />
-      <Tab.Screen name="Calorías" component={CaloriesScreen} />
       <Tab.Screen name="Rutina" component={RoutineScreen} />
-      <Tab.Screen name="Comidas" component={MealsScreen} />
-      <Tab.Screen name="Progreso" component={ProgressScreen} />
-      <Tab.Screen name="Salud" component={HealthScreen} />
-      <Tab.Screen name="Conocimiento" component={KnowledgeScreen} />
-      <Tab.Screen name="Ligas" component={LeaguesScreen} />
-      <Tab.Screen name="Consultas" component={TicketsScreen} />
+      <Tab.Screen name="Calorías" component={CaloriesScreen} />
       <Tab.Screen name="Chat" component={ChatScreen} />
-      <Tab.Screen name="Citas" component={AppointmentsScreen} />
+      <Tab.Screen name="Más" component={MoreScreen} />
+      {/* Secondary screens — hidden from the bar, reachable only via "Más". */}
+      <Tab.Screen
+        name="Inicio"
+        component={DashboardScreen}
+        options={{ tabBarButton: () => null, tabBarItemStyle: { display: "none" } }}
+      />
+      <Tab.Screen
+        name="Comidas"
+        component={MealsScreen}
+        options={{ tabBarButton: () => null, tabBarItemStyle: { display: "none" } }}
+      />
+      <Tab.Screen
+        name="Progreso"
+        component={ProgressScreen}
+        options={{ tabBarButton: () => null, tabBarItemStyle: { display: "none" } }}
+      />
+      <Tab.Screen
+        name="Salud"
+        component={HealthScreen}
+        options={{ tabBarButton: () => null, tabBarItemStyle: { display: "none" } }}
+      />
+      <Tab.Screen
+        name="Conocimiento"
+        component={KnowledgeScreen}
+        options={{ tabBarButton: () => null, tabBarItemStyle: { display: "none" } }}
+      />
+      <Tab.Screen
+        name="Ligas"
+        component={LeaguesScreen}
+        options={{ tabBarButton: () => null, tabBarItemStyle: { display: "none" } }}
+      />
+      <Tab.Screen
+        name="Consultas"
+        component={TicketsScreen}
+        options={{ tabBarButton: () => null, tabBarItemStyle: { display: "none" } }}
+      />
+      <Tab.Screen
+        name="Citas"
+        component={AppointmentsScreen}
+        options={{ tabBarButton: () => null, tabBarItemStyle: { display: "none" } }}
+      />
     </Tab.Navigator>
   );
 }

@@ -104,7 +104,7 @@ export const MealSlotCard = memo(function MealSlotCard({
       {meal.foods.map((food, foodIndex) => (
         <div
           key={foodIndex}
-          className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5"
+          className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-2.5"
         >
           <div className="flex-1 min-w-0">
             <p className="truncate text-[13px] text-[#E8E8ED]">{food.name}</p>

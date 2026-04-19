@@ -83,7 +83,7 @@ export function HeroSection() {
         <div className="relative overflow-hidden rounded-2xl border border-white/[0.1] bg-[#0E0E18]/90 backdrop-blur-sm shadow-[0_40px_100px_rgba(0,0,0,0.6)]">
           <div className="scan-line" />
           {/* Chrome */}
-          <div className="flex items-center gap-2 border-b border-white/[0.06] bg-[#12121A]/80 px-4 py-3">
+          <div className="flex items-center gap-2 border-b border-white/10 bg-[#12121A]/80 px-4 py-3">
             <span className="h-2 w-2 rounded-full bg-[#FF5F57]" />
             <span className="h-2 w-2 rounded-full bg-[#FEBC2E]" />
             <span className="h-2 w-2 rounded-full bg-[#28C840]" />

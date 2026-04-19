@@ -13,7 +13,7 @@ export const MessageInput = memo(function MessageInput({ input, sending, onChang
   };
 
   return (
-    <div className="border-t border-white/[0.06] p-4">
+    <div className="border-t border-white/10 p-4">
       <div className="flex items-end gap-3">
         <textarea
           value={input}

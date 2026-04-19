@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.06)",
+    borderBottomColor: "rgba(255, 255, 255, 0.10)",
     backgroundColor: colors.sidebar,
   },
   headerAvatar: {
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   separatorLine: {
     flex: 1,
     height: 1,
-    backgroundColor: "rgba(255,255,255,0.06)",
+    backgroundColor: "rgba(255, 255, 255, 0.10)",
   },
   separatorText: {
     color: colors.dimmed,

@@ -68,7 +68,7 @@ export const styles = StyleSheet.create({
     borderRadius: radius.xl,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: "rgba(255, 255, 255, 0.10)",
     ...shadows.card,
   },
   cardHeader: {
@@ -197,7 +197,7 @@ export const styles = StyleSheet.create({
     padding: spacing.xl,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: "rgba(255, 255, 255, 0.10)",
   },
   emptyIcon: {
     fontSize: 32,

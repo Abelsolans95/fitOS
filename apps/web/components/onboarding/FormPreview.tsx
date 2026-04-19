@@ -88,7 +88,7 @@ export function FormPreview({ title, description, fields }: FormPreviewProps) {
             {field.type === "select" && (
               <div className="space-y-1">
                 {(field.options || []).map((opt, idx) => (
-                  <label key={idx} className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-[#0A0A0F] px-3 py-2 text-sm text-[#8B8BA3]">
+                  <label key={idx} className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0A0A0F] px-3 py-2 text-sm text-[#8B8BA3]">
                     <div className="h-4 w-4 rounded-full border border-white/20" />
                     {opt}
                   </label>
@@ -100,7 +100,7 @@ export function FormPreview({ title, description, fields }: FormPreviewProps) {
             {field.type === "multiselect" && (
               <div className="space-y-1">
                 {(field.options || []).map((opt, idx) => (
-                  <label key={idx} className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-[#0A0A0F] px-3 py-2 text-sm text-[#8B8BA3]">
+                  <label key={idx} className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0A0A0F] px-3 py-2 text-sm text-[#8B8BA3]">
                     <div className="h-4 w-4 rounded border border-white/20" />
                     {opt}
                   </label>

@@ -88,7 +88,7 @@ export default function AuditPage() {
         <select
           value={actionFilter}
           onChange={(e) => { setActionFilter(e.target.value); setPage(1); }}
-          className="rounded-xl border border-white/[0.06] bg-[#12121A] px-4 py-2.5 text-sm text-white outline-none focus:border-[#7C3AED]/50"
+          className="rounded-xl border border-white/10 bg-[#12121A] px-4 py-2.5 text-sm text-white outline-none focus:border-[#7C3AED]/50"
         >
           <option value="">Todas las acciones</option>
           <option value="create">Crear</option>
@@ -102,7 +102,7 @@ export default function AuditPage() {
         <select
           value={resourceFilter}
           onChange={(e) => { setResourceFilter(e.target.value); setPage(1); }}
-          className="rounded-xl border border-white/[0.06] bg-[#12121A] px-4 py-2.5 text-sm text-white outline-none focus:border-[#7C3AED]/50"
+          className="rounded-xl border border-white/10 bg-[#12121A] px-4 py-2.5 text-sm text-white outline-none focus:border-[#7C3AED]/50"
         >
           <option value="">Todos los recursos</option>
           {Object.entries(RESOURCE_LABELS).map(([val, label]) => (
@@ -118,14 +118,14 @@ export default function AuditPage() {
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#7C3AED] border-t-transparent" />
           </div>
         ) : logs.length === 0 ? (
-          <div className="flex h-48 items-center justify-center rounded-2xl border border-white/[0.06] bg-[#12121A]">
+          <div className="flex h-48 items-center justify-center rounded-2xl border border-white/10 bg-[#12121A]">
             <p className="text-sm text-[#5A5A72]">No se encontraron eventos</p>
           </div>
         ) : (
           logs.map((log) => (
             <div
               key={log.id}
-              className="rounded-xl border border-white/[0.06] bg-[#12121A] px-4 py-3"
+              className="rounded-xl border border-white/10 bg-[#12121A] px-4 py-3"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 space-y-1">
@@ -218,7 +218,7 @@ export default function AuditPage() {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1}
-            className="rounded-lg border border-white/[0.06] bg-[#12121A] px-3 py-1.5 text-xs text-[#8B8BA3] transition-colors hover:text-white disabled:opacity-30"
+            className="rounded-lg border border-white/10 bg-[#12121A] px-3 py-1.5 text-xs text-[#8B8BA3] transition-colors hover:text-white disabled:opacity-30"
           >
             Anterior
           </button>
@@ -228,7 +228,7 @@ export default function AuditPage() {
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
-            className="rounded-lg border border-white/[0.06] bg-[#12121A] px-3 py-1.5 text-xs text-[#8B8BA3] transition-colors hover:text-white disabled:opacity-30"
+            className="rounded-lg border border-white/10 bg-[#12121A] px-3 py-1.5 text-xs text-[#8B8BA3] transition-colors hover:text-white disabled:opacity-30"
           >
             Siguiente
           </button>

@@ -41,7 +41,7 @@ export const SignatureCanvas = React.memo(function SignatureCanvas({
     ctx.fillRect(0, 0, rect.width, rect.height);
 
     // Draw guide line
-    ctx.strokeStyle = "rgba(255,255,255,0.06)";
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.10)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(20, rect.height - 30);
@@ -104,7 +104,7 @@ export const SignatureCanvas = React.memo(function SignatureCanvas({
     ctx.fillRect(0, 0, rect.width, rect.height);
 
     // Redraw guide line
-    ctx.strokeStyle = "rgba(255,255,255,0.06)";
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.10)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(20, rect.height - 30);

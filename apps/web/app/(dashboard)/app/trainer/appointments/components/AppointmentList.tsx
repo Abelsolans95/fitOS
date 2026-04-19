@@ -17,7 +17,7 @@ function AppointmentCard({
   const isPast = new Date(appt.starts_at) < new Date();
 
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-[#12121A]/60 p-5 backdrop-blur-sm">
+    <div className="rounded-2xl border border-white/10 bg-[#12121A]/60 p-5 backdrop-blur-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
@@ -181,7 +181,7 @@ export function AppointmentList({
           Próximas ({upcoming.length})
         </h2>
         {upcoming.length === 0 ? (
-          <div className="rounded-2xl border border-white/[0.06] bg-[#12121A]/60 px-6 py-10 text-center">
+          <div className="rounded-2xl border border-white/10 bg-[#12121A]/60 px-6 py-10 text-center">
             <p className="text-sm text-[#5A5A72]">No hay citas próximas</p>
           </div>
         ) : (
@@ -227,7 +227,7 @@ export function AppointmentList({
 
       {/* Empty state */}
       {appointments.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-white/[0.06] bg-[#12121A]/60 px-6 py-16 text-center">
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#12121A]/60 px-6 py-16 text-center">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.04]">
             <svg className="h-6 w-6 text-[#5A5A72]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />

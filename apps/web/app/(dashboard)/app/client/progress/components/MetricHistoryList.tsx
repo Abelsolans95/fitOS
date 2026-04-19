@@ -8,7 +8,7 @@ interface MetricHistoryListProps {
 
 export function MetricHistoryList({ metrics }: MetricHistoryListProps) {
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6">
+    <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-6">
       <h3 className="mb-4 text-sm font-medium text-white">Historial de mediciones</h3>
 
       {metrics.length === 0 ? (
@@ -23,7 +23,7 @@ export function MetricHistoryList({ metrics }: MetricHistoryListProps) {
             .map((metric) => (
               <div
                 key={metric.id}
-                className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4"
+                className="rounded-xl border border-white/10 bg-white/[0.02] p-4"
               >
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-xs text-[#8B8BA3]">

@@ -47,12 +47,12 @@ export const ArticleList = memo(function ArticleList({
           value={searchQuery}
           onChange={(e) => onSetSearch(e.target.value)}
           placeholder="Buscar artículos..."
-          className="flex-1 min-w-[200px] rounded-lg border border-white/[0.06] bg-[#12121A] px-3 py-2 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#00E5FF]/30"
+          className="flex-1 min-w-[200px] rounded-lg border border-white/10 bg-[#12121A] px-3 py-2 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#00E5FF]/30"
         />
         <select
           value={filterCategory}
           onChange={(e) => onSetCategory(e.target.value as KnowledgeCategory | "all")}
-          className="rounded-lg border border-white/[0.06] bg-[#12121A] px-3 py-2 text-sm text-white outline-none"
+          className="rounded-lg border border-white/10 bg-[#12121A] px-3 py-2 text-sm text-white outline-none"
         >
           <option value="all">Categoría</option>
           {KNOWLEDGE_CATEGORIES.map((c) => (
@@ -62,7 +62,7 @@ export const ArticleList = memo(function ArticleList({
       </div>
 
       {/* Publish filter tabs */}
-      <div className="flex gap-1 rounded-xl border border-white/[0.06] bg-[#12121A] p-1">
+      <div className="flex gap-1 rounded-xl border border-white/10 bg-[#12121A] p-1">
         {PUBLISH_FILTERS.map((f) => (
           <button
             key={f.key}
@@ -86,7 +86,7 @@ export const ArticleList = memo(function ArticleList({
           {articles.map((article) => (
             <div
               key={article.id}
-              className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-4 transition-all hover:border-white/10"
+              className="rounded-2xl border border-white/10 bg-[#12121A] p-4 transition-all hover:border-white/10"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">

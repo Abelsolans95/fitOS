@@ -248,7 +248,7 @@ function Step1Config({
     <div className="space-y-6">
       <h2 className="text-[22px] font-extrabold tracking-[-0.03em] text-white">Configurar mesociclo</h2>
 
-      <div className="rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6 space-y-5">
+      <div className="rounded-[18px] border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-6 space-y-5">
         {/* Template selector */}
         {templates.length > 0 && (
           <div className="space-y-1.5">
@@ -397,7 +397,7 @@ function Step2Days({
 
       {/* Week preview with dates */}
       {weekDates.length > 0 && (
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
           <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">
             Semana 1 — Vista previa
           </p>
@@ -434,7 +434,7 @@ function Step2Days({
               className={`rounded-[18px] border p-4 transition-all ${
                 isSelected
                   ? "border-[#00E5FF]/30 bg-[#00E5FF]/5"
-                  : "border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl"
+                  : "border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl"
               }`}
             >
               <div className="flex items-center justify-between">
@@ -485,7 +485,7 @@ function Step2Days({
                         label: e.target.value.toUpperCase(),
                       })
                     }
-                    className="h-8 w-full rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#00E5FF] placeholder:text-[#5A5A72] placeholder:normal-case placeholder:tracking-normal outline-none transition-colors focus:border-[#00E5FF]/40"
+                    className="h-8 w-full rounded-lg border border-white/10 bg-white/[0.02] px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#00E5FF] placeholder:text-[#5A5A72] placeholder:normal-case placeholder:tracking-normal outline-none transition-colors focus:border-[#00E5FF]/40"
                   />
                 </div>
               ) : isSelected ? (
@@ -554,7 +554,7 @@ function SaveTemplateModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-md rounded-2xl border border-white/[0.08] bg-[#12121A] shadow-2xl">
-        <div className="border-b border-white/[0.06] px-6 py-4">
+        <div className="border-b border-white/10 px-6 py-4">
           <h2 className="text-lg font-bold text-white">Guardar plantilla</h2>
           <p className="text-[12px] text-[#8B8BA3] mt-0.5">
             Guarda esta configuración para reutilizarla con otros clientes.
@@ -578,7 +578,7 @@ function SaveTemplateModal({
             />
           </div>
         </div>
-        <div className="flex items-center justify-end gap-3 border-t border-white/[0.06] px-6 py-4">
+        <div className="flex items-center justify-end gap-3 border-t border-white/10 px-6 py-4">
           <button
             type="button"
             onClick={onClose}

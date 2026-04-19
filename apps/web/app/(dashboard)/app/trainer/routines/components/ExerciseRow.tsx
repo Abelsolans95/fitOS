@@ -43,7 +43,7 @@ export const ExerciseRow = memo(function ExerciseRow({
     dispatch({ type: "CR_UPDATE_SET_CONFIG", dayKey, exIndex, setIndex, updates });
 
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
+    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 space-y-3">
       {/* Header row */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
@@ -86,7 +86,7 @@ export const ExerciseRow = memo(function ExerciseRow({
       </div>
 
       {/* Mode toggle */}
-      <div className="flex overflow-hidden rounded-lg border border-white/[0.06]">
+      <div className="flex overflow-hidden rounded-lg border border-white/10">
         <button
           type="button"
           onClick={() => update({ mode: "equal" })}
@@ -284,10 +284,10 @@ function DifferentModeGrid({
                 </div>
                 <input type="number" min={1} value={sc.reps_min}
                   onChange={(e) => updateSet(setIdx, { reps_min: Number(e.target.value) || 1 })}
-                  className="h-7 w-full rounded border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-1 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40" />
+                  className="h-7 w-full rounded border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl px-1 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40" />
                 <input type="number" min={1} value={sc.reps_max}
                   onChange={(e) => updateSet(setIdx, { reps_max: Number(e.target.value) || 1 })}
-                  className="h-7 w-full rounded border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-1 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40" />
+                  className="h-7 w-full rounded border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl px-1 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40" />
                 <input type="number" min={0} max={5} value={sc.rir}
                   onChange={(e) => updateSet(setIdx, { rir: Number(e.target.value) || 0 })}
                   className="h-7 w-full rounded border border-[#00E5FF]/20 bg-[#0E0E18]/60 backdrop-blur-xl px-1 text-center text-[11px] text-[#00E5FF] outline-none focus:border-[#00E5FF]/40" />
@@ -298,10 +298,10 @@ function DifferentModeGrid({
                 <input type="number" min={0} step={0.5} value={sc.target_weight ?? ""}
                   onChange={(e) => updateSet(setIdx, { target_weight: e.target.value ? Number(e.target.value) : null })}
                   placeholder="—"
-                  className="h-7 w-full rounded border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-1 text-center text-[11px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40" />
+                  className="h-7 w-full rounded border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl px-1 text-center text-[11px] text-white placeholder:text-[#5A5A72] outline-none focus:border-[#00E5FF]/40" />
                 <input type="number" min={0} step={15} value={sc.rest_s}
                   onChange={(e) => updateSet(setIdx, { rest_s: Number(e.target.value) || 0 })}
-                  className="h-7 w-full rounded border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-1 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40" />
+                  className="h-7 w-full rounded border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl px-1 text-center text-[11px] text-white outline-none focus:border-[#00E5FF]/40" />
                 <div className="flex items-center gap-0.5">
                   {isDeriv ? (
                     <button type="button" title="Eliminar"

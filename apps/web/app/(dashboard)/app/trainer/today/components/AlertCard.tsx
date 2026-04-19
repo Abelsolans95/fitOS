@@ -65,7 +65,7 @@ export function AlertCard({ alert }: { alert: TodayAlert }) {
   const clientHref = `/app/trainer/clients/${alert.client_id}`;
 
   return (
-    <div className="flex items-center justify-between rounded-2xl border border-white/[0.06] bg-[#12121A] p-4 transition-colors hover:border-white/[0.12]">
+    <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#12121A] p-4 transition-colors hover:border-white/[0.12]">
       <div className="flex min-w-0 items-center gap-3">
         <span className={`h-2 w-2 shrink-0 rounded-full ${meta.dot}`} />
         <div className="min-w-0">

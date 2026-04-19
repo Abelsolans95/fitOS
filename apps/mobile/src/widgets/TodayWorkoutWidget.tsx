@@ -33,7 +33,7 @@ const C = {
   muted: "#8B8BA3",
   dimmed: "#5A5A72",
   green: "#00C853",
-  border: "rgba(255,255,255,0.06)",
+  border: "rgba(255, 255, 255, 0.10)",
   cyanDim: "rgba(0,229,255,0.08)",
 };
 

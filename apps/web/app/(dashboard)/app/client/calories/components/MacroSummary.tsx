@@ -13,7 +13,7 @@ interface MacroSummaryProps {
 
 export function MacroSummary({ totals }: MacroSummaryProps) {
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-5">
+    <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-5">
       <h2 className="mb-4 text-base font-semibold text-white">Totales del dia</h2>
       <div className="grid grid-cols-4 gap-3">
         <div className="text-center">

@@ -40,7 +40,7 @@ export const MacroInfoPanel = forwardRef<HTMLDivElement, MacroInfoPanelProps>(
   ) {
     return (
       <div ref={ref} className="hidden lg:block w-72 shrink-0">
-        <div className="rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-5 space-y-4">
+        <div className="rounded-[18px] border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-5 space-y-4">
           <h4 className="text-[11px] font-bold uppercase tracking-[0.3em] text-[#00E5FF]">Info nutricional</h4>
 
           {/* Kcal */}

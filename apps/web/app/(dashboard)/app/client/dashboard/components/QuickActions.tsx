@@ -8,7 +8,7 @@ export const QuickActions = memo(function QuickActions() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Link
           href="/app/client/calories"
-          className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-5 py-4 transition-all hover:border-[#00E5FF]/20 hover:bg-[#00E5FF]/[0.03]"
+          className="group flex items-center gap-4 rounded-xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl px-5 py-4 transition-all hover:border-[#00E5FF]/20 hover:bg-[#00E5FF]/[0.03]"
         >
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#00E5FF]/[0.08] transition-colors group-hover:bg-[#00E5FF]/[0.14]">
             <svg className="h-5 w-5 text-[#00E5FF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -24,7 +24,7 @@ export const QuickActions = memo(function QuickActions() {
 
         <Link
           href="/app/client/routine"
-          className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-5 py-4 transition-all hover:border-[#7C3AED]/20 hover:bg-[#7C3AED]/[0.03]"
+          className="group flex items-center gap-4 rounded-xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl px-5 py-4 transition-all hover:border-[#7C3AED]/20 hover:bg-[#7C3AED]/[0.03]"
         >
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED]/[0.08] transition-colors group-hover:bg-[#7C3AED]/[0.14]">
             <svg className="h-5 w-5 text-[#7C3AED]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -39,7 +39,7 @@ export const QuickActions = memo(function QuickActions() {
 
         <Link
           href="/app/client/progress"
-          className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-5 py-4 transition-all hover:border-[#00C853]/20 hover:bg-[#00C853]/[0.03]"
+          className="group flex items-center gap-4 rounded-xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl px-5 py-4 transition-all hover:border-[#00C853]/20 hover:bg-[#00C853]/[0.03]"
         >
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#00C853]/[0.08] transition-colors group-hover:bg-[#00C853]/[0.14]">
             <svg className="h-5 w-5 text-[#00C853]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

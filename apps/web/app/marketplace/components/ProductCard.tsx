@@ -5,7 +5,7 @@ export function ProductCard({ product }: { product: MarketplaceProduct }) {
   return (
     <Link
       href={`/marketplace/${product.id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-white/[0.06] bg-[#12121A] transition-all hover:border-[#00E5FF]/20 hover:shadow-lg hover:shadow-[#00E5FF]/5"
+      className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#12121A] transition-all hover:border-[#00E5FF]/20 hover:shadow-lg hover:shadow-[#00E5FF]/5"
     >
       {/* Cover image */}
       <div className="relative aspect-[16/10] w-full overflow-hidden bg-[#0A0A0F]">

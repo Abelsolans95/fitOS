@@ -160,7 +160,7 @@ function getEmailHtmlBody(data: AppointmentEmailData): string {
     </div>
 
     <!-- Card -->
-    <div style="background:#12121A;border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:32px;">
+    <div style="background:#12121A;border:1px solid rgba(255, 255, 255, 0.10);border-radius:16px;padding:32px;">
       <div style="display:inline-block;background:${statusColor}20;border:1px solid ${statusColor}40;border-radius:8px;padding:4px 12px;margin-bottom:24px;">
         <span style="color:${statusColor};font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;">${statusText}</span>
       </div>
@@ -168,7 +168,7 @@ function getEmailHtmlBody(data: AppointmentEmailData): string {
       <h1 style="color:#ffffff;font-size:20px;font-weight:800;margin:0 0 8px;">${data.appointmentTitle}</h1>
       <p style="color:#8B8BA3;font-size:14px;margin:0 0 24px;">${typeLabel}</p>
 
-      <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:24px;display:flex;flex-direction:column;gap:12px;">
+      <div style="border-top:1px solid rgba(255, 255, 255, 0.10);padding-top:24px;display:flex;flex-direction:column;gap:12px;">
         <div>
           <span style="color:#5A5A72;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;">Entrenador</span>
           <p style="color:#ffffff;font-size:14px;font-weight:600;margin:4px 0 0;">${data.trainerName}</p>

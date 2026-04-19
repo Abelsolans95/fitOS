@@ -53,7 +53,7 @@ export function ContactForm({ trainerId, trainerName, accentColor }: ContactForm
 
   if (submitted) {
     return (
-      <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-8 text-center">
+      <div className="rounded-2xl border border-white/10 bg-[#12121A] p-8 text-center">
         <div
           className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full"
           style={{ backgroundColor: `${accentColor}15` }}
@@ -71,7 +71,7 @@ export function ContactForm({ trainerId, trainerName, accentColor }: ContactForm
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6 sm:p-8">
+    <form onSubmit={handleSubmit} className="rounded-2xl border border-white/10 bg-[#12121A] p-6 sm:p-8">
       <h2 className="mb-6 text-xl font-bold text-white">
         Empieza a entrenar con {trainerName}
       </h2>

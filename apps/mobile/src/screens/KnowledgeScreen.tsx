@@ -257,7 +257,7 @@ const s = StyleSheet.create({
   header: {
     flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.md,
     paddingTop: spacing.xl + 20, paddingBottom: spacing.md,
-    borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.06)",
+    borderBottomWidth: 1, borderBottomColor: "rgba(255, 255, 255, 0.10)",
   },
   backBtn: { marginRight: 12 },
   backText: { color: colors.cyan, fontSize: 14, fontFamily: fonts.semibold },
@@ -268,13 +268,13 @@ const s = StyleSheet.create({
   // Search
   searchInput: {
     backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 14,
+    borderColor: "rgba(255, 255, 255, 0.10)", color: "#fff", fontSize: 14,
     fontFamily: fonts.regular, paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2,
   },
 
   // Filter chips
   filterChip: {
-    borderRadius: radius.md, borderWidth: 1, borderColor: "rgba(255,255,255,0.06)",
+    borderRadius: radius.md, borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.10)",
     paddingHorizontal: 12, paddingVertical: 6,
   },
   filterChipActive: {
@@ -286,7 +286,7 @@ const s = StyleSheet.create({
   // List card
   articleListCard: {
     backgroundColor: colors.card, borderRadius: radius.xl, borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)", padding: spacing.md, marginBottom: spacing.sm,
+    borderColor: "rgba(255, 255, 255, 0.10)", padding: spacing.md, marginBottom: spacing.sm,
   },
   listTitle: { color: "#fff", fontSize: 14, fontFamily: fonts.bold },
   listContent: { color: colors.muted, fontSize: 12, fontFamily: fonts.regular, marginTop: 4, lineHeight: 18 },
@@ -294,7 +294,7 @@ const s = StyleSheet.create({
   // Detail card
   articleCard: {
     backgroundColor: colors.card, borderRadius: radius.xl, borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)", padding: spacing.md,
+    borderColor: "rgba(255, 255, 255, 0.10)", padding: spacing.md,
   },
   articleTitle: { color: "#fff", fontSize: 18, fontFamily: fonts.extrabold, letterSpacing: -0.3, marginBottom: 16 },
   articleContent: { color: colors.muted, fontSize: 14, fontFamily: fonts.regular, lineHeight: 22 },

@@ -56,14 +56,14 @@ export function TabPerfil({ profile }: { profile: ClientProfile }) {
           { label: "Objetivo", value: profile.goal ? GOAL_LABELS[profile.goal] ?? profile.goal : null },
           { label: "Bio", value: profile.bio },
         ].map((f) => (
-          <div key={f.label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+          <div key={f.label} className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
             <p className="text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">{f.label}</p>
             <p className="mt-1 text-sm text-[#E8E8ED]">{f.value ?? "No especificado"}</p>
           </div>
         ))}
       </div>
 
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
         <p className="mb-3 text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">
           Preferencias alimentarias
         </p>

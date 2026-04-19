@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { CheckCircle2 } from "lucide-react";
 import type { TodayPanel } from "@kuvox/shared";
 import { AlertSection } from "./components/AlertSection";
 
@@ -137,7 +138,7 @@ export default function TodayPage() {
       {/* Empty state */}
       {panel.total_alerts === 0 && (
         <div className="rounded-2xl border border-dashed border-white/10 bg-[#12121A] p-10 text-center">
-          <p className="text-6xl">✓</p>
+          <CheckCircle2 className="mx-auto h-12 w-12 text-[#00C853]" strokeWidth={1.5} />
           <h2 className="mt-3 text-lg font-bold text-white">
             Ningún cliente necesita atención hoy
           </h2>

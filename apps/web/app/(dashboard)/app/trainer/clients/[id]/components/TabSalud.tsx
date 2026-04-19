@@ -176,7 +176,7 @@ export function TabSalud({
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       {/* Left: Anatomy map */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-5">
+      <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-[#5A5A72]">
             Mapa corporal
@@ -198,7 +198,7 @@ export function TabSalud({
       {/* Right: Form or Timeline */}
       <div className="space-y-4">
         {showForm && selectedMuscle ? (
-          <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-5">
+          <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-5">
             <HealthReportForm
               muscleId={selectedMuscle}
               existingData={
@@ -223,7 +223,7 @@ export function TabSalud({
         ) : (
           <>
             {/* Active issues */}
-            <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-5">
+            <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-5">
               <h2 className="mb-4 text-sm font-bold uppercase tracking-[0.2em] text-[#5A5A72]">
                 Incidencias activas
               </h2>
@@ -255,7 +255,7 @@ export function TabSalud({
 
             {/* Recovered (timeline) */}
             {recoveredLogs.length > 0 && (
-              <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-5">
+              <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-5">
                 <h2 className="mb-4 text-sm font-bold uppercase tracking-[0.2em] text-[#5A5A72]">
                   Historial recuperado
                 </h2>
@@ -289,7 +289,7 @@ function HealthLogCard({
       type="button"
       onClick={onClick}
       disabled={!onClick}
-      className={`w-full rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-left transition-all ${
+      className={`w-full rounded-xl border border-white/10 bg-white/[0.02] p-4 text-left transition-all ${
         onClick ? "cursor-pointer hover:border-white/[0.12] hover:bg-white/[0.04]" : "cursor-default"
       }`}
     >

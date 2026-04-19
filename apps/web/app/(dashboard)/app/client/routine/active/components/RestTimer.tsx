@@ -87,14 +87,14 @@ export function RestTimer({
           onChange={(e) => onNotesChange(e.target.value)}
           placeholder="Notas sobre este ejercicio... (opcional)"
           rows={2}
-          className="w-full rounded-xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-4 py-3 text-sm text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/30 resize-none"
+          className="w-full rounded-xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl px-4 py-3 text-sm text-white placeholder:text-[#5A5A72] outline-none transition-colors focus:border-[#00E5FF]/30 resize-none"
         />
       </div>
 
       {/* Skip */}
       <button
         onClick={onSkipRest}
-        className="rounded-xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-8 py-3 text-sm font-semibold text-[#8B8BA3] transition-colors hover:border-[#00E5FF]/20 hover:text-white"
+        className="rounded-xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl px-8 py-3 text-sm font-semibold text-[#8B8BA3] transition-colors hover:border-[#00E5FF]/20 hover:text-white"
       >
         Saltar descanso
       </button>

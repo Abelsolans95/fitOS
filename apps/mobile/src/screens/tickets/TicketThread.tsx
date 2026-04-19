@@ -135,7 +135,7 @@ const s = StyleSheet.create({
   header: {
     flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.md,
     paddingTop: spacing.xl + 20, paddingBottom: spacing.md,
-    borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.06)",
+    borderBottomWidth: 1, borderBottomColor: "rgba(255, 255, 255, 0.10)",
   },
   backBtn: { marginRight: 12 },
   backText: { color: colors.cyan, fontSize: 14, fontFamily: fonts.semibold },
@@ -152,7 +152,7 @@ const s = StyleSheet.create({
   // Original message
   messageCard: {
     backgroundColor: colors.card, borderRadius: radius.xl, borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)", padding: spacing.md, marginBottom: spacing.sm,
+    borderColor: "rgba(255, 255, 255, 0.10)", padding: spacing.md, marginBottom: spacing.sm,
   },
   senderRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   avatarCyan: {
@@ -175,12 +175,12 @@ const s = StyleSheet.create({
   // Input bar
   inputBar: {
     flexDirection: "row", gap: 8, paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.06)",
+    paddingVertical: spacing.sm, borderTopWidth: 1, borderTopColor: "rgba(255, 255, 255, 0.10)",
     paddingBottom: Platform.OS === "ios" ? 30 : spacing.sm,
   },
   replyInput: {
     flex: 1, backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 14,
+    borderColor: "rgba(255, 255, 255, 0.10)", color: "#fff", fontSize: 14,
     fontFamily: fonts.regular, paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
     maxHeight: 80,
   },
@@ -191,7 +191,7 @@ const s = StyleSheet.create({
   sendBtnText: { color: "#0A0A0F", fontSize: 18, fontFamily: fonts.bold },
   resolvedBar: {
     alignItems: "center", paddingVertical: spacing.md,
-    borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.06)",
+    borderTopWidth: 1, borderTopColor: "rgba(255, 255, 255, 0.10)",
     paddingBottom: Platform.OS === "ios" ? 30 : spacing.md,
   },
   resolvedText: { color: colors.success, fontSize: 14, fontFamily: fonts.semibold },

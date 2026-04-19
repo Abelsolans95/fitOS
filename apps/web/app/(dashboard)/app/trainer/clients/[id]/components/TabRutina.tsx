@@ -85,7 +85,7 @@ export function TabRutina({
   return (
     <div className="space-y-4">
       {/* Active routine info */}
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5">
         <div className="flex items-start justify-between">
           <h4 className="text-sm font-semibold text-white">{routine.title}</h4>
           <span className="inline-flex items-center rounded-full bg-[#7C3AED]/10 px-2.5 py-0.5 text-xs font-medium text-[#7C3AED]">
@@ -96,7 +96,7 @@ export function TabRutina({
       </div>
 
       {/* View toggle */}
-      <div className="flex gap-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-1">
+      <div className="flex gap-1 rounded-xl border border-white/10 bg-white/[0.02] p-1">
         <button
           onClick={() => setView("historial")}
           className={`flex-1 rounded-lg py-2 text-xs font-bold uppercase tracking-[0.15em] transition-all ${
@@ -133,7 +133,7 @@ export function TabRutina({
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#00E5FF] border-t-transparent" />
           </div>
         ) : sessions.length === 0 ? (
-          <p className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 text-center text-sm text-[#5A5A72]">
+          <p className="rounded-xl border border-white/10 bg-white/[0.02] p-5 text-center text-sm text-[#5A5A72]">
             Aún no ha completado ninguna sesión
           </p>
         ) : (
@@ -145,7 +145,7 @@ export function TabRutina({
               return (
                 <div
                   key={session.id}
-                  className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden"
+                  className="rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden"
                 >
                   <button
                     type="button"

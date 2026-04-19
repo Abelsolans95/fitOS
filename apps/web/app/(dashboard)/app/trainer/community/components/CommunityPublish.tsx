@@ -31,7 +31,7 @@ export function CommunityPublish({
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6">
+      <div className="rounded-2xl border border-white/10 bg-[#12121A] p-6">
         <h2 className="mb-4 text-sm font-bold uppercase tracking-[0.2em] text-[#8B8BA3]">
           Nueva publicacion
         </h2>
@@ -41,7 +41,7 @@ export function CommunityPublish({
           value={newPostTitle}
           onChange={(e) => onSetTitle(e.target.value)}
           placeholder="Titulo (opcional)"
-          className="mb-3 w-full rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-4 py-3 text-sm font-semibold text-white placeholder-[#5A5A72] focus:border-[#00E5FF]/30 focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/20"
+          className="mb-3 w-full rounded-xl border border-white/10 bg-[#0A0A0F] px-4 py-3 text-sm font-semibold text-white placeholder-[#5A5A72] focus:border-[#00E5FF]/30 focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/20"
         />
 
         <textarea
@@ -49,7 +49,7 @@ export function CommunityPublish({
           onChange={(e) => onSetContent(e.target.value)}
           placeholder="Comparte algo con tu comunidad..."
           rows={5}
-          className="w-full resize-none rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-4 py-3 text-sm text-white placeholder-[#5A5A72] focus:border-[#00E5FF]/30 focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/20"
+          className="w-full resize-none rounded-xl border border-white/10 bg-[#0A0A0F] px-4 py-3 text-sm text-white placeholder-[#5A5A72] focus:border-[#00E5FF]/30 focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/20"
         />
 
         {newPostImagePreview && (
@@ -57,7 +57,7 @@ export function CommunityPublish({
             <img
               src={newPostImagePreview}
               alt="Preview"
-              className="max-h-48 rounded-xl border border-white/[0.06]"
+              className="max-h-48 rounded-xl border border-white/10"
             />
             <button
               onClick={() => {
@@ -72,7 +72,7 @@ export function CommunityPublish({
         )}
 
         {/* Public toggle */}
-        <div className="mt-4 flex items-center gap-3 rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-4 py-3">
+        <div className="mt-4 flex items-center gap-3 rounded-xl border border-white/10 bg-[#0A0A0F] px-4 py-3">
           <button
             type="button"
             role="switch"

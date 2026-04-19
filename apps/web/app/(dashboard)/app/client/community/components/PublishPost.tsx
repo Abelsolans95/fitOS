@@ -22,25 +22,25 @@ export function PublishPost({
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6">
+      <div className="rounded-2xl border border-white/10 bg-[#12121A] p-6">
         <h2 className="mb-4 text-sm font-bold uppercase tracking-[0.2em] text-[#8B8BA3]">Nueva publicacion</h2>
         <input
           type="text"
           value={newTitle}
           onChange={(e) => onTitleChange(e.target.value)}
           placeholder="Titulo (opcional)"
-          className="mb-3 w-full rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-4 py-3 text-sm font-semibold text-white placeholder-[#5A5A72] focus:border-[#00E5FF]/30 focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/20"
+          className="mb-3 w-full rounded-xl border border-white/10 bg-[#0A0A0F] px-4 py-3 text-sm font-semibold text-white placeholder-[#5A5A72] focus:border-[#00E5FF]/30 focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/20"
         />
         <textarea
           value={newContent}
           onChange={(e) => onContentChange(e.target.value)}
           placeholder="Comparte algo con la comunidad..."
           rows={5}
-          className="w-full resize-none rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-4 py-3 text-sm text-white placeholder-[#5A5A72] focus:border-[#00E5FF]/30 focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/20"
+          className="w-full resize-none rounded-xl border border-white/10 bg-[#0A0A0F] px-4 py-3 text-sm text-white placeholder-[#5A5A72] focus:border-[#00E5FF]/30 focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/20"
         />
         {imagePreview && (
           <div className="relative mt-3 inline-block">
-            <img src={imagePreview} alt="Preview" className="max-h-48 rounded-xl border border-white/[0.06]" />
+            <img src={imagePreview} alt="Preview" className="max-h-48 rounded-xl border border-white/10" />
             <button
               onClick={() => { onRemoveImage(); if (fileRef.current) fileRef.current.value = ""; }}
               className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-[#FF1744] text-white text-xs"

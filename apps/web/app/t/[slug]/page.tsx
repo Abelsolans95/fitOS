@@ -191,7 +191,7 @@ export default async function TrainerLandingPage({
                   });
 
                   const Card = (
-                    <div className="group rounded-2xl border border-white/[0.06] bg-[#12121A] p-5 transition-colors hover:border-white/[0.12]">
+                    <div className="group rounded-2xl border border-white/10 bg-[#12121A] p-5 transition-colors hover:border-white/[0.12]">
                       <div className="flex gap-4">
                         {post.image_url && (
                           <div className="hidden sm:block">

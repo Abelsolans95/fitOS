@@ -50,7 +50,7 @@ function ContractsPageInner() {
 
       {/* Content */}
       {state.activeView === "create" ? (
-        <div className="flex-1 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0A0A0F] p-4">
+        <div className="flex-1 overflow-hidden rounded-2xl border border-white/10 bg-[#0A0A0F] p-4">
           <CreateContractForm
             clients={state.clients}
             templates={state.templates}
@@ -68,10 +68,10 @@ function ContractsPageInner() {
           />
         </div>
       ) : (
-        <div className="flex flex-1 gap-4 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0A0A0F]">
+        <div className="flex flex-1 gap-4 overflow-hidden rounded-2xl border border-white/10 bg-[#0A0A0F]">
           {/* Left panel — contract list */}
           <div
-            className={`w-full flex-shrink-0 border-r border-white/[0.06] p-4 lg:w-[380px] ${
+            className={`w-full flex-shrink-0 border-r border-white/10 p-4 lg:w-[380px] ${
               selectedContract ? "hidden lg:block" : ""
             }`}
           >

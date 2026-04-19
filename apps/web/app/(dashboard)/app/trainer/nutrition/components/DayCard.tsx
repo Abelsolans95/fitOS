@@ -33,7 +33,7 @@ export const DayCard = memo(function DayCard({
   const [showClone, setShowClone] = useState(false);
 
   return (
-    <div className={`rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl${showClone ? " relative z-[60]" : ""}`}>
+    <div className={`rounded-[18px] border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl${showClone ? " relative z-[60]" : ""}`}>
       {/* Day header */}
       <div className="flex items-center gap-2 px-4 sm:px-6 py-4">
         <button
@@ -102,7 +102,7 @@ export const DayCard = memo(function DayCard({
 
       {/* Day content */}
       {day.expanded && (
-        <div className="border-t border-white/[0.06] px-6 py-4 space-y-4">
+        <div className="border-t border-white/10 px-6 py-4 space-y-4">
           {day.meals.map((meal, mealIndex) => (
             <MealSlotCard
               key={mealIndex}

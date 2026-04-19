@@ -43,7 +43,7 @@ export const TicketThread = memo(function TicketThread({
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="border-b border-white/[0.06] pb-4">
+      <div className="border-b border-white/10 pb-4">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -67,7 +67,7 @@ export const TicketThread = memo(function TicketThread({
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto py-4">
         {/* Original message */}
-        <div className="rounded-xl border border-white/[0.06] bg-[#12121A] p-4">
+        <div className="rounded-xl border border-white/10 bg-[#12121A] p-4">
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#00E5FF]/20 text-xs font-bold text-[#00E5FF]">
               T
@@ -80,7 +80,7 @@ export const TicketThread = memo(function TicketThread({
             <img
               src={ticket.image_url}
               alt="Adjunto"
-              className="mt-3 max-h-64 rounded-lg border border-white/[0.06] object-cover"
+              className="mt-3 max-h-64 rounded-lg border border-white/10 object-cover"
             />
           )}
         </div>
@@ -121,7 +121,7 @@ export const TicketThread = memo(function TicketThread({
                     <img
                       src={reply.image_url}
                       alt="Adjunto"
-                      className="mt-2 max-h-48 rounded-lg border border-white/[0.06] object-cover"
+                      className="mt-2 max-h-48 rounded-lg border border-white/10 object-cover"
                     />
                   )}
                 </div>
@@ -133,7 +133,7 @@ export const TicketThread = memo(function TicketThread({
 
       {/* Reply input */}
       {ticket.status !== "resolved" ? (
-        <div className="border-t border-white/[0.06] pt-3">
+        <div className="border-t border-white/10 pt-3">
           <div className="flex gap-2">
             <textarea
               value={replyContent}
@@ -141,7 +141,7 @@ export const TicketThread = memo(function TicketThread({
               onKeyDown={handleKeyDown}
               placeholder="Escribe tu respuesta..."
               rows={2}
-              className="flex-1 resize-none rounded-xl border border-white/[0.06] bg-[#12121A] px-4 py-3 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#00E5FF]/30"
+              className="flex-1 resize-none rounded-xl border border-white/10 bg-[#12121A] px-4 py-3 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#00E5FF]/30"
             />
             <button
               onClick={onSendReply}
@@ -159,7 +159,7 @@ export const TicketThread = memo(function TicketThread({
           </div>
         </div>
       ) : (
-        <div className="border-t border-white/[0.06] pt-3">
+        <div className="border-t border-white/10 pt-3">
           <p className="text-center text-sm text-[#00C853]">
             Esta consulta ha sido resuelta
           </p>

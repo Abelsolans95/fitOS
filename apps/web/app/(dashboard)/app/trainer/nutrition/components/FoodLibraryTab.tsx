@@ -119,8 +119,8 @@ export function FoodLibraryTab({ n }: { n: NutritionHook }) {
           description={state.libSearch.trim() ? "No se encontraron alimentos" : "Añade alimentos a tu biblioteca"}
         />
       ) : (
-        <div className="overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl">
-          <div className="hidden border-b border-white/[0.06] px-6 py-3 lg:grid lg:grid-cols-12 lg:gap-3">
+        <div className="overflow-hidden rounded-[18px] border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl">
+          <div className="hidden border-b border-white/10 px-6 py-3 lg:grid lg:grid-cols-12 lg:gap-3">
             {["Nombre", "Kcal", "Prot.", "Carbs", "Grasa", "Fibra", "Cat.", "Tipo"].map((h, i) => (
               <div key={h} className={`${i === 0 ? "col-span-3" : "col-span-1"} text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]`}>{h}</div>
             ))}

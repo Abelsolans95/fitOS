@@ -17,7 +17,7 @@ export const BadgeCollection = React.memo(function BadgeCollection({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6">
+      <div className="rounded-2xl border border-white/10 bg-[#12121A] p-6">
         <h2 className="text-lg font-bold text-white mb-4">
           Mis Insignias
           <span className="ml-2 text-sm font-normal text-[#5A5A72]">

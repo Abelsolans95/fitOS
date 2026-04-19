@@ -27,7 +27,7 @@ export function MenuConfigCard({
   macroSumOk,
 }: MenuConfigCardProps) {
   return (
-    <div className="rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6 space-y-5">
+    <div className="rounded-[18px] border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-6 space-y-5">
       {/* Load saved menu */}
       {state.savedMenus.length > 0 && (
         <div className="space-y-1.5">
@@ -190,7 +190,7 @@ export function MenuConfigCard({
             { key: "carbs", label: "Carbos", color: "#FF9100", value: weekTarget.carbsPct, weekAction: "CR_SET_WEEK_TARGET_CARBS_PCT" as const, globalAction: "CR_SET_TARGET_CARBS_PCT" as const },
             { key: "fat", label: "Grasas", color: "#7C3AED", value: weekTarget.fatPct, weekAction: "CR_SET_WEEK_TARGET_FAT_PCT" as const, globalAction: "CR_SET_TARGET_FAT_PCT" as const },
           ].map(({ key, label, color, value, weekAction, globalAction }) => (
-            <div key={key} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-center">
+            <div key={key} className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-center">
               <span className="block text-[10px] font-bold uppercase tracking-[0.2em] mb-1" style={{ color }}>{label}</span>
               <input
                 type="number"

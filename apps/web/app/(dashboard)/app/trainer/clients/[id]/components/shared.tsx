@@ -54,7 +54,7 @@ export function EmptyState({
   description: string;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] py-12">
+    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] py-12">
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/[0.04] text-[#8B8BA3]">
         {icon}
       </div>

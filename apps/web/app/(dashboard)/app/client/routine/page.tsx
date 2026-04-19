@@ -66,7 +66,7 @@ export default function ClientRoutinePage() {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-white">Mi Rutina</h1>
-        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl py-16">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl py-16">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.04]">
             <svg className="h-7 w-7 text-[#8B8BA3]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
@@ -189,7 +189,7 @@ export default function ClientRoutinePage() {
 
       {/* Exercise list */}
       {dayExercises.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl py-12">
+        <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl py-12">
           <p className="text-sm text-[#8B8BA3]">Día de descanso</p>
         </div>
       ) : (
@@ -232,7 +232,7 @@ export default function ClientRoutinePage() {
               <button
                 type="button"
                 onClick={startTracking}
-                className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl py-3.5 text-sm font-semibold text-white transition-all hover:bg-white/[0.04]"
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl py-3.5 text-sm font-semibold text-white transition-all hover:bg-white/[0.04]"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />

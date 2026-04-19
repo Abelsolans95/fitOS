@@ -116,17 +116,17 @@ function KnowledgePageInner() {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-4">
+        <div className="rounded-2xl border border-white/10 bg-[#12121A] p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#5A5A72]">Total</p>
           <p className="mt-1 text-2xl font-black text-white">{state.articles.length}</p>
         </div>
-        <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-4">
+        <div className="rounded-2xl border border-white/10 bg-[#12121A] p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#5A5A72]">Publicados</p>
           <p className="mt-1 text-2xl font-black text-green-400">
             {state.articles.filter((a) => a.is_published).length}
           </p>
         </div>
-        <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-4">
+        <div className="rounded-2xl border border-white/10 bg-[#12121A] p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#5A5A72]">Visualizaciones</p>
           <p className="mt-1 text-2xl font-black text-[#00E5FF]">
             {state.articles.reduce((sum, a) => sum + a.view_count, 0)}

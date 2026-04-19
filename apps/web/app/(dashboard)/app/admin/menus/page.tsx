@@ -105,7 +105,7 @@ function MenusPageInner() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-4">
+        <div className="rounded-2xl border border-white/10 bg-[#12121A] p-4">
           <p className="text-xs font-bold uppercase tracking-[0.15em] text-[#5A5A72]">Total</p>
           <p className="mt-1 text-2xl font-black text-white">{total}</p>
         </div>
@@ -126,7 +126,7 @@ function MenusPageInner() {
           placeholder="Buscar por nombre..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-4 py-2.5 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#00E5FF]/30"
+          className="flex-1 rounded-xl border border-white/10 bg-[#0A0A0F] px-4 py-2.5 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#00E5FF]/30"
         />
         <div className="flex gap-2">
           {(["all", "trainer", "client"] as RoleFilter[]).map((role) => (
@@ -158,10 +158,10 @@ function MenusPageInner() {
           <p className="text-sm text-[#5A5A72]">No se encontraron usuarios</p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-white/[0.06] bg-[#12121A]">
+        <div className="overflow-x-auto rounded-2xl border border-white/10 bg-[#12121A]">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-white/[0.06]">
+              <tr className="border-b border-white/10">
                 <th className="px-5 py-3 text-left text-xs font-bold uppercase tracking-[0.15em] text-[#5A5A72]">
                   Usuario
                 </th>
@@ -227,7 +227,7 @@ function MenusPageInner() {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="rounded-lg border border-white/[0.06] px-3 py-1.5 text-xs text-[#8B8BA3] transition-colors hover:text-white disabled:opacity-30"
+            className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-[#8B8BA3] transition-colors hover:text-white disabled:opacity-30"
           >
             Anterior
           </button>
@@ -237,7 +237,7 @@ function MenusPageInner() {
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className="rounded-lg border border-white/[0.06] px-3 py-1.5 text-xs text-[#8B8BA3] transition-colors hover:text-white disabled:opacity-30"
+            className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-[#8B8BA3] transition-colors hover:text-white disabled:opacity-30"
           >
             Siguiente
           </button>

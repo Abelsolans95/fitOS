@@ -122,7 +122,7 @@ export default function CreateUserPage() {
                   : r === "client"
                   ? "bg-[#00E5FF] text-[#0A0A0F] shadow-[0_0_20px_rgba(0,229,255,0.3)]"
                   : "bg-[#FF9100] text-[#0A0A0F] shadow-[0_0_20px_rgba(255,145,0,0.3)]"
-                : "border border-white/[0.06] bg-[#12121A] text-[#8B8BA3] hover:text-white"
+                : "border border-white/10 bg-[#12121A] text-[#8B8BA3] hover:text-white"
             }`}
           >
             {r === "trainer" ? "Entrenador" : r === "client" ? "Cliente" : "Admin"}
@@ -132,7 +132,7 @@ export default function CreateUserPage() {
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6 space-y-4">
+        <div className="rounded-2xl border border-white/10 bg-[#12121A] p-6 space-y-4">
           {/* Name */}
           <div>
             <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.15em] text-[#5A5A72]">
@@ -144,7 +144,7 @@ export default function CreateUserPage() {
               onChange={(e) => setFullName(e.target.value)}
               maxLength={100}
               required
-              className="w-full rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-4 py-2.5 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#7C3AED]/50"
+              className="w-full rounded-xl border border-white/10 bg-[#0A0A0F] px-4 py-2.5 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#7C3AED]/50"
               placeholder="Nombre y apellidos"
             />
           </div>
@@ -159,7 +159,7 @@ export default function CreateUserPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-4 py-2.5 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#7C3AED]/50"
+              className="w-full rounded-xl border border-white/10 bg-[#0A0A0F] px-4 py-2.5 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#7C3AED]/50"
               placeholder="email@ejemplo.com"
             />
           </div>
@@ -175,7 +175,7 @@ export default function CreateUserPage() {
               onChange={(e) => setPassword(e.target.value)}
               minLength={6}
               required
-              className="w-full rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-4 py-2.5 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#7C3AED]/50"
+              className="w-full rounded-xl border border-white/10 bg-[#0A0A0F] px-4 py-2.5 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#7C3AED]/50"
               placeholder="Mínimo 6 caracteres"
             />
           </div>
@@ -192,7 +192,7 @@ export default function CreateUserPage() {
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
                   maxLength={100}
-                  className="w-full rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-4 py-2.5 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#7C3AED]/50"
+                  className="w-full rounded-xl border border-white/10 bg-[#0A0A0F] px-4 py-2.5 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#7C3AED]/50"
                   placeholder="Ej: FitStudio Madrid"
                 />
               </div>
@@ -205,7 +205,7 @@ export default function CreateUserPage() {
                   value={specialty}
                   onChange={(e) => setSpecialty(e.target.value)}
                   maxLength={100}
-                  className="w-full rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-4 py-2.5 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#7C3AED]/50"
+                  className="w-full rounded-xl border border-white/10 bg-[#0A0A0F] px-4 py-2.5 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#7C3AED]/50"
                   placeholder="Ej: Hipertrofia, Pérdida de peso"
                 />
               </div>
@@ -225,7 +225,7 @@ export default function CreateUserPage() {
                   value={trainerId}
                   onChange={(e) => setTrainerId(e.target.value)}
                   required
-                  className="w-full rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-4 py-2.5 text-sm text-white outline-none focus:border-[#7C3AED]/50"
+                  className="w-full rounded-xl border border-white/10 bg-[#0A0A0F] px-4 py-2.5 text-sm text-white outline-none focus:border-[#7C3AED]/50"
                 >
                   <option value="">Seleccionar entrenador...</option>
                   {trainers.map((t) => (

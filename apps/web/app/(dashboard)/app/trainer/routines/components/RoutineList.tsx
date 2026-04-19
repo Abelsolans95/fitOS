@@ -56,12 +56,12 @@ const RoutineList = memo(function RoutineList({ templates, onNewRoutine }: Routi
               </p>
             </div>
           ) : (
-            <div className="relative overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl">
+            <div className="relative overflow-hidden rounded-[18px] border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl">
               <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(90deg, #00E5FF, transparent)" }} />
               <div className="pointer-events-none absolute -top-8 -right-8 h-32 w-32 rounded-full bg-[#00E5FF] opacity-[0.04] blur-[40px]" />
 
               {/* Table header */}
-              <div className="hidden border-b border-white/[0.06] px-6 py-3 sm:grid sm:grid-cols-12 sm:gap-4">
+              <div className="hidden border-b border-white/10 px-6 py-3 sm:grid sm:grid-cols-12 sm:gap-4">
                 <div className="col-span-4 text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]">Nombre</div>
                 <div className="col-span-2 text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]">Objetivo</div>
                 <div className="col-span-2 text-[10px] font-bold uppercase tracking-[0.25em] text-[#5A5A72]">Semanas</div>

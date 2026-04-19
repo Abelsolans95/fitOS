@@ -9,7 +9,7 @@ interface DailyTotalsProps {
 
 export function DailyTotals({ day, mealPlan }: DailyTotalsProps) {
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-5">
+    <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-5">
       <h3 className="mb-3 text-sm font-semibold text-white">Totales del dia</h3>
       <div className="grid grid-cols-4 gap-3">
         <div className="text-center">

@@ -175,7 +175,7 @@ export default function ProductDetailPage({
               </p>
             </div>
 
-            <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6">
+            <div className="rounded-2xl border border-white/10 bg-[#12121A] p-6">
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[#5A5A72]">
                 Descripcion
               </h2>
@@ -186,15 +186,15 @@ export default function ProductDetailPage({
 
             {/* Stats */}
             <div className="grid grid-cols-3 gap-4">
-              <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-4 text-center">
+              <div className="rounded-2xl border border-white/10 bg-[#12121A] p-4 text-center">
                 <p className="text-2xl font-black text-[#00E5FF]">{totalWeeks}</p>
                 <p className="mt-1 text-xs text-[#5A5A72]">Semanas</p>
               </div>
-              <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-4 text-center">
+              <div className="rounded-2xl border border-white/10 bg-[#12121A] p-4 text-center">
                 <p className="text-2xl font-black text-[#7C3AED]">{trainingDays.length}</p>
                 <p className="mt-1 text-xs text-[#5A5A72]">Dias/semana</p>
               </div>
-              <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-4 text-center">
+              <div className="rounded-2xl border border-white/10 bg-[#12121A] p-4 text-center">
                 <p className="text-2xl font-black text-[#FF9100]">{exerciseCount}</p>
                 <p className="mt-1 text-xs text-[#5A5A72]">Ejercicios</p>
               </div>
@@ -203,7 +203,7 @@ export default function ProductDetailPage({
 
           {/* Right: purchase sidebar */}
           <div className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-            <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6">
+            <div className="rounded-2xl border border-white/10 bg-[#12121A] p-6">
               <p className="text-3xl font-black text-[#00E5FF]">
                 {formatPrice(product.price_cents, product.currency)}
               </p>
@@ -226,7 +226,7 @@ export default function ProductDetailPage({
               </button>
             </div>
 
-            <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-4">
+            <div className="rounded-2xl border border-white/10 bg-[#12121A] p-4">
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#5A5A72]">
                 Incluye
               </h3>
