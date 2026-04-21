@@ -293,10 +293,10 @@ const styles = StyleSheet.create({
 
   // Header
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.xxl },
-  title: { fontSize: 28, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white, letterSpacing: -0.5 },
+  title: { fontSize: 28, fontFamily: fonts.extraBold, color: colors.white, letterSpacing: -0.5 },
   addButton: { borderRadius: radius.md, overflow: "hidden", ...shadows.glow(colors.cyan) },
   addButtonGradient: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 10 },
-  addButtonText: { fontSize: 14, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.bg },
+  addButtonText: { fontSize: 14, fontFamily: fonts.extraBold, color: colors.bg },
 
   // Stats bento
   statsGrid: { flexDirection: "row", gap: spacing.md, marginBottom: spacing.xxl },
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     ...shadows.subtle,
   },
   statLabel: { fontSize: 9, fontFamily: fonts.bold, color: colors.dimmed, letterSpacing: 2, marginBottom: 8 },
-  statValue: { fontSize: 36, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white, letterSpacing: -1 },
+  statValue: { fontSize: 36, fontFamily: fonts.extraBold, color: colors.white, letterSpacing: -1 },
   statUnit: { fontSize: 14, color: colors.muted, fontFamily: fonts.medium, marginTop: -2 },
   statValueSmall: { fontSize: 22, fontFamily: fonts.extraBold, letterSpacing: -0.5 },
   trendBadge: {
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
   },
   saveButton: { borderRadius: radius.md, overflow: "hidden", marginTop: spacing.md },
   saveGradient: { paddingVertical: 14, alignItems: "center" },
-  saveButtonText: { fontSize: 15, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.bg },
+  saveButtonText: { fontSize: 15, fontFamily: fonts.extraBold, color: colors.bg },
 
   // Section
   sectionLabel: { fontSize: 10, fontFamily: fonts.bold, color: colors.dimmed, letterSpacing: 2, marginBottom: spacing.md },
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceHover,
     alignItems: "center", justifyContent: "center",
   },
-  historyDay: { fontSize: 16, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white, lineHeight: 18 },
+  historyDay: { fontSize: 16, fontFamily: fonts.extraBold, color: colors.white, lineHeight: 18 },
   historyMonth: { fontSize: 8, fontFamily: fonts.bold, color: colors.dimmed, letterSpacing: 1 },
   historyRight: { flex: 1, justifyContent: "center" },
   historyValues: { flexDirection: "row", gap: 14 },

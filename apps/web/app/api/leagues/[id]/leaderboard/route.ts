@@ -72,7 +72,7 @@ export async function GET(
 
     // Enrich with profile names — no FK between trainer_clients and profiles
     const clientIds = (participants ?? []).map((p) => p.client_id);
-    let profileMap: Record<string, string> = {};
+    const profileMap: Record<string, string> = {};
 
     if (clientIds.length > 0) {
       const { data: profiles } = await supabase

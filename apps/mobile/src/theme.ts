@@ -1,4 +1,4 @@
-// FitOS Design System — Mobile
+// Kuvox Design System — Mobile
 // Colores, spacing y radius vienen de @kuvox/theme (fuente de verdad compartida).
 // Para cambiar la paleta: editar packages/theme/src/index.ts
 // Para actualizar Tailwind web: ejecutar pnpm sync-theme desde la raíz.

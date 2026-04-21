@@ -142,7 +142,7 @@ export function useClientTicketsPage() {
 
     // Get unread replies (from trainer, unread by client)
     const ticketIds = (data ?? []).map((t) => t.id);
-    let unreadMap: Record<string, number> = {};
+    const unreadMap: Record<string, number> = {};
     if (ticketIds.length > 0) {
       const { data: unreadData } = await supabase
         .from("ticket_replies")

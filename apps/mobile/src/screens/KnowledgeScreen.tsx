@@ -13,9 +13,9 @@ import { KNOWLEDGE_CATEGORIES } from "@kuvox/shared";
 // ── Category colors ──
 
 const CATEGORY_COLORS: Record<KnowledgeCategory, string> = {
-  nutricion: colors.success,
+  nutricion: colors.green,
   rutina: colors.cyan,
-  lesion: colors.error,
+  lesion: colors.red,
   tecnica: colors.orange,
   suplementacion: colors.violet,
   general: colors.muted,
@@ -260,14 +260,14 @@ const s = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: "rgba(255, 255, 255, 0.10)",
   },
   backBtn: { marginRight: 12 },
-  backText: { color: colors.cyan, fontSize: 14, fontFamily: fonts.semibold },
-  title: { color: "#fff", fontSize: 20, fontFamily: fonts.extrabold, letterSpacing: -0.5 },
+  backText: { color: colors.cyan, fontSize: 14, fontFamily: fonts.bold },
+  title: { color: "#fff", fontSize: 20, fontFamily: fonts.extraBold, letterSpacing: -0.5 },
   subtitle: { color: colors.dimmed, fontSize: 12, fontFamily: fonts.medium, marginTop: 2 },
   content: { flex: 1, padding: spacing.md },
 
   // Search
   searchInput: {
-    backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1,
+    backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.10)", color: "#fff", fontSize: 14,
     fontFamily: fonts.regular, paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2,
   },
@@ -280,12 +280,12 @@ const s = StyleSheet.create({
   filterChipActive: {
     borderColor: `${colors.cyan}50`, backgroundColor: `${colors.cyan}15`,
   },
-  filterChipText: { color: colors.dimmed, fontSize: 12, fontFamily: fonts.semibold },
+  filterChipText: { color: colors.dimmed, fontSize: 12, fontFamily: fonts.bold },
   filterChipTextActive: { color: colors.cyan },
 
   // List card
   articleListCard: {
-    backgroundColor: colors.card, borderRadius: radius.xl, borderWidth: 1,
+    backgroundColor: colors.surface, borderRadius: radius.xl, borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.10)", padding: spacing.md, marginBottom: spacing.sm,
   },
   listTitle: { color: "#fff", fontSize: 14, fontFamily: fonts.bold },
@@ -293,10 +293,10 @@ const s = StyleSheet.create({
 
   // Detail card
   articleCard: {
-    backgroundColor: colors.card, borderRadius: radius.xl, borderWidth: 1,
+    backgroundColor: colors.surface, borderRadius: radius.xl, borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.10)", padding: spacing.md,
   },
-  articleTitle: { color: "#fff", fontSize: 18, fontFamily: fonts.extrabold, letterSpacing: -0.3, marginBottom: 16 },
+  articleTitle: { color: "#fff", fontSize: 18, fontFamily: fonts.extraBold, marginBottom: 16 },
   articleContent: { color: colors.muted, fontSize: 14, fontFamily: fonts.regular, lineHeight: 22 },
 
   // Video link
@@ -305,7 +305,7 @@ const s = StyleSheet.create({
     backgroundColor: `${colors.cyan}10`, paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
     marginBottom: 16, alignSelf: "flex-start",
   },
-  videoLinkText: { color: colors.cyan, fontSize: 14, fontFamily: fonts.semibold },
+  videoLinkText: { color: colors.cyan, fontSize: 14, fontFamily: fonts.bold },
 
   // Badges
   badge: { borderRadius: 12, paddingHorizontal: 8, paddingVertical: 2 },

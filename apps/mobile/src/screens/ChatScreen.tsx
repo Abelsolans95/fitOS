@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   errorText: {
-    color: colors.error,
+    color: colors.red,
     fontSize: 14,
   },
 
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.success,
+    backgroundColor: colors.green,
   },
 
   // Messages list

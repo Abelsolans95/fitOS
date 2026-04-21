@@ -33,7 +33,7 @@ export const styles = StyleSheet.create({
   tabBar: {
     flexDirection: "row",
     marginHorizontal: spacing.lg,
-    backgroundColor: colors.card,
+    backgroundColor: colors.surface,
     borderRadius: radius.lg,
     padding: 4,
     gap: 4,
@@ -49,7 +49,7 @@ export const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 13,
-    fontFamily: fonts.semiBold,
+    fontFamily: fonts.bold,
     color: colors.dimmed,
   },
   tabTextActive: {
@@ -64,7 +64,7 @@ export const styles = StyleSheet.create({
     gap: 12,
   },
   card: {
-    backgroundColor: colors.card,
+    backgroundColor: colors.surface,
     borderRadius: radius.xl,
     padding: spacing.md,
     borderWidth: 1,
@@ -119,7 +119,7 @@ export const styles = StyleSheet.create({
   },
   actionBtnText: {
     fontSize: 12,
-    fontFamily: fonts.semiBold,
+    fontFamily: fonts.bold,
     color: colors.cyan,
   },
   joinBtn: {
@@ -128,7 +128,7 @@ export const styles = StyleSheet.create({
   },
   joinBtnText: {
     fontSize: 12,
-    fontFamily: fonts.semiBold,
+    fontFamily: fonts.bold,
     color: colors.violet,
   },
   statusBadge: {
@@ -146,7 +146,7 @@ export const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 10,
-    fontFamily: fonts.semiBold,
+    fontFamily: fonts.bold,
   },
   leaderboard: {
     marginTop: 12,
@@ -192,7 +192,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   emptyCard: {
-    backgroundColor: colors.card,
+    backgroundColor: colors.surface,
     borderRadius: radius.xl,
     padding: spacing.xl,
     alignItems: "center",
@@ -260,7 +260,7 @@ export const styles = StyleSheet.create({
   },
   badgeName: {
     fontSize: 12,
-    fontFamily: fonts.semiBold,
+    fontFamily: fonts.bold,
     color: colors.white,
     textAlign: "center",
   },

@@ -53,7 +53,7 @@ export const styles = StyleSheet.create({
   },
   sectionStatus: {
     fontSize: 11,
-    fontFamily: fonts.semiBold,
+    fontFamily: fonts.bold,
     color: colors.green,
   },
 
@@ -82,7 +82,7 @@ export const styles = StyleSheet.create({
   },
   workoutPillText: {
     fontSize: 12,
-    fontFamily: fonts.semiBold,
+    fontFamily: fonts.bold,
     color: colors.muted,
   },
   workoutPillTextActive: {
@@ -114,7 +114,7 @@ export const styles = StyleSheet.create({
   },
   sliderLabelText: {
     fontSize: 12,
-    fontFamily: fonts.semiBold,
+    fontFamily: fonts.bold,
     color: colors.white,
   },
   sliderValue: {
@@ -142,7 +142,7 @@ export const styles = StyleSheet.create({
   },
   sliderBtnText: {
     fontSize: 13,
-    fontFamily: fonts.semiBold,
+    fontFamily: fonts.bold,
     color: colors.muted,
   },
   sliderBtnTextActive: {
@@ -181,7 +181,6 @@ export const styles = StyleSheet.create({
   saveBtnText: {
     fontSize: 15,
     fontFamily: fonts.extraBold,
-    letterSpacing: -0.3,
     color: colors.bg,
   },
 
@@ -194,7 +193,7 @@ export const styles = StyleSheet.create({
   },
   linkLabel: {
     fontSize: 13,
-    fontFamily: fonts.semiBold,
+    fontFamily: fonts.bold,
     color: colors.white,
   },
   linkHint: {

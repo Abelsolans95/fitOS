@@ -435,7 +435,7 @@ const styles = StyleSheet.create({
   captureRow: { flexDirection: "row", gap: spacing.md },
   captureMain: { flex: 2, borderRadius: radius.lg, overflow: "hidden", ...shadows.glow(colors.orange) },
   captureGradient: { paddingVertical: 18, alignItems: "center", flexDirection: "row", justifyContent: "center", gap: spacing.sm },
-  captureMainText: { fontSize: 15, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white },
+  captureMainText: { fontSize: 15, fontFamily: fonts.extraBold, color: colors.white },
   captureSecondary: {
     flex: 1,
     backgroundColor: colors.surface,

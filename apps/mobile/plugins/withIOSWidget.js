@@ -125,14 +125,14 @@ struct TodayWorkoutWidgetEntryView: View {
     var placeholderView: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text("FitOS")
+                Text("KUVOX")
                     .font(.caption2)
                     .fontWeight(.bold)
                     .tracking(2)
                     .foregroundColor(Color(hex: "00E5FF"))
                 Spacer()
             }
-            Text("Abre FitOS")
+            Text("Abre Kuvox")
                 .font(.headline)
                 .fontWeight(.black)
                 .foregroundColor(Color(hex: "E8E8ED"))
@@ -150,7 +150,7 @@ struct TodayWorkoutWidgetEntryView: View {
             // Header
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("FitOS")
+                    Text("KUVOX")
                         .font(.system(size: 10, weight: .bold))
                         .tracking(2)
                         .foregroundColor(Color(hex: "00E5FF"))
@@ -256,7 +256,7 @@ struct TodayWorkoutWidgetBundle: Widget {
             TodayWorkoutWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("Entrenamiento del día")
-        .description("Ve tu entrenamiento de hoy sin abrir FitOS.")
+        .description("Ve tu entrenamiento de hoy sin abrir Kuvox.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
@@ -300,7 +300,7 @@ extension Color {
     <key>CFBundleDevelopmentRegion</key>
     <string>es</string>
     <key>CFBundleDisplayName</key>
-    <string>FitOS Widget</string>
+    <string>Kuvox Widget</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>

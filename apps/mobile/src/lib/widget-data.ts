@@ -43,16 +43,16 @@ function getTodayKey(): string {
 
 function buildScheme(ex: {
   scheme?: string;
-  sets: number;
-  reps_min: number;
-  reps_max: number;
+  sets?: number;
+  reps_min?: number;
+  reps_max?: number;
 }): string {
   if (ex.scheme) return ex.scheme;
-  const reps =
-    ex.reps_max !== ex.reps_min
-      ? `${ex.reps_min}-${ex.reps_max}`
-      : `${ex.reps_min}`;
-  return `${ex.sets}×${reps}`;
+  const sets = ex.sets ?? 0;
+  const min = ex.reps_min ?? 0;
+  const max = ex.reps_max ?? min;
+  const reps = max !== min ? `${min}-${max}` : `${min}`;
+  return `${sets}×${reps}`;
 }
 
 /**

@@ -141,9 +141,9 @@ export const HealthCard = React.memo(function HealthCard({
           </View>
 
           <View style={styles.healthMetric}>
-            <View style={[styles.healthMetricDot, { backgroundColor: colors.error }]} />
+            <View style={[styles.healthMetricDot, { backgroundColor: colors.red }]} />
             <Text style={styles.healthMetricLabel}>FC</Text>
-            <Text style={[styles.healthMetricValue, { color: colors.error }]}>
+            <Text style={[styles.healthMetricValue, { color: colors.red }]}>
               {heartRate != null ? `${heartRate}` : "—"}
             </Text>
             {heartRate != null && <Text style={styles.healthMetricUnit}>bpm</Text>}

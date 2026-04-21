@@ -1,7 +1,7 @@
 {
   "name": "@kuvox/shared",
   "version": "0.1.0",
-  "description": "FitOS shared types, constants and pure utilities",
+  "description": "Kuvox shared types, constants and pure utilities",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {

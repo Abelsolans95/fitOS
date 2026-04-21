@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 24, paddingBottom: 60 },
   centered: { flex: 1, backgroundColor: colors.bg, justifyContent: "center", alignItems: "center", padding: 24 },
 
-  logo: { fontSize: 36, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white, textAlign: "center", marginTop: 16 },
+  logo: { fontSize: 36, fontFamily: fonts.extraBold, color: colors.white, textAlign: "center", marginTop: 16 },
   subtitle: { fontSize: 14, color: colors.muted, textAlign: "center", marginTop: 8, marginBottom: 20 },
   loadingText: { fontSize: 13, color: colors.muted, marginTop: 12 },
 

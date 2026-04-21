@@ -308,7 +308,7 @@ const st = StyleSheet.create({
   content: { paddingHorizontal: spacing.xl, paddingTop: spacing.section + spacing.xxxl, paddingBottom: spacing.section, alignItems: "center" },
   loadingContainer: { flex: 1, backgroundColor: colors.bg, justifyContent: "center", alignItems: "center" },
   headerRow: { flexDirection: "row", alignItems: "flex-start", width: "100%", marginBottom: spacing.lg },
-  title: { fontSize: 28, fontFamily: fonts.extraBold, letterSpacing: -1, color: colors.white },
+  title: { fontSize: 28, fontFamily: fonts.extraBold, color: colors.white },
   subtitle: { fontSize: 13, color: colors.muted, marginTop: spacing.xs },
   genderContainer: { flexDirection: "row", backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.xs, marginBottom: spacing.md, borderWidth: 1, borderColor: colors.border, alignSelf: "center" },
   genderBtn: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.sm, alignItems: "center" },

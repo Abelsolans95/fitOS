@@ -34,7 +34,6 @@ export const styles = StyleSheet.create({
   avatarText: {
     fontSize: 18,
     fontFamily: fonts.extraBold,
-    letterSpacing: -0.5,
     color: colors.bg,
   },
 
@@ -92,7 +91,6 @@ export const styles = StyleSheet.create({
   kcalMetaValue: {
     fontSize: 16,
     fontFamily: fonts.extraBold,
-    letterSpacing: -0.5,
     color: colors.white,
   },
   kcalMetaLabel: { fontSize: 9, color: colors.dimmed, letterSpacing: 1, marginTop: 2 },
@@ -110,7 +108,6 @@ export const styles = StyleSheet.create({
   bentoSmallValue: {
     fontSize: 18,
     fontFamily: fonts.extraBold,
-    letterSpacing: -0.5,
     color: colors.white,
   },
   bentoSmallUnit: { fontSize: 12, fontFamily: fonts.medium },
@@ -241,7 +238,6 @@ export const styles = StyleSheet.create({
   healthMetricValue: {
     fontSize: 16,
     fontFamily: fonts.extraBold,
-    letterSpacing: -0.5,
   },
   healthMetricUnit: {
     fontSize: 10,

@@ -23,7 +23,7 @@ interface DashboardData {
   refetch: () => void;
 }
 
-const DEFAULT_STATE = {
+const DEFAULT_STATE: { todayPlan: TodayPlan; weeklyStats: WeeklyStats } = {
   todayPlan: { workout: null, meals: null },
   weeklyStats: { adherence: 0, streak: 0, caloriesGoal: 2000, caloriesConsumed: 0 },
 };
@@ -56,7 +56,7 @@ export function useDashboardData(user: User | null): DashboardData {
         const [calendarRes, mealPlanRes, caloriesRes] = await Promise.all([
           supabase
             .from("user_calendar")
-            .select("date, activity_type, completed")
+            .select("date, activity_type, activity_details, completed")
             .eq("user_id", user.id)
             .gte("date", startOfWeekStr)
             .lte("date", today),

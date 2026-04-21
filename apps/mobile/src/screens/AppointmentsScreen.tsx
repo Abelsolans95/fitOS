@@ -193,7 +193,7 @@ const st = StyleSheet.create({
     paddingTop: Platform.OS === "ios" ? 56 : 32, paddingHorizontal: spacing.xl,
     paddingBottom: spacing.lg, borderBottomWidth: 1, borderBottomColor: colors.border,
   },
-  headerTitle: { fontSize: 28, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white },
+  headerTitle: { fontSize: 28, fontFamily: fonts.extraBold, color: colors.white },
   headerSub: { fontSize: 13, color: colors.muted, marginTop: 2 },
   newButton: { backgroundColor: colors.cyan, borderRadius: radius.lg, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm + 2 },
   newButtonText: { color: "#0A0A0F", fontFamily: fonts.extraBold, fontSize: 13 },

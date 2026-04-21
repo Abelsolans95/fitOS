@@ -119,7 +119,6 @@ export const styles = StyleSheet.create({
   captureMainText: {
     fontSize: 15,
     fontFamily: fonts.extraBold,
-    letterSpacing: -0.5,
     color: colors.bg,
   },
   captureSecondary: {
@@ -195,7 +194,6 @@ export const styles = StyleSheet.create({
   logKcal: {
     fontSize: 20,
     fontFamily: fonts.extraBold,
-    letterSpacing: -0.5,
     color: colors.white,
   },
   logKcalUnit: { fontSize: 10, color: colors.dimmed, letterSpacing: 1 },

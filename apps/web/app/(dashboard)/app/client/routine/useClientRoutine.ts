@@ -359,7 +359,7 @@ export function useClientRoutine() {
    Private async helpers (calendar + RPE)
    ──────────────────────────────────────────── */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 type SupabaseClient = ReturnType<typeof createClient>;
 
 async function saveCalendarEntry(

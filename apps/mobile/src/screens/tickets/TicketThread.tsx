@@ -138,9 +138,9 @@ const s = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: "rgba(255, 255, 255, 0.10)",
   },
   backBtn: { marginRight: 12 },
-  backText: { color: colors.cyan, fontSize: 14, fontFamily: fonts.semibold },
+  backText: { color: colors.cyan, fontSize: 14, fontFamily: fonts.bold },
   headerContent: { flex: 1 },
-  title: { color: "#fff", fontSize: 20, fontFamily: fonts.extrabold, letterSpacing: -0.5 },
+  title: { color: "#fff", fontSize: 20, fontFamily: fonts.extraBold, letterSpacing: -0.5 },
   badgeRow: { flexDirection: "row", gap: 8, marginTop: 4 },
   content: { flex: 1, padding: spacing.md },
 
@@ -151,7 +151,7 @@ const s = StyleSheet.create({
 
   // Original message
   messageCard: {
-    backgroundColor: colors.card, borderRadius: radius.xl, borderWidth: 1,
+    backgroundColor: colors.surface, borderRadius: radius.xl, borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.10)", padding: spacing.md, marginBottom: spacing.sm,
   },
   senderRow: { flexDirection: "row", alignItems: "center", gap: 8 },
@@ -179,7 +179,7 @@ const s = StyleSheet.create({
     paddingBottom: Platform.OS === "ios" ? 30 : spacing.sm,
   },
   replyInput: {
-    flex: 1, backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1,
+    flex: 1, backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.10)", color: "#fff", fontSize: 14,
     fontFamily: fonts.regular, paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
     maxHeight: 80,
@@ -194,5 +194,5 @@ const s = StyleSheet.create({
     borderTopWidth: 1, borderTopColor: "rgba(255, 255, 255, 0.10)",
     paddingBottom: Platform.OS === "ios" ? 30 : spacing.md,
   },
-  resolvedText: { color: colors.success, fontSize: 14, fontFamily: fonts.semibold },
+  resolvedText: { color: colors.green, fontSize: 14, fontFamily: fonts.bold },
 });

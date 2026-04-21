@@ -1,7 +1,7 @@
 {
   "name": "@kuvox/theme",
   "version": "0.1.0",
-  "description": "FitOS design tokens — shared color, spacing and radius values",
+  "description": "Kuvox design tokens — shared color, spacing and radius values",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
