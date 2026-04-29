@@ -18,8 +18,8 @@ import { getDatabase } from "./database";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
-const STORAGE_KEY_LAST_SYNC = "@fitos/offline_last_sync";
-const STORAGE_KEY_PENDING_COUNT = "@fitos/offline_pending_count";
+const STORAGE_KEY_LAST_SYNC = "@kuvox/offline_last_sync";
+const STORAGE_KEY_PENDING_COUNT = "@kuvox/offline_pending_count";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 

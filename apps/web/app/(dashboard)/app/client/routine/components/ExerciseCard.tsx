@@ -82,7 +82,7 @@ export const ExerciseCard = memo(function ExerciseCard({ ex, idx, activeWeek, fo
       : ex.scheme || `${ex.sets}x${ex.reps_min}-${ex.reps_max}`;
 
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-3 py-2.5">
+    <div className="rounded-xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl px-3 py-2.5">
       <div className="flex items-center justify-between gap-1">
         <div className="flex items-center gap-1.5 min-w-0">
           <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-[#00E5FF]/10 text-[9px] font-bold text-[#00E5FF]">

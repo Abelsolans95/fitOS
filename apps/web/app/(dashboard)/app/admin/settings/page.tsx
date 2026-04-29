@@ -10,7 +10,7 @@ export default function AdminSettingsPage() {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {/* Platform Info */}
-        <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6 space-y-4">
+        <div className="rounded-2xl border border-white/10 bg-[#12121A] p-6 space-y-4">
           <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-[#5A5A72]">Plataforma</h3>
           <div className="space-y-3">
             <InfoRow label="Versión" value="1.0.0" />
@@ -21,7 +21,7 @@ export default function AdminSettingsPage() {
         </div>
 
         {/* Integrations */}
-        <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6 space-y-4">
+        <div className="rounded-2xl border border-white/10 bg-[#12121A] p-6 space-y-4">
           <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-[#5A5A72]">Integraciones</h3>
           <div className="space-y-3">
             <IntegrationRow label="Google Calendar" configured={false} />
@@ -32,7 +32,7 @@ export default function AdminSettingsPage() {
         </div>
 
         {/* Security */}
-        <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6 space-y-4">
+        <div className="rounded-2xl border border-white/10 bg-[#12121A] p-6 space-y-4">
           <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-[#5A5A72]">Seguridad</h3>
           <div className="space-y-3">
             <InfoRow label="CSP Headers" value="Activo" accent="#00C853" />
@@ -44,7 +44,7 @@ export default function AdminSettingsPage() {
         </div>
 
         {/* Limits */}
-        <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6 space-y-4">
+        <div className="rounded-2xl border border-white/10 bg-[#12121A] p-6 space-y-4">
           <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-[#5A5A72]">Límites</h3>
           <div className="space-y-3">
             <InfoRow label="Rate limit API" value="60 req/min" />

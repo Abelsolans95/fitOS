@@ -4,6 +4,7 @@ import { createClient as createServerClient } from "@/lib/supabase-server";
 import { validateCsrf } from "@/lib/csrf";
 import { sanitizeName } from "@/lib/sanitize";
 import { apiLimiter, getClientIdentifier } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
     // Insert user_roles record
     const { error: roleError } = await supabase.from("user_roles").insert({ user_id: client_id, role: sanitizeName(role, 20) });
     if (roleError) {
-      console.error("[complete-registration] Role insert error");
+      logger.error("[complete-registration] Role insert error");
       return NextResponse.json({ error: "Error al asignar rol" }, { status: 500 });
     }
 
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
       });
 
       if (tcError) {
-        console.error("[complete-registration] Insert error");
+        logger.error("[complete-registration] Insert error");
         return NextResponse.json({ error: "Error al vincular con entrenador" }, { status: 500 });
       }
 
@@ -116,7 +117,7 @@ export async function POST(request: NextRequest) {
           .update({ email: callerEmail })
           .eq("user_id", client_id);
         if (emailError) {
-          console.error("[complete-registration] Email update error");
+          logger.error("[complete-registration] Email update error");
         }
       }
 
@@ -125,7 +126,7 @@ export async function POST(request: NextRequest) {
         .rpc("increment_promo_code_usage", { p_promo_code_id: promo_code_id });
 
       if (incrementErr) {
-        console.error("[complete-registration] Promo increment error");
+        logger.error("[complete-registration] Promo increment error");
       }
     }
 

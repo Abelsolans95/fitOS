@@ -37,7 +37,7 @@ export function TabFormulario({ responses }: { responses: OnboardingResponse[] }
         const entries = Object.entries(resp.responses ?? {});
 
         return (
-          <div key={resp.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+          <div key={resp.id} className="rounded-xl border border-white/10 bg-white/[0.02] p-5">
             <div className="mb-4 flex items-center justify-between">
               <h4 className="text-sm font-semibold text-white">
                 {resp.form?.title ?? "Formulario de onboarding"}
@@ -82,7 +82,7 @@ export function TabFormulario({ responses }: { responses: OnboardingResponse[] }
                 <p className="text-sm leading-relaxed text-[#E8E8ED]">{resp.ai_analysis}</p>
               </div>
             ) : (
-              <div className="mt-4 rounded-lg border border-white/[0.06] bg-white/[0.04] px-4 py-3">
+              <div className="mt-4 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3">
                 <p className="text-xs text-[#8B8BA3]">Análisis IA pendiente</p>
               </div>
             )}

@@ -3,5 +3,5 @@ export type {
   TicketReply,
   TicketCategory,
   TicketStatus,
-} from "@fitos/shared";
-export { TICKET_CATEGORIES, TICKET_STATUSES } from "@fitos/shared";
+} from "@kuvox/shared";
+export { TICKET_CATEGORIES, TICKET_STATUSES } from "@kuvox/shared";

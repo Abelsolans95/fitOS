@@ -175,7 +175,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
 
         <button
           onClick={() => setEditing(!editing)}
-          className="rounded-xl border border-white/[0.06] bg-[#12121A] px-4 py-2 text-xs font-semibold text-[#8B8BA3] transition-colors hover:text-white"
+          className="rounded-xl border border-white/10 bg-[#12121A] px-4 py-2 text-xs font-semibold text-[#8B8BA3] transition-colors hover:text-white"
         >
           {editing ? "Cancelar" : "Editar"}
         </button>
@@ -193,7 +193,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 maxLength={100}
-                className="w-full rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-3 py-2 text-sm text-white outline-none focus:border-[#7C3AED]/50"
+                className="w-full rounded-xl border border-white/10 bg-[#0A0A0F] px-3 py-2 text-sm text-white outline-none focus:border-[#7C3AED]/50"
               />
             </div>
             {user.role === "trainer" && (
@@ -205,7 +205,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     value={editBusiness}
                     onChange={(e) => setEditBusiness(e.target.value)}
                     maxLength={100}
-                    className="w-full rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-3 py-2 text-sm text-white outline-none focus:border-[#7C3AED]/50"
+                    className="w-full rounded-xl border border-white/10 bg-[#0A0A0F] px-3 py-2 text-sm text-white outline-none focus:border-[#7C3AED]/50"
                   />
                 </div>
                 <div>
@@ -215,7 +215,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     value={editSpecialty}
                     onChange={(e) => setEditSpecialty(e.target.value)}
                     maxLength={100}
-                    className="w-full rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-3 py-2 text-sm text-white outline-none focus:border-[#7C3AED]/50"
+                    className="w-full rounded-xl border border-white/10 bg-[#0A0A0F] px-3 py-2 text-sm text-white outline-none focus:border-[#7C3AED]/50"
                   />
                 </div>
               </>
@@ -227,7 +227,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 onChange={(e) => setEditBio(e.target.value)}
                 maxLength={500}
                 rows={3}
-                className="w-full rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-3 py-2 text-sm text-white outline-none focus:border-[#7C3AED]/50 resize-none"
+                className="w-full rounded-xl border border-white/10 bg-[#0A0A0F] px-3 py-2 text-sm text-white outline-none focus:border-[#7C3AED]/50 resize-none"
               />
             </div>
           </div>
@@ -244,7 +244,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       {/* Info Cards */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {/* Profile Info */}
-        <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-5 space-y-3">
+        <div className="rounded-2xl border border-white/10 bg-[#12121A] p-5 space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-[#5A5A72]">Información</h3>
           <InfoRow label="Registrado" value={new Date(user.created_at).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })} />
           {user.gender && <InfoRow label="Género" value={user.gender === "male" ? "Masculino" : "Femenino"} />}
@@ -257,7 +257,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         </div>
 
         {/* Stats */}
-        <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-5 space-y-3">
+        <div className="rounded-2xl border border-white/10 bg-[#12121A] p-5 space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-[#5A5A72]">Estadísticas</h3>
 
           {user.role === "trainer" && (
@@ -287,7 +287,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
 
       {/* Promo Codes (Trainer) */}
       {user.role === "trainer" && user.promo_codes && user.promo_codes.length > 0 && (
-        <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-5 space-y-3">
+        <div className="rounded-2xl border border-white/10 bg-[#12121A] p-5 space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-[#5A5A72]">Códigos Promocionales</h3>
           <div className="space-y-2">
             {user.promo_codes.map((pc) => (
@@ -309,7 +309,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
 
       {/* Client list (Trainer) */}
       {user.role === "trainer" && user.clients && user.clients.length > 0 && (
-        <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-5 space-y-3">
+        <div className="rounded-2xl border border-white/10 bg-[#12121A] p-5 space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-[#5A5A72]">
             Clientes ({user.clients.length})
           </h3>

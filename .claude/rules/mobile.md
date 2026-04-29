@@ -10,10 +10,10 @@
 
 ## Theme
 
-- `apps/mobile/src/theme.ts` re-exporta `colors`, `spacing`, `radius`, `fonts` desde `@fitos/theme`.
+- `apps/mobile/src/theme.ts` re-exporta `colors`, `spacing`, `radius`, `fonts` desde `@kuvox/theme`.
 - `shadows` permanece local en theme.ts (usa APIs de React Native).
 - `shadows.glow(color)` genera glow effect.
-- `rgba` strings de `@fitos/theme` son solo para web. En RN usar `borderHex` + `StyleSheet opacity`.
+- `rgba` strings de `@kuvox/theme` son solo para web. En RN usar `borderHex` + `StyleSheet opacity`.
 - Para cambiar colores de marca: editar `packages/theme/src/index.ts` + `npm run sync-theme`.
 
 ## Metro Bundler
@@ -42,8 +42,8 @@ Nunca `return setup()` (retorna Promise, no cleanup).
 ## Shared types
 
 - Mobile `SetEntry.type` es required; shared es optional. No cambiar shared a required — rompería web.
-- Tipos compartidos re-exportados desde `@fitos/shared` en `apps/mobile/src/screens/routine/types.ts`. No redefinir localmente (excepto `SetEntry`).
-- Zonas anatómicas: importar `ZONE_LABELS` de `@fitos/shared`, no del deprecado `muscleData.ts`.
+- Tipos compartidos re-exportados desde `@kuvox/shared` en `apps/mobile/src/screens/routine/types.ts`. No redefinir localmente (excepto `SetEntry`).
+- Zonas anatómicas: importar `ZONE_LABELS` de `@kuvox/shared`, no del deprecado `muscleData.ts`.
 
 ## Offline mode (WatermelonDB)
 

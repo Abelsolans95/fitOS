@@ -95,7 +95,7 @@ export function TabMenu({
   return (
     <div className="space-y-4">
       {/* Plan info */}
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5">
         <div className="flex items-start justify-between">
           <h4 className="text-sm font-semibold text-white">{mealPlan.title}</h4>
           <span className="inline-flex items-center rounded-full bg-[#00C853]/10 px-2.5 py-0.5 text-xs font-medium text-[#00C853]">
@@ -106,7 +106,7 @@ export function TabMenu({
       </div>
 
       {/* Date selector */}
-      <div className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+      <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3">
         <button
           type="button"
           onClick={() => changeDate(-1)}
@@ -136,7 +136,7 @@ export function TabMenu({
           { label: "Carbos", value: `${Math.round(dailyTotals.carbs)}g`, color: "#7C3AED" },
           { label: "Grasa", value: `${Math.round(dailyTotals.fat)}g`, color: "#00C853" },
         ].map((macro) => (
-          <div key={macro.label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-center">
+          <div key={macro.label} className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-center">
             <p className="text-lg font-black" style={{ color: macro.color }}>
               {macro.value}
             </p>
@@ -156,13 +156,13 @@ export function TabMenu({
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#00E5FF] border-t-transparent" />
           </div>
         ) : foodLogs.length === 0 ? (
-          <p className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 text-center text-sm text-[#5A5A72]">
+          <p className="rounded-xl border border-white/10 bg-white/[0.02] p-5 text-center text-sm text-[#5A5A72]">
             Sin registros este día
           </p>
         ) : (
           <div className="space-y-3">
             {Object.entries(logsByMeal).map(([meal, entries]) => (
-              <div key={meal} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+              <div key={meal} className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
                 <h4 className="mb-3 text-xs font-bold uppercase tracking-[0.15em] text-[#00E5FF]">
                   {MEAL_LABELS[meal] ?? meal}
                 </h4>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAdmin } from "@/lib/admin-auth";
 import { validateCsrf } from "@/lib/csrf";
 import { sanitizeName } from "@/lib/sanitize";
+import { logger } from "@/lib/logger";
 
 export async function GET(
   request: NextRequest,
@@ -104,7 +105,7 @@ export async function GET(
 
     return NextResponse.json(result);
   } catch {
-    console.error("[admin/users/[id]] Error inesperado");
+    logger.error("[admin/users/[id]] Error inesperado");
     return NextResponse.json({ error: "Error inesperado" }, { status: 500 });
   }
 }
@@ -157,7 +158,7 @@ export async function PUT(
       .eq("user_id", id);
 
     if (updateErr) {
-      console.error("[admin/users/[id]] Error actualizando perfil");
+      logger.error("[admin/users/[id]] Error actualizando perfil");
       return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
     }
 
@@ -206,7 +207,7 @@ export async function PUT(
 
     return NextResponse.json({ success: true });
   } catch {
-    console.error("[admin/users/[id]] Error inesperado");
+    logger.error("[admin/users/[id]] Error inesperado");
     return NextResponse.json({ error: "Error inesperado" }, { status: 500 });
   }
 }

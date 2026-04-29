@@ -260,7 +260,7 @@ export default function LoginPage() {
             </form>
 
             {/* Footer */}
-            <div className="login-up lu-5 mt-10 border-t border-white/[0.06] pt-6">
+            <div className="login-up lu-5 mt-10 border-t border-white/10 pt-6">
               <p className="text-[13px] text-[#5A5A72]">
                 ¿No tienes cuenta?{" "}
                 <Link href="/register" className="font-semibold text-white hover:text-[#00E5FF] transition-colors">

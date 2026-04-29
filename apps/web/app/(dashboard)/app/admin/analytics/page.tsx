@@ -36,7 +36,7 @@ interface Analytics {
 
 function StatCard({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent: string }) {
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-5">
+    <div className="rounded-2xl border border-white/10 bg-[#12121A] p-5">
       <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#5A5A72]">{label}</p>
       <p className="mt-2 text-3xl font-black tracking-tight" style={{ color: accent }}>
         {typeof value === "number" ? value.toLocaleString() : value}
@@ -112,7 +112,7 @@ export default function AnalyticsPage() {
             sub={`${data.totals.activeClients} de ${data.totals.clients} clientes`}
             accent={data.totals.retentionRate >= 70 ? "#00C853" : data.totals.retentionRate >= 50 ? "#FF9100" : "#FF1744"}
           />
-          <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-5">
+          <div className="rounded-2xl border border-white/10 bg-[#12121A] p-5">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#5A5A72]">Sesiones (30d)</p>
             <p className="mt-2 text-3xl font-black tracking-tight text-[#FF9100]">
               {data.activity.sessionsLast30.toLocaleString()}
@@ -171,7 +171,7 @@ export default function AnalyticsPage() {
           <h2 className="mb-4 text-sm font-bold uppercase tracking-[0.2em] text-[#5A5A72]">
             Top Entrenadores por Clientes Activos
           </h2>
-          <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-5">
+          <div className="rounded-2xl border border-white/10 bg-[#12121A] p-5">
             <div className="space-y-3">
               {data.topTrainers.map((t, i) => {
                 const maxClients = data.topTrainers[0]?.active_clients ?? 1;

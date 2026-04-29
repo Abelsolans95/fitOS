@@ -27,7 +27,7 @@ export function SummaryView({
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-4 text-center">
+        <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-4 text-center">
           <p className="text-3xl font-black tracking-tight text-[#00E5FF]">
             {formatTime(elapsed)}
           </p>
@@ -35,7 +35,7 @@ export function SummaryView({
             Duración
           </p>
         </div>
-        <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-4 text-center">
+        <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-4 text-center">
           <p className="text-3xl font-black tracking-tight text-[#7C3AED]">
             {Math.round(summaryData.totalVolume).toLocaleString()}
           </p>
@@ -43,7 +43,7 @@ export function SummaryView({
             Vol (kg)
           </p>
         </div>
-        <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-4 text-center">
+        <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-4 text-center">
           <p className="text-3xl font-black tracking-tight text-[#FF9100]">
             {summaryData.totalSetsCount}
           </p>
@@ -108,7 +108,7 @@ export function SummaryView({
       </div>
 
       {/* RPE */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-4 text-center">
+      <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-4 text-center">
         <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#5A5A72]">
           RPE Global
         </p>

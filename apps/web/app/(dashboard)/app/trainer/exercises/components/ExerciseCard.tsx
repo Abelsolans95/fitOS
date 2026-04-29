@@ -15,7 +15,7 @@ export const ExerciseCard = memo(function ExerciseCard({
   onDelete: () => void;
 }) {
   return (
-    <div className="group relative flex flex-col rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-4 transition-all duration-200 hover:border-white/[0.1]">
+    <div className="group relative flex flex-col rounded-[18px] border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-4 transition-all duration-200 hover:border-white/[0.1]">
       {/* Video thumbnail placeholder */}
       {exercise.video_url ? (
         <div className="mb-3 flex h-36 items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.04]">

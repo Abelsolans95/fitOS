@@ -3,6 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase-server";
 import { createClient } from "@supabase/supabase-js";
 import { validateCsrf } from "@/lib/csrf";
 import { apiLimiter, getClientIdentifier } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
       .eq("status", "pending");
 
     if (activateError) {
-      console.error("[activate-client] Error activando cliente");
+      logger.error("[activate-client] Error activando cliente");
       return NextResponse.json({ error: "Error al activar el cliente" }, { status: 500 });
     }
 
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
       .is("email", null);
 
     if (profileError) {
-      console.error("[activate-client] Error actualizando email en perfil");
+      logger.error("[activate-client] Error actualizando email en perfil");
       // No bloqueante — la activación ya se completó
     }
 

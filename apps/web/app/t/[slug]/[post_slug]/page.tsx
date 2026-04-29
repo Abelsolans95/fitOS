@@ -215,7 +215,7 @@ export default async function PublicArticlePage({
 
         {/* Hero image */}
         {post.image_url && (
-          <div className="relative mt-8 aspect-video overflow-hidden rounded-2xl border border-white/[0.06]">
+          <div className="relative mt-8 aspect-video overflow-hidden rounded-2xl border border-white/10">
             <Image
               src={post.image_url}
               alt={post.title ?? "Imagen del articulo"}
@@ -272,7 +272,7 @@ export default async function PublicArticlePage({
                 const href = p.slug ? `/t/${slug}/${p.slug}` : null;
 
                 const Card = (
-                  <div className="group rounded-2xl border border-white/[0.06] bg-[#12121A] p-4 transition-colors hover:border-white/[0.12]">
+                  <div className="group rounded-2xl border border-white/10 bg-[#12121A] p-4 transition-colors hover:border-white/[0.12]">
                     <h3 className="text-sm font-bold text-white group-hover:text-[#00E5FF] transition-colors line-clamp-2">
                       {p.title ?? "Sin titulo"}
                     </h3>

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createRateLimiter, getClientIdentifier } from "@/lib/rate-limit";
 import { validateCsrf } from "@/lib/csrf";
 import { sanitizeName, sanitizeEmail, sanitizeText } from "@/lib/sanitize";
+import { uuidSchema } from "@/lib/validation";
+import { logger } from "@/lib/logger";
 
 // Rate limiter: 10 requests per minute (public form, strict)
 const leadLimiter = createRateLimiter({ interval: 60_000, maxRequests: 10 });
@@ -42,9 +44,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Identificador de entrenador invalido." }, { status: 400 });
     }
 
-    // Validate UUID format for trainer_id
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(trainerId)) {
+    // Validate UUID format for trainer_id (strict lowercase — Postgres canonical form)
+    if (!uuidSchema.safeParse(trainerId).success) {
       return NextResponse.json({ error: "Identificador de entrenador invalido." }, { status: 400 });
     }
 
@@ -82,7 +83,7 @@ export async function POST(request: Request) {
     });
 
     if (insertError) {
-      console.error("[API/leads] Insert error:", insertError.code);
+      logger.error("[API/leads] Insert error:", { error: insertError.code });
       return NextResponse.json({ error: "Error al enviar el formulario." }, { status: 500 });
     }
 

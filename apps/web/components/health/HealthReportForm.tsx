@@ -128,7 +128,7 @@ export function HealthReportForm({
               className={`rounded-lg border px-3 py-2 text-xs font-medium transition-all ${
                 incidentType === t.value
                   ? "border-[#00E5FF]/30 bg-[#00E5FF]/10 text-[#00E5FF]"
-                  : "border-white/[0.06] bg-white/[0.02] text-[#8B8BA3] hover:text-white"
+                  : "border-white/10 bg-white/[0.02] text-[#8B8BA3] hover:text-white"
               }`}
             >
               {t.label}
@@ -155,7 +155,7 @@ export function HealthReportForm({
                     : s.value === "recovering"
                       ? "border-[#FF9100]/30 bg-[#FF9100]/10 text-[#FF9100]"
                       : "border-[#00C853]/30 bg-[#00C853]/10 text-[#00C853]"
-                  : "border-white/[0.06] bg-white/[0.02] text-[#8B8BA3] hover:text-white"
+                  : "border-white/10 bg-white/[0.02] text-[#8B8BA3] hover:text-white"
               }`}
             >
               {s.label}
@@ -174,7 +174,7 @@ export function HealthReportForm({
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Describe la sensación, diagnóstico, circunstancias..."
           rows={3}
-          className="w-full resize-none rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white placeholder:text-[#5A5A72] focus:border-[#00E5FF]/30 focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/20"
+          className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm text-white placeholder:text-[#5A5A72] focus:border-[#00E5FF]/30 focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/20"
         />
       </div>
 
@@ -183,7 +183,7 @@ export function HealthReportForm({
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 rounded-xl border border-white/[0.06] bg-white/[0.02] py-2.5 text-sm font-medium text-[#8B8BA3] transition-colors hover:text-white"
+          className="flex-1 rounded-xl border border-white/10 bg-white/[0.02] py-2.5 text-sm font-medium text-[#8B8BA3] transition-colors hover:text-white"
         >
           Cancelar
         </button>

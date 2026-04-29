@@ -7,7 +7,7 @@ function AdminLayoutError({ message }: { message: string }) {
   return (
     <div className="relative min-h-screen bg-[#0A0A0F] text-white">
       <div className="flex min-h-screen items-center justify-center">
-        <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-8 text-center max-w-md">
+        <div className="rounded-2xl border border-white/10 bg-[#12121A] p-8 text-center max-w-md">
           <p className="text-lg font-semibold text-white">Error de acceso</p>
           <p className="mt-2 text-sm text-[#8B8BA3]">{message}</p>
           <a

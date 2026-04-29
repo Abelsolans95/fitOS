@@ -1,8 +1,8 @@
-# FitOS — Guía para Agentes
+# Kuvox — Guía para Agentes
 
 ## Contexto
 
-**FitOS** es una plataforma SaaS para entrenadores personales. Dos roles: `trainer` y `client` (+ `admin`). Monorepo con Next.js 15 (web) + Expo 55 (mobile) + Supabase (DB + Edge Functions).
+**Kuvox** (directorio histórico `fitOS`, paquetes `@kuvox/*`) es una plataforma SaaS para entrenadores personales. Dos roles: `trainer` y `client` (+ `admin`). Monorepo con Next.js 15 (web) + Expo 55 (mobile) + Supabase (DB + Edge Functions).
 
 Para historial completo de fases: @docs/changelog.md
 Para integraciones pendientes: @docs/integrations.md

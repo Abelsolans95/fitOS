@@ -32,7 +32,7 @@ export const ArticleDetail = memo(function ArticleDetail({ article, onBack }: Ar
         Volver a artículos
       </button>
 
-      <article className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6">
+      <article className="rounded-2xl border border-white/10 bg-[#12121A] p-6">
         {/* Header */}
         <div className="mb-4 flex items-center gap-2">
           <CategoryBadge category={article.category} />

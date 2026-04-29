@@ -2,7 +2,7 @@ import React, { memo, useCallback } from "react";
 import {
   View, Text, TouchableOpacity, FlatList, StyleSheet, Platform,
 } from "react-native";
-import { TICKET_CATEGORIES } from "@fitos/shared";
+import { TICKET_CATEGORIES } from "@kuvox/shared";
 import { colors, spacing, radius, fonts } from "../../theme";
 import { CATEGORY_COLORS, STATUS_COLORS, STATUS_LABELS, timeAgo } from "./types";
 import type { SupportTicket } from "./types";
@@ -103,10 +103,10 @@ const s = StyleSheet.create({
   header: {
     flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.md,
     paddingTop: spacing.xl + 20, paddingBottom: spacing.md,
-    borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.06)",
+    borderBottomWidth: 1, borderBottomColor: "rgba(255, 255, 255, 0.10)",
   },
   headerLeft: { flex: 1 },
-  title: { color: "#fff", fontSize: 20, fontFamily: fonts.extrabold, letterSpacing: -0.5 },
+  title: { color: "#fff", fontSize: 20, fontFamily: fonts.extraBold, letterSpacing: -0.5 },
   subtitle: { color: colors.dimmed, fontSize: 12, fontFamily: fonts.medium, marginTop: 2 },
   newBtn: {
     backgroundColor: colors.cyan, borderRadius: radius.md,
@@ -114,8 +114,8 @@ const s = StyleSheet.create({
   },
   newBtnText: { color: "#0A0A0F", fontSize: 12, fontFamily: fonts.bold },
   ticketCard: {
-    backgroundColor: colors.card, borderRadius: radius.xl, borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)", padding: spacing.md, marginBottom: spacing.sm,
+    backgroundColor: colors.surface, borderRadius: radius.xl, borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.10)", padding: spacing.md, marginBottom: spacing.sm,
   },
   ticketRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" },
   ticketLeft: { flex: 1, marginRight: 12 },

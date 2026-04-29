@@ -65,7 +65,7 @@ export const SFRSelector = memo(function SFRSelector({
               className={`flex flex-1 flex-col items-center gap-1 rounded-xl py-3 text-sm font-bold transition-all ${
                 stimulus === v
                   ? "bg-[#7C3AED] text-white shadow-[0_0_20px_rgba(124,58,237,0.3)]"
-                  : "border border-white/[0.06] bg-white/[0.02] text-[#8B8BA3] hover:bg-white/[0.04]"
+                  : "border border-white/10 bg-white/[0.02] text-[#8B8BA3] hover:bg-white/[0.04]"
               }`}
             >
               <span className="text-lg">{v}</span>
@@ -95,7 +95,7 @@ export const SFRSelector = memo(function SFRSelector({
               className={`flex flex-1 flex-col items-center gap-1 rounded-xl py-3 text-sm font-bold transition-all ${
                 fatigue === v
                   ? "bg-[#FF9100] text-[#0A0A0F] shadow-[0_0_20px_rgba(255,145,0,0.3)]"
-                  : "border border-white/[0.06] bg-white/[0.02] text-[#8B8BA3] hover:bg-white/[0.04]"
+                  : "border border-white/10 bg-white/[0.02] text-[#8B8BA3] hover:bg-white/[0.04]"
               }`}
             >
               <span className="text-lg">{v}</span>

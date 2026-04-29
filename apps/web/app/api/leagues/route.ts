@@ -4,7 +4,8 @@ import { createClient as createServerClient } from "@/lib/supabase-server";
 import { apiLimiter, getClientIdentifier } from "@/lib/rate-limit";
 import { validateCsrf } from "@/lib/csrf";
 import { sanitizeName, sanitizeText } from "@/lib/sanitize";
-import type { LeagueMetric, LeagueStatus } from "@fitos/shared";
+import type { LeagueMetric, LeagueStatus } from "@kuvox/shared";
+import { logger } from "@/lib/logger";
 
 const VALID_METRICS: LeagueMetric[] = ["consistency", "volume", "steps", "sessions", "custom"];
 const VALID_STATUSES: LeagueStatus[] = ["upcoming", "active", "completed"];
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
         .limit(100);
 
       if (error) {
-        console.error("[leagues] Error al cargar ligas");
+        logger.error("[leagues] Error al cargar ligas");
         return NextResponse.json({ error: "Error al cargar ligas" }, { status: 500 });
       }
 
@@ -55,7 +56,7 @@ export async function GET(request: NextRequest) {
         .limit(100);
 
       if (error) {
-        console.error("[leagues] Error al cargar ligas cliente");
+        logger.error("[leagues] Error al cargar ligas cliente");
         return NextResponse.json({ error: "Error al cargar ligas" }, { status: 500 });
       }
 
@@ -138,7 +139,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error("[leagues] Error al crear liga");
+      logger.error("[leagues] Error al crear liga");
       return NextResponse.json({ error: "Error al crear la liga" }, { status: 500 });
     }
 
@@ -206,7 +207,7 @@ export async function PUT(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error("[leagues] Error al actualizar liga");
+      logger.error("[leagues] Error al actualizar liga");
       return NextResponse.json({ error: "Error al actualizar la liga" }, { status: 500 });
     }
 
@@ -256,7 +257,7 @@ export async function DELETE(request: NextRequest) {
       .eq("trainer_id", user.id);
 
     if (error) {
-      console.error("[leagues] Error al eliminar liga");
+      logger.error("[leagues] Error al eliminar liga");
       return NextResponse.json({ error: "Error al eliminar la liga" }, { status: 500 });
     }
 

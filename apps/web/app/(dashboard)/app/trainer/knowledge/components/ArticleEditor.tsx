@@ -20,7 +20,7 @@ export const ArticleEditor = memo(function ArticleEditor({
   onCancel,
 }: ArticleEditorProps) {
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6">
+    <div className="rounded-2xl border border-white/10 bg-[#12121A] p-6">
       <h2 className="mb-4 text-lg font-bold text-white">
         {article.id ? "Editar artículo" : "Nuevo artículo"}
       </h2>
@@ -37,7 +37,7 @@ export const ArticleEditor = memo(function ArticleEditor({
             onChange={(e) => onUpdateField({ title: e.target.value })}
             placeholder="Ej: Cómo hacer peso muerto correctamente"
             maxLength={200}
-            className="w-full rounded-lg border border-white/[0.06] bg-[#0A0A0F] px-3 py-2.5 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#00E5FF]/30"
+            className="w-full rounded-lg border border-white/10 bg-[#0A0A0F] px-3 py-2.5 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#00E5FF]/30"
           />
         </div>
 
@@ -54,7 +54,7 @@ export const ArticleEditor = memo(function ArticleEditor({
                 className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${
                   article.category === cat.value
                     ? "border-[#00E5FF]/30 bg-[#00E5FF]/10 text-[#00E5FF]"
-                    : "border-white/[0.06] text-[#5A5A72] hover:text-white"
+                    : "border-white/10 text-[#5A5A72] hover:text-white"
                 }`}
               >
                 {cat.label}
@@ -73,7 +73,7 @@ export const ArticleEditor = memo(function ArticleEditor({
             onChange={(e) => onUpdateField({ content: e.target.value })}
             placeholder="Escribe el contenido del artículo..."
             rows={12}
-            className="w-full resize-y rounded-lg border border-white/[0.06] bg-[#0A0A0F] px-3 py-2.5 text-sm leading-relaxed text-white placeholder-[#5A5A72] outline-none focus:border-[#00E5FF]/30"
+            className="w-full resize-y rounded-lg border border-white/10 bg-[#0A0A0F] px-3 py-2.5 text-sm leading-relaxed text-white placeholder-[#5A5A72] outline-none focus:border-[#00E5FF]/30"
           />
         </div>
 
@@ -87,7 +87,7 @@ export const ArticleEditor = memo(function ArticleEditor({
             value={article.video_url ?? ""}
             onChange={(e) => onUpdateField({ video_url: e.target.value || null })}
             placeholder="https://youtube.com/watch?v=..."
-            className="w-full rounded-lg border border-white/[0.06] bg-[#0A0A0F] px-3 py-2.5 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#00E5FF]/30"
+            className="w-full rounded-lg border border-white/10 bg-[#0A0A0F] px-3 py-2.5 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#00E5FF]/30"
           />
         </div>
 
@@ -121,7 +121,7 @@ export const ArticleEditor = memo(function ArticleEditor({
         <div className="flex justify-end gap-3 pt-2">
           <button
             onClick={onCancel}
-            className="rounded-xl border border-white/[0.06] px-4 py-2 text-sm font-medium text-[#8B8BA3] transition-colors hover:text-white"
+            className="rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-[#8B8BA3] transition-colors hover:text-white"
           >
             Cancelar
           </button>

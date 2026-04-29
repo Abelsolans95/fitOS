@@ -35,7 +35,7 @@ export function LeadDetailPanel({
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Panel */}
-      <div className="relative z-10 h-full w-full max-w-md overflow-y-auto border-l border-white/[0.06] bg-[#0E0E18] p-6">
+      <div className="relative z-10 h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-[#0E0E18] p-6">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
@@ -120,7 +120,7 @@ export function LeadDetailPanel({
           </div>
 
           {/* Delete */}
-          <div className="border-t border-white/[0.06] pt-5">
+          <div className="border-t border-white/10 pt-5">
             <button
               onClick={onDelete}
               disabled={saving}

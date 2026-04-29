@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { apiLimiter, getClientIdentifier } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/marketplace
@@ -111,7 +112,7 @@ export async function GET(request: NextRequest) {
     const { data: products, error: listErr } = await query;
 
     if (listErr) {
-      console.error("[marketplace] Error listing products");
+      logger.error("[marketplace] Error listing products");
       return NextResponse.json(
         { error: "Error al obtener productos" },
         { status: 500 }

@@ -16,7 +16,7 @@ export function HowItWorksSection() {
         </div>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
           {STEPS.map(({ n, title, desc, accent }) => (
-            <div key={n} className="how-card relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[#12121A] p-8">
+            <div key={n} className="how-card relative overflow-hidden rounded-2xl border border-white/10 bg-[#12121A] p-8">
               <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${accent}, transparent)` }} />
               <div className="pointer-events-none absolute right-0 top-0 h-40 w-40 rounded-full opacity-[0.05] blur-[50px]" style={{ background: accent }} />
               <p className="text-[36px] font-extrabold leading-none mb-5" style={{ color: accent }}>{n}</p>

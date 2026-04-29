@@ -188,7 +188,7 @@ export const BuffetAnalysis = memo(function BuffetAnalysis({
   return (
     <div className="space-y-4">
       {/* Remaining macros display */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-4">
+      <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-4">
         <p className="mb-2 text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">Macros restantes hoy</p>
         <div className="grid grid-cols-4 gap-3">
           <div className="text-center">
@@ -297,7 +297,7 @@ export const BuffetAnalysis = memo(function BuffetAnalysis({
 
       {/* Identified items */}
       {identifiedItems.length > 0 && (
-        <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-4">
+        <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-4">
           <p className="mb-2 text-xs font-medium uppercase tracking-wider text-[#8B8BA3]">Opciones identificadas en el buffet</p>
           <div className="flex flex-wrap gap-1.5">
             {identifiedItems.map((item, i) => (

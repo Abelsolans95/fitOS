@@ -32,7 +32,7 @@ export default function TicketsScreen() {
   const loadTickets = useCallback(async (cId: string) => {
     const { data, error } = await supabase
       .from("support_tickets")
-      .select("id, trainer_id, client_id, category, subject, description, image_url, status, created_at, updated_at")
+      .select("id, trainer_id, client_id, category, subject, description, image_url, status, created_at, updated_at, trainer_read_at, client_read_at")
       .eq("client_id", cId)
       .order("created_at", { ascending: false })
       .limit(QUERY_LIMITS.TICKETS);

@@ -167,13 +167,13 @@ export default function TrainerMarketplacePage() {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-4">
+        <div className="rounded-2xl border border-white/10 bg-[#12121A] p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#5A5A72]">
             Productos
           </p>
           <p className="mt-1 text-2xl font-black text-white">{products.length}</p>
         </div>
-        <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-4">
+        <div className="rounded-2xl border border-white/10 bg-[#12121A] p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#5A5A72]">
             Publicados
           </p>
@@ -181,7 +181,7 @@ export default function TrainerMarketplacePage() {
             {products.filter((p) => p.status === "published").length}
           </p>
         </div>
-        <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-4">
+        <div className="rounded-2xl border border-white/10 bg-[#12121A] p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#5A5A72]">
             Descargas totales
           </p>

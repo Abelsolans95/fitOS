@@ -113,7 +113,7 @@ export default function TrainerFormsPage() {
         </div>
 
         {/* ── Tab switcher ── */}
-        <div className="fm-in fm-2 flex gap-1 rounded-[14px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-1">
+        <div className="fm-in fm-2 flex gap-1 rounded-[14px] border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-1">
           {(["editor", "preview"] as Tab[]).map(t => {
             const active = tab === t;
             const color = t === "editor" ? "#00E5FF" : "#7C3AED";
@@ -136,7 +136,7 @@ export default function TrainerFormsPage() {
         </div>
 
         {/* ── Content ── */}
-        <div className="fm-in fm-3 rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6">
+        <div className="fm-in fm-3 rounded-[18px] border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-6">
           {/* Top accent bar */}
           <div className="absolute top-0 left-0 right-0 h-[2px] rounded-t-[18px]"
             style={{ background: tab === "editor" ? "linear-gradient(90deg, #00E5FF, transparent)" : "linear-gradient(90deg, #7C3AED, transparent)" }} />

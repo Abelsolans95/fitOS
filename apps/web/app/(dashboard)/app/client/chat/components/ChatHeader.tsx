@@ -8,7 +8,7 @@ interface Props {
 
 export const ChatHeader = memo(function ChatHeader({ trainer }: Props) {
   return (
-    <div className="flex items-center gap-3 border-b border-white/[0.06] px-5 py-4">
+    <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#00E5FF]/10 text-xs font-bold text-[#00E5FF]">
         {getInitials(trainer?.full_name ?? null)}
       </div>

@@ -10,7 +10,7 @@ function IcClock() {
 
 export function RecentActivity() {
   return (
-    <div className="rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl overflow-hidden">
+    <div className="rounded-[18px] border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl overflow-hidden">
       {/* Header bar */}
       <div className="flex items-center justify-between border-b border-white/[0.05] px-5 py-4">
         <div className="flex items-center gap-2">

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import { validateCsrf } from "@/lib/csrf";
 import { apiLimiter, getClientIdentifier } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 const MAX_EXERCISE_NAMES = 200;
 
@@ -137,7 +138,7 @@ export async function POST(request: NextRequest) {
     .eq("id", import_id);
 
   if (updateError) {
-    console.error("[import/reconcile] Error updating excel_imports:", updateError);
+    logger.error("[import/reconcile] Error updating excel_imports:", { error: updateError });
     // No bloqueante — la reconciliación ya se completó
   }
 

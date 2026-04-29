@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { exchangeCodeForTokens } from "@/lib/google-calendar";
 import { createClient } from "@/lib/supabase-server";
+import { logger } from "@/lib/logger";
 
 // SECURITY: Whitelist of allowed redirect URLs to prevent open redirect attacks
 const ALLOWED_RETURN_URLS = [
@@ -67,7 +68,7 @@ export async function GET(request: Request) {
       .eq("user_id", user.id);
 
     if (updateErr) {
-      console.error("[GoogleOAuth] Error saving tokens");
+      logger.error("[GoogleOAuth] Error saving tokens");
       return NextResponse.redirect(
         new URL("/app/trainer/appointments?google_error=save_failed", request.url)
       );
@@ -78,7 +79,7 @@ export async function GET(request: Request) {
       new URL(`${returnTo}?google_connected=true`, request.url)
     );
   } catch {
-    console.error("[GoogleOAuth] Callback error");
+    logger.error("[GoogleOAuth] Callback error");
     return NextResponse.redirect(
       new URL("/app/trainer/appointments?google_error=token_exchange_failed", request.url)
     );

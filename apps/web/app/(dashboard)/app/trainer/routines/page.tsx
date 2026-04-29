@@ -56,7 +56,7 @@ export default function TrainerRoutinesPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 rounded-[14px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-1">
+      <div className="flex gap-1 rounded-[14px] border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-1">
         {(["rutinas", "ejercicios"] as const).map((tab) => (
           <button
             key={tab}

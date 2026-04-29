@@ -31,7 +31,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // For posts we need to map community_id -> trainer slug
   // Get all communities for the trainers
   const communityIds = [...new Set(posts.map((p) => p.community_id))];
-  let communityToSlug: Map<string, string> = new Map();
+  const communityToSlug: Map<string, string> = new Map();
 
   if (communityIds.length > 0) {
     const { data: communities } = await supabase

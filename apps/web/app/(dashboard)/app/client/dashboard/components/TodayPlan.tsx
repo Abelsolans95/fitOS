@@ -11,7 +11,7 @@ export const TodayPlan = memo(function TodayPlan({ todayPlan, weeklyStats }: Pro
   return (
     <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
       {/* Today's plan — 2 cols */}
-      <div className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6 md:col-span-2">
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-6 md:col-span-2">
         <div className="absolute -right-20 -top-20 h-48 w-48 rounded-full bg-[#7C3AED]/[0.06] blur-3xl pointer-events-none" />
 
         <div className="mb-5 flex items-center justify-between">
@@ -77,7 +77,7 @@ export const TodayPlan = memo(function TodayPlan({ todayPlan, weeklyStats }: Pro
 
       {/* Stats column — 1 col */}
       <div className="flex flex-col gap-4">
-        <div className="flex-1 rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-5">
+        <div className="flex-1 rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-5">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#5A5A72]">Adherencia</p>
           <p className="text-4xl font-black tracking-tight text-[#00E5FF]">
             {weeklyStats.adherence}<span className="text-2xl">%</span>
@@ -91,7 +91,7 @@ export const TodayPlan = memo(function TodayPlan({ todayPlan, weeklyStats }: Pro
           </div>
         </div>
 
-        <div className="flex-1 rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-5">
+        <div className="flex-1 rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-5">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#5A5A72]">Próximo</p>
           <p className="text-lg font-bold text-[#7C3AED]">{weeklyStats.nextWorkout || "—"}</p>
           <p className="mt-1 text-xs text-[#5A5A72]">próximo entreno</p>

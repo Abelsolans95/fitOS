@@ -27,7 +27,7 @@ export const WeekStrip = memo(function WeekStrip({ todayDayIndex, nextWorkout }:
                 ? "bg-[#00E5FF] text-[#0A0A0F]"
                 : isPast
                 ? "bg-white/[0.06] text-[#8B8BA3]"
-                : "border border-white/[0.06] text-[#5A5A72]"
+                : "border border-white/10 text-[#5A5A72]"
             }`}
           >
             {day}

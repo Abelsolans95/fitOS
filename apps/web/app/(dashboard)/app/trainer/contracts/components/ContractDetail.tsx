@@ -50,16 +50,16 @@ export const ContractDetail = React.memo(function ContractDetail({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-6">
+      <div className="flex-1 overflow-y-auto rounded-xl border border-white/10 bg-[#0A0A0F] p-6">
         <div className="prose prose-invert max-w-none whitespace-pre-wrap text-sm text-[#E8E8ED]">
           {contract.content}
         </div>
 
         {/* Signature display */}
         {isSigned && contract.signature_data && (
-          <div className="mt-6 border-t border-white/[0.06] pt-4">
+          <div className="mt-6 border-t border-white/10 pt-4">
             <p className="mb-2 text-xs font-medium text-[#8B8BA3]">Firma del cliente</p>
-            <div className="inline-block rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+            <div className="inline-block rounded-xl border border-white/10 bg-white/[0.02] p-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={contract.signature_data}

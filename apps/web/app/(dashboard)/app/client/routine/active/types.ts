@@ -1,5 +1,5 @@
 /* ────────────────────────────────────────────
-   Active Training — re-exports from @fitos/shared
+   Active Training — re-exports from @kuvox/shared
    ──────────────────────────────────────────── */
 
 export type {
@@ -16,9 +16,9 @@ export type {
   Phase,
   SummaryExerciseResult,
   SummaryData,
-} from "@fitos/shared";
+} from "@kuvox/shared";
 
-export { formatTime } from "@fitos/shared";
+export { formatTime } from "@kuvox/shared";
 
 /* ── calculateProgress (web-specific labels/colors) ── */
 

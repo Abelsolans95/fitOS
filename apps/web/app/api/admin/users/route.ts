@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdmin } from "@/lib/admin-auth";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
     const { data: users, error, count } = await query;
 
     if (error) {
-      console.error("[admin/users] Error listando usuarios");
+      logger.error("[admin/users] Error listando usuarios");
       return NextResponse.json({ error: "Error al cargar usuarios" }, { status: 500 });
     }
 
@@ -112,7 +113,7 @@ export async function GET(request: NextRequest) {
       limit,
     });
   } catch {
-    console.error("[admin/users] Error inesperado");
+    logger.error("[admin/users] Error inesperado");
     return NextResponse.json({ error: "Error inesperado" }, { status: 500 });
   }
 }

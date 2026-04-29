@@ -80,7 +80,7 @@ function AppointmentPopover({
       </div>
       {appt.notes && <p className="mt-1.5 text-[11px] text-[#5A5A72] italic line-clamp-2">{appt.notes}</p>}
       {!isPast && appt.status !== "cancelled" && appt.status !== "completed" && (
-        <div className="mt-3 flex gap-1.5 border-t border-white/[0.06] pt-3">
+        <div className="mt-3 flex gap-1.5 border-t border-white/10 pt-3">
           {appt.status === "pending" && (
             <button onClick={() => onConfirm(appt.id)} disabled={!!actionLoading}
               className="rounded-md bg-[#00C853]/10 px-2 py-1 text-[10px] font-semibold text-[#00C853] hover:bg-[#00C853]/20 disabled:opacity-40">
@@ -152,7 +152,7 @@ function MonthGrid({
   onDayClick: (d: Date) => void;
 }) {
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-[#12121A]/60 overflow-hidden">
+    <div className="rounded-2xl border border-white/10 bg-[#12121A]/60 overflow-hidden">
       <div className="grid grid-cols-7 border-b border-white/[0.04]">
         {DAY_NAMES.map((d) => (
           <div key={d} className="px-1 py-2 text-center text-[10px] font-bold uppercase tracking-[0.15em] text-[#5A5A72]">
@@ -208,8 +208,8 @@ function WeekGrid({
   const ROW_H = 48;
 
   return (
-    <div className="overflow-auto rounded-2xl border border-white/[0.06] bg-[#12121A]/60">
-      <div className="sticky top-0 z-10 grid grid-cols-[60px_repeat(7,1fr)] border-b border-white/[0.06] bg-[#12121A]">
+    <div className="overflow-auto rounded-2xl border border-white/10 bg-[#12121A]/60">
+      <div className="sticky top-0 z-10 grid grid-cols-[60px_repeat(7,1fr)] border-b border-white/10 bg-[#12121A]">
         <div className="border-r border-white/[0.04]" />
         {days.map((d, i) => {
           const isToday = isSameDay(d, today);
@@ -285,8 +285,8 @@ function DayGrid({
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
 
   return (
-    <div className="overflow-auto rounded-2xl border border-white/[0.06] bg-[#12121A]/60">
-      <div className={`border-b border-white/[0.06] px-4 py-3 ${isToday ? "bg-[#00E5FF]/5" : ""}`}>
+    <div className="overflow-auto rounded-2xl border border-white/10 bg-[#12121A]/60">
+      <div className={`border-b border-white/10 px-4 py-3 ${isToday ? "bg-[#00E5FF]/5" : ""}`}>
         <p className={`text-sm font-bold capitalize ${isToday ? "text-[#00E5FF]" : "text-white"}`}>
           {fmtDayFull(date)}
           {isToday && <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-[#00E5FF]/60">Hoy</span>}
@@ -394,7 +394,7 @@ export function AppointmentCalendar({
     <div className="space-y-4">
       {/* Mode tabs + navigation */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-1 rounded-lg border border-white/[0.06] bg-white/[0.02] p-0.5">
+        <div className="flex gap-1 rounded-lg border border-white/10 bg-white/[0.02] p-0.5">
           {(["month", "week", "day"] as CalMode[]).map((m) => (
             <button key={m} onClick={() => setMode(m)}
               className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${mode === m ? "bg-[#00E5FF]/10 text-[#00E5FF]" : "text-[#5A5A72] hover:text-[#8B8BA3]"}`}>
@@ -403,16 +403,16 @@ export function AppointmentCalendar({
           ))}
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => navigate(-1)} className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/[0.06] text-[#8B8BA3] hover:text-white">
+          <button onClick={() => navigate(-1)} className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 text-[#8B8BA3] hover:text-white">
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
             </svg>
           </button>
           <button onClick={() => setCalDate(new Date())}
-            className="rounded-lg border border-white/[0.06] px-3 py-1 text-xs font-semibold text-[#8B8BA3] hover:text-white">
+            className="rounded-lg border border-white/10 px-3 py-1 text-xs font-semibold text-[#8B8BA3] hover:text-white">
             Hoy
           </button>
-          <button onClick={() => navigate(1)} className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/[0.06] text-[#8B8BA3] hover:text-white">
+          <button onClick={() => navigate(1)} className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 text-[#8B8BA3] hover:text-white">
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
             </svg>

@@ -2,7 +2,7 @@
  * Pure helper functions for useRoutineScreen.
  * No React hooks, no side effects, no Supabase calls.
  *
- * Shared logic lives in @fitos/shared/routine-logic.
+ * Shared logic lives in @kuvox/shared/routine-logic.
  * This file contains mobile-specific wrappers that ensure SetEntry.type is always set.
  */
 import type {
@@ -14,24 +14,24 @@ import type {
 import { calculateProgress } from "./constants";
 
 // ── Re-export shared helpers used directly by mobile ────────────────────────
-export type { SetsDataEntry as SetsDataRow } from "@fitos/shared";
+export type { SetsDataEntry as SetsDataRow } from "@kuvox/shared";
 export {
   findPreviousSets,
   computeAverageRpe,
   computeTotalVolume,
-} from "@fitos/shared";
+} from "@kuvox/shared";
 
 // ── Shared imports used internally ──────────────────────────────────────────
 import {
   resolveSetEntryType,
   getSetTypeForIndex,
   getTotalSetsCount,
-} from "@fitos/shared";
-import type { SetConfig } from "@fitos/shared";
+} from "@kuvox/shared";
+import type { SetConfig } from "@kuvox/shared";
 
 // ─── Empty set creation ──────────────────────────────────────────────────────
 
-import type { SetEntryType } from "@fitos/shared";
+import type { SetEntryType } from "@kuvox/shared";
 
 function emptySet(type: SetEntryType): SetEntry {
   return { weight_kg: "", reps_done: "", rir: "", rpe: "", completed: false, type };
@@ -143,7 +143,7 @@ export function buildResumedSets(
 
 // ─── Build sets_data payload for DB ──────────────────────────────────────────
 
-import { buildSetsData as sharedBuildSetsData, buildRegistrationSetsData as sharedBuildRegistrationSetsData } from "@fitos/shared";
+import { buildSetsData as sharedBuildSetsData, buildRegistrationSetsData as sharedBuildRegistrationSetsData } from "@kuvox/shared";
 
 /**
  * Transform SetEntry[] into the shape expected by weight_log.sets_data.
@@ -167,7 +167,7 @@ export function buildRegistrationSetsData(
 
 // ─── Compute session totals ──────────────────────────────────────────────────
 
-import { computeSessionTotals as sharedComputeSessionTotals } from "@fitos/shared";
+import { computeSessionTotals as sharedComputeSessionTotals } from "@kuvox/shared";
 
 export function computeSessionTotals(
   allSets: Record<number, SetEntry[]>,

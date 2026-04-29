@@ -239,11 +239,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
     alignItems: "center", justifyContent: "center", marginBottom: spacing.lg,
   },
-  emptyTitle: { fontSize: 20, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white, marginBottom: 6 },
+  emptyTitle: { fontSize: 20, fontFamily: fonts.extraBold, color: colors.white, marginBottom: 6 },
   emptySubtitle: { fontSize: 14, color: colors.muted, textAlign: "center" },
 
   // Header
-  planTitle: { fontSize: 26, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white, letterSpacing: -0.5 },
+  planTitle: { fontSize: 26, fontFamily: fonts.extraBold, color: colors.white, letterSpacing: -0.5 },
   metaRow: { flexDirection: "row", gap: 8, marginTop: 8, marginBottom: spacing.xl },
   metaBadge: {
     paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6,
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     overflow: "hidden", ...shadows.subtle,
   },
   totalMain: { flex: 1 },
-  totalKcal: { fontSize: 32, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white, letterSpacing: -1 },
+  totalKcal: { fontSize: 32, fontFamily: fonts.extraBold, color: colors.white, letterSpacing: -1 },
   totalKcalUnit: { fontSize: 11, color: colors.dimmed, letterSpacing: 1, marginTop: 2 },
   totalMacros: { flexDirection: "row", gap: spacing.lg },
   totalMacroItem: { alignItems: "center" },

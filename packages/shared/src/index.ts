@@ -1,4 +1,4 @@
-// ── @fitos/shared — barrel export ────────────────────────────────────────────
+// ── @kuvox/shared — barrel export ────────────────────────────────────────────
 // Single source of truth for cross-platform types, constants and pure utilities.
 
 // Types
@@ -79,6 +79,21 @@ export type {
 } from "./types/leagues";
 export { LEAGUE_METRICS, LEAGUE_STATUSES, BADGE_ICONS } from "./types/leagues";
 
+export type {
+  DailyCheckin,
+  DailyCheckinInput,
+  TodayAlert,
+  TodayAlertKind,
+  TodayAlertClient,
+  TodayPanel,
+  NoWorkoutAlert,
+  NoCheckinAlert,
+  NewInjuryAlert,
+  PendingTicketAlert,
+  HighStressAlert,
+  HighPainAlert,
+} from "./types/daily-checkin";
+
 // Data
 export { DAY_KEYS, DAY_LABELS, DAY_SHORT } from "./data/days";
 export type { DayKey } from "./data/days";
@@ -117,3 +132,23 @@ export {
 
 // Utils
 export { formatTime } from "./utils/time";
+
+// Resolvers (three-layer exercise/food + query cache) — cross-platform.
+export {
+  getResolvedExercises,
+  resolveExercise,
+  searchSimilarExercises,
+  upsertExerciseOverride,
+  getResolvedFoods,
+  searchSimilarFoods,
+  upsertFoodOverride,
+  getCached,
+  setCache,
+  invalidateCache,
+} from "./resolvers";
+export type {
+  ResolvedExercise,
+  SimilarExerciseResult,
+  ResolvedFood,
+  SimilarFoodResult,
+} from "./resolvers";

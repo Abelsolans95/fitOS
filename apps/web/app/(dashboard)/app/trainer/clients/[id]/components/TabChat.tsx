@@ -165,9 +165,9 @@ export function TabChat({
   }
 
   return (
-    <div className="flex h-[580px] flex-col rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl overflow-hidden">
+    <div className="flex h-[580px] flex-col rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-white/[0.06] px-5 py-4">
+      <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#7C3AED]/10 text-xs font-bold text-[#7C3AED]">
           {clientName
             ? clientName
@@ -223,7 +223,7 @@ export function TabChat({
                     className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${
                       isTrainer
                         ? "bg-[#00E5FF]/10 border border-[#00E5FF]/20 text-white rounded-br-sm"
-                        : "bg-white/[0.05] border border-white/[0.06] text-[#E8E8ED] rounded-bl-sm"
+                        : "bg-white/[0.05] border border-white/10 text-[#E8E8ED] rounded-bl-sm"
                     } ${isOptimistic ? "opacity-70" : ""}`}
                   >
                     <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.content}</p>
@@ -251,7 +251,7 @@ export function TabChat({
       </div>
 
       {/* Input */}
-      <div className="border-t border-white/[0.06] p-4">
+      <div className="border-t border-white/10 p-4">
         <div className="flex items-end gap-3">
           <textarea
             value={input}

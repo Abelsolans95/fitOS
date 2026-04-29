@@ -1,4 +1,4 @@
-import type { Lead, LeadStatus, LeadSource } from "@fitos/shared";
+import type { Lead, LeadStatus, LeadSource } from "@kuvox/shared";
 
 export type { Lead, LeadStatus, LeadSource };
 

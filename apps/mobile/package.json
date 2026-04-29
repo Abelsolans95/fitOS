@@ -1,5 +1,5 @@
 {
-  "name": "@fitos/mobile",
+  "name": "@kuvox/mobile",
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
@@ -13,8 +13,8 @@
   },
   "dependencies": {
     "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
-    "@fitos/shared": "*",
-    "@fitos/theme": "*",
+    "@kuvox/shared": "*",
+    "@kuvox/theme": "*",
     "@kingstinct/react-native-healthkit": "^13.4.0",
     "@nozbe/watermelondb": "^0.28.0",
     "@nozbe/with-observables": "^1.6.0",

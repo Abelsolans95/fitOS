@@ -95,7 +95,7 @@ export function LandingStyles() {
       /* Feature cards */
       .feat-card {
         position: relative; overflow: hidden;
-        border: 1px solid rgba(255,255,255,0.06);
+        border: 1px solid rgba(255, 255, 255, 0.10);
         background: #12121A; border-radius: 20px;
         transition: border-color 0.4s ease, transform 0.35s ease, box-shadow 0.4s ease;
       }

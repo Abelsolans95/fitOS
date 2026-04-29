@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   errorText: {
-    color: colors.error,
+    color: colors.red,
     fontSize: 14,
   },
 
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.06)",
+    borderBottomColor: "rgba(255, 255, 255, 0.10)",
     backgroundColor: colors.sidebar,
   },
   headerAvatar: {
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.success,
+    backgroundColor: colors.green,
   },
 
   // Messages list
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   separatorLine: {
     flex: 1,
     height: 1,
-    backgroundColor: "rgba(255,255,255,0.06)",
+    backgroundColor: "rgba(255, 255, 255, 0.10)",
   },
   separatorText: {
     color: colors.dimmed,

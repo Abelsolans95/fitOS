@@ -1,4 +1,4 @@
-export type { Appointment } from "@fitos/shared";
+export type { Appointment } from "@kuvox/shared";
 
 export interface ClientOption {
   client_id: string;

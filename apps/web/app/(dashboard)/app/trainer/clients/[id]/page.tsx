@@ -185,7 +185,7 @@ function ClientDetailPageInner() {
       </button>
 
       {/* Client header */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6">
+      <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-5">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#7C3AED]/10 text-lg font-bold text-[#7C3AED]">
             {getInitials(profile.full_name)}
@@ -210,7 +210,7 @@ function ClientDetailPageInner() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 overflow-x-auto rounded-xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-1">
+      <div className="flex gap-1 overflow-x-auto rounded-xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-1">
         {TABS.map((tab) => (
           <button
             key={tab.key}

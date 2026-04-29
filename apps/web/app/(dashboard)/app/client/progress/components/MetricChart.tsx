@@ -68,7 +68,7 @@ function MiniChart({
   const latest = chartData[chartData.length - 1];
 
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 p-4">
+    <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 p-4">
       {/* Header */}
       <div className="mb-3 flex items-center justify-between">
         <div>
@@ -218,7 +218,7 @@ export function MetricChart({
       </div>
 
       {/* Time filter — always visible */}
-      <div className="no-scrollbar flex items-center gap-1 overflow-x-auto rounded-xl border border-white/[0.06] bg-[#0A0A0F]/50 p-1">
+      <div className="no-scrollbar flex items-center gap-1 overflow-x-auto rounded-xl border border-white/10 bg-[#0A0A0F]/50 p-1">
         {TIME_FILTERS.map((tf) => (
           <button
             key={tf.value}
@@ -248,7 +248,7 @@ export function MetricChart({
         </div>
       ) : (
         /* Single chart */
-        <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6">
+        <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-6">
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-3">
               <h3 className="flex items-center text-sm font-medium text-white">

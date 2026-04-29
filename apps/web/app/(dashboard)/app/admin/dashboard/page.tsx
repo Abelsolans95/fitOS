@@ -29,7 +29,7 @@ function StatCard({
   href?: string;
 }) {
   const content = (
-    <div className="group rounded-2xl border border-white/[0.06] bg-[#12121A] p-5 transition-colors hover:border-white/[0.1]">
+    <div className="group rounded-2xl border border-white/10 bg-[#12121A] p-5 transition-colors hover:border-white/[0.1]">
       <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#5A5A72]">{label}</p>
       <p className="mt-2 text-3xl font-black tracking-tight" style={{ color: accent }}>
         {value.toLocaleString()}
@@ -159,7 +159,7 @@ export default function AdminDashboardPage() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Link
             href="/app/admin/users/create"
-            className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-[#12121A] px-4 py-3 transition-colors hover:border-[#7C3AED]/30 hover:bg-[#7C3AED]/5"
+            className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#12121A] px-4 py-3 transition-colors hover:border-[#7C3AED]/30 hover:bg-[#7C3AED]/5"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#7C3AED]/10">
               <svg className="h-4 w-4 text-[#7C3AED]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -171,7 +171,7 @@ export default function AdminDashboardPage() {
 
           <Link
             href="/app/admin/users?role=trainer"
-            className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-[#12121A] px-4 py-3 transition-colors hover:border-[#00E5FF]/30 hover:bg-[#00E5FF]/5"
+            className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#12121A] px-4 py-3 transition-colors hover:border-[#00E5FF]/30 hover:bg-[#00E5FF]/5"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#00E5FF]/10">
               <svg className="h-4 w-4 text-[#00E5FF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -183,7 +183,7 @@ export default function AdminDashboardPage() {
 
           <Link
             href="/app/admin/users?role=client"
-            className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-[#12121A] px-4 py-3 transition-colors hover:border-[#00C853]/30 hover:bg-[#00C853]/5"
+            className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#12121A] px-4 py-3 transition-colors hover:border-[#00C853]/30 hover:bg-[#00C853]/5"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#00C853]/10">
               <svg className="h-4 w-4 text-[#00C853]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -195,7 +195,7 @@ export default function AdminDashboardPage() {
 
           <Link
             href="/app/admin/audit"
-            className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-[#12121A] px-4 py-3 transition-colors hover:border-[#FF9100]/30 hover:bg-[#FF9100]/5"
+            className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#12121A] px-4 py-3 transition-colors hover:border-[#FF9100]/30 hover:bg-[#FF9100]/5"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FF9100]/10">
               <svg className="h-4 w-4 text-[#FF9100]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

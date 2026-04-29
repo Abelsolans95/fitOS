@@ -117,7 +117,7 @@ const PostCard = memo(function PostCard({
   };
 
   return (
-    <div className={`rounded-2xl border bg-[#12121A] p-5 transition-all ${post.is_pinned ? "border-[#7C3AED]/30 ring-1 ring-[#7C3AED]/10" : "border-white/[0.06]"}`}>
+    <div className={`rounded-2xl border bg-[#12121A] p-5 transition-all ${post.is_pinned ? "border-[#7C3AED]/30 ring-1 ring-[#7C3AED]/10" : "border-white/10"}`}>
       {post.is_pinned && (
         <div className="mb-3 flex items-center gap-1.5 text-xs text-[#7C3AED]">
           <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>
@@ -196,7 +196,7 @@ const PostCard = memo(function PostCard({
             <CommentItem key={comment.id} comment={comment} postId={post.id} userId={userId} depth={0} replyingTo={replyingTo} replyText={replyText} onDeleteComment={onDeleteComment} onToggleCommentLike={onToggleCommentLike} onSetReplyingTo={onSetReplyingTo} onSetReplyText={onSetReplyText} onAddComment={onAddComment} />
           ))}
           <div className="flex gap-2">
-            <input type="text" value={newCommentText} onChange={(e) => onSetNewComment(post.id, e.target.value)} placeholder="Escribe un comentario..." className="flex-1 rounded-lg border border-white/[0.06] bg-[#0A0A0F] px-3 py-2 text-xs text-white placeholder-[#5A5A72] focus:border-[#00E5FF]/30 focus:outline-none" onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onAddComment(post.id); } }} />
+            <input type="text" value={newCommentText} onChange={(e) => onSetNewComment(post.id, e.target.value)} placeholder="Escribe un comentario..." className="flex-1 rounded-lg border border-white/10 bg-[#0A0A0F] px-3 py-2 text-xs text-white placeholder-[#5A5A72] focus:border-[#00E5FF]/30 focus:outline-none" onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onAddComment(post.id); } }} />
             <button onClick={() => onAddComment(post.id)} disabled={!newCommentText?.trim()} className="rounded-lg bg-[#00E5FF]/10 px-3 py-2 text-xs font-medium text-[#00E5FF] transition-all hover:bg-[#00E5FF]/20 disabled:opacity-40">Enviar</button>
           </div>
         </div>
@@ -282,7 +282,7 @@ function CommentItem({ comment, postId, userId, depth, replyingTo, replyText, on
           </div>
           {isReplying && (
             <div className="mt-2 flex gap-2">
-              <input type="text" value={currentReplyText} onChange={(e) => onSetReplyText(comment.id, e.target.value)} placeholder={`Responder a ${comment.author_name}...`} className="flex-1 rounded-lg border border-white/[0.06] bg-[#0A0A0F] px-3 py-1.5 text-xs text-white placeholder-[#5A5A72] focus:border-[#00E5FF]/30 focus:outline-none" onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onAddComment(postId, comment.id); } }} autoFocus />
+              <input type="text" value={currentReplyText} onChange={(e) => onSetReplyText(comment.id, e.target.value)} placeholder={`Responder a ${comment.author_name}...`} className="flex-1 rounded-lg border border-white/10 bg-[#0A0A0F] px-3 py-1.5 text-xs text-white placeholder-[#5A5A72] focus:border-[#00E5FF]/30 focus:outline-none" onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onAddComment(postId, comment.id); } }} autoFocus />
               <button onClick={() => onAddComment(postId, comment.id)} disabled={!currentReplyText.trim()} className="rounded-lg bg-[#00E5FF]/10 px-2.5 py-1.5 text-[10px] font-medium text-[#00E5FF] transition-all hover:bg-[#00E5FF]/20 disabled:opacity-40">Enviar</button>
             </div>
           )}

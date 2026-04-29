@@ -21,7 +21,7 @@ function LeadCardInner({ lead, onSelect, onDragStart }: LeadCardProps) {
       draggable
       onDragStart={(e) => onDragStart(e, lead.id)}
       onClick={() => onSelect(lead)}
-      className="cursor-pointer rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-3 transition-all hover:border-white/[0.12] hover:bg-[#0E0E18] active:scale-[0.98]"
+      className="cursor-pointer rounded-xl border border-white/10 bg-[#0A0A0F] p-3 transition-all hover:border-white/[0.12] hover:bg-[#0E0E18] active:scale-[0.98]"
     >
       <p className="text-sm font-semibold text-white truncate">{lead.name}</p>
       <p className="mt-0.5 text-xs text-[#8B8BA3] truncate">{lead.email}</p>

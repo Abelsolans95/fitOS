@@ -153,7 +153,7 @@ export default function TrainerSettingsPage() {
         )}
 
         {/* ── Promo Code ── */}
-        <div className="st-in st-2 relative overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6">
+        <div className="st-in st-2 relative overflow-hidden rounded-[18px] border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-6">
           {/* Accent top bar */}
           <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(90deg, #00E5FF, transparent)" }} />
           {/* Glow */}
@@ -198,7 +198,7 @@ export default function TrainerSettingsPage() {
         </div>
 
         {/* ── Profile ── */}
-        <div className="st-in st-3 relative overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6">
+        <div className="st-in st-3 relative overflow-hidden rounded-[18px] border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-6">
           <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(90deg, #7C3AED, transparent)" }} />
           <div className="pointer-events-none absolute -top-8 -right-8 h-32 w-32 rounded-full bg-[#7C3AED] opacity-[0.04] blur-[40px]" />
 
@@ -261,7 +261,7 @@ export default function TrainerSettingsPage() {
         </div>
 
         {/* ── Public Profile ── */}
-        <div className="st-in st-3 relative overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6">
+        <div className="st-in st-3 relative overflow-hidden rounded-[18px] border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-6">
           <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(90deg, #00E5FF, #7C3AED)" }} />
           <div className="pointer-events-none absolute -top-8 -right-8 h-32 w-32 rounded-full bg-[#00E5FF] opacity-[0.04] blur-[40px]" />
 

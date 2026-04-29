@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   },
   logo: {
     fontSize: 56,
-    fontFamily: fonts.extraBold, letterSpacing: -0.5,
+    fontFamily: fonts.extraBold,
     color: colors.white,
     letterSpacing: -3,
   },
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 16,
-    fontFamily: fonts.extraBold, letterSpacing: -0.5,
+    fontFamily: fonts.extraBold,
     color: colors.bg,
     letterSpacing: 0.5,
   },

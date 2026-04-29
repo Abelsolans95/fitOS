@@ -41,6 +41,7 @@ supabase functions deploy analyze-onboarding-form --project-ref rgrtxlciqmexdkxa
 | 042_ticket_replies_trainer_client_ids.sql | Realtime filters en ticket_replies |
 | 043_rls_trainer_clients_hardening.sql | RLS en 6 tablas core |
 | 044_prevent_admin_signup.sql | Anti-admin signup via RLS RESTRICTIVE |
+| 050_daily_checkins.sql | Pantalla "Mi día" cliente + panel "Hoy" trainer |
 
 ## Features sin implementar
 

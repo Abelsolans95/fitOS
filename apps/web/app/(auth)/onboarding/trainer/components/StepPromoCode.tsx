@@ -98,7 +98,7 @@ export function StepPromoCode({
           </button>
 
           {/* Share section */}
-          <div className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-5 space-y-4">
+          <div className="rounded-xl border border-white/10 bg-[#0A0A0F] p-5 space-y-4">
             <div className="flex items-center gap-2">
               <svg
                 className="h-5 w-5 text-[#7C3AED]"

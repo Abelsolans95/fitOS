@@ -23,7 +23,7 @@
 - Comprar dominios kuvox.io y kuvox.app
 - Asegurar @kuvox en redes sociales
 - Registrar marca cuando haya revenue
-- NO se cambiaron: nombres de paquetes (@fitos/*), bundle IDs, import paths, env vars — esto se hace cuando los dominios estén listos
+- NO se cambiaron: nombres de paquetes (@kuvox/*), bundle IDs, import paths, env vars — esto se hace cuando los dominios estén listos
 
 ---
 
@@ -186,7 +186,7 @@ Tabla: contracts
 - API routes: `/api/contracts` (CRUD) + `/api/contracts/sign` (firma con IP + timestamp)
 - Web trainer: crear/editar contratos, plantillas reutilizables, ver firma
 - Web client: ver contrato, firmar con canvas signature
-- Tipos compartidos en `@fitos/shared`
+- Tipos compartidos en `@kuvox/shared`
 - Sidebar entries en trainer y client
 
 ### 📋 Pendiente por ti
@@ -788,7 +788,7 @@ Las tablas de gamificacion ya existen en la DB. Falta la interfaz.
 - Web client: ver ligas, unirse, leaderboard, colección de badges. Oculto si gamificación desactivada
 - Mobile: `LeaguesScreen.tsx` con tabs de ligas y badges, leaderboard, join. Condicional a gamification_enabled
 - API routes: `/api/leagues` (CRUD), `/api/leagues/[id]/join`, `/api/leagues/[id]/leaderboard`
-- Tipos compartidos en `@fitos/shared`
+- Tipos compartidos en `@kuvox/shared`
 - Sidebar entries en trainer y client + tab "Ligas" en mobile
 
 ### 📋 Pendiente por ti

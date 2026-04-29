@@ -83,7 +83,7 @@ export default function CaloriesPage() {
       </div>
 
       {/* Tab selector */}
-      <div className="flex gap-1 rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 p-1">
+      <div className="flex gap-1 rounded-2xl border border-white/10 bg-[#0E0E18]/60 p-1">
         {TABS.map((tab) => (
           <button
             key={tab.key}

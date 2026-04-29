@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createBrowserClient } from "@/lib/supabase-server";
 import { apiLimiter, getClientIdentifier } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/client-trainer
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest) {
       .eq("client_id", user.id);
 
     if (tcErr) {
-      console.error("[client-trainer] Error al buscar trainer_clients");
+      logger.error("[client-trainer] Error al buscar trainer_clients");
       return NextResponse.json(
         { error: "Error al buscar el entrenador vinculado" },
         { status: 500 }
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (profileErr) {
-      console.error("[client-trainer] Error al obtener perfil del entrenador");
+      logger.error("[client-trainer] Error al obtener perfil del entrenador");
     }
 
     return NextResponse.json({

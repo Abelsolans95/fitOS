@@ -182,7 +182,7 @@ export default function RoutineScreen() {
       isSessionCompleted={isSessionCompleted}
       getDayLabel={getDayLabel}
       formatPrevious={formatPrevious}
-      onDaySelect={setSelectedDay}
+      onDaySelect={(day) => setSelectedDay(day as typeof selectedDay)}
       onWeekSelect={setActiveWeek}
       onStartRegistration={() => startSession("registration")}
       onStartActive={() => startSession("active")}

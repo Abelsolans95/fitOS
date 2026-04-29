@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import { apiLimiter, getClientIdentifier } from "@/lib/rate-limit";
 import ical, { ICalEventStatus } from "ical-generator";
+import { logger } from "@/lib/logger";
 
 const APPOINTMENT_COLUMNS =
   "id, trainer_id, client_id, title, description, starts_at, ends_at, status, location, meeting_url" as const;
@@ -100,7 +101,7 @@ export async function GET(request: NextRequest) {
     const { data: appointments, error: apptErr } = await query;
 
     if (apptErr) {
-      console.error("[calendar/export] Error al obtener citas");
+      logger.error("[calendar/export] Error al obtener citas");
       return NextResponse.json(
         { error: "Error al exportar el calendario" },
         { status: 500 }

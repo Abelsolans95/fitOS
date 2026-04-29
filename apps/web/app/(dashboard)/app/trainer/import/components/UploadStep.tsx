@@ -7,7 +7,7 @@ interface Props {
 
 export function UploadStep({ loading, onUpload }: Props) {
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-8">
+    <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-8">
       <label className="flex cursor-pointer flex-col items-center gap-4 rounded-xl border-2 border-dashed border-white/[0.1] p-12 transition-colors hover:border-[#00E5FF]/30 hover:bg-[#00E5FF]/[0.02]">
         <svg
           className="h-12 w-12 text-[#5A5A72]"

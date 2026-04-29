@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdmin } from "@/lib/admin-auth";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
     const { data: codes, error, count } = await query;
 
     if (error) {
-      console.error("[admin/promo-codes] Error listando códigos");
+      logger.error("[admin/promo-codes] Error listando códigos");
       return NextResponse.json({ error: "Error al cargar códigos" }, { status: 500 });
     }
 
@@ -80,7 +81,7 @@ export async function GET(request: NextRequest) {
       limit,
     });
   } catch {
-    console.error("[admin/promo-codes] Error inesperado");
+    logger.error("[admin/promo-codes] Error inesperado");
     return NextResponse.json({ error: "Error inesperado" }, { status: 500 });
   }
 }

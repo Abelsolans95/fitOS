@@ -47,7 +47,7 @@ export const TicketDetail = memo(function TicketDetail({
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="border-b border-white/[0.06] pb-4">
+      <div className="border-b border-white/10 pb-4">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -108,7 +108,7 @@ export const TicketDetail = memo(function TicketDetail({
 
       {/* Original message */}
       <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto py-4">
-        <div className="rounded-xl border border-white/[0.06] bg-[#12121A] p-4">
+        <div className="rounded-xl border border-white/10 bg-[#12121A] p-4">
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#00E5FF]/20 text-xs font-bold text-[#00E5FF]">
               {ticket.client_name?.charAt(0)?.toUpperCase() ?? "C"}
@@ -121,7 +121,7 @@ export const TicketDetail = memo(function TicketDetail({
             <img
               src={ticket.image_url}
               alt="Adjunto"
-              className="mt-3 max-h-64 rounded-lg border border-white/[0.06] object-cover"
+              className="mt-3 max-h-64 rounded-lg border border-white/10 object-cover"
             />
           )}
         </div>
@@ -143,7 +143,7 @@ export const TicketDetail = memo(function TicketDetail({
                   className={`max-w-[80%] rounded-xl p-3 ${
                     isTrainer
                       ? "bg-[#7C3AED]/10 border border-[#7C3AED]/20"
-                      : "bg-[#12121A] border border-white/[0.06]"
+                      : "bg-[#12121A] border border-white/10"
                   }`}
                 >
                   <div className="flex items-center gap-2">
@@ -157,7 +157,7 @@ export const TicketDetail = memo(function TicketDetail({
                     <img
                       src={reply.image_url}
                       alt="Adjunto"
-                      className="mt-2 max-h-48 rounded-lg border border-white/[0.06] object-cover"
+                      className="mt-2 max-h-48 rounded-lg border border-white/10 object-cover"
                     />
                   )}
                 </div>
@@ -169,7 +169,7 @@ export const TicketDetail = memo(function TicketDetail({
 
       {/* Reply input */}
       {ticket.status !== "resolved" && (
-        <div className="border-t border-white/[0.06] pt-3">
+        <div className="border-t border-white/10 pt-3">
           <div className="flex gap-2">
             <textarea
               value={replyContent}
@@ -177,7 +177,7 @@ export const TicketDetail = memo(function TicketDetail({
               onKeyDown={handleKeyDown}
               placeholder="Escribe tu respuesta..."
               rows={2}
-              className="flex-1 resize-none rounded-xl border border-white/[0.06] bg-[#12121A] px-4 py-3 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#00E5FF]/30"
+              className="flex-1 resize-none rounded-xl border border-white/10 bg-[#12121A] px-4 py-3 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#00E5FF]/30"
             />
             <button
               onClick={onSendReply}

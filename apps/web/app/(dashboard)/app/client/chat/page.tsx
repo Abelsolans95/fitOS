@@ -33,7 +33,7 @@ export default function ClientChatPage() {
         <p className="mt-1 text-sm text-[#8B8BA3]">Mensajes con tu entrenador</p>
       </div>
 
-      <div className="flex h-[620px] flex-col rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl overflow-hidden">
+      <div className="flex h-[620px] flex-col rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl overflow-hidden">
         <ChatHeader trainer={trainer} />
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-1">
           <MessageList messages={messages} clientId={clientId} clientIdRef={clientIdRef} trainer={trainer} />

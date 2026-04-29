@@ -130,7 +130,7 @@ export default function TrainerAppointmentsPage() {
           <a
             href="/api/calendar/export?range=month"
             download="kuvox-calendar.ics"
-            className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-[#12121A] px-3 py-2.5 text-sm font-semibold text-[#8B8BA3] transition-colors hover:border-[#00E5FF]/30 hover:text-[#00E5FF]"
+            className="flex items-center gap-2 rounded-xl border border-white/10 bg-[#12121A] px-3 py-2.5 text-sm font-semibold text-[#8B8BA3] transition-colors hover:border-[#00E5FF]/30 hover:text-[#00E5FF]"
             title="Exportar calendario (.ics)"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -152,7 +152,7 @@ export default function TrainerAppointmentsPage() {
       </div>
 
       {/* View toggle */}
-      <div className="flex gap-1 rounded-xl border border-white/[0.06] bg-[#0E0E18]/60 p-1 w-fit">
+      <div className="flex gap-1 rounded-xl border border-white/10 bg-[#0E0E18]/60 p-1 w-fit">
         {([["list", "Lista"], ["calendar", "Calendario"]] as const).map(([key, label]) => (
           <button
             key={key}

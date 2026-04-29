@@ -47,7 +47,7 @@ function TicketsPageInner() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0A0A0F] p-4">
+      <div className="flex-1 overflow-hidden rounded-2xl border border-white/10 bg-[#0A0A0F] p-4">
         {state.activeView === "create" && (
           <CreateTicketForm
             category={state.formCategory}
@@ -99,7 +99,7 @@ function TicketsPageInner() {
                 <button
                   key={ticket.id}
                   onClick={() => handleSelectTicket(ticket.id)}
-                  className="w-full rounded-xl border border-white/[0.06] bg-[#12121A] p-4 text-left transition-all hover:border-white/10"
+                  className="w-full rounded-xl border border-white/10 bg-[#12121A] p-4 text-left transition-all hover:border-white/10"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">

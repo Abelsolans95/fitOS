@@ -3,7 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet,
   KeyboardAvoidingView, Platform,
 } from "react-native";
-import { TICKET_CATEGORIES } from "@fitos/shared";
+import { TICKET_CATEGORIES } from "@kuvox/shared";
 import { colors, spacing, radius, fonts } from "../../theme";
 import { CATEGORY_COLORS } from "./types";
 import type { TicketCategory } from "./types";
@@ -110,26 +110,25 @@ const s = StyleSheet.create({
   header: {
     flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.md,
     paddingTop: spacing.xl + 20, paddingBottom: spacing.md,
-    borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.06)",
+    borderBottomWidth: 1, borderBottomColor: "rgba(255, 255, 255, 0.10)",
   },
   backBtn: { marginRight: 12 },
-  backText: { color: colors.cyan, fontSize: 14, fontFamily: fonts.semibold },
-  title: { color: "#fff", fontSize: 20, fontFamily: fonts.extrabold, letterSpacing: -0.5 },
+  backText: { color: colors.cyan, fontSize: 14, fontFamily: fonts.bold },
+  title: { color: "#fff", fontSize: 20, fontFamily: fonts.extraBold, letterSpacing: -0.5 },
   content: { flex: 1, padding: spacing.md },
   label: {
-    color: colors.dimmed, fontSize: 10, fontFamily: fonts.bold,
-    letterSpacing: 2, marginTop: spacing.md, marginBottom: spacing.sm,
+    color: colors.dimmed, fontSize: 10, fontFamily: fonts.bold, marginTop: spacing.md, marginBottom: spacing.sm,
   },
   categoryGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   categoryCard: {
     flex: 1, minWidth: "45%", borderRadius: radius.lg, borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)", backgroundColor: colors.card,
+    borderColor: "rgba(255, 255, 255, 0.10)", backgroundColor: colors.surface,
     paddingVertical: spacing.md, alignItems: "center",
   },
-  categoryLabel: { color: colors.muted, fontSize: 14, fontFamily: fonts.semibold },
+  categoryLabel: { color: colors.muted, fontSize: 14, fontFamily: fonts.bold },
   input: {
-    backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 14,
+    backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.10)", color: "#fff", fontSize: 14,
     fontFamily: fonts.regular, paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2,
   },
   primaryBtn: {

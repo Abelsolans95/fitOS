@@ -28,7 +28,7 @@ export function CommunitySettings({
   return (
     <div className="mx-auto max-w-xl space-y-6">
       {/* Community info */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6 space-y-5">
+      <div className="rounded-2xl border border-white/10 bg-[#12121A] p-6 space-y-5">
         <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[#8B8BA3]">Informacion de la comunidad</h3>
 
         <div className="space-y-1.5">
@@ -38,7 +38,7 @@ export function CommunitySettings({
             value={name}
             onChange={(e) => onSetName(e.target.value)}
             placeholder="Mi Comunidad"
-            className="w-full rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-4 py-3 text-sm text-white placeholder-[#5A5A72] focus:border-[#00E5FF]/30 focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/20"
+            className="w-full rounded-xl border border-white/10 bg-[#0A0A0F] px-4 py-3 text-sm text-white placeholder-[#5A5A72] focus:border-[#00E5FF]/30 focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/20"
           />
         </div>
 
@@ -49,17 +49,17 @@ export function CommunitySettings({
             onChange={(e) => onSetDescription(e.target.value)}
             placeholder="Descripcion para tus clientes..."
             rows={3}
-            className="w-full resize-none rounded-xl border border-white/[0.06] bg-[#0A0A0F] px-4 py-3 text-sm text-white placeholder-[#5A5A72] focus:border-[#00E5FF]/30 focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/20"
+            className="w-full resize-none rounded-xl border border-white/10 bg-[#0A0A0F] px-4 py-3 text-sm text-white placeholder-[#5A5A72] focus:border-[#00E5FF]/30 focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/20"
           />
         </div>
       </div>
 
       {/* Privacy mode */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6 space-y-5">
+      <div className="rounded-2xl border border-white/10 bg-[#12121A] p-6 space-y-5">
         <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[#8B8BA3]">Privacidad y permisos</h3>
 
         {/* Mode switch */}
-        <div className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-4">
+        <div className="flex items-center justify-between rounded-xl border border-white/10 bg-[#0A0A0F] p-4">
           <div>
             <p className="text-sm font-semibold text-white">Permitir publicaciones de clientes</p>
             <p className="mt-1 text-xs text-[#5A5A72]">
@@ -95,7 +95,7 @@ export function CommunitySettings({
         </div>
 
         {/* Active toggle */}
-        <div className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-4">
+        <div className="flex items-center justify-between rounded-xl border border-white/10 bg-[#0A0A0F] p-4">
           <div>
             <p className="text-sm font-semibold text-white">Comunidad activa</p>
             <p className="mt-1 text-xs text-[#5A5A72]">

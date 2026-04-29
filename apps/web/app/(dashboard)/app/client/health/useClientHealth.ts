@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
 import { toast } from "sonner";
-import type { HealthLog, HealthLogFormData } from "@fitos/shared";
+import type { HealthLog, HealthLogFormData } from "@kuvox/shared";
 import type { Gender } from "@/components/health/AnatomyMap";
 
 export type { HealthLog, HealthLogFormData };

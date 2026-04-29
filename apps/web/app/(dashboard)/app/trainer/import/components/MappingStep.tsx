@@ -32,7 +32,7 @@ export function MappingStep({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-6">
+      <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-6">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-white">Mapeo de columnas</h2>
@@ -52,7 +52,7 @@ export function MappingStep({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/[0.06]">
+              <tr className="border-b border-white/10">
                 <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-[0.15em] text-[#5A5A72]">
                   Columna
                 </th>
@@ -130,7 +130,7 @@ export function MappingStep({
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.15em] text-[#5A5A72]">
             Vista previa (5 primeras filas)
           </p>
-          <div className="overflow-x-auto rounded-lg border border-white/[0.06]">
+          <div className="overflow-x-auto rounded-lg border border-white/10">
             <table className="w-full text-xs">
               <thead>
                 <tr className="bg-white/[0.04]">
@@ -168,7 +168,7 @@ export function MappingStep({
       <div className="flex gap-3">
         <button
           onClick={onBack}
-          className="rounded-xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl px-6 py-3 font-semibold text-white transition-colors hover:bg-white/[0.04]"
+          className="rounded-xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl px-6 py-3 font-semibold text-white transition-colors hover:bg-white/[0.04]"
         >
           Volver
         </button>

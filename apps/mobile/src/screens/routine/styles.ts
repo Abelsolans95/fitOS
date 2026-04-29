@@ -11,12 +11,12 @@ export const st = StyleSheet.create({
     width: 64, height: 64, borderRadius: 20, backgroundColor: colors.surface,
     borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center", marginBottom: spacing.lg,
   },
-  emptyTitle: { fontSize: 20, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white, marginBottom: 6 },
+  emptyTitle: { fontSize: 20, fontFamily: fonts.extraBold, color: colors.white, marginBottom: 6 },
   emptySub: { fontSize: 14, color: colors.muted, textAlign: "center", maxWidth: 260 },
 
   // Header
   pageLabel: { fontSize: 10, fontFamily: fonts.bold, color: colors.dimmed, letterSpacing: 2, marginBottom: spacing.xs },
-  title: { fontSize: 26, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white },
+  title: { fontSize: 26, fontFamily: fonts.extraBold, color: colors.white },
   headerMeta: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginTop: spacing.sm, marginBottom: spacing.xl },
   goalBadge: {
     paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6,
@@ -75,7 +75,7 @@ export const st = StyleSheet.create({
     width: 32, height: 32, borderRadius: 10, backgroundColor: colors.cyanDim,
     alignItems: "center", justifyContent: "center",
   },
-  exerciseIndexText: { fontSize: 13, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.cyan },
+  exerciseIndexText: { fontSize: 13, fontFamily: fonts.extraBold, color: colors.cyan },
   exerciseInfo: { flex: 1 },
   exerciseName: { fontSize: 15, fontFamily: fonts.bold, color: colors.white, marginBottom: 6 },
   exerciseMetaRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
@@ -118,7 +118,7 @@ export const st = StyleSheet.create({
   timerLabel: { fontSize: 11, fontFamily: fonts.bold, color: colors.dimmed, letterSpacing: 3, marginBottom: spacing.xxl },
   timerRing: { alignItems: "center", justifyContent: "center", width: 240, height: 240 },
   timerCenter: { position: "absolute", alignItems: "center" },
-  timerValue: { fontSize: 52, fontFamily: fonts.extraBold, letterSpacing: -1, color: colors.white },
+  timerValue: { fontSize: 52, fontFamily: fonts.extraBold, color: colors.white },
   timerExName: { fontSize: 12, color: colors.dimmed, marginTop: 4 },
   skipBtn: {
     marginTop: spacing.xxl, paddingHorizontal: 32, paddingVertical: 12, borderRadius: radius.lg,
@@ -134,8 +134,8 @@ export const st = StyleSheet.create({
     flex: 1, backgroundColor: colors.bg, alignItems: "center", justifyContent: "center", padding: spacing.xl,
   },
   rpeLabel: { fontSize: 11, fontFamily: fonts.bold, color: colors.dimmed, letterSpacing: 3 },
-  rpeQuestion: { fontSize: 24, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white, marginTop: spacing.md, marginBottom: spacing.xxl },
-  rpeValue: { fontSize: 72, fontFamily: fonts.extraBold, letterSpacing: -0.5, marginBottom: spacing.xxl },
+  rpeQuestion: { fontSize: 24, fontFamily: fonts.extraBold, color: colors.white, marginTop: spacing.md, marginBottom: spacing.xxl },
+  rpeValue: { fontSize: 72, fontFamily: fonts.extraBold, marginBottom: spacing.xxl },
   rpeSliderRow: { flexDirection: "row", gap: 6 },
   rpeDot: {
     width: 32, height: 32, borderRadius: 16, borderWidth: 1.5,
@@ -151,7 +151,7 @@ export const st = StyleSheet.create({
     width: 36, height: 36, borderRadius: radius.md,
     alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.04)",
   },
-  activeCounter: { fontSize: 14, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.cyan },
+  activeCounter: { fontSize: 14, fontFamily: fonts.extraBold, color: colors.cyan },
   elapsedBadge: {
     paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.sm,
     backgroundColor: "rgba(255,255,255,0.04)",
@@ -164,7 +164,7 @@ export const st = StyleSheet.create({
     borderColor: colors.border, padding: spacing.lg, marginBottom: spacing.md,
   },
   activeExLabel: { fontSize: 10, fontFamily: fonts.bold, color: colors.dimmed, letterSpacing: 2 },
-  activeExName: { fontSize: 22, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white, marginTop: 4 },
+  activeExName: { fontSize: 22, fontFamily: fonts.extraBold, color: colors.white, marginTop: 4 },
   activeExMeta: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: spacing.sm },
   schemeBadge: { backgroundColor: colors.cyanDim, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4 },
   schemeText: { fontSize: 11, fontFamily: fonts.bold, color: colors.cyan },
@@ -237,7 +237,7 @@ export const st = StyleSheet.create({
     width: 26, height: 26, borderRadius: 8, backgroundColor: colors.cyanDim,
     alignItems: "center", justifyContent: "center",
   },
-  regExIdxText: { fontSize: 10, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.cyan },
+  regExIdxText: { fontSize: 10, fontFamily: fonts.extraBold, color: colors.cyan },
   regExName: { fontSize: 14, fontFamily: fonts.bold, color: colors.white },
   regExMetaRow: { flexDirection: "row", gap: spacing.sm, marginTop: 2 },
   regExScheme: { fontSize: 10, fontFamily: fonts.bold, color: colors.dimmed },
@@ -255,7 +255,7 @@ export const st = StyleSheet.create({
   },
   regSetNumText: { fontSize: 11, fontFamily: fonts.bold, color: colors.dimmed },
   regInput: {
-    flex: 1, height: 36, borderRadius: 6, borderWidth: 1, borderColor: "rgba(255,255,255,0.06)",
+    flex: 1, height: 36, borderRadius: 6, borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.10)",
     backgroundColor: colors.bg, color: colors.white, fontSize: 14, fontFamily: fonts.medium,
     textAlign: "center", paddingHorizontal: 6,
   },
@@ -275,7 +275,7 @@ export const st = StyleSheet.create({
   summaryHeader: { alignItems: "center", marginBottom: spacing.xxl },
   summaryBadgeWrap: { flexDirection: "row", alignItems: "center", gap: 6 },
   summaryBadge: { fontSize: 10, fontFamily: fonts.bold, color: colors.green, letterSpacing: 2 },
-  summaryTitle: { fontSize: 28, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white, textAlign: "center", marginTop: spacing.sm },
+  summaryTitle: { fontSize: 28, fontFamily: fonts.extraBold, color: colors.white, textAlign: "center", marginTop: spacing.sm },
   summaryDay: { fontSize: 12, color: colors.dimmed, marginTop: spacing.xs },
   statsRow: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.xxl },
   statCard: {
@@ -300,7 +300,7 @@ export const st = StyleSheet.create({
   // Rest notes input
   restNotesInput: {
     width: "100%", minHeight: 44, borderRadius: radius.lg, borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)", backgroundColor: colors.surface,
+    borderColor: "rgba(255, 255, 255, 0.10)", backgroundColor: colors.surface,
     color: colors.muted, fontSize: 13, paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm, marginTop: spacing.xl, textAlignVertical: "top",
   },

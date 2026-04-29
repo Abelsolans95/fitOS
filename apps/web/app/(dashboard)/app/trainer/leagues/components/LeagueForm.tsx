@@ -1,7 +1,7 @@
 "use client";
 
 import { DarkSelect } from "@/components/ui/DarkSelect";
-import { LEAGUE_METRICS } from "@fitos/shared";
+import { LEAGUE_METRICS } from "@kuvox/shared";
 import type { LeagueFormData } from "./types";
 
 interface LeagueFormProps {
@@ -14,7 +14,7 @@ interface LeagueFormProps {
 
 export function LeagueForm({ form, creating, onFieldChange, onSubmit, onCancel }: LeagueFormProps) {
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-6 space-y-5">
+    <div className="rounded-2xl border border-white/10 bg-[#12121A] p-6 space-y-5">
       <h2 className="text-lg font-bold text-white">Crear nueva liga</h2>
 
       {/* Title */}

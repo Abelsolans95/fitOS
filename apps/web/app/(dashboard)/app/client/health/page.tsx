@@ -9,7 +9,7 @@ import type { MuscleStatus, Gender } from "@/components/health/AnatomyMap";
 
 function GenderToggle({ gender, onChange }: { gender: Gender; onChange: (g: Gender) => void }) {
   return (
-    <div className="flex gap-1 rounded-lg border border-white/[0.06] bg-[#0A0A12] p-1">
+    <div className="flex gap-1 rounded-lg border border-white/10 bg-[#0A0A12] p-1">
       <button
         type="button"
         onClick={() => onChange("male")}
@@ -78,7 +78,7 @@ function ClientHealthInner() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Left: Anatomy map */}
-        <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-5">
+        <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-5">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-[#5A5A72]">Mapa corporal</h2>
             {activeLogs.length > 0 && (
@@ -93,7 +93,7 @@ function ClientHealthInner() {
         {/* Right: Form or log list */}
         <div className="space-y-4">
           {showForm && selectedMuscle ? (
-            <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-5">
+            <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-5">
               <HealthReportForm
                 muscleId={selectedMuscle}
                 existingData={

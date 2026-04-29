@@ -87,7 +87,7 @@ const st = StyleSheet.create({
   statusBadge: { borderRadius: radius.pill, paddingHorizontal: spacing.sm, paddingVertical: 3 },
   statusBadgeText: { fontSize: 10, fontFamily: fonts.bold, textTransform: "uppercase", letterSpacing: 0.5 },
   typeText: { fontSize: 11, color: colors.dimmed },
-  cardTitle: { fontSize: 16, fontFamily: fonts.extraBold, letterSpacing: -0.5, color: colors.white, marginBottom: spacing.sm },
+  cardTitle: { fontSize: 16, fontFamily: fonts.extraBold, color: colors.white, marginBottom: spacing.sm },
   cardDateRow: { flexDirection: "row", alignItems: "center", gap: 4 },
   cardDate: { fontSize: 13, fontFamily: fonts.bold, color: colors.cyan },
   cardDot: { fontSize: 13, color: colors.dimmed },

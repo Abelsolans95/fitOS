@@ -28,10 +28,10 @@ export const HealthLogList = memo(function HealthLogList({ activeLogs, recovered
   return (
     <>
       {/* Active issues */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-5">
+      <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-5">
         <h2 className="mb-4 text-sm font-bold uppercase tracking-[0.2em] text-[#5A5A72]">Incidencias activas</h2>
         {activeLogs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] py-12">
+          <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] py-12">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/[0.04] text-[#8B8BA3]">
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
@@ -46,7 +46,7 @@ export const HealthLogList = memo(function HealthLogList({ activeLogs, recovered
               <button
                 key={log.id} type="button"
                 onClick={() => onLogClick(log.muscle_id)}
-                className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-left transition-all hover:border-white/[0.12] hover:bg-white/[0.04]"
+                className="w-full rounded-xl border border-white/10 bg-white/[0.02] p-4 text-left transition-all hover:border-white/[0.12] hover:bg-white/[0.04]"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">
@@ -78,11 +78,11 @@ export const HealthLogList = memo(function HealthLogList({ activeLogs, recovered
 
       {/* Recovered history */}
       {recoveredLogs.length > 0 && (
-        <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-5">
+        <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-5">
           <h2 className="mb-4 text-sm font-bold uppercase tracking-[0.2em] text-[#5A5A72]">Historial recuperado</h2>
           <div className="space-y-3">
             {recoveredLogs.slice(0, 10).map((log) => (
-              <div key={log.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+              <div key={log.id} className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-white">{MUSCLE_LABELS[log.muscle_id] ?? log.muscle_id}</span>
                   <span className="rounded-full bg-[#00C853]/10 px-2 py-0.5 text-[10px] font-semibold text-[#00C853]">Recuperada</span>

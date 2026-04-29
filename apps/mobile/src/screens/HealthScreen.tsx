@@ -14,10 +14,10 @@ import Svg, { Path, Defs, Filter, FeGaussianBlur, FeColorMatrix, FeMerge, FeMerg
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
 import { colors, spacing, radius, shadows, fonts } from "../theme";
-import { getZonesByView, ZONE_LABELS, ANATOMY_VIEWBOX } from "@fitos/shared";
-import type { MuscleZone } from "@fitos/shared";
+import { getZonesByView, ZONE_LABELS, ANATOMY_VIEWBOX } from "@kuvox/shared";
+import type { MuscleZone } from "@kuvox/shared";
 import { ReportModal } from "./health/ReportModal";
-import type { HealthLog } from "@fitos/shared";
+import type { HealthLog } from "@kuvox/shared";
 
 type Gender = "male" | "female";
 
@@ -203,7 +203,7 @@ export default function HealthScreen() {
       {/* Legend */}
       <View style={st.legendRow}>
         <View style={st.legendItem}>
-          <View style={[st.legendDot, { backgroundColor: "rgba(255,255,255,0.06)" }]} />
+          <View style={[st.legendDot, { backgroundColor: "rgba(255, 255, 255, 0.10)" }]} />
           <Text style={st.legendText}>Sin molestias</Text>
         </View>
         <View style={st.legendItem}>
@@ -308,7 +308,7 @@ const st = StyleSheet.create({
   content: { paddingHorizontal: spacing.xl, paddingTop: spacing.section + spacing.xxxl, paddingBottom: spacing.section, alignItems: "center" },
   loadingContainer: { flex: 1, backgroundColor: colors.bg, justifyContent: "center", alignItems: "center" },
   headerRow: { flexDirection: "row", alignItems: "flex-start", width: "100%", marginBottom: spacing.lg },
-  title: { fontSize: 28, fontFamily: fonts.extraBold, letterSpacing: -1, color: colors.white },
+  title: { fontSize: 28, fontFamily: fonts.extraBold, color: colors.white },
   subtitle: { fontSize: 13, color: colors.muted, marginTop: spacing.xs },
   genderContainer: { flexDirection: "row", backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.xs, marginBottom: spacing.md, borderWidth: 1, borderColor: colors.border, alignSelf: "center" },
   genderBtn: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.sm, alignItems: "center" },

@@ -1,5 +1,5 @@
 /**
- * WatermelonDB Schema — Offline tables for FitOS mobile client.
+ * WatermelonDB Schema — Offline tables for Kuvox mobile client.
  *
  * Only the fields needed for offline training are included.
  * Mirrors a subset of Supabase tables: user_routines, workout_sessions,

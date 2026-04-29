@@ -65,7 +65,7 @@ function ClientKnowledgeInner() {
         value={state.searchQuery}
         onChange={(e) => dispatch({ type: "SET_SEARCH", payload: e.target.value })}
         placeholder="Buscar artículos..."
-        className="w-full rounded-xl border border-white/[0.06] bg-[#12121A] px-4 py-3 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#00E5FF]/30"
+        className="w-full rounded-xl border border-white/10 bg-[#12121A] px-4 py-3 text-sm text-white placeholder-[#5A5A72] outline-none focus:border-[#00E5FF]/30"
       />
 
       {/* Category filter */}
@@ -75,7 +75,7 @@ function ClientKnowledgeInner() {
           className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${
             state.filterCategory === "all"
               ? "border-[#00E5FF]/30 bg-[#00E5FF]/10 text-[#00E5FF]"
-              : "border-white/[0.06] text-[#5A5A72] hover:text-white"
+              : "border-white/10 text-[#5A5A72] hover:text-white"
           }`}
         >
           Todos
@@ -87,7 +87,7 @@ function ClientKnowledgeInner() {
             className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${
               state.filterCategory === cat.value
                 ? "border-[#00E5FF]/30 bg-[#00E5FF]/10 text-[#00E5FF]"
-                : "border-white/[0.06] text-[#5A5A72] hover:text-white"
+                : "border-white/10 text-[#5A5A72] hover:text-white"
             }`}
           >
             {cat.label}
@@ -104,7 +104,7 @@ function ClientKnowledgeInner() {
             <button
               key={article.id}
               onClick={() => handleSelectArticle(article.id)}
-              className="rounded-2xl border border-white/[0.06] bg-[#12121A] p-4 text-left transition-all hover:border-[#00E5FF]/20 hover:shadow-[0_0_20px_rgba(0,229,255,0.05)]"
+              className="rounded-2xl border border-white/10 bg-[#12121A] p-4 text-left transition-all hover:border-[#00E5FF]/20 hover:shadow-[0_0_20px_rgba(0,229,255,0.05)]"
             >
               <div className="mb-2 flex items-center gap-2">
                 <CategoryBadge category={article.category} />

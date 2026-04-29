@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.06)",
+    borderTopColor: "rgba(255, 255, 255, 0.10)",
     backgroundColor: colors.sidebar,
     gap: spacing.sm,
   },

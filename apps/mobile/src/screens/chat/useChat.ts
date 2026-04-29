@@ -17,7 +17,7 @@ interface UseChatReturn {
   loading: boolean;
   error: string | null;
   listItems: ListItem[];
-  flatListRef: React.RefObject<FlatList>;
+  flatListRef: React.RefObject<FlatList | null>;
   scrollToBottom: () => void;
   handleSend: () => Promise<void>;
 }
@@ -105,12 +105,15 @@ export function useChat({ userId }: UseChatParams): UseChatReturn {
               if (prev.find((m) => m.id === msg.id)) return prev;
               return [...prev, msg];
             });
-            // Mark incoming trainer messages as read
+            // Mark incoming trainer messages as read. Supabase PostgrestBuilder
+            // returns a PromiseLike (no .catch), so wrap with Promise.resolve().
             if (msg.sender_id === tid) {
-              supabase
-                .from("messages")
-                .update({ read_at: new Date().toISOString() })
-                .eq("id", msg.id)
+              Promise.resolve(
+                supabase
+                  .from("messages")
+                  .update({ read_at: new Date().toISOString() })
+                  .eq("id", msg.id)
+              )
                 .then(({ error: readErr }) => {
                   if (readErr) {
                     console.error(
@@ -119,7 +122,9 @@ export function useChat({ userId }: UseChatParams): UseChatReturn {
                     );
                   }
                 })
-                .catch((err) => console.error("[useChat] Error marking as read:", err));
+                .catch((err: unknown) =>
+                  console.error("[useChat] Error marking as read:", err)
+                );
             }
           }
         )

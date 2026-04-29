@@ -215,7 +215,7 @@ export function FormFieldEditor({ fields, onFieldsChange }: FormFieldEditorProps
                     ? isSectionDisabled
                       ? "border-white/[0.04] bg-[#0E0E18]/50 opacity-60"
                       : "border-[#7C3AED]/20 bg-[#7C3AED]/[0.04]"
-                    : "border-white/[0.06] bg-[#12121A]"
+                    : "border-white/10 bg-[#12121A]"
                 }`}
               >
                 {/* Field header */}
@@ -310,7 +310,7 @@ export function FormFieldEditor({ fields, onFieldsChange }: FormFieldEditorProps
 
                 {/* Editing panel */}
                 {isEditing && (
-                  <div className="border-t border-white/[0.06] p-4 space-y-4">
+                  <div className="border-t border-white/10 p-4 space-y-4">
                     {/* Label */}
                     <div className="space-y-1">
                       <Label className="text-xs text-[#8B8BA3]">{isSection ? "Nombre de la seccion" : "Pregunta"}</Label>

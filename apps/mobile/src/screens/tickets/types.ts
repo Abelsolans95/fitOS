@@ -1,19 +1,19 @@
-import type { TicketCategory, TicketStatus, SupportTicket, TicketReply } from "@fitos/shared";
+import type { TicketCategory, TicketStatus, SupportTicket, TicketReply } from "@kuvox/shared";
 import { colors, fonts } from "../../theme";
 
 export type ScreenView = "list" | "create" | "detail";
 
 export const CATEGORY_COLORS: Record<TicketCategory, string> = {
-  nutricion: colors.success,
+  nutricion: colors.green,
   rutina: colors.cyan,
-  lesion: colors.error,
+  lesion: colors.red,
   general: colors.violet,
 };
 
 export const STATUS_COLORS: Record<TicketStatus, string> = {
   open: colors.orange,
   in_progress: colors.cyan,
-  resolved: colors.success,
+  resolved: colors.green,
 };
 
 export const STATUS_LABELS: Record<TicketStatus, string> = {

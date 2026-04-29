@@ -57,7 +57,7 @@
   /* [fitos-theme-end] */
 }
 
-/* ===== FitOS Dark-Only Theme ===== */
+/* ===== Kuvox Dark-Only Theme ===== */
 :root {
   /* Background & surfaces */
   --background: #0A0A0F;
@@ -108,7 +108,7 @@
   --sidebar-primary-foreground: #0A0A0F;
   --sidebar-accent: #1A1A2E;
   --sidebar-accent-foreground: #00E5FF;
-  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-border: rgba(255, 255, 255, 0.10);
   --sidebar-ring: #00E5FF;
 }
 
@@ -130,6 +130,21 @@
     input, textarea, select {
       font-size: 16px !important;
     }
+  }
+
+  /* Staggered page-enter fade-in. Used across trainer dashboard + Hoy panel. */
+  @keyframes dash-fade-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .dash-in { animation: dash-fade-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .dash-d1 { animation-delay: 0.04s; }
+  .dash-d2 { animation-delay: 0.12s; }
+  .dash-d3 { animation-delay: 0.22s; }
+  .dash-d4 { animation-delay: 0.34s; }
+  .dash-d5 { animation-delay: 0.46s; }
+  @media (prefers-reduced-motion: reduce) {
+    .dash-in { animation: none !important; }
   }
 
   /* Neon glow effects */

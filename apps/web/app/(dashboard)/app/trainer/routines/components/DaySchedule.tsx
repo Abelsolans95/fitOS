@@ -30,9 +30,9 @@ export default function DaySchedule({
   const dayInfo = DAYS_OF_WEEK.find((d) => d.key === day.key);
 
   return (
-    <div className="rounded-[18px] border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl overflow-hidden">
+    <div className="rounded-[18px] border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl overflow-hidden">
       {/* Day header */}
-      <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3">
+      <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#00E5FF]/10">
             <span className="text-[11px] font-bold text-[#00E5FF]">

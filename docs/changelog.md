@@ -1,4 +1,4 @@
-# Changelog — FitOS Development History
+# Changelog — Kuvox Development History
 
 ## Fase 0 — Estructura base ✅
 - Estructura monorepo, auth, 19 tablas, tema visual.
@@ -63,7 +63,7 @@
 ## Seguridad Fase 3 — Auditoría Profunda (03/04/2026) ✅
 - 23 vulnerabilidades adicionales. Migraciones 042, 043.
 
-## `@fitos/theme` (30/03/2026) ✅
+## `@kuvox/theme` (30/03/2026) ✅
 - Paquete compartido de tokens de diseño. Metro watchFolders configurado.
 
 ## Mapa anatómico con imágenes reales (31/03/2026) ✅
@@ -144,3 +144,80 @@
 - Hook `useMenusEnabled` — fetches profile flag, used by both sidebars.
 - Admin sidebar updated with "Gestion de menus" nav item.
 - Tests: 7 tests for admin menus API (GET filtering, PUT toggle, validation, role guard).
+
+## Defense-in-depth refactor + repo hygiene (17/04/2026) ✅
+- **Security fixes**:
+  - CORS whitelist en Edge Functions (`supabase/functions/_shared/auth.ts`) — reemplazada heurística permisiva `origin.endsWith(".vercel.app") && origin.includes("fitos")` por regex exacta via `VERCEL_PROJECT_PREVIEW_REGEX` env var. Sin la env, solo se permiten los orígenes estáticos del whitelist.
+  - UUID regex case-insensitive en `/api/leads` sustituida por `uuidSchema` Zod (lowercase estricto, forma canónica de Postgres).
+  - 55 ocurrencias de `console.error` en API routes migradas a `logger.error` — ahora PII-redacted por defecto.
+- **Defense-by-construction**:
+  - `lib/api-handler.ts` — wrapper declarativo que aplica CSRF → rate-limit → auth → role → body-parse+validate de un plumazo. Previene la clase entera de gotchas #68, #93, #94, #97, #138. 16 tests.
+  - `lib/validation.ts` — schemas Zod compartidos (`uuidSchema`, `emailSchema`, `roleSchema`, etc.) + `escapeLike()` para prevenir wildcard injection ILIKE (gotcha #134). 14 tests.
+- **Test coverage** (+88 tests):
+  - `admin-auth` (6 — gotcha #121), `csrf` (8), `rate-limit` (8), `sanitize` (10), `file-validation` (10), `url-validation` (10), `logger` (6), `validation` (14), `api-handler` (16).
+- **Repo hygiene**:
+  - `pnpm-workspace.yaml` eliminado (proyecto usa npm).
+  - `commit_diff.txt`, `push_error.txt`, `staged_diff.txt` eliminados + blindado `.gitignore`.
+  - Planning markdown (`PROMPT_CHAT*.md`, `RUTA_ABRIL.md`, `KUVOX_VISION.md`, etc.) movidos a `docs/archive/`.
+  - Scripts dev (`script_*.js`, `replace_dashboard_colors.js`, etc.) movidos a `scripts/dev/`.
+- **Shared code**:
+  - `exercise-resolver`, `food-resolver`, `query-cache` extraídos a `@kuvox/shared/resolvers`. `apps/web/lib/*` son ahora shims de re-export (backward compat). Listos para consumir desde mobile.
+- **Docs**:
+  - Path de migración a Upstash Redis documentado en `lib/rate-limit.ts` (mantiene la misma API de `check()` al migrar).
+
+## Panel "Hoy" del trainer + Pantalla "Mi día" del cliente (18/04/2026) ✅
+
+Traducción directa del positioning ("ves en un panel quién necesita atención hoy" + "reporte en 30 segundos"):
+
+- **Migration 050** — nueva tabla `daily_checkins` (sleep/stress/energy/pain 1-5, notes).
+  UNIQUE(client_id, checkin_date) → una fila por día. RLS: client CRUD propio; trainer SELECT
+  sólo para clientes activos (EXISTS en trainer_clients).
+- **@kuvox/shared**: tipos `DailyCheckin`, `TodayAlert`, `TodayPanel` y sus variantes por tipo.
+- **Trainer**:
+  - `/api/trainer/today` — agrega en paralelo 6 señales: `no_workout` (3+ días), `no_checkin`
+    (48h), `new_injury` (7 días), `pending_ticket` (open/in_progress), `high_stress` (≥4/5),
+    `high_pain` (≥4/5). Usa el `handler` wrapper + rol=trainer + RLS del caller. 7 tests.
+  - `/app/trainer/today` — página client-side con secciones por tipo de alerta, contador,
+    botón refresh y estado vacío "todo en orden".
+  - TrainerSidebar: "Hoy" como primer item. Default href del sidebar movido a `/app/trainer/today`.
+- **Cliente**:
+  - `/api/client/daily-checkin` — POST upsert (onConflict client_id+checkin_date) + GET fetch
+    del día. `handler({ auth, role: 'client', body: zod schema })`.
+  - `MyDayScreen.tsx` (mobile): secciones Entreno (toggle), Comidas (link a tab Calorías),
+    Peso (input decimal), Cómo me siento (4 sliders 1-5), Notas, CTA "Guardar check-in".
+  - Hook `useMyDay` carga en paralelo: daily_checkins de hoy, workout_sessions completadas hoy,
+    último body_metrics del día — pre-rellena formulario.
+  - Tab "Mi día" añadida como primera en el bottom nav.
+
+Tests: 362/362 verdes.
+
+## UX polish premium — rebrand, iconografía, densidad (19/04/2026) ✅
+
+Todo el package de mejoras estéticas propuestas en la auditoría visual:
+
+- **Sidebar trainer**: 17 items → 7 top-level. "Comunicación" y "Herramientas"
+  agrupan las secciones secundarias. Heroicons inline sustituidos por Lucide
+  (`LayoutDashboard`, `CalendarClock`, `Users`, `Dumbbell`, `Salad`,
+  `MessagesSquare`, `Wrench`, `Settings2`).
+- **Sidebar client**: 14 items → 5 top-level ("Inicio", "Rutina", "Nutrición",
+  "Progreso", "Comunicación", "Más") con children agrupados.
+- **Sidebar admin**: migrado a Lucide (8 items, ya razonable).
+- **Mobile tabs**: 11 → 5 visibles ("Mi día", "Rutina", "Calorías", "Chat",
+  "Más") + MoreScreen con deep-link a las secundarias ocultas (tabBarButton
+  null).
+- **Opacidad de bordes**: `rgba(255,255,255,0.06)` → `0.10` global (400
+  reemplazos en 160 archivos) — legibilidad en Android/luz solar.
+- **Dashboard trainer**: paleta 4-color → **grayscale con cyan como único
+  acento en hover**. KPICard simplificado. Todo el CSS-in-JS inline migrado a
+  Tailwind; animaciones de entrada movidas a `.dash-in/.dash-d*` en
+  `globals.css` (respeta `prefers-reduced-motion`).
+- **Emojis como iconos** → Lucide SVG: CreateTicketForm (`Salad`, `Dumbbell`,
+  `Bandage`, `HelpCircle`), trainer `today` empty state (`CheckCircle2`),
+  mobile LeaguesScreen (trofeo SVG custom).
+- **Migration 051**: `profiles.avatar_url` TEXT + bucket `avatars` (private,
+  5 MB max, jpeg/png/webp) con RLS — escritura sólo en carpeta propia,
+  lectura cruzada sólo entre trainer↔client activos.
+- **Avatar component** (`components/ui/Avatar.tsx`): next/image + fallback de
+  iniciales con gradiente determinista por nombre.
+
+Tests: 362/362 verdes (ningún test tocaba estos archivos).

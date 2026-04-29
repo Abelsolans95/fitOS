@@ -42,7 +42,7 @@ export function AddFoodModal({
       <h2 className="text-base font-semibold text-white">Alimentos detectados</h2>
 
       {analyzedFoods.map((food, index) => (
-        <div key={index} className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-4">
+        <div key={index} className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-4">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm font-medium text-white">{food.name}</p>
@@ -88,7 +88,7 @@ export function AddFoodModal({
       ))}
 
       {/* Meal type selector */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-4">
+      <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-4">
         <p className="mb-3 text-sm font-medium text-white">Tipo de comida</p>
         <div className="flex flex-wrap gap-2">
           {MEAL_TYPES.map((mt) => (

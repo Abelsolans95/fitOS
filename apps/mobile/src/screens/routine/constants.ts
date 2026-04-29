@@ -1,6 +1,6 @@
 import { colors } from "../../theme";
 
-export { DAY_KEYS, DAY_LABELS, DAY_SHORT, formatTime } from "@fitos/shared";
+export { DAY_KEYS, DAY_LABELS, DAY_SHORT, formatTime } from "@kuvox/shared";
 
 export function calculateProgress(
   current: { weight: number; reps: number }[],

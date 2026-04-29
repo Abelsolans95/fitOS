@@ -128,7 +128,7 @@ function SetDetailRow({
             onFieldChange(setIdx, f.key, f.nullable && raw === "" ? null : Number(raw) || 0);
           }}
           placeholder={f.nullable ? "—" : undefined}
-          className={`h-7 w-full rounded border bg-[#0E0E18]/60 px-1 text-center text-[11px] placeholder:text-[#5A5A72] outline-none transition-colors ${f.key === "rir" ? "border-[#00E5FF]/20 text-[#00E5FF] focus:border-[#00E5FF]/40" : f.key === "target_rpe" ? "border-[#FF9100]/20 text-[#FF9100] focus:border-[#FF9100]/40" : "border-white/[0.06] text-white focus:border-[#7C3AED]/40"}`}
+          className={`h-7 w-full rounded border bg-[#0E0E18]/60 px-1 text-center text-[11px] placeholder:text-[#5A5A72] outline-none transition-colors ${f.key === "rir" ? "border-[#00E5FF]/20 text-[#00E5FF] focus:border-[#00E5FF]/40" : f.key === "target_rpe" ? "border-[#FF9100]/20 text-[#FF9100] focus:border-[#FF9100]/40" : "border-white/10 text-white focus:border-[#7C3AED]/40"}`}
         />
       ))}
       <div className="flex items-center gap-0.5">
@@ -339,7 +339,7 @@ export default function WeeklyConfigModal({
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border border-white/[0.08] bg-[#12121A] shadow-2xl">
         {/* Header */}
-        <div className="shrink-0 flex items-center justify-between border-b border-white/[0.06] px-6 py-4">
+        <div className="shrink-0 flex items-center justify-between border-b border-white/10 px-6 py-4">
           <div>
             <h2 className="text-lg font-bold text-white">Progresión semanal</h2>
             <p className="text-[12px] text-[#8B8BA3] mt-0.5">
@@ -509,7 +509,7 @@ export default function WeeklyConfigModal({
                   value={weeks[week]?.coach_notes ?? ""}
                   onChange={(e) => updateWeekField(week, "coach_notes", e.target.value)}
                   placeholder="Notas del entrenador para esta semana..."
-                  className="w-full resize-none rounded-lg border border-white/[0.06] bg-[#0E0E18]/60 px-3 py-1.5 text-[11px] text-white placeholder:text-[#5A5A72]/60 outline-none transition-colors focus:border-[#7C3AED]/40"
+                  className="w-full resize-none rounded-lg border border-white/10 bg-[#0E0E18]/60 px-3 py-1.5 text-[11px] text-white placeholder:text-[#5A5A72]/60 outline-none transition-colors focus:border-[#7C3AED]/40"
                 />
               </div>
 
@@ -530,7 +530,7 @@ export default function WeeklyConfigModal({
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 flex items-center justify-between border-t border-white/[0.06] px-6 py-4">
+        <div className="shrink-0 flex items-center justify-between border-t border-white/10 px-6 py-4">
           <button type="button" onClick={handleReset}
             className="rounded-xl border border-white/[0.08] px-4 py-2 text-[12px] font-medium text-[#8B8BA3] transition-colors hover:text-white hover:border-white/[0.15]">
             Restablecer valores base

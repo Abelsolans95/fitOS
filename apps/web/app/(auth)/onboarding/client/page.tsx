@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Spotlight, SpotlightCard } from "@/components/ui/spotlight";
 import { createClient } from "@/lib/supabase";
-import { groupFieldsBySection, getEnabledSections } from "@fitos/shared";
+import { groupFieldsBySection, getEnabledSections } from "@kuvox/shared";
 import { Spinner, StepIndicator } from "./components/Shared";
 import { StepDynamicForm } from "./components/StepDynamicForm";
 import { StepProfile } from "./components/StepProfile";

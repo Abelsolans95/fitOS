@@ -36,7 +36,7 @@ function ContractsPageInner() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0A0A0F] p-4">
+      <div className="flex-1 overflow-hidden rounded-2xl border border-white/10 bg-[#0A0A0F] p-4">
         {state.activeView === "detail" && selectedContract ? (
           <ContractView
             contract={selectedContract}
@@ -68,7 +68,7 @@ function ContractsPageInner() {
                     className={`w-full rounded-xl border p-4 text-left transition-all hover:border-white/10 ${
                       isPending
                         ? "border-[#00E5FF]/20 bg-[#00E5FF]/[0.02]"
-                        : "border-white/[0.06] bg-[#12121A]"
+                        : "border-white/10 bg-[#12121A]"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">

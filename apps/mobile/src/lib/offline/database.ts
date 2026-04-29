@@ -1,5 +1,5 @@
 /**
- * WatermelonDB Database initialization — Offline storage for FitOS.
+ * WatermelonDB Database initialization — Offline storage for Kuvox.
  *
  * Uses dynamic imports to avoid crashes in Expo Go or environments
  * where the native SQLite adapter is not available (requires prebuild).

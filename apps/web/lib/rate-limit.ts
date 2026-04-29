@@ -1,15 +1,32 @@
 /**
- * Simple in-memory rate limiter for API routes.
+ * Rate limiter for API routes.
  *
- * LIMITATION: In-memory store resets per serverless cold start on Vercel.
- * This provides protection against rapid bursts within a single instance
- * but NOT against distributed attacks across multiple cold starts.
- * For true distributed rate limiting, migrate to Upstash Redis (@upstash/ratelimit).
- * Current implementation is sufficient for dev and moderate traffic.
+ * LIMITATION (in-memory): the Map is scoped to a single serverless instance and
+ * resets on cold start. It protects against rapid bursts within one warm lambda
+ * but NOT against a distributed attack that spreads requests across cold starts.
  *
- * Usage in API routes:
+ * MIGRATION PATH TO DISTRIBUTED (Upstash Redis):
+ *   1. `cd apps/web && npm install @upstash/ratelimit @upstash/redis --legacy-peer-deps`
+ *   2. Create a Redis DB on console.upstash.com (free tier is enough for moderate traffic).
+ *   3. Add to Vercel env + .env.local:
+ *        UPSTASH_REDIS_REST_URL=...
+ *        UPSTASH_REDIS_REST_TOKEN=...
+ *   4. Replace the `check()` implementation with:
+ *        import { Ratelimit } from "@upstash/ratelimit";
+ *        import { Redis } from "@upstash/redis";
+ *        const rl = new Ratelimit({
+ *          redis: Redis.fromEnv(),
+ *          limiter: Ratelimit.slidingWindow(maxRequests, `${interval} ms`),
+ *          analytics: true,
+ *          prefix: "fitos:rl",
+ *        });
+ *        // check(id) → await rl.limit(id) → { success, remaining, reset }
+ *      Keep the `{ success, remaining, resetAt }` return shape so callers don't change.
+ *   5. Keep the in-memory version as a fallback when env vars are missing (dev/preview
+ *      without Redis) — gate with `UPSTASH_REDIS_REST_URL` presence.
+ *
+ * Usage in API routes (unchanged after migration):
  *   const limiter = createRateLimiter({ interval: 60_000, maxRequests: 30 });
- *   // In handler:
  *   const { success } = limiter.check(userId || ip);
  *   if (!success) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
  */

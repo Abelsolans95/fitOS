@@ -36,7 +36,7 @@ function KanbanColumnInner({ column, leads, onSelect, onDragStart, onDrop }: Kan
   return (
     <div
       className={`flex h-full min-w-[260px] flex-col rounded-2xl border bg-[#12121A] transition-colors ${
-        dragOver ? "border-white/[0.15] bg-[#16162A]" : "border-white/[0.06]"
+        dragOver ? "border-white/[0.15] bg-[#16162A]" : "border-white/10"
       }`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}

@@ -30,7 +30,7 @@ export function FeaturesSection() {
               </div>
             </div>
             <p className="text-[13px] leading-relaxed text-[#8B8BA3] max-w-sm mb-7">Dile a la IA el nivel, objetivo y equipamiento. En segundos tienes un plan completo, periodizado y listo para asignar.</p>
-            <div className="rounded-xl border border-white/[0.06] bg-[#0A0A0F] p-4 space-y-3">
+            <div className="rounded-xl border border-white/10 bg-[#0A0A0F] p-4 space-y-3">
               <div className="flex items-center gap-2 text-[11px] text-[#5A5A72]"><span className="text-[#00E5FF]">›</span> Fuerza · 4 días · Gimnasio completo</div>
               <div className="h-px bg-white/[0.04]" />
               <div className="grid grid-cols-3 gap-2">

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase-server";
 import { apiLimiter, getClientIdentifier } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/leagues/[id]/leaderboard
@@ -62,7 +63,7 @@ export async function GET(
       .limit(200);
 
     if (partErr) {
-      console.error("[leagues/leaderboard] Error al cargar participantes");
+      logger.error("[leagues/leaderboard] Error al cargar participantes");
       return NextResponse.json(
         { error: "Error al cargar clasificacion" },
         { status: 500 }
@@ -71,7 +72,7 @@ export async function GET(
 
     // Enrich with profile names — no FK between trainer_clients and profiles
     const clientIds = (participants ?? []).map((p) => p.client_id);
-    let profileMap: Record<string, string> = {};
+    const profileMap: Record<string, string> = {};
 
     if (clientIds.length > 0) {
       const { data: profiles } = await supabase

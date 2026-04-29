@@ -1,12 +1,12 @@
-// FitOS Design System — Mobile
-// Colores, spacing y radius vienen de @fitos/theme (fuente de verdad compartida).
+// Kuvox Design System — Mobile
+// Colores, spacing y radius vienen de @kuvox/theme (fuente de verdad compartida).
 // Para cambiar la paleta: editar packages/theme/src/index.ts
 // Para actualizar Tailwind web: ejecutar pnpm sync-theme desde la raíz.
 
-import { colors, spacing, radius, fonts } from "@fitos/theme";
+import { colors, spacing, radius, fonts } from "@kuvox/theme";
 
 export { colors, spacing, radius, fonts };
-export type { Colors, ColorKey, Spacing, Radius } from "@fitos/theme";
+export type { Colors, ColorKey, Spacing, Radius } from "@kuvox/theme";
 
 // Shadow utilities — permanecen aquí porque usan APIs de React Native.
 // No se pueden compartir con web (shadowColor, elevation son propiedades RN).

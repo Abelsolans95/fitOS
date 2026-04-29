@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useReducer } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase";
-import type { League, Badge, UserBadge } from "@fitos/shared";
+import type { League, Badge, UserBadge } from "@kuvox/shared";
 import { ClientLeagueList } from "./components/ClientLeagueList";
 import { BadgeCollection } from "./components/BadgeCollection";
 import {
@@ -188,7 +188,7 @@ function ClientLeaguesInner() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 rounded-xl border border-white/[0.06] bg-[#12121A] p-1">
+      <div className="flex gap-1 rounded-xl border border-white/10 bg-[#12121A] p-1">
         {TABS.map((tab) => (
           <button
             key={tab.key}

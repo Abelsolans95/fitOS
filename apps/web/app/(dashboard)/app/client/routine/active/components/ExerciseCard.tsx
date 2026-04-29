@@ -134,7 +134,7 @@ export function ExerciseCard({
       </div>
 
       {/* Exercise header */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl p-5">
+      <div className="rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl p-5">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#5A5A72]">
@@ -389,7 +389,7 @@ export function ExerciseCard({
         <button
           onClick={onPrev}
           disabled={exerciseIndex === 0}
-          className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/[0.06] bg-[#0E0E18]/60 backdrop-blur-xl py-3.5 text-sm font-semibold text-white transition-all hover:bg-white/[0.04] disabled:opacity-30 disabled:cursor-not-allowed"
+          className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0E0E18]/60 backdrop-blur-xl py-3.5 text-sm font-semibold text-white transition-all hover:bg-white/[0.04] disabled:opacity-30 disabled:cursor-not-allowed"
         >
           <svg
             className="h-4 w-4"
