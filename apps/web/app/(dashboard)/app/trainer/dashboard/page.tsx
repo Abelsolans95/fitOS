@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useUser } from "@/lib/hooks/useUser";
+import { Avatar } from "@/components/ui/Avatar";
 import { KPICard } from "./components/KPICard";
 import { RecentActivity } from "./components/RecentActivity";
 
@@ -24,13 +25,62 @@ interface KpiData {
   activeMealPlans: number;
 }
 
+interface KpiDeltas {
+  activeClientsThisWeek: number;
+  pendingFormsThisWeek: number;
+  activeRoutinesThisWeek: number;
+  activeMealPlansThisWeek: number;
+}
+
+interface KpiSparklines {
+  clientsByDay: number[];
+  routinesByDay: number[];
+  mealPlansByDay: number[];
+  formsByDay: number[];
+}
+
+const SPARKLINE_DAYS = 30;
+
+function isoDate(daysAgo: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  return d.toISOString();
+}
+
+function bucketByDay(rows: { created_at: string }[], days = SPARKLINE_DAYS): number[] {
+  const buckets = new Array(days).fill(0);
+  const now = Date.now();
+  for (const r of rows) {
+    const ageDays = Math.floor((now - new Date(r.created_at).getTime()) / 86_400_000);
+    if (ageDays < 0 || ageDays >= days) continue;
+    buckets[days - 1 - ageDays]++;
+  }
+  // Convert per-day deltas into a running total — cumulative sparklines feel more
+  // natural for "active count" metrics.
+  let acc = 0;
+  return buckets.map((v) => (acc += v));
+}
+
 function useTrainerDashboard(user: User | null) {
   const [trainerName, setTrainerName] = useState("");
+  const [trainerAvatar, setTrainerAvatar] = useState<string | null>(null);
   const [kpis, setKpis] = useState<KpiData>({
     activeClients: 0,
     pendingForms: 0,
     activeRoutines: 0,
     activeMealPlans: 0,
+  });
+  const [deltas, setDeltas] = useState<KpiDeltas>({
+    activeClientsThisWeek: 0,
+    pendingFormsThisWeek: 0,
+    activeRoutinesThisWeek: 0,
+    activeMealPlansThisWeek: 0,
+  });
+  const [sparklines, setSparklines] = useState<KpiSparklines>({
+    clientsByDay: [],
+    routinesByDay: [],
+    mealPlansByDay: [],
+    formsByDay: [],
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,40 +90,85 @@ function useTrainerDashboard(user: User | null) {
     const load = async () => {
       try {
         const supabase = createClient();
-        const [profileRes, clientsRes, formsRes, routinesRes, mealsRes] =
-          await Promise.all([
-            supabase.from("profiles").select("full_name").eq("user_id", user.id).single(),
-            supabase
-              .from("trainer_clients")
-              .select("id", { count: "exact", head: true })
-              .eq("trainer_id", user.id)
-              .eq("status", "active"),
-            supabase
-              .from("onboarding_responses")
-              .select("id", { count: "exact", head: true })
-              .eq("trainer_id", user.id),
-            supabase
-              .from("user_routines")
-              .select("id", { count: "exact", head: true })
-              .eq("trainer_id", user.id)
-              .eq("is_active", true),
-            supabase
-              .from("meal_plans")
-              .select("id", { count: "exact", head: true })
-              .eq("trainer_id", user.id)
-              .eq("is_active", true),
-          ]);
+        const sevenDaysAgo = isoDate(7);
+        const thirtyDaysAgo = isoDate(SPARKLINE_DAYS);
+
+        // 9 queries in parallel: 1 profile, 4 totals (count head), 4 weekly deltas (count head),
+        // and 4 created_at lists for sparklines (capped at SPARKLINE_DAYS rows worst case).
+        const [
+          profileRes,
+          clientsRes,
+          formsRes,
+          routinesRes,
+          mealsRes,
+          clientsWeekRes,
+          formsWeekRes,
+          routinesWeekRes,
+          mealsWeekRes,
+          clientsHistoryRes,
+          formsHistoryRes,
+          routinesHistoryRes,
+          mealsHistoryRes,
+        ] = await Promise.all([
+          supabase.from("profiles").select("full_name, avatar_url").eq("user_id", user.id).maybeSingle(),
+          supabase.from("trainer_clients").select("id", { count: "exact", head: true })
+            .eq("trainer_id", user.id).eq("status", "active"),
+          supabase.from("onboarding_responses").select("id", { count: "exact", head: true })
+            .eq("trainer_id", user.id),
+          supabase.from("user_routines").select("id", { count: "exact", head: true })
+            .eq("trainer_id", user.id).eq("is_active", true),
+          supabase.from("meal_plans").select("id", { count: "exact", head: true })
+            .eq("trainer_id", user.id).eq("is_active", true),
+          // Last 7 days deltas
+          supabase.from("trainer_clients").select("id", { count: "exact", head: true })
+            .eq("trainer_id", user.id).eq("status", "active").gte("joined_at", sevenDaysAgo),
+          supabase.from("onboarding_responses").select("id", { count: "exact", head: true })
+            .eq("trainer_id", user.id).gte("created_at", sevenDaysAgo),
+          supabase.from("user_routines").select("id", { count: "exact", head: true })
+            .eq("trainer_id", user.id).eq("is_active", true).gte("created_at", sevenDaysAgo),
+          supabase.from("meal_plans").select("id", { count: "exact", head: true })
+            .eq("trainer_id", user.id).eq("is_active", true).gte("created_at", sevenDaysAgo),
+          // 30-day history for sparklines (only created_at; small payload)
+          supabase.from("trainer_clients").select("joined_at")
+            .eq("trainer_id", user.id).eq("status", "active").gte("joined_at", thirtyDaysAgo)
+            .order("joined_at", { ascending: true }).limit(500),
+          supabase.from("onboarding_responses").select("created_at")
+            .eq("trainer_id", user.id).gte("created_at", thirtyDaysAgo)
+            .order("created_at", { ascending: true }).limit(500),
+          supabase.from("user_routines").select("created_at")
+            .eq("trainer_id", user.id).eq("is_active", true).gte("created_at", thirtyDaysAgo)
+            .order("created_at", { ascending: true }).limit(500),
+          supabase.from("meal_plans").select("created_at")
+            .eq("trainer_id", user.id).eq("is_active", true).gte("created_at", thirtyDaysAgo)
+            .order("created_at", { ascending: true }).limit(500),
+        ]);
+
         setTrainerName(
           profileRes.data?.full_name ||
             user.user_metadata?.full_name ||
             user.email?.split("@")[0] ||
             "Entrenador"
         );
+        setTrainerAvatar(profileRes.data?.avatar_url ?? null);
         setKpis({
           activeClients: clientsRes.count ?? 0,
           pendingForms: formsRes.count ?? 0,
           activeRoutines: routinesRes.count ?? 0,
           activeMealPlans: mealsRes.count ?? 0,
+        });
+        setDeltas({
+          activeClientsThisWeek: clientsWeekRes.count ?? 0,
+          pendingFormsThisWeek: formsWeekRes.count ?? 0,
+          activeRoutinesThisWeek: routinesWeekRes.count ?? 0,
+          activeMealPlansThisWeek: mealsWeekRes.count ?? 0,
+        });
+        setSparklines({
+          clientsByDay: bucketByDay(
+            (clientsHistoryRes.data ?? []).map((r) => ({ created_at: r.joined_at }))
+          ),
+          formsByDay: bucketByDay(formsHistoryRes.data ?? []),
+          routinesByDay: bucketByDay(routinesHistoryRes.data ?? []),
+          mealPlansByDay: bucketByDay(mealsHistoryRes.data ?? []),
         });
       } catch {
         setError("Error al cargar el dashboard.");
@@ -84,7 +179,17 @@ function useTrainerDashboard(user: User | null) {
     load();
   }, [user]);
 
-  return { trainerName, kpis, loading, error };
+  return { trainerName, trainerAvatar, kpis, deltas, sparklines, loading, error };
+}
+
+function formatToday(): string {
+  const d = new Date();
+  const formatted = d.toLocaleDateString("es-ES", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 
 function getGreeting(): string {
@@ -100,7 +205,15 @@ function Skeleton({ className }: { className: string }) {
 
 export default function TrainerDashboardPage() {
   const { user, loading: userLoading } = useUser();
-  const { trainerName, kpis, loading: dataLoading, error } = useTrainerDashboard(user);
+  const {
+    trainerName,
+    trainerAvatar,
+    kpis,
+    deltas,
+    sparklines,
+    loading: dataLoading,
+    error,
+  } = useTrainerDashboard(user);
   const loading = userLoading || (!!user && dataLoading);
 
   const firstName = trainerName.split(" ")[0] || "Entrenador";
@@ -113,6 +226,8 @@ export default function TrainerDashboardPage() {
         icon: <Users className="h-[18px] w-[18px]" />,
         href: "/app/trainer/clients",
         hint: "Ver todos",
+        delta: deltas.activeClientsThisWeek,
+        sparkline: sparklines.clientsByDay,
       },
       {
         label: "Formularios",
@@ -120,6 +235,8 @@ export default function TrainerDashboardPage() {
         icon: <FileText className="h-[18px] w-[18px]" />,
         href: "/app/trainer/forms",
         hint: "Ver todos",
+        delta: deltas.pendingFormsThisWeek,
+        sparkline: sparklines.formsByDay,
       },
       {
         label: "Rutinas activas",
@@ -127,6 +244,8 @@ export default function TrainerDashboardPage() {
         icon: <Zap className="h-[18px] w-[18px]" />,
         href: "/app/trainer/routines",
         hint: "Gestionar",
+        delta: deltas.activeRoutinesThisWeek,
+        sparkline: sparklines.routinesByDay,
       },
       {
         label: "Menús activos",
@@ -134,9 +253,11 @@ export default function TrainerDashboardPage() {
         icon: <Salad className="h-[18px] w-[18px]" />,
         href: "/app/trainer/nutrition",
         hint: "Gestionar",
+        delta: deltas.activeMealPlansThisWeek,
+        sparkline: sparklines.mealPlansByDay,
       },
     ],
-    [kpis.activeClients, kpis.pendingForms, kpis.activeRoutines, kpis.activeMealPlans]
+    [kpis, deltas, sparklines]
   );
 
   const quickActions = useMemo(
@@ -211,19 +332,24 @@ export default function TrainerDashboardPage() {
 
   return (
     <div className="space-y-7">
-      {/* Header */}
-      <div className="dash-in dash-d1 flex items-start justify-between">
-        <div>
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">
-            {getGreeting()}
-          </p>
-          <h1 className="text-[32px] font-extrabold leading-tight tracking-[-0.03em] text-white">
-            {firstName}
-            <span className="text-[#00E5FF]">.</span>
-          </h1>
-          <p className="mt-1 text-[13px] text-[#8B8BA3]">Aquí está tu resumen de hoy</p>
+      {/* Header — avatar + name + date, with live indicator on the right */}
+      <div className="dash-in dash-d1 flex items-start justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-4">
+          <Avatar src={trainerAvatar} name={trainerName || "Entrenador"} size={52} />
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#5A5A72]">
+              {getGreeting()} · <span className="text-[#8B8BA3]">{formatToday()}</span>
+            </p>
+            <h1 className="mt-1 text-[26px] font-extrabold leading-tight tracking-[-0.03em] text-white">
+              {firstName}
+              <span className="text-[#00E5FF]">.</span>
+            </h1>
+            <p className="mt-0.5 text-[12px] text-[#8B8BA3]">
+              Aquí está tu resumen de hoy
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-2 backdrop-blur-md">
+        <div className="flex shrink-0 items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-2 backdrop-blur-md">
           <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-[#00C853]" />
           <span className="text-[11px] font-semibold text-[#8B8BA3]">En vivo</span>
         </div>

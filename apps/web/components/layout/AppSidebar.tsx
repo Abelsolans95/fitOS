@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { Avatar } from "@/components/ui/Avatar";
 
 export interface SidebarNavItem {
   label: string;
@@ -18,10 +20,54 @@ interface AppSidebarProps {
   defaultHref: string;
 }
 
+interface UserBadgeData {
+  name: string;
+  email: string;
+  avatarUrl: string | null;
+}
+
+function useSidebarUser(): UserBadgeData | null {
+  const [user, setUser] = useState<UserBadgeData | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData.session;
+      if (!session?.user || cancelled) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, avatar_url")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+
+      if (cancelled) return;
+      setUser({
+        name:
+          profile?.full_name ||
+          session.user.user_metadata?.full_name ||
+          session.user.email?.split("@")[0] ||
+          "Usuario",
+        email: session.user.email ?? "",
+        avatarUrl: profile?.avatar_url ?? null,
+      });
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return user;
+}
+
 export function AppSidebar({ items, defaultHref }: AppSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const user = useSidebarUser();
 
   // Track which groups are open — auto-open if a child is active
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
@@ -243,27 +289,48 @@ export function AppSidebar({ items, defaultHref }: AppSidebarProps) {
           </div>
         </nav>
 
-        {/* Logout */}
+        {/* User badge + logout — grouped footer */}
         <div className="border-t border-white/[0.04] p-3">
-          <button
-            type="button"
-            onClick={handleLogout}
-            title={collapsed ? "Cerrar sesión" : undefined}
-            className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-[#5A5A72] transition-colors hover:bg-[#FF1744]/10 hover:text-[#FF1744] ${
-              collapsed ? "justify-center" : ""
-            }`}
-          >
-            <svg
-              className="h-4 w-4 shrink-0 transition-colors group-hover:text-[#FF1744]/80"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
-            </svg>
-            {!collapsed && <span className="block truncate">Cerrar sesión</span>}
-          </button>
+          {collapsed ? (
+            <div className="flex flex-col items-center gap-2">
+              {user && (
+                <Avatar src={user.avatarUrl} name={user.name} size={32} />
+              )}
+              <button
+                type="button"
+                onClick={handleLogout}
+                title="Cerrar sesión"
+                className="group flex h-8 w-8 items-center justify-center rounded-lg text-[#5A5A72] transition-colors hover:bg-[#FF1744]/10 hover:text-[#FF1744]"
+              >
+                <LogOut className="h-4 w-4" strokeWidth={1.5} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2.5 rounded-xl px-2 py-2">
+              {user ? (
+                <Avatar src={user.avatarUrl} name={user.name} size={36} />
+              ) : (
+                <div className="h-9 w-9 shrink-0 rounded-full bg-white/[0.04]" />
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] font-semibold text-white">
+                  {user?.name ?? "Cargando…"}
+                </p>
+                <p className="truncate text-[11px] text-[#5A5A72]">
+                  {user?.email ?? ""}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                aria-label="Cerrar sesión"
+                title="Cerrar sesión"
+                className="group flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#5A5A72] transition-colors hover:bg-[#FF1744]/10 hover:text-[#FF1744]"
+              >
+                <LogOut className="h-4 w-4" strokeWidth={1.5} />
+              </button>
+            </div>
+          )}
         </div>
         </div>
       </aside>
