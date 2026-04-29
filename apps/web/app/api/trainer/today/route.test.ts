@@ -145,7 +145,7 @@ describe("GET /api/trainer/today", () => {
         id: "ticket-1",
         client_id: CLIENT_A,
         category: "nutricion",
-        title: "Duda sobre carbos",
+        subject: "Duda sobre carbos",
         status: "open",
         created_at: new Date().toISOString(),
       },

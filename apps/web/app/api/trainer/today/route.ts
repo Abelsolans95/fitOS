@@ -110,13 +110,13 @@ export const GET = handler(
         .gte("created_at", checkinSince),
       supabase
         .from("health_logs")
-        .select("client_id, muscle_id, severity, reported_at")
+        .select("client_id, muscle_id, pain_score, created_at")
         .in("client_id", clientIds)
-        .gte("reported_at", injurySince)
-        .order("reported_at", { ascending: false }),
+        .gte("created_at", injurySince)
+        .order("created_at", { ascending: false }),
       supabase
         .from("support_tickets")
-        .select("id, client_id, category, title, status, created_at")
+        .select("id, client_id, category, subject, status, created_at")
         .in("client_id", clientIds)
         .in("status", ["open", "in_progress"])
         .order("created_at", { ascending: false })
@@ -185,8 +185,8 @@ export const GET = handler(
       client_id: row.client_id,
       client_name: name(row.client_id),
       muscle_id: row.muscle_id,
-      severity: row.severity ?? null,
-      reported_at: row.reported_at,
+      severity: row.pain_score ?? null,
+      reported_at: row.created_at,
     }));
 
     // ─── pending_ticket ─────────────────────────────────────────────────────
@@ -196,7 +196,7 @@ export const GET = handler(
       client_name: name(row.client_id),
       ticket_id: row.id,
       category: row.category,
-      title: row.title,
+      title: row.subject,
       created_at: row.created_at,
     }));
 
